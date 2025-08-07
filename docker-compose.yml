@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql
+    container_name: netrics_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#      MYSQL_DATABASE: kpi_database
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8006:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - netrics_net
+
+volumes:
+  mysql_data:
+
+networks:
+  netrics_net:
+    driver: bridge
