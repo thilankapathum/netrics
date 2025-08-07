@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  mysql:
+  netrics_mysql:
     image: mysql
     container_name: netrics_mysql
     environment:
@@ -16,6 +16,7 @@ services:
       #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - netrics_net
+    restart: unless-stopped
 
 volumes:
   mysql_data:

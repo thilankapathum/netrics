@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    # DOCKER-COMPOSE MYSQL DATABASE INFORMATION
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_PULSE}   # Environment Variables defined in application-prod.yml
+    username: ${MYSQL_USER}   # Defined in docker-compose.yml as an Environment Variable
+    password: ${MYSQL_PASSWORD}   # Defined in docker-compose.yml as an Environment Variable
+    #driver-class-name: org.mysql.Driver
+
+  # DOCKER-COMPOSE.YML - ENVIRONMENT VARIABLES FOR CONTAINERIZATION WITHIN DOCKER NETWORK
+  # ${ENVIRONMENT_VARIABLE:DefaultValue}
