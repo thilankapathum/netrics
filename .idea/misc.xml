@@ -7,6 +7,7 @@
         <option value="$PROJECT_DIR$/backend/spring/config-server/pom.xml" />
         <option value="$PROJECT_DIR$/backend/spring/discovery/pom.xml" />
         <option value="$PROJECT_DIR$/backend/spring/pulse/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/spring/gateway/pom.xml" />
       </list>
     </option>
   </component>

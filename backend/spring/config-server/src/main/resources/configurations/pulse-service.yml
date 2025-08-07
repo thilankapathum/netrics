@@ -1,2 +1,5 @@
 server:
   port: 8012
+eureka:
+  instance:
+    prefer-ip-address: true #To force Eureka to use host IP address instead of PC Name

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/oss")
+@RequestMapping("/api/v1/pulse/oss")
 @RequiredArgsConstructor
 public class OssController {
     private final OssService ossService;
