@@ -24,3 +24,6 @@ hs_err_pid*
 replay_pid*
 
 .env
+
+backend/python/pulse/files/
+backend/python/pulse/kpi_processor.log
