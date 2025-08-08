@@ -8,6 +8,8 @@ import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,19 +20,30 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
 
     @Override
     public List<LteFddStandardKpiDto> getAll() {
-        List<LteFddStandardKpi> lteFddStandardKpis = lteFddStandardKpiRepository.findAll();
-        List<LteFddStandardKpiDto> lteFddStandardKpiDtos = lteFddStandardKpis
+        List<LteFddStandardKpi> kpis = lteFddStandardKpiRepository.findAll();
+        List<LteFddStandardKpiDto> kpiDtos = kpis
                 .stream()
-                .map(lfsk -> mapper.lteFddStandardKpiToDto(lfsk))
+                .map(k -> mapper.lteFddStandardKpiToDto(k))
                 .toList();
 
-        return lteFddStandardKpiDtos;
+        return kpiDtos;
     }
 
     @Override
-    public LteFddStandardKpiDto createLteFddStandardKpi(LteFddStandardKpiDto lteFddStandardKpiDto) {
-        LteFddStandardKpi lteFddStandardKpi = mapper.toLteFddStandardKpi(lteFddStandardKpiDto);
-        LteFddStandardKpi savedLteFddStandardKpi = lteFddStandardKpiRepository.save(lteFddStandardKpi);
-        return mapper.lteFddStandardKpiToDto(savedLteFddStandardKpi);
+    public LteFddStandardKpiDto createLteFddStandardKpi(LteFddStandardKpiDto kpiDto) {
+        LteFddStandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
+        LteFddStandardKpi savedKpi = lteFddStandardKpiRepository.save(kpi);
+        return mapper.lteFddStandardKpiToDto(savedKpi);
+    }
+
+    @Override
+    public List<LteFddStandardKpiDto> createLteFddStandardKpis(List<LteFddStandardKpiDto> dtos) {
+
+        List<LteFddStandardKpiDto> dtoList = new ArrayList<>();
+
+        for (LteFddStandardKpiDto dto : dtos){
+            dtoList.add(createLteFddStandardKpi(dto));
+        }
+        return dtoList;
     }
 }

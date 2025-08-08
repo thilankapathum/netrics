@@ -9,4 +9,6 @@ public interface LteFddKpiMappingService {
     List<LteFddKpiMappingDto> getAll();
 
     LteFddKpiMappingDto createLteFddKpiMapping(@Valid LteFddKpiMappingDto dto);
+
+    List<LteFddKpiMappingDto> createLteFddKpiMappingList(@Valid List<LteFddKpiMappingDto> dtos);
 }

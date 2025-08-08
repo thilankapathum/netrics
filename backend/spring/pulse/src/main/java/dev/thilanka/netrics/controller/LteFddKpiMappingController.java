@@ -28,4 +28,10 @@ public class LteFddKpiMappingController {
         LteFddKpiMappingDto savedDto = lteFddKpiMappingService.createLteFddKpiMapping(dto);
         return new ResponseEntity<>(savedDto,HttpStatus.CREATED);
     }
+
+    @PostMapping("list")
+    public ResponseEntity<List<LteFddKpiMappingDto>> createMapping(@RequestBody @Valid List<LteFddKpiMappingDto> dtos){
+        List<LteFddKpiMappingDto> savedDtoList = lteFddKpiMappingService.createLteFddKpiMappingList(dtos);
+        return new ResponseEntity<>(savedDtoList,HttpStatus.CREATED);
+    }
 }

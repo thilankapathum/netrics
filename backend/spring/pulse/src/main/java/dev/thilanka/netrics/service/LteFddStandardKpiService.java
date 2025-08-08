@@ -9,4 +9,6 @@ public interface LteFddStandardKpiService {
     List<LteFddStandardKpiDto> getAll();
 
     LteFddStandardKpiDto createLteFddStandardKpi(@Valid LteFddStandardKpiDto lteFddStandardKpiDto);
+
+    List<LteFddStandardKpiDto> createLteFddStandardKpis(@Valid List<LteFddStandardKpiDto> lteFddStandardKpiDtos);
 }

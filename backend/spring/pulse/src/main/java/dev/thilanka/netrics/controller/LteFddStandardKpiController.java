@@ -18,15 +18,21 @@ public class LteFddStandardKpiController {
     private final LteFddStandardKpiService lteFddStandardKpiService;
 
     @GetMapping
-    public ResponseEntity<List<LteFddStandardKpiDto>> getAllLteFddStandardKpi(){
+    public ResponseEntity<List<LteFddStandardKpiDto>> getAllLteFddStandardKpi() {
         List<LteFddStandardKpiDto> lteFddStandardKpiDtos = lteFddStandardKpiService.getAll();
         return ResponseEntity.ok(lteFddStandardKpiDtos);
     }
 
     @PostMapping
-    public ResponseEntity<LteFddStandardKpiDto> createLteFddStandardKpi(@RequestBody @Valid LteFddStandardKpiDto lteFddStandardKpiDto){
+    public ResponseEntity<LteFddStandardKpiDto> createLteFddStandardKpi(@RequestBody @Valid LteFddStandardKpiDto lteFddStandardKpiDto) {
         LteFddStandardKpiDto savedLteFddStandardKpiDto = lteFddStandardKpiService.createLteFddStandardKpi(lteFddStandardKpiDto);
         return new ResponseEntity<>(savedLteFddStandardKpiDto, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/list")
+    public ResponseEntity<List<LteFddStandardKpiDto>> createLteFddStandardKpis(@RequestBody @Valid List<LteFddStandardKpiDto> lteFddStandardKpiDtos) {
+        List<LteFddStandardKpiDto> savedLteFddStandardKpiDtos = lteFddStandardKpiService.createLteFddStandardKpis(lteFddStandardKpiDtos);
+        return new ResponseEntity<>(savedLteFddStandardKpiDtos, HttpStatus.CREATED);
     }
 
 }

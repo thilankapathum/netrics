@@ -12,6 +12,7 @@ import dev.thilanka.netrics.service.LteFddKpiMappingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,5 +57,16 @@ public class LteFddKpiMappingServiceImpl implements LteFddKpiMappingService {
         LteFddKpiMappingDto savedDto = mapper.LteFddKpiMappingToDto(savedMapping);
 
         return savedDto;
+    }
+
+    @Override
+    public List<LteFddKpiMappingDto> createLteFddKpiMappingList(List<LteFddKpiMappingDto> dtos) {
+
+        List<LteFddKpiMappingDto> dtoList = new ArrayList<>();
+
+        for (LteFddKpiMappingDto dto : dtos){
+            dtoList.add(createLteFddKpiMapping(dto));
+        }
+        return dtoList;
     }
 }
