@@ -12,3 +12,7 @@ spring:
       hibernate:
         format_sql: true
     database: mysql
+
+    logging:
+      level:
+        org.springframework.cloud.gateway: DEBUG

@@ -27,4 +27,7 @@ public class LteFddStandardKpi {
 
     @OneToMany(mappedBy = "lteFddStandardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddKpiMapping> lteFddKpiMappings;
+
+    @OneToMany(mappedBy = "lteFddStandardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddKpiDay> lteFddKpiDays;
 }

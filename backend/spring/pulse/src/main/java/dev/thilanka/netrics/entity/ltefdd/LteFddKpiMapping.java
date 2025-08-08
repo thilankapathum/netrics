@@ -16,11 +16,11 @@ public class LteFddKpiMapping {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String ossKpiName;
+    private Double multiplicationFactor = 1.0;  //-- Setting default multiplication factor
 
     @ManyToOne
     @JoinColumn(name = "oss_id")
     private Oss oss;
-
 
     @ManyToOne
     @JoinColumn(name = "lteFddStandardKpi_id")
