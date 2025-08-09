@@ -25,13 +25,27 @@ public class LteFddKpiDay {
     private LocalDateTime timestamp;
     private String cellName;
     private String siteName;
+
     private String kpiValue;
+    private String numeratorKpiValue;
+    private String denominatorKpiValue;
+
     private String dataType;
     private String fileName;
 
     @ManyToOne
     @JoinColumn(name = "lte_fdd_standard_kpi_id")
     private LteFddStandardKpi lteFddStandardKpi;
+
+    @ManyToOne
+    @JoinColumn(name = "numerator_kpi_id")
+    private LteFddStandardKpi numeratorKpi;
+
+    @ManyToOne
+    @JoinColumn(name = "denominator_kpi_id")
+    private LteFddStandardKpi denominatorKpi;
+
+
 
     @ManyToOne
     @JoinColumn(name = "oss_id")

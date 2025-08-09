@@ -30,4 +30,20 @@ public class LteFddStandardKpi {
 
     @OneToMany(mappedBy = "lteFddStandardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddKpiDay> lteFddKpiDays;
+
+    @OneToMany(mappedBy = "numeratorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddKpiDay> lteFddKpiDaysNumerator;
+
+    @OneToMany(mappedBy = "denominatorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddKpiDay> lteFddKpiDaysDenominator;
+
+
+    @OneToOne(mappedBy = "standardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private LteFddStandardRawKpiMapping standardKpi;
+
+    @OneToOne(mappedBy = "numerator", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
+    private  LteFddStandardRawKpiMapping numerator;
+
+    @OneToOne(mappedBy = "denominator", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private LteFddStandardRawKpiMapping denominator;
 }

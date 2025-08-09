@@ -1,19 +1,19 @@
 package dev.thilanka.netrics.mapper;
 
-import dev.thilanka.netrics.dto.KpiDataDto;
-import dev.thilanka.netrics.dto.LteFddKpiMappingDto;
-import dev.thilanka.netrics.dto.LteFddStandardKpiDto;
-import dev.thilanka.netrics.dto.OssDto;
+import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.KpiData;
 import dev.thilanka.netrics.entity.Oss;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiMapping;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
+import dev.thilanka.netrics.entity.ltefdd.LteFddStandardRawKpiMapping;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class Mapper {
     public OssDto ossToDto(Oss oss){
         OssDto ossDto = new OssDto(oss.getOssName(),oss.getIdentifier(),oss.getVendor());
@@ -73,5 +73,33 @@ public class Mapper {
 
         return kpiDataDto;
     }
+
+    // ----- LteFddStandardRawKpiMapping -----
+
+    public LteFddStandardRawKpiMappingDto lteFddStandardRawKpiMappingToDto(LteFddStandardRawKpiMapping mapping){
+        LteFddStandardRawKpiMappingDto dto = new LteFddStandardRawKpiMappingDto(
+                mapping.getStandardKpi().getKpiName(),
+                mapping.getNumerator().getKpiName(),
+                mapping.getDenominator().getKpiName()
+        );
+
+        return dto;
+    }
+
+//    public LteFddStandardRawKpiMapping toLteFddStandardRawKpiMapping(LteFddStandardRawKpiMappingDto dto){
+//
+//        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(dto.standardKpi());
+//        LteFddStandardKpi numerator = lteFddStandardKpiService.findByKpiName(dto.numerator());
+//        LteFddStandardKpi denominator = lteFddStandardKpiService.findByKpiName(dto.denominator());
+//
+//
+//        LteFddStandardRawKpiMapping mapping = LteFddStandardRawKpiMapping.builder()
+//                .standardKpi(standardKpi)
+//                .numerator(numerator)
+//                .denominator(denominator)
+//                .build();
+//
+//        return mapping;
+//    }
 
 }

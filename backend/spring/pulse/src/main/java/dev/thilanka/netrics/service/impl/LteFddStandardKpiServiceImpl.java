@@ -8,7 +8,6 @@ import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,20 +29,28 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     }
 
     @Override
-    public LteFddStandardKpiDto createLteFddStandardKpi(LteFddStandardKpiDto kpiDto) {
+    public LteFddStandardKpiDto createKpi(LteFddStandardKpiDto kpiDto) {
         LteFddStandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
         LteFddStandardKpi savedKpi = lteFddStandardKpiRepository.save(kpi);
         return mapper.lteFddStandardKpiToDto(savedKpi);
     }
 
     @Override
-    public List<LteFddStandardKpiDto> createLteFddStandardKpis(List<LteFddStandardKpiDto> dtos) {
+    public List<LteFddStandardKpiDto> createKpis(List<LteFddStandardKpiDto> dtos) {
 
         List<LteFddStandardKpiDto> dtoList = new ArrayList<>();
 
         for (LteFddStandardKpiDto dto : dtos){
-            dtoList.add(createLteFddStandardKpi(dto));
+            dtoList.add(createKpi(dto));
         }
         return dtoList;
+    }
+
+    @Override
+    public LteFddStandardKpi findByKpiName(String kpiName) {
+        LteFddStandardKpi standardKpi = lteFddStandardKpiRepository
+                .findByKpiName(kpiName)
+                .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
+        return standardKpi;
     }
 }

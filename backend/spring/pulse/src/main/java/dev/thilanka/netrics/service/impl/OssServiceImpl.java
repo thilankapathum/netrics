@@ -19,7 +19,10 @@ public class OssServiceImpl implements OssService {
     @Override
     public List<OssDto> getAllOss() {
         List<Oss> ossList = ossRepository.findAll();
-        List<OssDto> ossDtoList = ossList.stream().map(o -> mapper.ossToDto(o)).toList();
+        List<OssDto> ossDtoList = ossList
+                .stream()
+                .map(o -> mapper.ossToDto(o))
+                .toList();
         return ossDtoList;
     }
 
