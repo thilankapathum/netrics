@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiDataFractionDto;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddKpiDayRepository;
@@ -26,5 +27,17 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
                 .toList();
 
         return kpiDataDtos;
+    }
+
+    @Override
+    public List<KpiDataFractionDto> findAllWithFractions() {
+        List<LteFddKpiDay> lteFddKpiDays = lteFddKpiDayRepository.findAll();
+
+        List<KpiDataFractionDto> dtos = lteFddKpiDays
+                .stream()
+                .map(lfkd -> mapper.lteFddKpiDayToKpiDataFractionDto(lfkd) )
+                .toList();
+
+        return dtos;
     }
 }

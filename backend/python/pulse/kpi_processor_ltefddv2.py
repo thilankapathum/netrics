@@ -572,9 +572,9 @@ class KPIProcessor:
                         'oss_id': oss_config['id'],
                         'oss_kpi_name': col,
                         'file_name': file_name,
-                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'],
+                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'] if kpi_values_info['numerator_kpi_id'] else None,
                         'numerator_kpi_value': numerator_value,
-                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'],
+                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'] if kpi_values_info['denominator_kpi_id'] else None,
                         'denominator_kpi_value': denominator_value
                     }
                     processed_rows.append(processed_row)
@@ -596,6 +596,12 @@ class KPIProcessor:
 
         return final_df
 
+    def convert_nan_to_none(self, value):
+        """Convert pandas NaN values to None for proper MySQL NULL insertion"""
+        if pd.isna(value):
+            return None
+        return value
+
     def insert_data_to_mysql(self, df: pd.DataFrame):
         """Insert unpivoted data into MySQL database with numerator/denominator support"""
         if df.empty:
@@ -616,7 +622,7 @@ class KPIProcessor:
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
-            # Convert dataframe to list of tuples
+            # Convert dataframe to list of tuples with proper None handling
             data_tuples = []
             for _, row in df.iterrows():
                 data_tuples.append((
@@ -628,10 +634,10 @@ class KPIProcessor:
                     row.get('data_type'),
                     row.get('oss_id'),
                     row.get('file_name'),
-                    row.get('numerator_kpi_id'),
-                    row.get('numerator_kpi_value'),
-                    row.get('denominator_kpi_id'),
-                    row.get('denominator_kpi_value')
+                    self.convert_nan_to_none(row.get('numerator_kpi_id')),
+                    self.convert_nan_to_none(row.get('numerator_kpi_value')),
+                    self.convert_nan_to_none(row.get('denominator_kpi_id')),
+                    self.convert_nan_to_none(row.get('denominator_kpi_value'))
                 ))
 
             # Execute batch insert
@@ -642,6 +648,9 @@ class KPIProcessor:
 
         except Error as e:
             logger.error(f"Error inserting data to MySQL: {e}")
+            # Log the problematic data for debugging
+            if data_tuples:
+                logger.error(f"Sample data tuple: {data_tuples[0]}")
         finally:
             if connection and connection.is_connected():
                 cursor.close()

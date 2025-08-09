@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiDataFractionDto;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +22,11 @@ public class LteFddKpiDayController {
     public ResponseEntity<List<KpiDataDto>> getAll(){
         List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.findAll();
         return ResponseEntity.ok(kpiDataDtos);
+    }
+
+    @GetMapping("fractions")
+    public  ResponseEntity<List<KpiDataFractionDto>> getAllWithFractions(){
+        List<KpiDataFractionDto> list = lteFddKpiDayService.findAllWithFractions();
+        return ResponseEntity.ok(list);
     }
 }

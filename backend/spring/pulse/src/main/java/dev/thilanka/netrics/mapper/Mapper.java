@@ -15,6 +15,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class Mapper {
+
+// ----- OSS -----
+
     public OssDto ossToDto(Oss oss){
         OssDto ossDto = new OssDto(oss.getOssName(),oss.getIdentifier(),oss.getVendor());
         return ossDto;
@@ -28,6 +31,9 @@ public class Mapper {
                 .build();
         return oss;
     }
+
+
+// ----- LteFddSandardKpi -----
 
     public LteFddStandardKpiDto lteFddStandardKpiToDto(LteFddStandardKpi lteFddStandardKpi){
         LteFddStandardKpiDto lteFddStandardKpiDto = new LteFddStandardKpiDto(
@@ -53,6 +59,8 @@ public class Mapper {
         return lteFddStandardKpi;
     }
 
+// ----- LteFddKpiMapping -----
+
     public LteFddKpiMappingDto LteFddKpiMappingToDto(LteFddKpiMapping mapping){
         LteFddKpiMappingDto dto = new LteFddKpiMappingDto(
                 mapping.getOssKpiName(),
@@ -63,6 +71,8 @@ public class Mapper {
         return dto;
     }
 
+// ----- KpiData -----
+
     public KpiDataDto LteFddKpiDayToKpiDataDto(LteFddKpiDay kpiDay){
         KpiDataDto kpiDataDto = new KpiDataDto(
                 kpiDay.getTimestamp(),
@@ -72,6 +82,19 @@ public class Mapper {
         );
 
         return kpiDataDto;
+    }
+
+
+    public KpiDataFractionDto lteFddKpiDayToKpiDataFractionDto(LteFddKpiDay kpiDay){
+        KpiDataFractionDto dto = new KpiDataFractionDto(
+                kpiDay.getTimestamp(),
+                kpiDay.getCellName(),
+                kpiDay.getLteFddStandardKpi().getKpiName(),
+                kpiDay.getKpiValue(),
+                kpiDay.getNumeratorKpiValue(),
+                kpiDay.getDenominatorKpiValue()
+        );
+        return dto;
     }
 
     // ----- LteFddStandardRawKpiMapping -----
