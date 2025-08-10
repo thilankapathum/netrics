@@ -791,7 +791,7 @@ class KPIProcessor:
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
 
-    def run_continuously(self, interval_minutes: int = 2):
+    def run_continuously(self, interval_minutes: int = 60):
         """Run the processor continuously with specified interval"""
         logger.info(f"Starting continuous processing with {interval_minutes} minute intervals")
 
@@ -816,7 +816,7 @@ if __name__ == "__main__":
     processor = KPIProcessor()
 
     # Run continuously (every 2 minutes)
-    processor.run_continuously(interval_minutes=2)
+    processor.run_continuously(interval_minutes=60)
 
     # Or run once
     # processor.process_new_files()

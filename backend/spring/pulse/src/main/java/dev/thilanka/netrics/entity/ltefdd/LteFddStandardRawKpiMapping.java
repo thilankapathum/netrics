@@ -9,7 +9,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "lte_fdd_standard_raw_kpi_mapping")
+@Table(name = "lte_fdd_standard_raw_kpi_mapping",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"standard_kpi_id", "numerator_id","denominator_id"})})
 public class LteFddStandardRawKpiMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

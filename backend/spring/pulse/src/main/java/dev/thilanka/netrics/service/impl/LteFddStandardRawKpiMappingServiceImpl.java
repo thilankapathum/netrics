@@ -10,6 +10,7 @@ import dev.thilanka.netrics.service.LteFddStandardRawKpiMappingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -46,5 +47,17 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
         LteFddStandardRawKpiMapping savedMapping = lteFddStandardRawKpiMappingRepository.save(mapping);
         LteFddStandardRawKpiMappingDto savedDto = mapper.lteFddStandardRawKpiMappingToDto(savedMapping);
         return savedDto;
+    }
+
+    @Override
+    public List<LteFddStandardRawKpiMappingDto> createMappingList(List<LteFddStandardRawKpiMappingDto> dtos) {
+
+        List<LteFddStandardRawKpiMappingDto> savedDtos = new ArrayList<>();
+
+        for (LteFddStandardRawKpiMappingDto dto: dtos){
+            savedDtos.add(createMapping(dto));
+        }
+
+        return savedDtos;
     }
 }

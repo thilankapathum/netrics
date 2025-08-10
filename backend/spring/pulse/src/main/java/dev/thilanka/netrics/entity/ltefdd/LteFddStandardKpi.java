@@ -18,6 +18,8 @@ public class LteFddStandardKpi {
     private Long id;
     @Column(unique = true,nullable = false)
     private String kpiName;
+    @Column(unique = true, nullable = false)
+    private String label;
     @Column(nullable = false)
     private String unit;
     @Column(nullable = false)
@@ -46,4 +48,7 @@ public class LteFddStandardKpi {
 
     @OneToOne(mappedBy = "denominator", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private LteFddStandardRawKpiMapping denominator;
+
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddBasicKpiMapping> lteFddBasicKpiMapping;
 }

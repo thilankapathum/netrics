@@ -27,4 +27,10 @@ public class LteFddStandardRawKpiMappingController {
         LteFddStandardRawKpiMappingDto savedDto = lteFddStandardRawKpiMappingService.createMapping(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
+
+    @PostMapping("list")
+    ResponseEntity<List<LteFddStandardRawKpiMappingDto>> createLteFddStandardKpiMappingList(@RequestBody @Valid List<LteFddStandardRawKpiMappingDto> dtos){
+        List<LteFddStandardRawKpiMappingDto> savedDtos = lteFddStandardRawKpiMappingService.createMappingList(dtos);
+        return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
+    }
 }
