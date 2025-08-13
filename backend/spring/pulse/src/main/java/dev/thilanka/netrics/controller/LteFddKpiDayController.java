@@ -2,12 +2,13 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiDataFractionDto;
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
+import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDaySnap;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,5 +29,15 @@ public class LteFddKpiDayController {
     public  ResponseEntity<List<KpiDataFractionDto>> getAllWithFractions(){
         List<KpiDataFractionDto> list = lteFddKpiDayService.findAllWithFractions();
         return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("ge")
+    public ResponseEntity<List<LteFddKpiDaySnap>> getAverage(){
+        return ResponseEntity.ok(lteFddKpiDayService.getAverage());
+    }
+
+    @GetMapping("get")
+    public ResponseEntity<LteFddKpiDaySnap[]> getKpi(@RequestParam String kpiName, @RequestParam String period){
+        return ResponseEntity.ok(lteFddKpiDayService.getKpiSnapshot(kpiName, period));
     }
 }
