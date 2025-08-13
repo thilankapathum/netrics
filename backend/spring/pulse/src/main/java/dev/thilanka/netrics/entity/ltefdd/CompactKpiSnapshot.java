@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LteFddBasicKpiSnap {
+public class CompactKpiSnapshot {
     private String kpiLabel;
     private boolean basic;
     private Double value;

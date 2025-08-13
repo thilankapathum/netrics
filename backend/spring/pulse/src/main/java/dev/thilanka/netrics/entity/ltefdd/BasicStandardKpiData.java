@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LteFddBasicKpiData {
-    private LteFddKpiDaySnap[] basicKpi;
-    private List<LteFddKpiDaySnap[]> standardKpi = new ArrayList<>();
+public class BasicStandardKpiData {
+    private KpiSnapshot[] basicKpi;
+    private List<KpiSnapshot[]> standardKpi = new ArrayList<>();
 }

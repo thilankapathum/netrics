@@ -7,9 +7,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LteFddKpiDaySnap {
+public class KpiSnapshot {
 //    private Timestamp timestamp;
-    private Long lteFddKpiId;
+    private String label;
     private Double kpiValueSum = 0.0;
     private Double numeratorKpiValueSum = 0.0;
     private Double denominatorKpiValueSum = 0.0;

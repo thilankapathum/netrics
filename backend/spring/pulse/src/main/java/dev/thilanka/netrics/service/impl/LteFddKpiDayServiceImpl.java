@@ -46,147 +46,126 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
-    public List<LteFddKpiDaySnap> getAverage() {
+    public List<KpiSnapshot> getAverage() {
         return lteFddKpiDayRepository.getKpiX();
     }
 
     @Override
-    public LteFddKpiDaySnap[] getKpiSnapshot(String standardKpiName, String period) {
+    public KpiSnapshot[] getLatestKpiSnapshot(String standardKpiName, String period) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
 
-        LteFddKpiDaySnap[] kpiDaySnaps = new LteFddKpiDaySnap[2];   //-- To get Current value & Previous period value
+        KpiSnapshot[] kpiSnapshots = new KpiSnapshot[2];   //-- To get Current values & Previous period values. [0] holds current values. [1] holds previous values
         LocalDateTime timestamp = getLatestDate();  //-- Get latest date
 
         switch (period) {
             case "day" -> {
-                kpiDaySnaps[0] = lteFddKpiDayRepository.getKpiSnapshot(standardKpi.getId(), timestamp, 0L)
+                kpiSnapshots[0] = lteFddKpiDayRepository.findLatestKpiSnapshot(standardKpi.getId(), timestamp, 0L)
                         .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                kpiDaySnaps[1] = lteFddKpiDayRepository.getKpiSnapshot(standardKpi.getId(), timestamp.minusDays(1), 0L)
+                kpiSnapshots[1] = lteFddKpiDayRepository.findLatestKpiSnapshot(standardKpi.getId(), timestamp.minusDays(1), 0L)
                         .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
             }
             case "week" -> {
-                kpiDaySnaps[0] = lteFddKpiDayRepository.getKpiSnapshot(standardKpi.getId(), timestamp, 6L)
+                kpiSnapshots[0] = lteFddKpiDayRepository.findLatestKpiSnapshot(standardKpi.getId(), timestamp, 6L)
                         .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                kpiDaySnaps[1] = lteFddKpiDayRepository.getKpiSnapshot(standardKpi.getId(), timestamp.minusDays(7), 6L)
+                kpiSnapshots[1] = lteFddKpiDayRepository.findLatestKpiSnapshot(standardKpi.getId(), timestamp.minusDays(7), 6L)
                         .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
             }
             case "month" -> {
-                kpiDaySnaps[0] = lteFddKpiDayRepository.getKpiSnapshot(standardKpi.getId(), timestamp, 29L)
+                kpiSnapshots[0] = lteFddKpiDayRepository.findLatestKpiSnapshot(standardKpi.getId(), timestamp, 29L)
                         .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                kpiDaySnaps[1] = lteFddKpiDayRepository.getKpiSnapshot(standardKpi.getId(), timestamp.minusDays(30), 29L)
+                kpiSnapshots[1] = lteFddKpiDayRepository.findLatestKpiSnapshot(standardKpi.getId(), timestamp.minusDays(30), 29L)
                         .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
             }
-            case null, default -> kpiDaySnaps = null;
+            case null, default -> kpiSnapshots = null;
         }
 
-        return kpiDaySnaps;
+        return kpiSnapshots;
     }
 
     @Override
-    public LteFddBasicKpiData getBasicKpiSnapshot(String basicKpiName, String period) {
+    public BasicStandardKpiData getBasicStandardKpiSnapshot(String basicKpiName, String period) {
 
-        LteFddBasicKpiData basicKpiData = new LteFddBasicKpiData(); //-- To Store Basic KPI data and all component Standard KPI data
-        LteFddKpiDaySnap[] basicKpiSnap = new LteFddKpiDaySnap[2];  //-- To Store Basic KPI's data
+        BasicStandardKpiData basicStandardKpiData = new BasicStandardKpiData(); //-- To Store Basic KPI data and all component Standard KPI data
+        KpiSnapshot[] basicKpiSnapshot = new KpiSnapshot[2];  //-- To Store Basic KPI's data
 
-        basicKpiSnap[0] = new LteFddKpiDaySnap();
-        basicKpiSnap[1] = new LteFddKpiDaySnap();
+        basicKpiSnapshot[0] = new KpiSnapshot();
+        basicKpiSnapshot[1] = new KpiSnapshot();
 
         //-- Get Basic KPI
         LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
         //-- Set Basic KPI ID into Entity's StandardKpi ID
-        basicKpiSnap[0].setLteFddKpiId(basicKpi.getId());   //-- for current period
-        basicKpiSnap[1].setLteFddKpiId(basicKpi.getId());   //-- for previous period
+        basicKpiSnapshot[0].setLabel(basicKpi.getLabel());   //-- for current period
+        basicKpiSnapshot[1].setLabel(basicKpi.getLabel());   //-- for previous period
 
+        //-- Get all Standard KPI of Basic KPI
         for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
 
-            LteFddKpiDaySnap[] snap = getKpiSnapshot(standardKpi.getKpiName(), period); //-- Get KPI Snapshot for each component Standard KPIs (both current and previous periods)
+            KpiSnapshot[] snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period); //-- Get KPI Snapshot for each component Standard KPIs (both current and previous periods)
 
-            basicKpiData.getStandardKpi().add(snap);    //-- Add queried Standard KPI snapshots to Basic KPI Data (list)
+            basicStandardKpiData.getStandardKpi().add(snapshot);    //-- Add queried Standard KPI snapshots to Basic+Standard KPI Data (list)
 
-            basicKpiSnap[0].setKpiValueSum(basicKpiSnap[0].getKpiValueSum() + snap[0].getKpiValueSum());    //-- Add KPI Value (SUM) to current period
-            basicKpiSnap[1].setKpiValueSum(basicKpiSnap[1].getKpiValueSum() + snap[1].getKpiValueSum());    //-- Add KPI Value (SUM) to previous period
+            //-- Add (Sum) KpiValue of each component KPI to Basic KPI's KpiValue
+            basicKpiSnapshot[0].setKpiValueSum(basicKpiSnapshot[0].getKpiValueSum() + snapshot[0].getKpiValueSum());    //-- Add KPI Value (SUM) to current period
+            basicKpiSnapshot[1].setKpiValueSum(basicKpiSnapshot[1].getKpiValueSum() + snapshot[1].getKpiValueSum());    //-- Add KPI Value (SUM) to previous period
 
             //-- Addition of Numerator values of component Standard KPI to Basic KPI's Numerator
-            basicKpiSnap[0].setNumeratorKpiValueSum(basicKpiSnap[0].getNumeratorKpiValueSum() + snap[0].getNumeratorKpiValueSum());
-            basicKpiSnap[1].setNumeratorKpiValueSum(basicKpiSnap[1].getNumeratorKpiValueSum() + snap[1].getNumeratorKpiValueSum());
+            basicKpiSnapshot[0].setNumeratorKpiValueSum(basicKpiSnapshot[0].getNumeratorKpiValueSum() + snapshot[0].getNumeratorKpiValueSum());
+            basicKpiSnapshot[1].setNumeratorKpiValueSum(basicKpiSnapshot[1].getNumeratorKpiValueSum() + snapshot[1].getNumeratorKpiValueSum());
 
             //-- Addition of Denominator values of component Standard KPI to Basic KPI's Denominator
-            basicKpiSnap[0].setDenominatorKpiValueSum(basicKpiSnap[0].getDenominatorKpiValueSum() + snap[0].getDenominatorKpiValueSum());
-            basicKpiSnap[1].setDenominatorKpiValueSum(basicKpiSnap[1].getDenominatorKpiValueSum() + snap[1].getDenominatorKpiValueSum());
+            basicKpiSnapshot[0].setDenominatorKpiValueSum(basicKpiSnapshot[0].getDenominatorKpiValueSum() + snapshot[0].getDenominatorKpiValueSum());
+            basicKpiSnapshot[1].setDenominatorKpiValueSum(basicKpiSnapshot[1].getDenominatorKpiValueSum() + snapshot[1].getDenominatorKpiValueSum());
         }
 
-        basicKpiData.setBasicKpi(basicKpiSnap); //-- Set Basic KPI info into BasicKpiData Object
+        basicStandardKpiData.setBasicKpi(basicKpiSnapshot); //-- Set Basic KPI info into BasicKpiData Object
 
-        return basicKpiData;
+        return basicStandardKpiData;
     }
 
     @Override
-    public List<LteFddBasicKpiSnap> getBasicSnapshot(String basicKpiName, String period) {
+    public List<CompactKpiSnapshot> getCompactBasicStandardKpiSnapshot(String basicKpiName, String period) {
 
-        List<LteFddBasicKpiSnap> basicKpiSnaps = new ArrayList<>();
+        List<CompactKpiSnapshot> kpiSnapshots = new ArrayList<>();
 
-        LteFddBasicKpiSnap basicKpi = new LteFddBasicKpiSnap();
+        BasicStandardKpiData basicStandardKpiData = getBasicStandardKpiSnapshot(basicKpiName, period);
 
-        LteFddBasicKpiData basicKpiData = getBasicKpiSnapshot(basicKpiName, period);
+        //-- Set Compact KPI values for Basic KPI.
+        CompactKpiSnapshot basicKpi = getCompactKpiSnapshot(basicStandardKpiData.getBasicKpi(), true);
+        basicKpi.setKpiLabel(basicStandardKpiData.getBasicKpi()[0].getLabel());
+        kpiSnapshots.add(basicKpi);
 
-        if (basicKpiData.getBasicKpi()[0].getNumeratorKpiValueSum() == 0.0 && basicKpiData.getBasicKpi()[0].getDenominatorKpiValueSum() == 0.0) {
+        //-- Set Compact KPI values for component Standard KPIs.
+        for (KpiSnapshot[] snap : basicStandardKpiData.getStandardKpi()) {
+            CompactKpiSnapshot standardKpi = getCompactKpiSnapshot(snap, false);
 
-            LteFddBasicKpi basic = lteFddBasicKpiRepository
-                    .findById(basicKpiData
-                            .getBasicKpi()[0]
-                            .getLteFddKpiId())
-                    .orElseThrow(() -> new RuntimeException("Incorrect Basic KPI ID"));
+            kpiSnapshots.add(standardKpi);
 
-            basicKpi.setBasic(true);
-            basicKpi.setValue(basicKpiData.getBasicKpi()[0].getKpiValueSum());
-            basicKpi.setDifference(basicKpiData.getBasicKpi()[0].getKpiValueSum() - basicKpiData.getBasicKpi()[1].getKpiValueSum());
-            basicKpi.setUp((basicKpiData.getBasicKpi()[0].getKpiValueSum() - basicKpiData.getBasicKpi()[1].getKpiValueSum()) > 0);
-            basicKpi.setKpiLabel(basic.getLabel());
-            basicKpiSnaps.add(basicKpi);
+        }
+
+        return kpiSnapshots;
+    }
+
+    private static CompactKpiSnapshot getCompactKpiSnapshot(KpiSnapshot[] snapshots, boolean basic) {
+        CompactKpiSnapshot standardKpi = new CompactKpiSnapshot();
+
+        if (!snapshots[0].getLabel().isBlank()) {
+            System.out.println("snap not blank");
+            standardKpi.setKpiLabel(snapshots[0].getLabel());
+        }
+        standardKpi.setBasic(basic);
+
+        if (snapshots[0].getNumeratorKpiValueSum() == 0.0 && snapshots[0].getDenominatorKpiValueSum() == 0) {
+            standardKpi.setValue(snapshots[0].getKpiValueSum());
+            standardKpi.setDifference(snapshots[0].getKpiValueSum() - snapshots[1].getKpiValueSum());
+            standardKpi.setUp((snapshots[0].getKpiValueSum() - snapshots[1].getKpiValueSum()) > 0);
         } else {
-            LteFddBasicKpi basic = lteFddBasicKpiRepository
-                    .findById(basicKpiData
-                            .getBasicKpi()[0]
-                            .getLteFddKpiId())
-                    .orElseThrow(() -> new RuntimeException("Incorrect Basic KPI ID"));
-            basicKpi.setBasic(true);
-            basicKpi.setValue(basicKpiData.getBasicKpi()[0].getNumeratorKpiValueSum()/basicKpiData.getBasicKpi()[0].getDenominatorKpiValueSum());
-            basicKpi.setDifference(basicKpiData.getBasicKpi()[0].getNumeratorKpiValueSum()/basicKpiData.getBasicKpi()[0].getDenominatorKpiValueSum() - basicKpiData.getBasicKpi()[1].getNumeratorKpiValueSum()/basicKpiData.getBasicKpi()[1].getDenominatorKpiValueSum());
-            basicKpi.setUp((basicKpiData.getBasicKpi()[0].getNumeratorKpiValueSum()/basicKpiData.getBasicKpi()[0].getDenominatorKpiValueSum() - basicKpiData.getBasicKpi()[1].getNumeratorKpiValueSum()/basicKpiData.getBasicKpi()[1].getDenominatorKpiValueSum()) > 0);
-            basicKpi.setKpiLabel(basic.getLabel());
-            basicKpiSnaps.add(basicKpi);
+            standardKpi.setValue(snapshots[0].getNumeratorKpiValueSum() / snapshots[0].getDenominatorKpiValueSum());
+            standardKpi.setDifference(snapshots[0].getNumeratorKpiValueSum() / snapshots[0].getDenominatorKpiValueSum() - snapshots[1].getNumeratorKpiValueSum() / snapshots[1].getDenominatorKpiValueSum());
+            standardKpi.setUp((snapshots[0].getNumeratorKpiValueSum() / snapshots[0].getDenominatorKpiValueSum() - snapshots[1].getNumeratorKpiValueSum() / snapshots[1].getDenominatorKpiValueSum()) > 0);
         }
-
-        for (LteFddKpiDaySnap[] snap: basicKpiData.getStandardKpi()){
-            LteFddBasicKpiSnap standardKpi = new LteFddBasicKpiSnap();
-
-            LteFddStandardKpi kpi = lteFddStandardKpiRepository
-                    .findById(snap[0].getLteFddKpiId())
-                    .orElseThrow(()-> new RuntimeException("Standard KPI ID incorrect"));
-
-            standardKpi.setKpiLabel(kpi.getLabel());
-            standardKpi.setBasic(false);
-
-            if (snap[0].getNumeratorKpiValueSum() == 0.0 && snap[0].getDenominatorKpiValueSum() == 0){
-                standardKpi.setValue(snap[0].getKpiValueSum());
-                standardKpi.setDifference(snap[0].getKpiValueSum() - snap[1].getKpiValueSum());
-                standardKpi.setUp((snap[0].getKpiValueSum() - snap[1].getKpiValueSum()) > 0);
-            } else {
-                standardKpi.setValue(snap[0].getNumeratorKpiValueSum()/snap[0].getDenominatorKpiValueSum());
-                standardKpi.setDifference(snap[0].getNumeratorKpiValueSum()/snap[0].getDenominatorKpiValueSum() - snap[1].getNumeratorKpiValueSum()/snap[1].getDenominatorKpiValueSum());
-                standardKpi.setUp((snap[0].getNumeratorKpiValueSum()/snap[0].getDenominatorKpiValueSum() - snap[1].getNumeratorKpiValueSum()/snap[1].getDenominatorKpiValueSum()) > 0);
-            }
-
-            basicKpiSnaps.add(standardKpi);
-
-        }
-
-
-
-
-        return basicKpiSnaps;
+        return standardKpi;
     }
 
     private LocalDateTime getLatestDate() {

@@ -2,9 +2,9 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiDataFractionDto;
-import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpiData;
-import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpiSnap;
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDaySnap;
+import dev.thilanka.netrics.entity.ltefdd.BasicStandardKpiData;
+import dev.thilanka.netrics.entity.ltefdd.CompactKpiSnapshot;
+import dev.thilanka.netrics.entity.ltefdd.KpiSnapshot;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,22 +34,22 @@ public class LteFddKpiDayController {
     }
 
     @GetMapping("ge")
-    public ResponseEntity<List<LteFddKpiDaySnap>> getAverage(){
+    public ResponseEntity<List<KpiSnapshot>> getAverage(){
         return ResponseEntity.ok(lteFddKpiDayService.getAverage());
     }
 
     @GetMapping("standardkpi")
-    public ResponseEntity<LteFddKpiDaySnap[]> getStandardKpi(@RequestParam String kpiName, @RequestParam String period){
-        return ResponseEntity.ok(lteFddKpiDayService.getKpiSnapshot(kpiName, period));
+    public ResponseEntity<KpiSnapshot[]> getStandardKpi(@RequestParam String kpiName, @RequestParam String period){
+        return ResponseEntity.ok(lteFddKpiDayService.getLatestKpiSnapshot(kpiName, period));
     }
 
     @GetMapping("basickpi")
-    public ResponseEntity<LteFddBasicKpiData> getBasicKpi(@RequestParam String kpiName, @RequestParam String period){
-        return ResponseEntity.ok(lteFddKpiDayService.getBasicKpiSnapshot(kpiName, period));
+    public ResponseEntity<BasicStandardKpiData> getBasicKpi(@RequestParam String kpiName, @RequestParam String period){
+        return ResponseEntity.ok(lteFddKpiDayService.getBasicStandardKpiSnapshot(kpiName, period));
     }
 
     @GetMapping("basic")
-    public ResponseEntity<List<LteFddBasicKpiSnap>> getBasicSnapshot(@RequestParam String kpiName, @RequestParam String period){
-        return ResponseEntity.ok(lteFddKpiDayService.getBasicSnapshot(kpiName, period));
+    public ResponseEntity<List<CompactKpiSnapshot>> getBasicSnapshot(@RequestParam String kpiName, @RequestParam String period){
+        return ResponseEntity.ok(lteFddKpiDayService.getCompactBasicStandardKpiSnapshot(kpiName, period));
     }
 }
