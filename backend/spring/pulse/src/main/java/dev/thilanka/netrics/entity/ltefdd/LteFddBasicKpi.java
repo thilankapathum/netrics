@@ -22,6 +22,9 @@ public class LteFddBasicKpi {
     @Column(unique = true,nullable = false)
     private String label;
 
-    @OneToMany(mappedBy = "basicKpi", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private List<LteFddBasicKpiMapping> lteFddBasicKpiMappings;
+//    @OneToMany(mappedBy = "basicKpi", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+//    private List<LteFddBasicKpiMapping> lteFddBasicKpiMappings;
+
+    @OneToMany(mappedBy = "lteFddBasicKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddStandardKpi> lteFddStandardKpis;
 }

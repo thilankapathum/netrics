@@ -2,6 +2,8 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiDataFractionDto;
+import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpiData;
+import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpiSnap;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDaySnap;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +38,18 @@ public class LteFddKpiDayController {
         return ResponseEntity.ok(lteFddKpiDayService.getAverage());
     }
 
-    @GetMapping("get")
-    public ResponseEntity<LteFddKpiDaySnap[]> getKpi(@RequestParam String kpiName, @RequestParam String period){
+    @GetMapping("standardkpi")
+    public ResponseEntity<LteFddKpiDaySnap[]> getStandardKpi(@RequestParam String kpiName, @RequestParam String period){
         return ResponseEntity.ok(lteFddKpiDayService.getKpiSnapshot(kpiName, period));
+    }
+
+    @GetMapping("basickpi")
+    public ResponseEntity<LteFddBasicKpiData> getBasicKpi(@RequestParam String kpiName, @RequestParam String period){
+        return ResponseEntity.ok(lteFddKpiDayService.getBasicKpiSnapshot(kpiName, period));
+    }
+
+    @GetMapping("basic")
+    public ResponseEntity<List<LteFddBasicKpiSnap>> getBasicSnapshot(@RequestParam String kpiName, @RequestParam String period){
+        return ResponseEntity.ok(lteFddKpiDayService.getBasicSnapshot(kpiName, period));
     }
 }

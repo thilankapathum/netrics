@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 public interface LteFddBasicKpiMappingService {
-    List<LteFddBasicKpiMappingDto> getAll();
+//    List<LteFddBasicKpiMappingDto> getAll();
 
-    LteFddBasicKpiMappingDto createMapping(@Valid LteFddBasicKpiMappingDto dto);
+//    LteFddBasicKpiMappingDto createMapping(@Valid LteFddBasicKpiMappingDto dto);
 }

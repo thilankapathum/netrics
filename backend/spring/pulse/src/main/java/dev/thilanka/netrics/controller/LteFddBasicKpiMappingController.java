@@ -14,17 +14,17 @@ import java.util.List;
 @RequestMapping("/api/v1/pulse/ltefddbasickpimapping")
 @RequiredArgsConstructor
 public class LteFddBasicKpiMappingController {
-    private final LteFddBasicKpiMappingService lteFddBasicKpiMappingService;
+//    private final LteFddBasicKpiMappingService lteFddBasicKpiMappingService;
 
-    @GetMapping
-    ResponseEntity<List<LteFddBasicKpiMappingDto>> getAll(){
-        List<LteFddBasicKpiMappingDto> dtos = lteFddBasicKpiMappingService.getAll();
-        return ResponseEntity.ok(dtos);
-    }
-
-    @PostMapping
-    ResponseEntity<LteFddBasicKpiMappingDto> createBasicKpiMapping(@RequestBody @Valid LteFddBasicKpiMappingDto dto){
-        LteFddBasicKpiMappingDto savedDto = lteFddBasicKpiMappingService.createMapping(dto);
-        return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
-    }
+//    @GetMapping
+//    ResponseEntity<List<LteFddBasicKpiMappingDto>> getAll(){
+//        List<LteFddBasicKpiMappingDto> dtos = lteFddBasicKpiMappingService.getAll();
+//        return ResponseEntity.ok(dtos);
+//    }
+//
+//    @PostMapping
+//    ResponseEntity<LteFddBasicKpiMappingDto> createBasicKpiMapping(@RequestBody @Valid LteFddBasicKpiMappingDto dto){
+//        LteFddBasicKpiMappingDto savedDto = lteFddBasicKpiMappingService.createMapping(dto);
+//        return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
+//    }
 }

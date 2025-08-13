@@ -126,10 +126,10 @@ public class Mapper {
 // ----- LteFddBasicKpiMapping -----
 
     public LteFddBasicKpiMappingDto lteFddBasicKpiMappingToDto(LteFddBasicKpiMapping mapping){
-        LteFddBasicKpiMappingDto dto = new LteFddBasicKpiMappingDto(mapping.getBasicKpi().getKpiName(),
-                mapping.getStandardKpi().getKpiName());
+//        LteFddBasicKpiMappingDto dto = new LteFddBasicKpiMappingDto(mapping.getBasicKpi().getKpiName(),
+//                mapping.getStandardKpi().getKpiName());
 
-        return dto;
+        return null;
     }
 
 }
