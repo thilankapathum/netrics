@@ -108,16 +108,16 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             basicStandardKpiData.getStandardKpi().add(snapshot);    //-- Add queried Standard KPI snapshots to Basic+Standard KPI Data (list)
 
             //-- Add (Sum) KpiValue of each component KPI to Basic KPI's KpiValue
-            basicKpiSnapshot[0].setKpiValueSum(basicKpiSnapshot[0].getKpiValueSum() + snapshot[0].getKpiValueSum());    //-- Add KPI Value (SUM) to current period
-            basicKpiSnapshot[1].setKpiValueSum(basicKpiSnapshot[1].getKpiValueSum() + snapshot[1].getKpiValueSum());    //-- Add KPI Value (SUM) to previous period
+            basicKpiSnapshot[0].setKpiValueSum(getDoubleNonNull(basicKpiSnapshot[0].getKpiValueSum()) + getDoubleNonNull(snapshot[0].getKpiValueSum()));
+            basicKpiSnapshot[1].setKpiValueSum(getDoubleNonNull(basicKpiSnapshot[1].getKpiValueSum()) + getDoubleNonNull(snapshot[1].getKpiValueSum()));//-- Add KPI Value (SUM) to previous period
 
             //-- Addition of Numerator values of component Standard KPI to Basic KPI's Numerator
-            basicKpiSnapshot[0].setNumeratorKpiValueSum(basicKpiSnapshot[0].getNumeratorKpiValueSum() + snapshot[0].getNumeratorKpiValueSum());
-            basicKpiSnapshot[1].setNumeratorKpiValueSum(basicKpiSnapshot[1].getNumeratorKpiValueSum() + snapshot[1].getNumeratorKpiValueSum());
+            basicKpiSnapshot[0].setNumeratorKpiValueSum(getDoubleNonNull(basicKpiSnapshot[0].getNumeratorKpiValueSum())+ getDoubleNonNull(snapshot[0].getNumeratorKpiValueSum()));
+            basicKpiSnapshot[1].setNumeratorKpiValueSum(getDoubleNonNull(basicKpiSnapshot[1].getNumeratorKpiValueSum())+ getDoubleNonNull(snapshot[1].getNumeratorKpiValueSum()));
 
             //-- Addition of Denominator values of component Standard KPI to Basic KPI's Denominator
-            basicKpiSnapshot[0].setDenominatorKpiValueSum(basicKpiSnapshot[0].getDenominatorKpiValueSum() + snapshot[0].getDenominatorKpiValueSum());
-            basicKpiSnapshot[1].setDenominatorKpiValueSum(basicKpiSnapshot[1].getDenominatorKpiValueSum() + snapshot[1].getDenominatorKpiValueSum());
+            basicKpiSnapshot[0].setDenominatorKpiValueSum(getDoubleNonNull(basicKpiSnapshot[0].getDenominatorKpiValueSum()) + getDoubleNonNull(snapshot[0].getDenominatorKpiValueSum()));
+            basicKpiSnapshot[1].setDenominatorKpiValueSum(getDoubleNonNull(basicKpiSnapshot[1].getDenominatorKpiValueSum()) + getDoubleNonNull(snapshot[1].getDenominatorKpiValueSum()));
         }
 
         basicStandardKpiData.setBasicKpi(basicKpiSnapshot); //-- Set Basic KPI info into BasicKpiData Object
@@ -168,19 +168,26 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     private static Double calculateDifferenceOfFractions(KpiSnapshot[] snapshot) {
-        return (snapshot[0].getNumeratorKpiValueSum() / snapshot[0].getDenominatorKpiValueSum())
-                - (snapshot[1].getNumeratorKpiValueSum() / snapshot[1].getDenominatorKpiValueSum());
+        return (getDoubleNonNull(snapshot[0].getNumeratorKpiValueSum()) / getDoubleNonNull(snapshot[0].getDenominatorKpiValueSum()))
+                - (getDoubleNonNull(snapshot[1].getNumeratorKpiValueSum()) / getDoubleNonNull(snapshot[1].getDenominatorKpiValueSum()));
     }
 
     private static boolean checkDifferenceUp(KpiSnapshot[] snapshot) {
-        return ((snapshot[0].getNumeratorKpiValueSum() / snapshot[0].getDenominatorKpiValueSum())
-                - (snapshot[1].getNumeratorKpiValueSum() / snapshot[1].getDenominatorKpiValueSum())) > 0;
+        return ((getDoubleNonNull(snapshot[0].getNumeratorKpiValueSum()) / getDoubleNonNull(snapshot[0].getDenominatorKpiValueSum()))
+                - (getDoubleNonNull(snapshot[1].getNumeratorKpiValueSum()) / getDoubleNonNull(snapshot[1].getDenominatorKpiValueSum()))) > 0;
     }
 
     private LocalDateTime getLatestDate() {
         LocalDateTime latestDate = lteFddKpiDayRepository.getLatestDate();
         System.out.println(latestDate);
         return latestDate;
+    }
+
+    private static Double getDoubleNonNull(Double value){
+        if (value == null) {
+            return 0.0;
+        }else return value;
+
     }
 
 }
