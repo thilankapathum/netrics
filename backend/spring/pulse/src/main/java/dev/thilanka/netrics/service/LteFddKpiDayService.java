@@ -13,11 +13,11 @@ public interface LteFddKpiDayService {
 
     List<KpiDataFractionDto> findAllWithFractions();
 
-    List<KpiSnapshot> getAverage();
+//    List<KpiSnapshot> getAverage();
 
-    KpiSnapshot[] getLatestKpiSnapshot(String standardKpiName, String period);
+//    KpiSnapshot[] getLatestKpiSnapshot(String standardKpiName, String period);
 
-    BasicStandardKpiData getBasicStandardKpiSnapshot(String basicKpiName, String period);
+//    BasicStandardKpiData getBasicStandardKpiSnapshot(String basicKpiName, String period);
 
     List<CompactKpiSnapshot> getCompactBasicStandardKpiSnapshot(String basicKpiName, String period);
 }

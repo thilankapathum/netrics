@@ -33,22 +33,22 @@ public class LteFddKpiDayController {
         return ResponseEntity.ok(list);
     }
 
-    @GetMapping("ge")
-    public ResponseEntity<List<KpiSnapshot>> getAverage(){
-        return ResponseEntity.ok(lteFddKpiDayService.getAverage());
-    }
+//    @GetMapping("ge")
+//    public ResponseEntity<List<KpiSnapshot>> getAverage(){
+//        return ResponseEntity.ok(lteFddKpiDayService.getAverage());
+//    }
 
-    @GetMapping("standardkpi")
-    public ResponseEntity<KpiSnapshot[]> getStandardKpi(@RequestParam String kpiName, @RequestParam String period){
-        return ResponseEntity.ok(lteFddKpiDayService.getLatestKpiSnapshot(kpiName, period));
-    }
+//    @GetMapping("standardkpi")
+//    public ResponseEntity<KpiSnapshot[]> getStandardKpi(@RequestParam String kpiName, @RequestParam String period){
+//        return ResponseEntity.ok(lteFddKpiDayService.getLatestKpiSnapshot(kpiName, period));
+//    }
 
-    @GetMapping("basickpi")
-    public ResponseEntity<BasicStandardKpiData> getBasicKpi(@RequestParam String kpiName, @RequestParam String period){
-        return ResponseEntity.ok(lteFddKpiDayService.getBasicStandardKpiSnapshot(kpiName, period));
-    }
+//    @GetMapping("basickpi")
+//    public ResponseEntity<BasicStandardKpiData> getBasicKpi(@RequestParam String kpiName, @RequestParam String period){
+//        return ResponseEntity.ok(lteFddKpiDayService.getBasicStandardKpiSnapshot(kpiName, period));
+//    }
 
-    @GetMapping("basic")
+    @GetMapping("snapshot/compact")
     public ResponseEntity<List<CompactKpiSnapshot>> getBasicSnapshot(@RequestParam String kpiName, @RequestParam String period){
         return ResponseEntity.ok(lteFddKpiDayService.getCompactBasicStandardKpiSnapshot(kpiName, period));
     }

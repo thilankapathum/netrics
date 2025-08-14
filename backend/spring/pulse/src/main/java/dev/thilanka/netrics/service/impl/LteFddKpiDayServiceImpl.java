@@ -19,6 +19,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
+
+    //-- Snapshot: Single whole KPI value considering the KPI and Period
+    //-- Standard KPI: KPIs like 'E-RAB Setup Success Rate', 'DL Volume (Kbyte)'
+    //-- Basic KPI: KPIs like 'Accessibility', 'Retainability'
+    //-- Latest: Last day (newest) KPI
+    //-- Compact: Contains only 'kpiLabel', 'value', 'difference with previous period', 'up/down with previous period'
+
     private final LteFddKpiDayRepository lteFddKpiDayRepository;
     private final LteFddStandardKpiService lteFddStandardKpiService;
     private final LteFddBasicKpiRepository lteFddBasicKpiRepository;
@@ -45,13 +52,8 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
                 .toList();
     }
 
-    @Override
-    public List<KpiSnapshot> getAverage() {
-        return lteFddKpiDayRepository.getKpiX();
-    }
 
-    @Override
-    public KpiSnapshot[] getLatestKpiSnapshot(String standardKpiName, String period) {
+    private KpiSnapshot[] getLatestKpiSnapshot(String standardKpiName, String period) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
 
         KpiSnapshot[] kpiSnapshots = new KpiSnapshot[2];   //-- To get Current values & Previous period values. [0] holds current values. [1] holds previous values
@@ -82,8 +84,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         return kpiSnapshots;
     }
 
-    @Override
-    public BasicStandardKpiData getBasicStandardKpiSnapshot(String basicKpiName, String period) {
+    private BasicStandardKpiData getBasicStandardKpiSnapshot(String basicKpiName, String period) {
 
         BasicStandardKpiData basicStandardKpiData = new BasicStandardKpiData(); //-- To Store Basic KPI data and all component Standard KPI data
         KpiSnapshot[] basicKpiSnapshot = new KpiSnapshot[2];  //-- To Store Basic KPI's data
@@ -132,40 +133,48 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         BasicStandardKpiData basicStandardKpiData = getBasicStandardKpiSnapshot(basicKpiName, period);
 
         //-- Set Compact KPI values for Basic KPI.
-        CompactKpiSnapshot basicKpi = getCompactKpiSnapshot(basicStandardKpiData.getBasicKpi(), true);
+        CompactKpiSnapshot basicKpi = makeCompactKpiSnapshot(basicStandardKpiData.getBasicKpi(), true);
         basicKpi.setKpiLabel(basicStandardKpiData.getBasicKpi()[0].getLabel());
         kpiSnapshots.add(basicKpi);
 
-        //-- Set Compact KPI values for component Standard KPIs.
-        for (KpiSnapshot[] snap : basicStandardKpiData.getStandardKpi()) {
-            CompactKpiSnapshot standardKpi = getCompactKpiSnapshot(snap, false);
+        //-- Set Compact KPI values for Basic KPI's component Standard KPIs.
+        for (KpiSnapshot[] snapshots : basicStandardKpiData.getStandardKpi()) {
+            CompactKpiSnapshot standardKpi = makeCompactKpiSnapshot(snapshots, false);
 
             kpiSnapshots.add(standardKpi);
-
         }
-
         return kpiSnapshots;
     }
 
-    private static CompactKpiSnapshot getCompactKpiSnapshot(KpiSnapshot[] snapshots, boolean basic) {
+    private static CompactKpiSnapshot makeCompactKpiSnapshot(KpiSnapshot[] snapshot, boolean basic) {
         CompactKpiSnapshot standardKpi = new CompactKpiSnapshot();
 
-        if (!snapshots[0].getLabel().isBlank()) {
-            System.out.println("snap not blank");
-            standardKpi.setKpiLabel(snapshots[0].getLabel());
+        if (!snapshot[0].getLabel().isBlank()) {
+            standardKpi.setKpiLabel(snapshot[0].getLabel());
         }
         standardKpi.setBasic(basic);
 
-        if (snapshots[0].getNumeratorKpiValueSum() == 0.0 && snapshots[0].getDenominatorKpiValueSum() == 0) {
-            standardKpi.setValue(snapshots[0].getKpiValueSum());
-            standardKpi.setDifference(snapshots[0].getKpiValueSum() - snapshots[1].getKpiValueSum());
-            standardKpi.setUp((snapshots[0].getKpiValueSum() - snapshots[1].getKpiValueSum()) > 0);
+        //-- Check for condition: Numerator and Denominator values are 0.0 and KpiValue is not 0.0
+        if (snapshot[0].getNumeratorKpiValueSum() == 0.0 && snapshot[0].getDenominatorKpiValueSum() == 0 && snapshot[0].getKpiValueSum() != 0.0) {
+            standardKpi.setValue(snapshot[0].getKpiValueSum());
+            standardKpi.setDifference(snapshot[0].getKpiValueSum() - snapshot[1].getKpiValueSum());
+            standardKpi.setUp((snapshot[0].getKpiValueSum() - snapshot[1].getKpiValueSum()) > 0);
         } else {
-            standardKpi.setValue(snapshots[0].getNumeratorKpiValueSum() / snapshots[0].getDenominatorKpiValueSum());
-            standardKpi.setDifference(snapshots[0].getNumeratorKpiValueSum() / snapshots[0].getDenominatorKpiValueSum() - snapshots[1].getNumeratorKpiValueSum() / snapshots[1].getDenominatorKpiValueSum());
-            standardKpi.setUp((snapshots[0].getNumeratorKpiValueSum() / snapshots[0].getDenominatorKpiValueSum() - snapshots[1].getNumeratorKpiValueSum() / snapshots[1].getDenominatorKpiValueSum()) > 0);
+            standardKpi.setValue(snapshot[0].getNumeratorKpiValueSum() / snapshot[0].getDenominatorKpiValueSum());
+            standardKpi.setDifference(calculateDifferenceOfFractions(snapshot));
+            standardKpi.setUp(checkDifferenceUp(snapshot));
         }
         return standardKpi;
+    }
+
+    private static Double calculateDifferenceOfFractions(KpiSnapshot[] snapshot) {
+        return (snapshot[0].getNumeratorKpiValueSum() / snapshot[0].getDenominatorKpiValueSum())
+                - (snapshot[1].getNumeratorKpiValueSum() / snapshot[1].getDenominatorKpiValueSum());
+    }
+
+    private static boolean checkDifferenceUp(KpiSnapshot[] snapshot) {
+        return ((snapshot[0].getNumeratorKpiValueSum() / snapshot[0].getDenominatorKpiValueSum())
+                - (snapshot[1].getNumeratorKpiValueSum() / snapshot[1].getDenominatorKpiValueSum())) > 0;
     }
 
     private LocalDateTime getLatestDate() {

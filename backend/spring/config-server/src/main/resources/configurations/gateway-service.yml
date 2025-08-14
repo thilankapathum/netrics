@@ -1,14 +1,24 @@
 spring:
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-      routes:
-        - id: pulse-service
-          uri: lb:http://PULSE-SERVICE
-          predicates:
-            - Path=/api/v1/pulse/**
+#      discovery:
+#        locator:
+#          enabled: true
+#      routes:
+#        - id: pulse-service
+#          uri: lb:http://PULSE-SERVICE
+#          predicates:
+#            - Path=/api/v1/pulse/**
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+          routes:
+            - id: pulse-service
+              uri: lb:http://PULSE-SERVICE
+              predicates:
+                - Path=/api/v1/pulse/**
 
 server:
   port: 8001
