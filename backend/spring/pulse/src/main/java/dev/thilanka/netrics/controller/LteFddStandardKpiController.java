@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/pulse/ltefddstandardkpi")
+@RequestMapping("/api/v1/pulse/ltefdd/standardkpi")
 @RequiredArgsConstructor
 public class LteFddStandardKpiController {
     private final LteFddStandardKpiService lteFddStandardKpiService;

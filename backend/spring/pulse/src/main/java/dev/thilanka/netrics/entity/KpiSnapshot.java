@@ -1,4 +1,4 @@
-package dev.thilanka.netrics.entity.ltefdd;
+package dev.thilanka.netrics.entity;
 
 import lombok.*;
 
@@ -8,9 +8,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class KpiSnapshot {
-//    private Timestamp timestamp;
     private String label;
+    private String worstOrder;
     private Double kpiValueSum = 0.0;
-    private Double numeratorKpiValueSum = 0.0;
-    private Double denominatorKpiValueSum = 0.0;
+    private Double calculatedKpiValue = 0.0;
 }

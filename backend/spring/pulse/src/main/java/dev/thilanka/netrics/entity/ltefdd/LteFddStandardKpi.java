@@ -28,7 +28,7 @@ public class LteFddStandardKpi {
     private Double threshold;
 
     @OneToMany(mappedBy = "lteFddStandardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiMapping> lteFddKpiMappings;
+    private List<LteFddKpiMappingToOss> lteFddKpiMappingToOsses;
 
     @OneToMany(mappedBy = "lteFddStandardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddKpiDay> lteFddKpiDays;
@@ -48,9 +48,6 @@ public class LteFddStandardKpi {
 
     @OneToOne(mappedBy = "denominator", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private LteFddStandardRawKpiMapping denominator;
-
-//    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-//    private List<LteFddBasicKpiMapping> lteFddBasicKpiMapping;
 
     @ManyToOne
     @JoinColumn(name = "lte_fdd_basic_kpi_id")

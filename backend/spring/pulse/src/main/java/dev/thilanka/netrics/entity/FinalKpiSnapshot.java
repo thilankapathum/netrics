@@ -1,4 +1,4 @@
-package dev.thilanka.netrics.entity.ltefdd;
+package dev.thilanka.netrics.entity;
 
 import lombok.*;
 
@@ -7,10 +7,11 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CompactKpiSnapshot {
+public class FinalKpiSnapshot {
     private String kpiLabel;
-    private boolean basic;
+    private boolean isBasic;
     private Double value;
+    private Double previousValue;
     private Double difference;
-    private boolean up;
+    private boolean improved;
 }

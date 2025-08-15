@@ -1,4 +1,4 @@
-package dev.thilanka.netrics.entity.ltefdd;
+package dev.thilanka.netrics.entity;
 
 import lombok.*;
 
@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class BasicStandardKpiData {
+public class BasicAndStandardKpiSnapshots {
     private KpiSnapshot[] basicKpi;
-    private List<KpiSnapshot[]> standardKpi = new ArrayList<>();
+    private List<KpiSnapshot[]> standardKpis = new ArrayList<>();
 }

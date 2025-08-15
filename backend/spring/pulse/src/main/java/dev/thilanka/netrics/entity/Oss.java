@@ -1,9 +1,8 @@
 package dev.thilanka.netrics.entity;
 
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiMapping;
+import dev.thilanka.netrics.entity.ltefdd.LteFddKpiMappingToOss;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.List;
@@ -28,7 +27,7 @@ public class Oss {
     private String vendor;
 
     @OneToMany(mappedBy = "oss", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiMapping> lteFddKpiMappings;
+    private List<LteFddKpiMappingToOss> lteFddKpiMappingToOsses;
 
     @OneToMany(mappedBy = "oss", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddKpiDay> lteFddKpiDays;

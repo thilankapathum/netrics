@@ -24,9 +24,6 @@ public class LteFddBasicKpi {
     private String worstOrder;
     private Double threshold;
 
-//    @OneToMany(mappedBy = "basicKpi", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-//    private List<LteFddBasicKpiMapping> lteFddBasicKpiMappings;
-
     @OneToMany(mappedBy = "lteFddBasicKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddStandardKpi> lteFddStandardKpis;
 }

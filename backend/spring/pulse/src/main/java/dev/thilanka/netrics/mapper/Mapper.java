@@ -6,8 +6,6 @@ import dev.thilanka.netrics.entity.ltefdd.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class Mapper {
@@ -29,7 +27,7 @@ public class Mapper {
     }
 
 
-// ----- LteFddSandardKpi -----
+// ----- LteFddStandardKpi -----
 
     public LteFddStandardKpiDto lteFddStandardKpiToDto(LteFddStandardKpi lteFddStandardKpi) {
         LteFddStandardKpiDto lteFddStandardKpiDto = new LteFddStandardKpiDto(
@@ -57,10 +55,10 @@ public class Mapper {
         return lteFddStandardKpi;
     }
 
-// ----- LteFddKpiMapping -----
+// ----- LteFddKpiMappingToOss -----
 
-    public LteFddKpiMappingDto LteFddKpiMappingToDto(LteFddKpiMapping mapping) {
-        LteFddKpiMappingDto dto = new LteFddKpiMappingDto(
+    public LteFddKpiMappingToOssDto LteFddKpiMappingToDto(LteFddKpiMappingToOss mapping) {
+        LteFddKpiMappingToOssDto dto = new LteFddKpiMappingToOssDto(
                 mapping.getOssKpiName(),
                 mapping.getMultiplicationFactor(),
                 mapping.getOss().getIdentifier(),
@@ -80,19 +78,6 @@ public class Mapper {
         );
 
         return kpiDataDto;
-    }
-
-
-    public KpiDataFractionDto lteFddKpiDayToKpiDataFractionDto(LteFddKpiDay kpiDay) {
-        KpiDataFractionDto dto = new KpiDataFractionDto(
-                kpiDay.getTimestamp(),
-                kpiDay.getCellName(),
-                kpiDay.getLteFddStandardKpi().getKpiName(),
-                kpiDay.getKpiValue(),
-                kpiDay.getNumeratorKpiValue(),
-                kpiDay.getDenominatorKpiValue()
-        );
-        return dto;
     }
 
     // ----- LteFddStandardRawKpiMapping -----
@@ -123,15 +108,4 @@ public class Mapper {
         LteFddBasicKpiDto dto = new LteFddBasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold());
         return dto;
     }
-
-
-// ----- LteFddBasicKpiMapping -----
-
-    public LteFddBasicKpiMappingDto lteFddBasicKpiMappingToDto(LteFddBasicKpiMapping mapping){
-//        LteFddBasicKpiMappingDto dto = new LteFddBasicKpiMappingDto(mapping.getBasicKpi().getKpiName(),
-//                mapping.getStandardKpi().getKpiName());
-
-        return null;
-    }
-
 }

@@ -1,7 +1,7 @@
 package dev.thilanka.netrics.repository;
 
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiMapping;
+import dev.thilanka.netrics.entity.ltefdd.LteFddKpiMappingToOss;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface LteFddKpiMappingRepository extends JpaRepository<LteFddKpiMapping, Long> {
+public interface LteFddKpiMappingRepository extends JpaRepository<LteFddKpiMappingToOss, Long> {
 }
