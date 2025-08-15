@@ -21,6 +21,8 @@ public class LteFddBasicKpi {
     private String kpiName;
     @Column(unique = true,nullable = false)
     private String label;
+    private String worstOrder;
+    private Double threshold;
 
 //    @OneToMany(mappedBy = "basicKpi", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 //    private List<LteFddBasicKpiMapping> lteFddBasicKpiMappings;

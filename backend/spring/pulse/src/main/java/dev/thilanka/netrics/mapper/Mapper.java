@@ -113,12 +113,14 @@ public class Mapper {
         LteFddBasicKpi basicKpi = LteFddBasicKpi.builder()
                 .kpiName(dto.kpiName())
                 .label(dto.label())
+                .worstOrder(dto.worstOrder())
+                .threshold(dto.threshold())
                 .build();
         return basicKpi;
     }
 
     public LteFddBasicKpiDto lteFddBasicKpiToDto(LteFddBasicKpi kpi) {
-        LteFddBasicKpiDto dto = new LteFddBasicKpiDto(kpi.getKpiName(), kpi.getLabel());
+        LteFddBasicKpiDto dto = new LteFddBasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold());
         return dto;
     }
 
