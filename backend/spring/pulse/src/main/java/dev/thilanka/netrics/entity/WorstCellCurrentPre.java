@@ -7,7 +7,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorstCellKpiDataCurrPre {
+public class WorstCellCurrentPre {
     private String cellName;
     private String label;
     private Double kpiValue;

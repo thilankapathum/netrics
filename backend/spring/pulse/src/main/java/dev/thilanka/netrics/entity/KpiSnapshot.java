@@ -8,8 +8,10 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class KpiSnapshot {
-    private String label;
-    private String worstOrder;
-    private Double kpiValue = 0.0;
-    private Double calculatedKpiValue = 0.0;
+    private String kpiLabel;
+    private boolean isBasic;
+    private Double value;
+    private Double previousValue;
+    private Double difference;
+    private boolean improved;
 }

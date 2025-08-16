@@ -33,95 +33,6 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     private final LteFddStandardKpiRepository lteFddStandardKpiRepository;
     private final Mapper mapper;
 
-    //------------------------------- CALCULATED START -----------------------------------------------------------------
-
-    @Override
-    public KpiSnapshot getLatestCalculatedKpiSnapshot(String kpiName, String period, boolean isPrevious) {
-        LocalDateTime timestamp = getLatestDate();
-        KpiSnapshot kpiSnapshot = new KpiSnapshot();
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
-
-        switch (period) {
-            case "day" -> {
-                if (isPrevious) timestamp = timestamp.minusDays(1);
-                if (standardKpi.getAggregation().equals("SUM")) {
-                    kpiSnapshot = lteFddKpiDayRepository
-                            .findLatestCalculatedSumKpiSnapshot(standardKpi.getId(), timestamp, 0L)
-                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                } else {
-                    kpiSnapshot = lteFddKpiDayRepository
-                            .findLatestCalculatedAvgKpiSnapshot(standardKpi.getId(), timestamp, 0L)
-                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                }
-
-            }
-            case "week" -> {
-                if (isPrevious) timestamp = timestamp.minusDays(7);
-                if (standardKpi.getAggregation().equals("SUM")) {
-                    kpiSnapshot = lteFddKpiDayRepository
-                            .findLatestCalculatedSumKpiSnapshot(standardKpi.getId(), timestamp, 6L)
-                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                } else {
-                    kpiSnapshot = lteFddKpiDayRepository
-                            .findLatestCalculatedAvgKpiSnapshot(standardKpi.getId(), timestamp, 6L)
-                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                }
-
-            }
-            case "month" -> {
-                if (isPrevious) timestamp = timestamp.minusDays(30);
-                if (standardKpi.getAggregation().equals("SUM")) {
-                    kpiSnapshot = lteFddKpiDayRepository
-                            .findLatestCalculatedSumKpiSnapshot(standardKpi.getId(), timestamp, 29L)
-                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                } else {
-                    kpiSnapshot = lteFddKpiDayRepository
-                            .findLatestCalculatedAvgKpiSnapshot(standardKpi.getId(), timestamp, 29L)
-                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
-                }
-
-            }
-        }
-        if (kpiSnapshot.getKpiValue() == null && kpiSnapshot.getCalculatedKpiValue() == null) {
-            kpiSnapshot.setKpiValue(0.0);
-            kpiSnapshot.setCalculatedKpiValue(0.0);
-        }
-        return kpiSnapshot;
-    }
-
-
-    private KpiSnapshot[] getLatestCalculatedKpiSnapshotWithPrevious(String kpiName, String period) {
-        KpiSnapshot[] kpiSnapshotWithPrevious = new KpiSnapshot[2];
-
-        kpiSnapshotWithPrevious[0] = getLatestCalculatedKpiSnapshot(kpiName, period, false);
-        kpiSnapshotWithPrevious[1] = getLatestCalculatedKpiSnapshot(kpiName, period, true);   //-- Array [1] will hold previous period KPI
-
-        return kpiSnapshotWithPrevious;
-    }
-
-    private FinalKpiSnapshot getLatestCompactCalculatedKpiSnapshot(String kpiName, String period, boolean isBasic) {
-        KpiSnapshot[] kpiSnapshotWithPrevious = getLatestCalculatedKpiSnapshotWithPrevious(kpiName, period);
-
-        FinalKpiSnapshot snapshot = new FinalKpiSnapshot();
-
-        snapshot.setKpiLabel(kpiSnapshotWithPrevious[0].getLabel());
-        snapshot.setBasic(isBasic);
-
-        if (kpiSnapshotWithPrevious[0].getCalculatedKpiValue() == null) {
-            snapshot.setValue(kpiSnapshotWithPrevious[0].getKpiValue());
-            snapshot.setPreviousValue(kpiSnapshotWithPrevious[1].getKpiValue());
-            snapshot.setDifference(kpiSnapshotWithPrevious[0].getKpiValue() - kpiSnapshotWithPrevious[1].getKpiValue());
-        } else {
-            snapshot.setValue(kpiSnapshotWithPrevious[0].getCalculatedKpiValue());
-            snapshot.setPreviousValue(kpiSnapshotWithPrevious[1].getCalculatedKpiValue());
-            snapshot.setDifference(kpiSnapshotWithPrevious[0].getCalculatedKpiValue() - kpiSnapshotWithPrevious[1].getCalculatedKpiValue());
-        }
-
-        snapshot.setImproved(checkImproved(kpiSnapshotWithPrevious[0].getWorstOrder(), snapshot.getDifference()));
-
-        return snapshot;
-    }
-
     private static boolean checkImproved(String worstOrder, Double difference) {
         if (Objects.equals(worstOrder, "ASC")) {
             return difference > 0;
@@ -131,54 +42,16 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         return false;
     }
 
-
-    @Override
-    public List<FinalKpiSnapshot> getLatestBasicAndStandardKpiSnapshot(String basicKpiName, String period) {
-
-        List<FinalKpiSnapshot> kpiSnapshotList = new ArrayList<>(); //-- Hold Snapshots of Basic KPI & its component Standard KPIs
-
-        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
-                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
-
-        FinalKpiSnapshot basicKpiSnapshot = new FinalKpiSnapshot(); //-- Basic KPI values
-        basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
-        basicKpiSnapshot.setBasic(true);
-        basicKpiSnapshot.setValue(1.0);
-        basicKpiSnapshot.setPreviousValue(1.0);
-
-        //-- Get component basic KPI and add to kpiSnapshotList
-        for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
-//            standardKpi.getWorstOrder()
-            kpiSnapshotList.add(getLatestCompactCalculatedKpiSnapshot(standardKpi.getKpiName(), period, false));
-        }
-
-        //-- Set Multiplication of Standard KPI's values to Basic KPI value
-        for (FinalKpiSnapshot snapshot : kpiSnapshotList) {
-            basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue());
-            basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * snapshot.getPreviousValue());
-        }
-
-        basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
-
-        basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
-
-        kpiSnapshotList.add(basicKpiSnapshot);
-
-        return kpiSnapshotList;
-    }
+    //------------------------------- KPI-SNAPSHOT START ---------------------------------------------------------------
 
 
-    //------------------------------- CALCULATED END -------------------------------------------------------------------
-
-
-    private KpiDataCurrPre getLatestKpiSnapshotWithPre(LteFddStandardKpi standardKpi, String period) {
+    private KpiSnapshotCurrentPre getLatestKpiSnapshotWithPre(LteFddStandardKpi standardKpi, String period) {
 
         //-- GET KPI WITH LABEL, WORST-ORDER, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
 
-//        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
         LocalDateTime timestamp = lteFddKpiDayRepository.getLatestDate();
 
-        KpiDataCurrPre kpiData = new KpiDataCurrPre();
+        KpiSnapshotCurrentPre kpiData = new KpiSnapshotCurrentPre();
 
         switch (period) {
             case "day" -> {
@@ -215,14 +88,14 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         return kpiData;
     }
 
-    private FinalKpiSnapshot getLatestKpiSnapshot(String kpiName, String period) {
+    private KpiSnapshot getLatestKpiSnapshot(String kpiName, String period) {
 
         //-- GET KPI WITH LABEL, IS-BASIC, VALUE, PREVIOUS VALUE, DIFFERENCE, IMPROVED
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
-        KpiDataCurrPre kpiData = getLatestKpiSnapshotWithPre(standardKpi, period);
+        KpiSnapshotCurrentPre kpiData = getLatestKpiSnapshotWithPre(standardKpi, period);
 
-        FinalKpiSnapshot snapshot = new FinalKpiSnapshot();
+        KpiSnapshot snapshot = new KpiSnapshot();
 
         snapshot.setKpiLabel(standardKpi.getLabel());
         snapshot.setBasic(false);
@@ -252,26 +125,27 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
 
     @Override
-    public List<FinalKpiSnapshot> getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
+    public List<KpiSnapshot> getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
 
         LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
-        List<FinalKpiSnapshot> finalKpiSnapshots = new ArrayList<>();
+        List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
         for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
-            FinalKpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period);
-            finalKpiSnapshots.add(snapshot);
+            KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period);
+            kpiSnapshots.add(snapshot);
         }
 
         //-- CREATE BASIC-KPI'S DATA
-        FinalKpiSnapshot basicKpiSnapshot = new FinalKpiSnapshot();
+        KpiSnapshot basicKpiSnapshot = new KpiSnapshot();
         basicKpiSnapshot.setBasic(true);
         basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
         basicKpiSnapshot.setValue(1.0);
         basicKpiSnapshot.setPreviousValue(1.0);
+
         //-- Calculate Value & Pre-Value by multiplying component Standard-KPI values. [IMPORTANT: Assume component Standard-KPI are percentages]
-        for (FinalKpiSnapshot snapshot : finalKpiSnapshots) {
+        for (KpiSnapshot snapshot : kpiSnapshots) {
             basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue() / 100.0);
             basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * snapshot.getPreviousValue() / 100.0);
         }
@@ -281,85 +155,22 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
         basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
 
-        finalKpiSnapshots.add(basicKpiSnapshot);
-        return finalKpiSnapshots;
+        kpiSnapshots.add(basicKpiSnapshot);
+        return kpiSnapshots;
     }
 
+    //------------------------------- KPI-SNAPSHOT END -----------------------------------------------------------------
 
-    // ------------------------------ WORST CELLS START ----------------------------------------------------------------
+    // ------------------------------ WORST-CELLS START ----------------------------------------------------------------
 
-//    @Override
-//    public List<WorstCellKpiData> findWorstCellsByKpi(String basicKpiName, String period, int count) {
-//
-//        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(basicKpiName);
-//        LocalDateTime timestamp = getLatestDate();
-//
-//        List<WorstCellKpiData> worstCells = new ArrayList<>();  //-- Get KpiValue and CalculatedKpiValue for each worst cell
-//
-//        switch (period) {
-//            case "day" -> {
-//                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
-//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 0L, count);
-//                    } else {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 0L, count);
-//                    }
-//                } else {
-//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 0L, count);
-//                    } else {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 0L, count);
-//                    }
-//                }
-//            }
-//            case "week" -> {
-//                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
-//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 6L, count);
-//                    } else {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 6L, count);
-//                    }
-//                } else {
-//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 6L, count);
-//                    } else {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 6L, count);
-//                    }
-//                }
-//            }
-//            case "month" -> {
-//                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
-//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 29L, count);
-//                    } else {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 29L, count);
-//                    }
-//                } else {
-//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 29L, count);
-//                    } else {
-//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 29L, count);
-//                    }
-//                }
-//            }
-//        }
-//        return worstCells;
-//    }
+    private List<WorstCellCurrentPre> getWorstCellsByKpiWithPre(String basicKpiName, String period, int count) {
 
-
-    // ------------------------------ WORST CELLS END ----------------------------------------------------------------
-
-    //  -------------------------- WORST CELLS WITH PREV - START -------------------------------------------------------
-
-
-    private List<WorstCellKpiDataCurrPre> getWorstCellsByKpiWithPre(String basicKpiName, String period, int count) {
-
-        //-- GET WORST CELLS WITH CELL-NAME LABEL, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
+        //-- GET WORST CELLS WITH CELL-NAME, LABEL, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(basicKpiName);
         LocalDateTime timestamp = getLatestDate();
 
-        List<WorstCellKpiDataCurrPre> worstCells = new ArrayList<>();  //-- Get KpiValue and CalculatedKpiValue for each worst cell
+        List<WorstCellCurrentPre> worstCells = new ArrayList<>();  //-- Get KpiValue and CalculatedKpiValue for each worst cell
 
         switch (period) {
             case "day" -> {
@@ -412,7 +223,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             }
         }
 
-        for (WorstCellKpiDataCurrPre worstCell : worstCells) {
+        for (WorstCellCurrentPre worstCell : worstCells) {
             if (worstCell.getKpiValue() == null) {
                 worstCell.setKpiValue(0.0);
             }
@@ -425,18 +236,18 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
-    public List<FinalWorstCellData> getWorstCellsByKpi(String kpiName, String period, int count) {
+    public List<WorstCell> getWorstCellsByKpi(String kpiName, String period, int count) {
 
         //-- GET WORST CELLS WITH CELL-NAME, LABEL, VALUE, PRE-VALUE, DIFFERENCE, IMPROVED & IS-BASIC
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
-//        List<FinalKpiSnapshot> finalKpiSnapshots = new ArrayList<>();
-        List<FinalWorstCellData> finalWorstCells = new ArrayList<>();
-        List<WorstCellKpiDataCurrPre> worstCells = getWorstCellsByKpiWithPre(kpiName, period, count);
+//        List<KpiSnapshot> finalKpiSnapshots = new ArrayList<>();
+        List<WorstCell> finalWorstCells = new ArrayList<>();
+        List<WorstCellCurrentPre> worstCells = getWorstCellsByKpiWithPre(kpiName, period, count);
 
-        for (WorstCellKpiDataCurrPre worstCell : worstCells) {
+        for (WorstCellCurrentPre worstCell : worstCells) {
 
-            FinalWorstCellData finalWorstCell = new FinalWorstCellData();
+            WorstCell finalWorstCell = new WorstCell();
 
             finalWorstCell.setCellName(worstCell.getCellName());
             finalWorstCell.setKpiLabel(worstCell.getLabel());
@@ -471,7 +282,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
 
-    //  -------------------------- WORST CELLS WITH PREV - END ---------------------------------------------------------
+    // ------------------------------ WORST-CELLS END ------------------------------------------------------------------
 
 
     @Override

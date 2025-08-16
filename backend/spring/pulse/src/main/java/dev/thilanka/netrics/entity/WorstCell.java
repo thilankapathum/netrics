@@ -7,10 +7,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class FinalWorstCellData {
+public class WorstCell {
     private String cellName;
     private String kpiLabel;
-//    private boolean isBasic;
     private Double value;
     private Double previousValue;
     private Double difference;

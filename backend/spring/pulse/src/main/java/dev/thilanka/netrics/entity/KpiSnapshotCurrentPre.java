@@ -7,7 +7,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KpiDataCurrPre {
+public class KpiSnapshotCurrentPre {
     private String label;
     private String worstOrder;
     private Double kpiValue;

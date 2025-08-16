@@ -1,8 +1,7 @@
 package dev.thilanka.netrics.repository;
 
-import dev.thilanka.netrics.entity.KpiDataCurrPre;
-import dev.thilanka.netrics.entity.KpiSnapshot;
-import dev.thilanka.netrics.entity.WorstCellKpiDataCurrPre;
+import dev.thilanka.netrics.entity.KpiSnapshotCurrentPre;
+import dev.thilanka.netrics.entity.WorstCellCurrentPre;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -45,7 +44,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             
             ON curr.id = pre.id
             """, nativeQuery = true)
-    Optional<KpiDataCurrPre> findLatestAvgKpiSnapshotWithPre(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("PreTimestamp") LocalDateTime preTimestamp, @Param("period") Long period);
+    Optional<KpiSnapshotCurrentPre> findLatestAvgKpiSnapshotWithPre(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("PreTimestamp") LocalDateTime preTimestamp, @Param("period") Long period);
 
 
     @Query(value = """
@@ -75,40 +74,13 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             
             ON curr.id = pre.id
             """, nativeQuery = true)
-    Optional<KpiDataCurrPre> findLatestSumKpiSnapshotWithPre(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("PreTimestamp") LocalDateTime preTimestamp, @Param("period") Long period);
-
-
-
-
-
-
-    @Query(value = "SELECT lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.worst_order worst_order,\n" +
-            "AVG(kpi_value) kpi_value, " +
-            "(SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value " +
-            "FROM lte_fdd_kpi_day " +
-            "LEFT JOIN lte_fdd_standard_kpi " +
-            "ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id " +
-            "WHERE timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY) " +
-            "AND :timestamp " +
-            "AND lte_fdd_standard_kpi_id = :standardKpiId", nativeQuery = true)
-    Optional<KpiSnapshot> findLatestCalculatedAvgKpiSnapshot(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period);
-
-    @Query(value = "SELECT lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.worst_order worst_order,\n" +
-            "SUM(kpi_value) kpi_value, " +
-            "(SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value " +
-            "FROM lte_fdd_kpi_day " +
-            "LEFT JOIN lte_fdd_standard_kpi " +
-            "ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id " +
-            "WHERE timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY) " +
-            "AND :timestamp " +
-            "AND lte_fdd_standard_kpi_id = :standardKpiId", nativeQuery = true)
-    Optional<KpiSnapshot> findLatestCalculatedSumKpiSnapshot(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period);
+    Optional<KpiSnapshotCurrentPre> findLatestSumKpiSnapshotWithPre(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("PreTimestamp") LocalDateTime preTimestamp, @Param("period") Long period);
 
 
     //  -------------------------- WORST CELLS WITH PREVIOUS - START -------------------------------------------------------
 
     @Query(value = """
-            SELECT 
+            SELECT
                 curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
@@ -123,7 +95,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                     AND (:timestamp)
                 GROUP BY cell_name
             ) curr
-            
+           \s
             LEFT JOIN (
                 SELECT cell_name pre_cell_name,
             	AVG(kpi_value) pre_kpi_value,
@@ -134,15 +106,15 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                     AND (:preTimestamp)
                 GROUP BY pre_cell_name
             ) pre
-            
+           \s
             ON curr.cell_name = pre.pre_cell_name
             ORDER BY curr.calculated_kpi_value ASC
             LIMIT :count
-            """, nativeQuery = true)
-    List<WorstCellKpiDataCurrPre> findWorstCellsWithPrevAvgAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
+           \s""", nativeQuery = true)
+    List<WorstCellCurrentPre> findWorstCellsWithPrevAvgAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
 
     @Query(value = """
-            SELECT 
+            SELECT
                 curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
@@ -173,10 +145,10 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ORDER BY curr.calculated_kpi_value DESC
             LIMIT :count
             """, nativeQuery = true)
-    List<WorstCellKpiDataCurrPre> findWorstCellsWithPrevAvgDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
+    List<WorstCellCurrentPre> findWorstCellsWithPrevAvgDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
 
     @Query(value = """
-            SELECT 
+            SELECT
                 curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
@@ -207,10 +179,10 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ORDER BY curr.calculated_kpi_value ASC
             LIMIT :count
             """, nativeQuery = true)
-    List<WorstCellKpiDataCurrPre> findWorstCellsWithPrevSumAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
+    List<WorstCellCurrentPre> findWorstCellsWithPrevSumAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
 
     @Query(value = """
-            SELECT 
+            SELECT
                 curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
@@ -241,7 +213,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ORDER BY curr.calculated_kpi_value DESC
             LIMIT :count
             """, nativeQuery = true)
-    List<WorstCellKpiDataCurrPre> findWorstCellsWithPrevSumDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
+    List<WorstCellCurrentPre> findWorstCellsWithPrevSumDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
 
 
     //  -------------------------- WORST CELLS - START -----------------------------------------------------------------
