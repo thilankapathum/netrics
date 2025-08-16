@@ -10,6 +10,6 @@ import lombok.*;
 public class KpiSnapshot {
     private String label;
     private String worstOrder;
-    private Double kpiValueSum = 0.0;
+    private Double kpiValue = 0.0;
     private Double calculatedKpiValue = 0.0;
 }

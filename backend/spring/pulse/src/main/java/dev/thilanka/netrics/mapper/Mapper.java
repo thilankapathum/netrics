@@ -36,7 +36,8 @@ public class Mapper {
                 lteFddStandardKpi.getUnit(),
                 lteFddStandardKpi.getType(),
                 lteFddStandardKpi.getWorstOrder(),
-                lteFddStandardKpi.getThreshold());
+                lteFddStandardKpi.getThreshold(),
+                lteFddStandardKpi.getAggregation());
 
         return lteFddStandardKpiDto;
     }
@@ -67,7 +68,7 @@ public class Mapper {
         return dto;
     }
 
-// ----- KpiData -----
+// ----- WorstCellKpiData -----
 
     public KpiDataDto LteFddKpiDayToKpiDataDto(LteFddKpiDay kpiDay) {
         KpiDataDto kpiDataDto = new KpiDataDto(

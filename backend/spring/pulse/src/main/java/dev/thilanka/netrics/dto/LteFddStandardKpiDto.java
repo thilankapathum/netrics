@@ -8,6 +8,7 @@ public record LteFddStandardKpiDto(
         String unit,
         String type,
         String worstOrder,
-        Double threshold
+        Double threshold,
+        String aggregation
         ) {
 }
