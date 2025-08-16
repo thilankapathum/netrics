@@ -1,10 +1,7 @@
 package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
-import dev.thilanka.netrics.entity.KpiSnapshot;
-import dev.thilanka.netrics.entity.FinalKpiSnapshot;
-import dev.thilanka.netrics.entity.WorstCellKpiData;
-import dev.thilanka.netrics.entity.WorstCellKpiDataCurrPre;
+import dev.thilanka.netrics.entity.*;
 
 import java.util.List;
 
@@ -15,9 +12,12 @@ public interface LteFddKpiDayService {
 
     List<FinalKpiSnapshot> getLatestBasicAndStandardKpiSnapshot(String basicKpiName, String period);
 
-    List<WorstCellKpiData> findWorstCellsByKpi(String basicKpiName, String period, int count);
+//    List<WorstCellKpiData> findWorstCellsByKpi(String basicKpiName, String period, int count);
 
-    List<WorstCellKpiDataCurrPre> getWorstCellsByKpiWithPre(String basicKpiName, String period, int count);
+//    List<WorstCellKpiDataCurrPre> getWorstCellsByKpiWithPre(String basicKpiName, String period, int count);
 
-    List<FinalKpiSnapshot> getFinalWorstCellsByKpi(String kpiName, String period, int count, boolean isBasic);
+    List<FinalWorstCellData> getWorstCellsByKpi(String kpiName, String period, int count);
+
+    List<FinalKpiSnapshot> getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period);
+
 }

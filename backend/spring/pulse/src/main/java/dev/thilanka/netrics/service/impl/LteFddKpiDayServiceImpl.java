@@ -1,10 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
-import dev.thilanka.netrics.entity.FinalKpiSnapshot;
-import dev.thilanka.netrics.entity.KpiSnapshot;
-import dev.thilanka.netrics.entity.WorstCellKpiData;
-import dev.thilanka.netrics.entity.WorstCellKpiDataCurrPre;
+import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.ltefdd.*;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddBasicKpiRepository;
@@ -173,65 +170,181 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
     //------------------------------- CALCULATED END -------------------------------------------------------------------
 
-    // ------------------------------ WORST CELLS START ----------------------------------------------------------------
 
-    @Override
-    public List<WorstCellKpiData> findWorstCellsByKpi(String basicKpiName, String period, int count) {
+    private KpiDataCurrPre getLatestKpiSnapshotWithPre(LteFddStandardKpi standardKpi, String period) {
 
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(basicKpiName);
-        LocalDateTime timestamp = getLatestDate();
+        //-- GET KPI WITH LABEL, WORST-ORDER, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
 
-        List<WorstCellKpiData> worstCells = new ArrayList<>();  //-- Get KpiValue and CalculatedKpiValue for each worst cell
+//        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
+        LocalDateTime timestamp = lteFddKpiDayRepository.getLatestDate();
+
+        KpiDataCurrPre kpiData = new KpiDataCurrPre();
 
         switch (period) {
             case "day" -> {
-                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
-                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 0L, count);
-                    } else {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 0L, count);
-                    }
+                LocalDateTime preTimestamp = timestamp.minusDays(1L);
+                if (standardKpi.getAggregation().equals("SUM")) {
+                    kpiData = lteFddKpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, 0L)
+                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
                 } else {
-                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 0L, count);
-                    } else {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 0L, count);
-                    }
+                    kpiData = lteFddKpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, 0L)
+                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
                 }
             }
             case "week" -> {
-                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
-                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 6L, count);
-                    } else {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 6L, count);
-                    }
+                LocalDateTime preTimestamp = timestamp.minusDays(7L);
+                if (standardKpi.getAggregation().equals("SUM")) {
+                    kpiData = lteFddKpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, 6L)
+                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
                 } else {
-                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 6L, count);
-                    } else {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 6L, count);
-                    }
+                    kpiData = lteFddKpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, 6L)
+                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
                 }
             }
             case "month" -> {
-                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
-                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 29L, count);
-                    } else {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 29L, count);
-                    }
+                LocalDateTime preTimestamp = timestamp.minusDays(30L);
+                if (standardKpi.getAggregation().equals("SUM")) {
+                    kpiData = lteFddKpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, 29L)
+                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
                 } else {
-                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 29L, count);
-                    } else {
-                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 29L, count);
-                    }
+                    kpiData = lteFddKpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, 29L)
+                            .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
                 }
             }
         }
-        return worstCells;
+        return kpiData;
     }
+
+    private FinalKpiSnapshot getLatestKpiSnapshot(String kpiName, String period) {
+
+        //-- GET KPI WITH LABEL, IS-BASIC, VALUE, PREVIOUS VALUE, DIFFERENCE, IMPROVED
+
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
+        KpiDataCurrPre kpiData = getLatestKpiSnapshotWithPre(standardKpi, period);
+
+        FinalKpiSnapshot snapshot = new FinalKpiSnapshot();
+
+        snapshot.setKpiLabel(standardKpi.getLabel());
+        snapshot.setBasic(false);
+
+        if (kpiData.getCalculatedKpiValue() == null) {   //-- CalculatedValue == null -> Value should be taken from kpiValue
+            snapshot.setValue(kpiData.getKpiValue());
+            if (kpiData.getPreKpiValue() == null) kpiData.setPreKpiValue(0.0);
+            snapshot.setPreviousValue(kpiData.getPreKpiValue());
+        } else {
+            if (Objects.equals(standardKpi.getUnit(), "%")) {
+                snapshot.setValue(kpiData.getCalculatedKpiValue() * 100.0);
+                if (kpiData.getPreCalculatedKpiValue() == null) kpiData.setPreCalculatedKpiValue(0.0);
+                snapshot.setPreviousValue(kpiData.getPreCalculatedKpiValue() * 100.0);
+            } else {
+                snapshot.setValue(kpiData.getCalculatedKpiValue());
+                if (kpiData.getPreCalculatedKpiValue() == null) kpiData.setPreCalculatedKpiValue(0.0);
+                snapshot.setPreviousValue(kpiData.getPreCalculatedKpiValue());
+            }
+        }
+
+        snapshot.setDifference(snapshot.getValue() - snapshot.getPreviousValue());
+
+        snapshot.setImproved(checkImproved(standardKpi.getWorstOrder(), snapshot.getDifference()));
+
+        return snapshot;
+    }
+
+
+    @Override
+    public List<FinalKpiSnapshot> getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
+
+        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
+                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
+
+        List<FinalKpiSnapshot> finalKpiSnapshots = new ArrayList<>();
+
+        for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
+            FinalKpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period);
+            finalKpiSnapshots.add(snapshot);
+        }
+
+        //-- CREATE BASIC-KPI'S DATA
+        FinalKpiSnapshot basicKpiSnapshot = new FinalKpiSnapshot();
+        basicKpiSnapshot.setBasic(true);
+        basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
+        basicKpiSnapshot.setValue(1.0);
+        basicKpiSnapshot.setPreviousValue(1.0);
+        //-- Calculate Value & Pre-Value by multiplying component Standard-KPI values. [IMPORTANT: Assume component Standard-KPI are percentages]
+        for (FinalKpiSnapshot snapshot : finalKpiSnapshots) {
+            basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue() / 100.0);
+            basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * snapshot.getPreviousValue() / 100.0);
+        }
+        basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * 100.0); //-- To avoid presenting decimals as percentages
+        basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * 100.0); //-- To avoid presenting decimals as percentages
+
+        basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
+        basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
+
+        finalKpiSnapshots.add(basicKpiSnapshot);
+        return finalKpiSnapshots;
+    }
+
+
+    // ------------------------------ WORST CELLS START ----------------------------------------------------------------
+
+//    @Override
+//    public List<WorstCellKpiData> findWorstCellsByKpi(String basicKpiName, String period, int count) {
+//
+//        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(basicKpiName);
+//        LocalDateTime timestamp = getLatestDate();
+//
+//        List<WorstCellKpiData> worstCells = new ArrayList<>();  //-- Get KpiValue and CalculatedKpiValue for each worst cell
+//
+//        switch (period) {
+//            case "day" -> {
+//                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
+//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 0L, count);
+//                    } else {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 0L, count);
+//                    }
+//                } else {
+//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 0L, count);
+//                    } else {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 0L, count);
+//                    }
+//                }
+//            }
+//            case "week" -> {
+//                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
+//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 6L, count);
+//                    } else {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 6L, count);
+//                    }
+//                } else {
+//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 6L, count);
+//                    } else {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 6L, count);
+//                    }
+//                }
+//            }
+//            case "month" -> {
+//                if (Objects.equals(standardKpi.getWorstOrder(), "ASC")) {
+//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumAsc(standardKpi.getId(), timestamp, 29L, count);
+//                    } else {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgAsc(standardKpi.getId(), timestamp, 29L, count);
+//                    }
+//                } else {
+//                    if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiSumDesc(standardKpi.getId(), timestamp, 29L, count);
+//                    } else {
+//                        worstCells = lteFddKpiDayRepository.findWorstCellsByKpiAvgDesc(standardKpi.getId(), timestamp, 29L, count);
+//                    }
+//                }
+//            }
+//        }
+//        return worstCells;
+//    }
 
 
     // ------------------------------ WORST CELLS END ----------------------------------------------------------------
@@ -239,8 +352,10 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     //  -------------------------- WORST CELLS WITH PREV - START -------------------------------------------------------
 
 
-    @Override
-    public List<WorstCellKpiDataCurrPre> getWorstCellsByKpiWithPre(String basicKpiName, String period, int count) {
+    private List<WorstCellKpiDataCurrPre> getWorstCellsByKpiWithPre(String basicKpiName, String period, int count) {
+
+        //-- GET WORST CELLS WITH CELL-NAME LABEL, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
+
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(basicKpiName);
         LocalDateTime timestamp = getLatestDate();
 
@@ -310,38 +425,51 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
-    public List<FinalKpiSnapshot> getFinalWorstCellsByKpi(String kpiName, String period, int count, boolean isBasic) {
+    public List<FinalWorstCellData> getWorstCellsByKpi(String kpiName, String period, int count) {
+
+        //-- GET WORST CELLS WITH CELL-NAME, LABEL, VALUE, PRE-VALUE, DIFFERENCE, IMPROVED & IS-BASIC
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
-        List<FinalKpiSnapshot> finalKpiSnapshots = new ArrayList<>();
+//        List<FinalKpiSnapshot> finalKpiSnapshots = new ArrayList<>();
+        List<FinalWorstCellData> finalWorstCells = new ArrayList<>();
         List<WorstCellKpiDataCurrPre> worstCells = getWorstCellsByKpiWithPre(kpiName, period, count);
 
         for (WorstCellKpiDataCurrPre worstCell : worstCells) {
-            FinalKpiSnapshot finalKpiSnapshot = new FinalKpiSnapshot();
 
-            finalKpiSnapshot.setKpiLabel(worstCell.getLabel());
-            finalKpiSnapshot.setValue(worstCell.getKpiValue());
-            finalKpiSnapshot.setBasic(isBasic);
+            FinalWorstCellData finalWorstCell = new FinalWorstCellData();
+
+            finalWorstCell.setCellName(worstCell.getCellName());
+            finalWorstCell.setKpiLabel(worstCell.getLabel());
+            finalWorstCell.setValue(worstCell.getKpiValue());
+//            finalWorstCell.setBasic(isBasic);
 
             if (worstCell.getCalculatedKpiValue() == null) {
-                finalKpiSnapshot.setValue(worstCell.getKpiValue());
-                finalKpiSnapshot.setPreviousValue(worstCell.getPreKpiValue());
+                finalWorstCell.setValue(worstCell.getKpiValue());
+                finalWorstCell.setPreviousValue(worstCell.getPreKpiValue());
             } else {
-                if (worstCell.getPreCalculatedKpiValue() == null) worstCell.setPreCalculatedKpiValue(0.0);
-                finalKpiSnapshot.setValue(worstCell.getCalculatedKpiValue() * 100.0);     //-- Make value a percentage
-                finalKpiSnapshot.setPreviousValue(worstCell.getPreCalculatedKpiValue() * 100.0);      //-- Make value a percentage
+
+                if (Objects.equals(standardKpi.getUnit(), "%")) {
+                    if (worstCell.getPreCalculatedKpiValue() == null) worstCell.setPreCalculatedKpiValue(0.0);
+                    finalWorstCell.setValue(worstCell.getCalculatedKpiValue() * 100.0);     //-- Make value a percentage
+                    finalWorstCell.setPreviousValue(worstCell.getPreCalculatedKpiValue() * 100.0);      //-- Make value a percentage
+                } else {
+                    if (worstCell.getPreCalculatedKpiValue() == null) worstCell.setPreCalculatedKpiValue(0.0);
+                    finalWorstCell.setValue(worstCell.getCalculatedKpiValue());
+                    finalWorstCell.setPreviousValue(worstCell.getPreCalculatedKpiValue());
+                }
             }
 
-            if (finalKpiSnapshot.getValue() == null) finalKpiSnapshot.setValue(0.0);
-            if (finalKpiSnapshot.getPreviousValue() == null) finalKpiSnapshot.setPreviousValue(0.0);
+            if (finalWorstCell.getValue() == null) finalWorstCell.setValue(0.0);
+            if (finalWorstCell.getPreviousValue() == null) finalWorstCell.setPreviousValue(0.0);
 
-            finalKpiSnapshot.setDifference(finalKpiSnapshot.getValue() - finalKpiSnapshot.getPreviousValue());
-            finalKpiSnapshot.setImproved(checkImproved(standardKpi.getWorstOrder(), finalKpiSnapshot.getDifference()));
+            finalWorstCell.setDifference(finalWorstCell.getValue() - finalWorstCell.getPreviousValue());
+            finalWorstCell.setImproved(checkImproved(standardKpi.getWorstOrder(), finalWorstCell.getDifference()));
 
-            finalKpiSnapshots.add(finalKpiSnapshot);
+            finalWorstCells.add(finalWorstCell);
         }
-        return finalKpiSnapshots;
+        return finalWorstCells;
     }
+
 
     //  -------------------------- WORST CELLS WITH PREV - END ---------------------------------------------------------
 

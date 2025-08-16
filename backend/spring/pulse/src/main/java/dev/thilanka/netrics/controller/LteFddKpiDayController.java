@@ -1,10 +1,9 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.entity.FinalWorstCellData;
 import dev.thilanka.netrics.entity.KpiSnapshot;
 import dev.thilanka.netrics.entity.FinalKpiSnapshot;
-import dev.thilanka.netrics.entity.WorstCellKpiData;
-import dev.thilanka.netrics.entity.WorstCellKpiDataCurrPre;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,21 +33,21 @@ public class LteFddKpiDayController {
 
     @GetMapping("snapshot/basic-kpi")
     public ResponseEntity<List<FinalKpiSnapshot>> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period){
-        return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshot(kpiName, period));
+        return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period));
     }
+
+//    @GetMapping("worst-cells")
+//    public ResponseEntity<List<WorstCellKpiData>> getWorstCells(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
+//        return ResponseEntity.ok(lteFddKpiDayService.findWorstCellsByKpi(kpiName, period,count));
+//    }
+
+//    @GetMapping("worst-cells-with-pre")
+//    public ResponseEntity<List<WorstCellKpiDataCurrPre>> getWorstCellsWithPre(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
+//        return ResponseEntity.ok(lteFddKpiDayService.getWorstCellsByKpiWithPre(kpiName, period,count));
+//    }
 
     @GetMapping("worst-cells")
-    public ResponseEntity<List<WorstCellKpiData>> getWorstCells(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
-        return ResponseEntity.ok(lteFddKpiDayService.findWorstCellsByKpi(kpiName, period,count));
-    }
-
-    @GetMapping("worst-cells-with-pre")
-    public ResponseEntity<List<WorstCellKpiDataCurrPre>> getWorstCellsWithPre(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
-        return ResponseEntity.ok(lteFddKpiDayService.getWorstCellsByKpiWithPre(kpiName, period,count));
-    }
-
-    @GetMapping("worst-cells/final")
-    public ResponseEntity<List<FinalKpiSnapshot>> getWorstCellsWithPreFinal(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count,@RequestParam boolean isBasic){
-        return ResponseEntity.ok(lteFddKpiDayService.getFinalWorstCellsByKpi(kpiName, period,count,isBasic));
+    public ResponseEntity<List<FinalWorstCellData>> getWorstCellsByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
+        return ResponseEntity.ok(lteFddKpiDayService.getWorstCellsByKpi(kpiName, period,count));
     }
 }
