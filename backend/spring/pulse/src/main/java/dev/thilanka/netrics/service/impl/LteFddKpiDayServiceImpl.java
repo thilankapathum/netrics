@@ -240,7 +240,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
 
     @Override
-    public List<WorstCellKpiDataCurrPre> findWorstCellsByKpiWithPre(String basicKpiName, String period, int count) {
+    public List<WorstCellKpiDataCurrPre> getWorstCellsByKpiWithPre(String basicKpiName, String period, int count) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(basicKpiName);
         LocalDateTime timestamp = getLatestDate();
 
@@ -314,7 +314,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
         List<FinalKpiSnapshot> finalKpiSnapshots = new ArrayList<>();
-        List<WorstCellKpiDataCurrPre> worstCells = findWorstCellsByKpiWithPre(kpiName, period, count);
+        List<WorstCellKpiDataCurrPre> worstCells = getWorstCellsByKpiWithPre(kpiName, period, count);
 
         for (WorstCellKpiDataCurrPre worstCell : worstCells) {
             FinalKpiSnapshot finalKpiSnapshot = new FinalKpiSnapshot();
@@ -327,8 +327,9 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
                 finalKpiSnapshot.setValue(worstCell.getKpiValue());
                 finalKpiSnapshot.setPreviousValue(worstCell.getPreKpiValue());
             } else {
-                finalKpiSnapshot.setValue(worstCell.getCalculatedKpiValue());
-                finalKpiSnapshot.setPreviousValue(worstCell.getPreCalculatedKpiValue());
+                if (worstCell.getPreCalculatedKpiValue() == null) worstCell.setPreCalculatedKpiValue(0.0);
+                finalKpiSnapshot.setValue(worstCell.getCalculatedKpiValue() * 100.0);     //-- Make value a percentage
+                finalKpiSnapshot.setPreviousValue(worstCell.getPreCalculatedKpiValue() * 100.0);      //-- Make value a percentage
             }
 
             if (finalKpiSnapshot.getValue() == null) finalKpiSnapshot.setValue(0.0);

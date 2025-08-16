@@ -5,6 +5,6 @@ public record KpiDataDto(
         LocalDateTime timestamp,
         String cellName,
         String lteFddStandardKpi,
-        String kpiValue
+        Double kpiValue
 ) {
 }

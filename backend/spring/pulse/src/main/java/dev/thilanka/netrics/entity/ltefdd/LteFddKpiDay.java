@@ -24,9 +24,9 @@ public class LteFddKpiDay {
     private String cellName;
     private String siteName;
 
-    private String kpiValue;
-    private String numeratorKpiValue;
-    private String denominatorKpiValue;
+    private Double kpiValue;
+    private Double numeratorKpiValue;
+    private Double denominatorKpiValue;
 
     private String dataType;
     private String fileName;

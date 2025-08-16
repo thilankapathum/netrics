@@ -44,7 +44,7 @@ public class LteFddKpiDayController {
 
     @GetMapping("worst-cells-with-pre")
     public ResponseEntity<List<WorstCellKpiDataCurrPre>> getWorstCellsWithPre(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
-        return ResponseEntity.ok(lteFddKpiDayService.findWorstCellsByKpiWithPre(kpiName, period,count));
+        return ResponseEntity.ok(lteFddKpiDayService.getWorstCellsByKpiWithPre(kpiName, period,count));
     }
 
     @GetMapping("worst-cells/final")

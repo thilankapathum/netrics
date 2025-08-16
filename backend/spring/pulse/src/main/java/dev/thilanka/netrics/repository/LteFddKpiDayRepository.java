@@ -39,6 +39,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             "AND lte_fdd_standard_kpi_id = :standardKpiId", nativeQuery = true)
     Optional<KpiSnapshot> findLatestCalculatedSumKpiSnapshot(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period);
 
+
+
+
+
+
     //  -------------------------- WORST CELLS - START -----------------------------------------------------------------
 
     @Query(value = """
