@@ -23,12 +23,11 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
     @Override
     public List<LteFddStandardRawKpiMappingDto> getAll() {
         List<LteFddStandardRawKpiMapping> mappings = lteFddStandardRawKpiMappingRepository.findAll();
-        List<LteFddStandardRawKpiMappingDto> dtos = mappings
-                .stream()
-                .map(m -> mapper.lteFddStandardRawKpiMappingToDto(m))
-                .toList();
 
-        return dtos;
+        return mappings
+                .stream()
+                .map(mapper::lteFddStandardRawKpiMappingToDto)
+                .toList();
     }
 
     @Override
@@ -45,8 +44,7 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
                 .build();
 
         LteFddStandardRawKpiMapping savedMapping = lteFddStandardRawKpiMappingRepository.save(mapping);
-        LteFddStandardRawKpiMappingDto savedDto = mapper.lteFddStandardRawKpiMappingToDto(savedMapping);
-        return savedDto;
+        return mapper.lteFddStandardRawKpiMappingToDto(savedMapping);
     }
 
     @Override

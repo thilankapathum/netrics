@@ -20,12 +20,11 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     @Override
     public List<LteFddStandardKpiDto> getAll() {
         List<LteFddStandardKpi> kpis = lteFddStandardKpiRepository.findAll();
-        List<LteFddStandardKpiDto> kpiDtos = kpis
-                .stream()
-                .map(k -> mapper.lteFddStandardKpiToDto(k))
-                .toList();
 
-        return kpiDtos;
+        return kpis
+                .stream()
+                .map(mapper::lteFddStandardKpiToDto)
+                .toList();
     }
 
     @Override
@@ -48,9 +47,8 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
 
     @Override
     public LteFddStandardKpi findByKpiName(String kpiName) {
-        LteFddStandardKpi standardKpi = lteFddStandardKpiRepository
+        return lteFddStandardKpiRepository
                 .findByKpiName(kpiName)
                 .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
-        return standardKpi;
     }
 }

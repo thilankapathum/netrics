@@ -13,24 +13,23 @@ public class Mapper {
 // ----- OSS -----
 
     public OssDto ossToDto(Oss oss) {
-        OssDto ossDto = new OssDto(oss.getOssName(), oss.getIdentifier(), oss.getVendor());
-        return ossDto;
+        return new OssDto(oss.getOssName(), oss.getIdentifier(), oss.getVendor());
     }
 
     public Oss ossDtoToOss(OssDto ossDto) {
-        Oss oss = Oss.builder()
+        return Oss.builder()
                 .ossName(ossDto.ossName())
                 .vendor(ossDto.vendor())
                 .identifier(ossDto.identifier())
                 .build();
-        return oss;
     }
 
 
 // ----- LteFddStandardKpi -----
 
     public LteFddStandardKpiDto lteFddStandardKpiToDto(LteFddStandardKpi lteFddStandardKpi) {
-        LteFddStandardKpiDto lteFddStandardKpiDto = new LteFddStandardKpiDto(
+
+        return new LteFddStandardKpiDto(
                 lteFddStandardKpi.getKpiName(),
                 lteFddStandardKpi.getLabel(),
                 lteFddStandardKpi.getUnit(),
@@ -38,12 +37,11 @@ public class Mapper {
                 lteFddStandardKpi.getWorstOrder(),
                 lteFddStandardKpi.getThreshold(),
                 lteFddStandardKpi.getAggregation());
-
-        return lteFddStandardKpiDto;
     }
 
     public LteFddStandardKpi toLteFddStandardKpi(LteFddStandardKpiDto lteFddStandardKpiDto) {
-        LteFddStandardKpi lteFddStandardKpi = LteFddStandardKpi
+
+        return LteFddStandardKpi
                 .builder()
                 .kpiName(lteFddStandardKpiDto.kpiName())
                 .label(lteFddStandardKpiDto.label())
@@ -52,61 +50,54 @@ public class Mapper {
                 .worstOrder(lteFddStandardKpiDto.worstOrder())
                 .threshold(lteFddStandardKpiDto.threshold())
                 .build();
-
-        return lteFddStandardKpi;
     }
 
 // ----- LteFddKpiMappingToOss -----
 
     public LteFddKpiMappingToOssDto LteFddKpiMappingToDto(LteFddKpiMappingToOss mapping) {
-        LteFddKpiMappingToOssDto dto = new LteFddKpiMappingToOssDto(
+
+        return new LteFddKpiMappingToOssDto(
                 mapping.getOssKpiName(),
                 mapping.getMultiplicationFactor(),
                 mapping.getOss().getIdentifier(),
                 mapping.getLteFddStandardKpi().getKpiName());
-
-        return dto;
     }
 
 // ----- WorstCellKpiData -----
 
     public KpiDataDto LteFddKpiDayToKpiDataDto(LteFddKpiDay kpiDay) {
-        KpiDataDto kpiDataDto = new KpiDataDto(
+
+        return new KpiDataDto(
                 kpiDay.getTimestamp(),
                 kpiDay.getCellName(),
                 kpiDay.getLteFddStandardKpi().getKpiName(),
                 kpiDay.getKpiValue()
         );
-
-        return kpiDataDto;
     }
 
     // ----- LteFddStandardRawKpiMapping -----
 
     public LteFddStandardRawKpiMappingDto lteFddStandardRawKpiMappingToDto(LteFddStandardRawKpiMapping mapping) {
-        LteFddStandardRawKpiMappingDto dto = new LteFddStandardRawKpiMappingDto(
+
+        return new LteFddStandardRawKpiMappingDto(
                 mapping.getStandardKpi().getKpiName(),
                 mapping.getNumerator().getKpiName(),
                 mapping.getDenominator().getKpiName()
         );
-
-        return dto;
     }
 
 // ----- LteFddBasicKpi -----
 
     public LteFddBasicKpi toLteFddBasicKpi(LteFddBasicKpiDto dto) {
-        LteFddBasicKpi basicKpi = LteFddBasicKpi.builder()
+        return LteFddBasicKpi.builder()
                 .kpiName(dto.kpiName())
                 .label(dto.label())
                 .worstOrder(dto.worstOrder())
                 .threshold(dto.threshold())
                 .build();
-        return basicKpi;
     }
 
     public LteFddBasicKpiDto lteFddBasicKpiToDto(LteFddBasicKpi kpi) {
-        LteFddBasicKpiDto dto = new LteFddBasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold());
-        return dto;
+        return new LteFddBasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold());
     }
 }

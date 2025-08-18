@@ -6,7 +6,6 @@ import dev.thilanka.netrics.entity.ltefdd.*;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddBasicKpiRepository;
 import dev.thilanka.netrics.repository.LteFddKpiDayRepository;
-import dev.thilanka.netrics.repository.LteFddStandardKpiRepository;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,6 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     private final LteFddKpiDayRepository lteFddKpiDayRepository;
     private final LteFddStandardKpiService lteFddStandardKpiService;
     private final LteFddBasicKpiRepository lteFddBasicKpiRepository;
-    private final LteFddStandardKpiRepository lteFddStandardKpiRepository;
     private final Mapper mapper;
 
     private static boolean checkImproved(String worstOrder, Double difference) {
@@ -238,7 +236,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     public List<WorstCell> getWorstCellsByKpi(String kpiName, String period, int count) {
 
-        //-- GET WORST CELLS WITH CELL-NAME, LABEL, VALUE, PRE-VALUE, DIFFERENCE, IMPROVED & IS-BASIC
+        //-- GET WORST CELLS WITH CELL-NAME, LABEL, VALUE, PRE-VALUE, DIFFERENCE, IMPROVED
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
 //        List<KpiSnapshot> finalKpiSnapshots = new ArrayList<>();

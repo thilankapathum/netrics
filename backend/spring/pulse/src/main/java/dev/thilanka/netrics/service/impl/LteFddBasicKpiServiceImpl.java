@@ -19,12 +19,11 @@ public class LteFddBasicKpiServiceImpl implements LteFddBasicKpiService {
     @Override
     public List<LteFddBasicKpiDto> getAll() {
         List<LteFddBasicKpi> kpis = lteFddBasicKpiRepository.findAll();
-        List<LteFddBasicKpiDto> dtos = kpis
-                .stream()
-                .map(k -> mapper.lteFddBasicKpiToDto(k))
-                .toList();
 
-        return dtos;
+        return kpis
+                .stream()
+                .map(mapper::lteFddBasicKpiToDto)
+                .toList();
     }
 
     @Override

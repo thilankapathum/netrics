@@ -26,12 +26,11 @@ public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssSe
     @Override
     public List<LteFddKpiMappingToOssDto> getAll() {
         List<LteFddKpiMappingToOss> kpi = lteFddKpiMappingRepository.findAll();
-        List<LteFddKpiMappingToOssDto> dtos = kpi
-                .stream()
-                .map(k -> mapper.LteFddKpiMappingToDto(k))
-                .toList();
 
-        return dtos;
+        return kpi
+                .stream()
+                .map(mapper::LteFddKpiMappingToDto)
+                .toList();
     }
 
     @Override
@@ -53,9 +52,7 @@ public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssSe
 
         LteFddKpiMappingToOss savedMapping = lteFddKpiMappingRepository.save(lteFddKpiMappingToOss);
 
-        LteFddKpiMappingToOssDto savedDto = mapper.LteFddKpiMappingToDto(savedMapping);
-
-        return savedDto;
+        return mapper.LteFddKpiMappingToDto(savedMapping);
     }
 
     @Override
