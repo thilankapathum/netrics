@@ -1,5 +1,7 @@
 package dev.thilanka.netrics.repository;
 
+import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.entity.KpiData;
 import dev.thilanka.netrics.entity.KpiSnapshotCurrentPre;
 import dev.thilanka.netrics.entity.WorstCellCurrentPre;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
@@ -216,69 +218,31 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
     List<WorstCellCurrentPre> findWorstCellsWithPrevSumDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
 
 
-    //  -------------------------- WORST CELLS - START -----------------------------------------------------------------
+    // ----------------------------- KPI DATA BY CELL AND KPI ----------------------------------------------------------
 
 //    @Query(value = """
-//            SELECT cell_name, lte_fdd_standard_kpi.label label,
-//            AVG(kpi_value) kpi_value,
-//            (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
+//            SELECT timestamp, cell_name,  lte_fdd_standard_kpi.label label, kpi_value
 //            FROM lte_fdd_kpi_day
 //            LEFT JOIN lte_fdd_standard_kpi
-//            ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
+//            	ON lte_fdd_standard_kpi.id = lte_fdd_kpi_day.lte_fdd_standard_kpi_id
 //            WHERE lte_fdd_standard_kpi_id = :standardKpiId
+//            	AND cell_name = :cellName
 //            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//            AND (:timestamp)
-//            GROUP BY cell_name
-//            ORDER BY calculated_kpi_value DESC
-//            LIMIT :count""", nativeQuery = true)
-//    List<WorstCellKpiData> findWorstCellsByKpiAvgDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("count") int count);
-//
-//    @Query(value = """
-//            SELECT cell_name, lte_fdd_standard_kpi.label label,
-//            AVG(kpi_value) kpi_value,
-//            (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
-//            FROM lte_fdd_kpi_day
-//            LEFT JOIN lte_fdd_standard_kpi
-//            ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
-//            WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//            AND (:timestamp)
-//            GROUP BY cell_name
-//            ORDER BY calculated_kpi_value ASC
-//            LIMIT :count""", nativeQuery = true)
-//    List<WorstCellKpiData> findWorstCellsByKpiAvgAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("count") int count);
-//
-//    @Query(value = """
-//            SELECT cell_name, lte_fdd_standard_kpi.label label,
-//            SUM(kpi_value) kpi_value,
-//            (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
-//            FROM lte_fdd_kpi_day
-//            LEFT JOIN lte_fdd_standard_kpi
-//            ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
-//            WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//            AND (:timestamp)
-//            GROUP BY cell_name
-//            ORDER BY calculated_kpi_value DESC
-//            LIMIT :count""", nativeQuery = true)
-//    List<WorstCellKpiData> findWorstCellsByKpiSumDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("count") int count);
-//
-//    @Query(value = """
-//            SELECT cell_name, lte_fdd_standard_kpi.label label,
-//            SUM(kpi_value) kpi_value,
-//            (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
-//            FROM lte_fdd_kpi_day
-//            LEFT JOIN lte_fdd_standard_kpi
-//            ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
-//            WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//            AND (:timestamp)
-//            GROUP BY cell_name
-//            ORDER BY calculated_kpi_value ASC
-//            LIMIT :count""", nativeQuery = true)
-//    List<WorstCellKpiData> findWorstCellsByKpiSumAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("count") int count);
+//                    AND (:timestamp)
+//            """, nativeQuery = true)
+//    List<KpiDataDto> findDataByKpiAndCel(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("cellName") String cellName);
 
-    //  -------------------------- WORST CELLS - END -------------------------------------------------------------------
 
+    @Query(value = """
+            SELECT timestamp, cell_name,  lte_fdd_standard_kpi.label label, kpi_value
+            FROM lte_fdd_kpi_day
+            LEFT JOIN lte_fdd_standard_kpi
+            	ON lte_fdd_standard_kpi.id = lte_fdd_kpi_day.lte_fdd_standard_kpi_id
+            WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            	AND cell_name = :cellName
+            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                    AND (:timestamp)
+            """, nativeQuery = true)
+    List<KpiData> findDataByKpiAndCell(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("cellName") String cellName);
 
 }

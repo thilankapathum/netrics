@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
-import dev.thilanka.netrics.dto.LteFddBasicKpiDto;
+import dev.thilanka.netrics.dto.BasicKpiDto;
 import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddBasicKpiRepository;
@@ -17,7 +17,7 @@ public class LteFddBasicKpiServiceImpl implements LteFddBasicKpiService {
     private final Mapper mapper;
 
     @Override
-    public List<LteFddBasicKpiDto> getAll() {
+    public List<BasicKpiDto> getAll() {
         List<LteFddBasicKpi> kpis = lteFddBasicKpiRepository.findAll();
 
         return kpis
@@ -27,7 +27,7 @@ public class LteFddBasicKpiServiceImpl implements LteFddBasicKpiService {
     }
 
     @Override
-    public LteFddBasicKpiDto createBasicKpi(LteFddBasicKpiDto dto) {
+    public BasicKpiDto createBasicKpi(BasicKpiDto dto) {
         LteFddBasicKpi kpi = mapper.toLteFddBasicKpi(dto);
         LteFddBasicKpi savedKpi = lteFddBasicKpiRepository.save(kpi);
         return mapper.lteFddBasicKpiToDto(savedKpi);

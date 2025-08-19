@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 public record KpiDataDto(
         LocalDateTime timestamp,
         String cellName,
-        String lteFddStandardKpi,
+        String kpiLabel,
         Double kpiValue
 ) {
 }

@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
-import dev.thilanka.netrics.dto.LteFddStandardKpiDto;
+import dev.thilanka.netrics.dto.StandardKpiDto;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddStandardKpiRepository;
@@ -18,7 +18,7 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     private final Mapper mapper;
 
     @Override
-    public List<LteFddStandardKpiDto> getAll() {
+    public List<StandardKpiDto> getAll() {
         List<LteFddStandardKpi> kpis = lteFddStandardKpiRepository.findAll();
 
         return kpis
@@ -28,18 +28,18 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     }
 
     @Override
-    public LteFddStandardKpiDto createKpi(LteFddStandardKpiDto kpiDto) {
+    public StandardKpiDto createKpi(StandardKpiDto kpiDto) {
         LteFddStandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
         LteFddStandardKpi savedKpi = lteFddStandardKpiRepository.save(kpi);
         return mapper.lteFddStandardKpiToDto(savedKpi);
     }
 
     @Override
-    public List<LteFddStandardKpiDto> createKpis(List<LteFddStandardKpiDto> dtos) {
+    public List<StandardKpiDto> createKpis(List<StandardKpiDto> dtos) {
 
-        List<LteFddStandardKpiDto> dtoList = new ArrayList<>();
+        List<StandardKpiDto> dtoList = new ArrayList<>();
 
-        for (LteFddStandardKpiDto dto : dtos){
+        for (StandardKpiDto dto : dtos){
             dtoList.add(createKpi(dto));
         }
         return dtoList;

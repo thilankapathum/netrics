@@ -1,14 +1,14 @@
 package dev.thilanka.netrics.service;
 
-import dev.thilanka.netrics.dto.LteFddKpiMappingToOssDto;
+import dev.thilanka.netrics.dto.KpiMappingToOssDto;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
 public interface LteFddKpiMappingToOssService {
-    List<LteFddKpiMappingToOssDto> getAll();
+    List<KpiMappingToOssDto> getAll();
 
-    LteFddKpiMappingToOssDto createLteFddKpiMapping(@Valid LteFddKpiMappingToOssDto dto);
+    KpiMappingToOssDto createLteFddKpiMapping(@Valid KpiMappingToOssDto dto);
 
-    List<LteFddKpiMappingToOssDto> createLteFddKpiMappingList(@Valid List<LteFddKpiMappingToOssDto> dtos);
+    List<KpiMappingToOssDto> createLteFddKpiMappingList(@Valid List<KpiMappingToOssDto> dtos);
 }

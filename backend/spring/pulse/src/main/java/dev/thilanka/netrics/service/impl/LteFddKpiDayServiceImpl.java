@@ -157,6 +157,8 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         return kpiSnapshots;
     }
 
+
+
     //------------------------------- KPI-SNAPSHOT END -----------------------------------------------------------------
 
     // ------------------------------ WORST-CELLS START ----------------------------------------------------------------
@@ -283,6 +285,41 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     // ------------------------------ WORST-CELLS END ------------------------------------------------------------------
 
 
+
+    // ------------------------------ CELL KPI - START -----------------------------------------------------------------
+
+    @Override
+    public List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period) {
+
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
+        LocalDateTime timestamp = getLatestDate();
+        List<KpiData> kpiData = new ArrayList<>();
+
+        switch (period) {
+            case "day" -> {
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,0L,cellName );
+            }
+            case "week" -> {
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,6L,cellName );
+            }
+            case "month" -> {
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,29L,cellName );
+            }
+            case "quarter" -> {
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,89L,cellName );
+            }
+            case null, default -> {
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,30L,cellName );
+            }
+        }
+
+
+        return kpiData.stream()
+                .map(mapper::kpiDataToDto)
+                .toList();
+    }
+
+    // ------------------------------ CELL KPI - END -------------------------------------------------------------------
     @Override
     public List<KpiDataDto> findAll() {
         List<LteFddKpiDay> lteFddKpiDays = lteFddKpiDayRepository.findAll();

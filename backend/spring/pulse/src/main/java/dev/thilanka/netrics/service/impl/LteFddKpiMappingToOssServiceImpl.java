@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
-import dev.thilanka.netrics.dto.LteFddKpiMappingToOssDto;
+import dev.thilanka.netrics.dto.KpiMappingToOssDto;
 import dev.thilanka.netrics.entity.Oss;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiMappingToOss;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
@@ -24,7 +24,7 @@ public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssSe
     private final Mapper mapper;
 
     @Override
-    public List<LteFddKpiMappingToOssDto> getAll() {
+    public List<KpiMappingToOssDto> getAll() {
         List<LteFddKpiMappingToOss> kpi = lteFddKpiMappingRepository.findAll();
 
         return kpi
@@ -34,14 +34,14 @@ public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssSe
     }
 
     @Override
-    public LteFddKpiMappingToOssDto createLteFddKpiMapping(LteFddKpiMappingToOssDto dto) {
+    public KpiMappingToOssDto createLteFddKpiMapping(KpiMappingToOssDto dto) {
 
         Oss oss = ossRepository.findByIdentifier(dto.ossIdentifier())
                 .orElseThrow(() -> new RuntimeException("OSS not found by: " + dto.ossIdentifier()));
 
         LteFddStandardKpi lteFddStandardKpi = lteFddStandardKpiRepository
-                .findByKpiName(dto.lteFddStandardKpi())
-                .orElseThrow(() -> new RuntimeException("KPI not found by: " + dto.lteFddStandardKpi()));
+                .findByKpiName(dto.standardKpi())
+                .orElseThrow(() -> new RuntimeException("KPI not found by: " + dto.standardKpi()));
 
         LteFddKpiMappingToOss lteFddKpiMappingToOss = LteFddKpiMappingToOss.builder()
                 .lteFddStandardKpi(lteFddStandardKpi)
@@ -56,11 +56,11 @@ public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssSe
     }
 
     @Override
-    public List<LteFddKpiMappingToOssDto> createLteFddKpiMappingList(List<LteFddKpiMappingToOssDto> dtos) {
+    public List<KpiMappingToOssDto> createLteFddKpiMappingList(List<KpiMappingToOssDto> dtos) {
 
-        List<LteFddKpiMappingToOssDto> dtoList = new ArrayList<>();
+        List<KpiMappingToOssDto> dtoList = new ArrayList<>();
 
-        for (LteFddKpiMappingToOssDto dto : dtos){
+        for (KpiMappingToOssDto dto : dtos){
             dtoList.add(createLteFddKpiMapping(dto));
         }
         return dtoList;

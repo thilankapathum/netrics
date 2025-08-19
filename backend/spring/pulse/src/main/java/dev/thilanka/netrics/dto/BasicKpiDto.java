@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.dto;
 
-public record LteFddBasicKpiDto(
+public record BasicKpiDto(
         String kpiName,
         String label,
         String worstOrder,

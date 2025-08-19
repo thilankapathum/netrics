@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.mapper;
 
 import dev.thilanka.netrics.dto.*;
+import dev.thilanka.netrics.entity.KpiData;
 import dev.thilanka.netrics.entity.Oss;
 import dev.thilanka.netrics.entity.ltefdd.*;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +28,9 @@ public class Mapper {
 
 // ----- LteFddStandardKpi -----
 
-    public LteFddStandardKpiDto lteFddStandardKpiToDto(LteFddStandardKpi lteFddStandardKpi) {
+    public StandardKpiDto lteFddStandardKpiToDto(LteFddStandardKpi lteFddStandardKpi) {
 
-        return new LteFddStandardKpiDto(
+        return new StandardKpiDto(
                 lteFddStandardKpi.getKpiName(),
                 lteFddStandardKpi.getLabel(),
                 lteFddStandardKpi.getUnit(),
@@ -39,31 +40,31 @@ public class Mapper {
                 lteFddStandardKpi.getAggregation());
     }
 
-    public LteFddStandardKpi toLteFddStandardKpi(LteFddStandardKpiDto lteFddStandardKpiDto) {
+    public LteFddStandardKpi toLteFddStandardKpi(StandardKpiDto standardKpiDto) {
 
         return LteFddStandardKpi
                 .builder()
-                .kpiName(lteFddStandardKpiDto.kpiName())
-                .label(lteFddStandardKpiDto.label())
-                .unit(lteFddStandardKpiDto.unit())
-                .type(lteFddStandardKpiDto.type())
-                .worstOrder(lteFddStandardKpiDto.worstOrder())
-                .threshold(lteFddStandardKpiDto.threshold())
+                .kpiName(standardKpiDto.kpiName())
+                .label(standardKpiDto.label())
+                .unit(standardKpiDto.unit())
+                .type(standardKpiDto.type())
+                .worstOrder(standardKpiDto.worstOrder())
+                .threshold(standardKpiDto.threshold())
                 .build();
     }
 
 // ----- LteFddKpiMappingToOss -----
 
-    public LteFddKpiMappingToOssDto LteFddKpiMappingToDto(LteFddKpiMappingToOss mapping) {
+    public KpiMappingToOssDto LteFddKpiMappingToDto(LteFddKpiMappingToOss mapping) {
 
-        return new LteFddKpiMappingToOssDto(
+        return new KpiMappingToOssDto(
                 mapping.getOssKpiName(),
                 mapping.getMultiplicationFactor(),
                 mapping.getOss().getIdentifier(),
                 mapping.getLteFddStandardKpi().getKpiName());
     }
 
-// ----- WorstCellKpiData -----
+// ----- CellKpiData -----
 
     public KpiDataDto LteFddKpiDayToKpiDataDto(LteFddKpiDay kpiDay) {
 
@@ -77,9 +78,9 @@ public class Mapper {
 
     // ----- LteFddStandardRawKpiMapping -----
 
-    public LteFddStandardRawKpiMappingDto lteFddStandardRawKpiMappingToDto(LteFddStandardRawKpiMapping mapping) {
+    public StandardRawKpiMappingDto lteFddStandardRawKpiMappingToDto(LteFddStandardRawKpiMapping mapping) {
 
-        return new LteFddStandardRawKpiMappingDto(
+        return new StandardRawKpiMappingDto(
                 mapping.getStandardKpi().getKpiName(),
                 mapping.getNumerator().getKpiName(),
                 mapping.getDenominator().getKpiName()
@@ -88,7 +89,7 @@ public class Mapper {
 
 // ----- LteFddBasicKpi -----
 
-    public LteFddBasicKpi toLteFddBasicKpi(LteFddBasicKpiDto dto) {
+    public LteFddBasicKpi toLteFddBasicKpi(BasicKpiDto dto) {
         return LteFddBasicKpi.builder()
                 .kpiName(dto.kpiName())
                 .label(dto.label())
@@ -97,7 +98,14 @@ public class Mapper {
                 .build();
     }
 
-    public LteFddBasicKpiDto lteFddBasicKpiToDto(LteFddBasicKpi kpi) {
-        return new LteFddBasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold());
+    public BasicKpiDto lteFddBasicKpiToDto(LteFddBasicKpi kpi) {
+        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold());
     }
+
+//-------- KpiData KpiDataDto -----------------------------------
+
+    public KpiDataDto kpiDataToDto(KpiData kpiData){
+        return new KpiDataDto(kpiData.getTimestamp().toLocalDateTime(), kpiData.getCellName(), kpiData.getKpiLabel(), kpiData.getKpiValue());
+    }
+
 }

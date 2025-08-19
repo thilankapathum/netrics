@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.dto;
 
-public record LteFddStandardRawKpiMappingDto(
+public record StandardRawKpiMappingDto(
         String standardKpi,
         String numerator,
         String denominator

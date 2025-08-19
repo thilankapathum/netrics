@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.controller;
 
-import dev.thilanka.netrics.dto.LteFddStandardRawKpiMappingDto;
+import dev.thilanka.netrics.dto.StandardRawKpiMappingDto;
 import dev.thilanka.netrics.service.LteFddStandardRawKpiMappingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,20 +17,20 @@ public class LteFddStandardRawKpiMappingController {
     private final LteFddStandardRawKpiMappingService lteFddStandardRawKpiMappingService;
 
     @GetMapping
-    ResponseEntity<List<LteFddStandardRawKpiMappingDto>> getAll(){
-        List<LteFddStandardRawKpiMappingDto> dtos = lteFddStandardRawKpiMappingService.getAll();
+    ResponseEntity<List<StandardRawKpiMappingDto>> getAll(){
+        List<StandardRawKpiMappingDto> dtos = lteFddStandardRawKpiMappingService.getAll();
         return ResponseEntity.ok(dtos);
     }
 
     @PostMapping
-    ResponseEntity<LteFddStandardRawKpiMappingDto> createLteFddStandardKpiMapping(@RequestBody @Valid LteFddStandardRawKpiMappingDto dto){
-        LteFddStandardRawKpiMappingDto savedDto = lteFddStandardRawKpiMappingService.createMapping(dto);
+    ResponseEntity<StandardRawKpiMappingDto> createLteFddStandardKpiMapping(@RequestBody @Valid StandardRawKpiMappingDto dto){
+        StandardRawKpiMappingDto savedDto = lteFddStandardRawKpiMappingService.createMapping(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
 
     @PostMapping("list")
-    ResponseEntity<List<LteFddStandardRawKpiMappingDto>> createLteFddStandardKpiMappingList(@RequestBody @Valid List<LteFddStandardRawKpiMappingDto> dtos){
-        List<LteFddStandardRawKpiMappingDto> savedDtos = lteFddStandardRawKpiMappingService.createMappingList(dtos);
+    ResponseEntity<List<StandardRawKpiMappingDto>> createLteFddStandardKpiMappingList(@RequestBody @Valid List<StandardRawKpiMappingDto> dtos){
+        List<StandardRawKpiMappingDto> savedDtos = lteFddStandardRawKpiMappingService.createMappingList(dtos);
         return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
     }
 }

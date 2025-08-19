@@ -1,14 +1,14 @@
 package dev.thilanka.netrics.service;
 
-import dev.thilanka.netrics.dto.LteFddStandardRawKpiMappingDto;
+import dev.thilanka.netrics.dto.StandardRawKpiMappingDto;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
 public interface LteFddStandardRawKpiMappingService {
-    List<LteFddStandardRawKpiMappingDto> getAll();
+    List<StandardRawKpiMappingDto> getAll();
 
-    LteFddStandardRawKpiMappingDto createMapping(LteFddStandardRawKpiMappingDto dto);
+    StandardRawKpiMappingDto createMapping(StandardRawKpiMappingDto dto);
 
-    List<LteFddStandardRawKpiMappingDto> createMappingList(@Valid List<LteFddStandardRawKpiMappingDto> dtos);
+    List<StandardRawKpiMappingDto> createMappingList(@Valid List<StandardRawKpiMappingDto> dtos);
 }

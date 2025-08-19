@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
-import dev.thilanka.netrics.dto.LteFddStandardRawKpiMappingDto;
+import dev.thilanka.netrics.dto.StandardRawKpiMappingDto;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardRawKpiMapping;
 import dev.thilanka.netrics.mapper.Mapper;
@@ -21,7 +21,7 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
     private final LteFddStandardKpiService lteFddStandardKpiService;
 
     @Override
-    public List<LteFddStandardRawKpiMappingDto> getAll() {
+    public List<StandardRawKpiMappingDto> getAll() {
         List<LteFddStandardRawKpiMapping> mappings = lteFddStandardRawKpiMappingRepository.findAll();
 
         return mappings
@@ -31,7 +31,7 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
     }
 
     @Override
-    public LteFddStandardRawKpiMappingDto createMapping(LteFddStandardRawKpiMappingDto dto) {
+    public StandardRawKpiMappingDto createMapping(StandardRawKpiMappingDto dto) {
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(dto.standardKpi());
         LteFddStandardKpi numerator = lteFddStandardKpiService.findByKpiName(dto.numerator());
@@ -48,11 +48,11 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
     }
 
     @Override
-    public List<LteFddStandardRawKpiMappingDto> createMappingList(List<LteFddStandardRawKpiMappingDto> dtos) {
+    public List<StandardRawKpiMappingDto> createMappingList(List<StandardRawKpiMappingDto> dtos) {
 
-        List<LteFddStandardRawKpiMappingDto> savedDtos = new ArrayList<>();
+        List<StandardRawKpiMappingDto> savedDtos = new ArrayList<>();
 
-        for (LteFddStandardRawKpiMappingDto dto: dtos){
+        for (StandardRawKpiMappingDto dto: dtos){
             savedDtos.add(createMapping(dto));
         }
 

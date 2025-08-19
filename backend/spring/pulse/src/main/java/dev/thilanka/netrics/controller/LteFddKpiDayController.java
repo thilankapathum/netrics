@@ -34,4 +34,10 @@ public class LteFddKpiDayController {
     public ResponseEntity<List<WorstCell>> getWorstCellsByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
         return ResponseEntity.ok(lteFddKpiDayService.getWorstCellsByKpi(kpiName, period,count));
     }
+
+    @GetMapping("cell")
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period){
+        List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiAndCell(kpiName, cellName, period);
+        return ResponseEntity.ok(kpiDataDtos);
+    }
 }

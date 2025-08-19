@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.controller;
 
-import dev.thilanka.netrics.dto.LteFddBasicKpiDto;
+import dev.thilanka.netrics.dto.BasicKpiDto;
 import dev.thilanka.netrics.service.LteFddBasicKpiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +17,14 @@ public class LteFddBasicKpiController {
     private final LteFddBasicKpiService lteFddBasicKpiService;
 
     @GetMapping
-    ResponseEntity<List<LteFddBasicKpiDto>> getAll(){
-        List<LteFddBasicKpiDto> dtos = lteFddBasicKpiService.getAll();
+    ResponseEntity<List<BasicKpiDto>> getAll(){
+        List<BasicKpiDto> dtos = lteFddBasicKpiService.getAll();
         return ResponseEntity.ok(dtos);
     }
 
     @PostMapping
-    ResponseEntity<LteFddBasicKpiDto> createBasicKpi(@RequestBody @Valid LteFddBasicKpiDto dto){
-        LteFddBasicKpiDto savedDto = lteFddBasicKpiService.createBasicKpi(dto);
+    ResponseEntity<BasicKpiDto> createBasicKpi(@RequestBody @Valid BasicKpiDto dto){
+        BasicKpiDto savedDto = lteFddBasicKpiService.createBasicKpi(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
 }

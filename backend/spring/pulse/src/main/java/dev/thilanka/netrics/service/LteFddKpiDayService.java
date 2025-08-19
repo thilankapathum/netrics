@@ -12,4 +12,6 @@ public interface LteFddKpiDayService {
 
     List<KpiSnapshot> getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period);
 
+    List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period);
+
 }

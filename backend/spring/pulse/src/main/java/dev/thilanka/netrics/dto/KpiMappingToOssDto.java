@@ -1,9 +1,9 @@
 package dev.thilanka.netrics.dto;
 
-public record LteFddKpiMappingToOssDto(
+public record KpiMappingToOssDto(
         String ossKpiName,
         Double multiplicationFactor,  //-- Setting default multiplication factor
         String ossIdentifier,
-        String lteFddStandardKpi
+        String standardKpi
         ) {
 }
