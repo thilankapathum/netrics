@@ -142,21 +142,42 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         basicKpiSnapshot.setValue(1.0);
         basicKpiSnapshot.setPreviousValue(1.0);
 
-        //-- Calculate Value & Pre-Value by multiplying component Standard-KPI values. [IMPORTANT: Assume component Standard-KPI are percentages]
-        for (KpiSnapshot snapshot : kpiSnapshots) {
-            basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue() / 100.0);
-            basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * snapshot.getPreviousValue() / 100.0);
+        if (Objects.equals(basicKpi.getAggregation(), "MULTIPLY")) {
+            //-- Calculate Value & Pre-Value by multiplying component Standard-KPI values. [IMPORTANT: Assume component Standard-KPI are percentages]
+            for (KpiSnapshot snapshot : kpiSnapshots) {
+                basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue() / 100.0);
+                basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * snapshot.getPreviousValue() / 100.0);
+            }
+            basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * 100.0); //-- To avoid presenting decimals as percentages
+            basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * 100.0); //-- To avoid presenting decimals as percentages
+
+            basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
+            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
+
+            kpiSnapshots.add(basicKpiSnapshot);
+        } else if (Objects.equals(basicKpi.getAggregation(), "SUM")){
+
+            //-- Calculate Value & Pre-Value by adding component Standard-KPI values.
+            for (KpiSnapshot snapshot : kpiSnapshots) {
+                basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() + snapshot.getValue());
+                basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() + snapshot.getPreviousValue());
+            }
+
+            basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
+            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
+
+            kpiSnapshots.add(basicKpiSnapshot);
+        } else {
+            basicKpiSnapshot.setValue(null);
+            basicKpiSnapshot.setPreviousValue(null);
+            basicKpiSnapshot.setDifference(null);
+            basicKpiSnapshot.setImproved(false);
+
+            kpiSnapshots.add(basicKpiSnapshot);
         }
-        basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * 100.0); //-- To avoid presenting decimals as percentages
-        basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * 100.0); //-- To avoid presenting decimals as percentages
 
-        basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
-        basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
-
-        kpiSnapshots.add(basicKpiSnapshot);
         return kpiSnapshots;
     }
-
 
 
     //------------------------------- KPI-SNAPSHOT END -----------------------------------------------------------------
@@ -285,7 +306,6 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     // ------------------------------ WORST-CELLS END ------------------------------------------------------------------
 
 
-
     // ------------------------------ CELL KPI - START -----------------------------------------------------------------
 
     @Override
@@ -297,22 +317,21 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
         switch (period) {
             case "day" -> {
-                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,0L,cellName );
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, 0L, cellName);
             }
             case "week" -> {
-                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,6L,cellName );
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, 6L, cellName);
             }
             case "month" -> {
-                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,29L,cellName );
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, 29L, cellName);
             }
             case "quarter" -> {
-                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,89L,cellName );
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, 89L, cellName);
             }
             case null, default -> {
-                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp,30L,cellName );
+                kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, 30L, cellName);
             }
         }
-
 
         return kpiData.stream()
                 .map(mapper::kpiDataToDto)

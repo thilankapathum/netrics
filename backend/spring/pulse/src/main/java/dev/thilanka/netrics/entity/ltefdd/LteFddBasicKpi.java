@@ -23,6 +23,7 @@ public class LteFddBasicKpi {
     private String label;
     private String worstOrder;
     private Double threshold;
+    private String aggregation;
 
     @OneToMany(mappedBy = "lteFddBasicKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddStandardKpi> lteFddStandardKpis;
