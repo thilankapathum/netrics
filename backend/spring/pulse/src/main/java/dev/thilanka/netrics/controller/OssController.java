@@ -27,4 +27,10 @@ public class OssController {
         OssDto savedOssDto = ossService.createOss(ossDto);
         return new ResponseEntity<>(savedOssDto, HttpStatus.CREATED);
     }
+
+    @PostMapping("list")
+    public ResponseEntity<List<OssDto>> createMultipleOss(@RequestBody @Valid List<OssDto> ossDtos){
+        List<OssDto> savedOssDtos = ossService.createMultipleOss(ossDtos);
+        return new ResponseEntity<>(savedOssDtos,HttpStatus.CREATED);
+    }
 }

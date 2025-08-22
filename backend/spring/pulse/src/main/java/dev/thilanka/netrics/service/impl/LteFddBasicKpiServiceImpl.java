@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,5 +32,12 @@ public class LteFddBasicKpiServiceImpl implements LteFddBasicKpiService {
         LteFddBasicKpi kpi = mapper.toLteFddBasicKpi(dto);
         LteFddBasicKpi savedKpi = lteFddBasicKpiRepository.save(kpi);
         return mapper.lteFddBasicKpiToDto(savedKpi);
+    }
+
+    @Override
+    public LteFddBasicKpi findByKpiName(String kpiName) {
+        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(kpiName)
+                .orElseThrow(()-> new RuntimeException("Basic KPI not found by: " + kpiName));
+        return basicKpi;
     }
 }

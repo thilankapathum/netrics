@@ -30,6 +30,10 @@ public class Mapper {
 
     public StandardKpiDto lteFddStandardKpiToDto(LteFddStandardKpi lteFddStandardKpi) {
 
+        String basicKpi = "";
+        if (lteFddStandardKpi.getLteFddBasicKpi() != null)
+            basicKpi = lteFddStandardKpi.getLteFddBasicKpi().getKpiName();
+
         return new StandardKpiDto(
                 lteFddStandardKpi.getKpiName(),
                 lteFddStandardKpi.getLabel(),
@@ -37,7 +41,8 @@ public class Mapper {
                 lteFddStandardKpi.getType(),
                 lteFddStandardKpi.getWorstOrder(),
                 lteFddStandardKpi.getThreshold(),
-                lteFddStandardKpi.getAggregation());
+                lteFddStandardKpi.getAggregation(),
+                basicKpi);
     }
 
     public LteFddStandardKpi toLteFddStandardKpi(StandardKpiDto standardKpiDto) {
@@ -48,9 +53,12 @@ public class Mapper {
                 .label(standardKpiDto.label())
                 .unit(standardKpiDto.unit())
                 .type(standardKpiDto.type())
+                .aggregation(standardKpiDto.aggregation())
                 .worstOrder(standardKpiDto.worstOrder())
                 .threshold(standardKpiDto.threshold())
                 .build();
+
+        //-- Basic KPI should be queried and set in the Service because otherwise Mapper will throw Circular Dependency (if Service is injected to Mapper)
     }
 
 // ----- LteFddKpiMappingToOss -----
@@ -105,7 +113,7 @@ public class Mapper {
 
 //-------- KpiData KpiDataDto -----------------------------------
 
-    public KpiDataDto kpiDataToDto(KpiData kpiData){
+    public KpiDataDto kpiDataToDto(KpiData kpiData) {
         return new KpiDataDto(kpiData.getTimestamp().toLocalDateTime(), kpiData.getCellName(), kpiData.getKpiLabel(), kpiData.getKpiValue());
     }
 

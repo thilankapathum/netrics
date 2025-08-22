@@ -1,20 +1,24 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.StandardKpiDto;
+import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpi;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddStandardKpiRepository;
+import dev.thilanka.netrics.service.LteFddBasicKpiService;
 import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     private final LteFddStandardKpiRepository lteFddStandardKpiRepository;
+    private final LteFddBasicKpiService lteFddBasicKpiService;
     private final Mapper mapper;
 
     @Override
@@ -29,7 +33,15 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
 
     @Override
     public StandardKpiDto createKpi(StandardKpiDto kpiDto) {
+
         LteFddStandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
+
+        if (!Objects.equals(kpiDto.basicKpi(), "")) {
+            System.out.println("Basic KPI: " + kpiDto.basicKpi());
+            LteFddBasicKpi basicKpi = lteFddBasicKpiService.findByKpiName(kpiDto.basicKpi());
+            kpi.setLteFddBasicKpi(basicKpi);
+        }
+
         LteFddStandardKpi savedKpi = lteFddStandardKpiRepository.save(kpi);
         return mapper.lteFddStandardKpiToDto(savedKpi);
     }
@@ -39,7 +51,7 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
 
         List<StandardKpiDto> dtoList = new ArrayList<>();
 
-        for (StandardKpiDto dto : dtos){
+        for (StandardKpiDto dto : dtos) {
             dtoList.add(createKpi(dto));
         }
         return dtoList;

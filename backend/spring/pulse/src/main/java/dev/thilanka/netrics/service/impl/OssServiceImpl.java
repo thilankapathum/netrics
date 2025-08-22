@@ -8,6 +8,7 @@ import dev.thilanka.netrics.service.OssService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,5 +31,18 @@ public class OssServiceImpl implements OssService {
         Oss oss = mapper.ossDtoToOss(ossDto);
         Oss savedOss = ossRepository.save(oss);
         return mapper.ossToDto(savedOss);
+    }
+
+    @Override
+    public List<OssDto> createMultipleOss(List<OssDto> ossDtos) {
+
+        List<OssDto> savedOss = new ArrayList<>();
+
+        for (OssDto dto: ossDtos){
+            OssDto savedDto = createOss(dto);
+            savedOss.add(savedDto);
+        }
+
+        return savedOss;
     }
 }
