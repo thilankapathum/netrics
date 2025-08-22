@@ -29,10 +29,21 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-ltefdd-dev.json'):
+    def __init__(self, config_file='config-ltefdd-day.json'):
         """Initialize KPI Processor with configuration"""
+        # load_dotenv()
+
         self.config = self.load_config(config_file)
-        self.db_config = self.config['database']
+
+        self.db_config = {
+            "host": os.getenv("MYSQL_HOST", self.config["database"].get("host")),
+            "port": int(os.getenv("MYSQL_PORT", self.config["database"].get("port", 3306))),
+            "database": os.getenv("MYSQL_DATABASE", self.config["database"].get("database")),
+            "user": os.getenv("MYSQL_USER", self.config["database"].get("user")),
+            "password": os.getenv("MYSQL_PASSWORD", self.config["database"].get("password")),
+        }
+
+        # self.db_config = self.config['database']
         self.ftp_folder = self.config['ftp_folder']
         self.processed_folder = self.config['processed_folder']
         self.temp_folder = self.config['temp_folder']
@@ -41,6 +52,7 @@ class KPIProcessor:
         self.standard_kpis = {}  # Will hold standard KPI info
         self.kpi_mappings = {}  # Will hold OSS to standard KPI mappings
         self.oss_configs = {}  # Will hold OSS configuration info
+        self.standard_kpi_mappings = {}  # Will hold standard KPI to numerator/denominator mappings
 
         # Load configuration from database
         self.load_database_configuration()
@@ -104,6 +116,36 @@ class KPIProcessor:
                 }
 
             logger.info(f"Loaded {len(self.standard_kpis)} standard KPIs")
+
+            # Load standard KPI numerator/denominator mappings
+            logger.info("Loading standard KPI numerator/denominator mappings...")
+            cursor.execute("""
+                SELECT 
+                    m.id,
+                    m.standard_kpi_id,
+                    m.numerator_id,
+                    m.denominator_id,
+                    s.kpi_name as standard_kpi_name,
+                    n.kpi_name as numerator_kpi_name,
+                    d.kpi_name as denominator_kpi_name
+                FROM lte_fdd_standard_raw_kpi_mapping m
+                JOIN lte_fdd_standard_kpi s ON m.standard_kpi_id = s.id
+                LEFT JOIN lte_fdd_standard_kpi n ON m.numerator_id = n.id
+                LEFT JOIN lte_fdd_standard_kpi d ON m.denominator_id = d.id
+            """)
+            standard_mapping_data = cursor.fetchall()
+
+            for mapping in standard_mapping_data:
+                standard_kpi_name = mapping['standard_kpi_name']
+                self.standard_kpi_mappings[standard_kpi_name] = {
+                    'standard_kpi_id': mapping['standard_kpi_id'],
+                    'numerator_id': mapping['numerator_id'],
+                    'denominator_id': mapping['denominator_id'],
+                    'numerator_kpi_name': mapping['numerator_kpi_name'],
+                    'denominator_kpi_name': mapping['denominator_kpi_name']
+                }
+
+            logger.info(f"Loaded {len(self.standard_kpi_mappings)} standard KPI mappings")
 
             # Load OSS configurations
             logger.info("Loading OSS configurations from database...")
@@ -174,7 +216,7 @@ class KPIProcessor:
             connection = mysql.connector.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # Create unpivoted KPI table (updated schema)
+            # Create unpivoted KPI table (updated schema with numerator/denominator columns)
             create_table_query = """
             CREATE TABLE IF NOT EXISTS lte_fdd_kpi_day (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -186,11 +228,17 @@ class KPIProcessor:
                 data_type ENUM('percentage', 'integer', 'decimal') DEFAULT 'decimal',
                 oss_id BIGINT,
                 file_name VARCHAR(255),
+                numerator_kpi_id BIGINT NULL,
+                numerator_kpi_value DECIMAL(15,3) NULL,
+                denominator_kpi_id BIGINT NULL,
+                denominator_kpi_value DECIMAL(15,3) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_timestamp (timestamp),
                 INDEX idx_cell_name (cell_name),
                 INDEX idx_oss_id (oss_id),
                 FOREIGN KEY (lte_fdd_standard_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
+                FOREIGN KEY (numerator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
+                FOREIGN KEY (denominator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
                 FOREIGN KEY (oss_id) REFERENCES oss(id)
             )
             """
@@ -404,9 +452,48 @@ class KPIProcessor:
             logger.warning(f"Could not convert value to numeric: {value}")
             return None
 
+    def get_kpi_values_for_standard_kpi(self, df: pd.DataFrame, standard_kpi_name: str, oss_identifier: str) -> Dict:
+        """Get the main, numerator, and denominator values for a standard KPI"""
+        result = {
+            'main_value': None,
+            'numerator_value': None,
+            'denominator_value': None,
+            'numerator_kpi_id': None,
+            'denominator_kpi_id': None
+        }
+
+        # Check if this standard KPI has numerator/denominator mapping
+        if standard_kpi_name in self.standard_kpi_mappings:
+            mapping = self.standard_kpi_mappings[standard_kpi_name]
+            numerator_kpi_name = mapping.get('numerator_kpi_name')
+            denominator_kpi_name = mapping.get('denominator_kpi_name')
+
+            result['numerator_kpi_id'] = mapping.get('numerator_id')
+            result['denominator_kpi_id'] = mapping.get('denominator_id')
+
+            # Look for numerator column in dataframe
+            if numerator_kpi_name:
+                for col in df.columns:
+                    # Check if this column maps to the numerator KPI
+                    mapped_info = self.map_oss_kpi_to_standard(col, oss_identifier)
+                    if mapped_info and mapped_info.get('standard_kpi_name') == numerator_kpi_name:
+                        result['numerator_value'] = col
+                        break
+
+            # Look for denominator column in dataframe
+            if denominator_kpi_name:
+                for col in df.columns:
+                    # Check if this column maps to the denominator KPI
+                    mapped_info = self.map_oss_kpi_to_standard(col, oss_identifier)
+                    if mapped_info and mapped_info.get('standard_kpi_name') == denominator_kpi_name:
+                        result['denominator_value'] = col
+                        break
+
+        return result
+
     def unpivot_dataframe(self, df: pd.DataFrame, oss_identifier: str, oss_config: dict,
                           file_name: str) -> pd.DataFrame:
-        """Convert wide format to unpivoted (long) format using database mappings"""
+        """Convert wide format to unpivoted (long) format using database mappings with numerator/denominator support"""
         # Standardize column names
         df = self.standardize_timestamp_column(df)
         df = self.standardize_identifier_columns(df)
@@ -422,54 +509,86 @@ class KPIProcessor:
             logger.warning("No KPI columns found in dataframe")
             return pd.DataFrame()
 
-        # Melt the dataframe
-        melted_df = pd.melt(
-            df,
-            id_vars=id_columns,
-            value_vars=kpi_columns,
-            var_name='oss_kpi_name',
-            value_name='kpi_value_raw'
-        )
-
-        # Process each row to map OSS KPI to standard KPI
+        # Process only standard KPIs (type = 'standard')
         processed_rows = []
 
-        for _, row in melted_df.iterrows():
-            oss_kpi_name = row['oss_kpi_name']
+        # Group KPI columns by their standard KPI mapping
+        standard_kpi_groups = {}
 
-            # Get mapping information
-            mapping_info = self.map_oss_kpi_to_standard(oss_kpi_name, oss_identifier)
+        for col in kpi_columns:
+            mapping_info = self.map_oss_kpi_to_standard(col, oss_identifier)
+            if mapping_info:
+                standard_kpi_name = mapping_info['standard_kpi_name']
+                if standard_kpi_name in self.standard_kpis:
+                    kpi_info = self.standard_kpis[standard_kpi_name]
+                    # Only process standard KPIs (not numerator/denominator)
+                    if kpi_info.get('type') == 'standard':
+                        if standard_kpi_name not in standard_kpi_groups:
+                            standard_kpi_groups[standard_kpi_name] = []
+                        standard_kpi_groups[standard_kpi_name].append({
+                            'column_name': col,
+                            'mapping_info': mapping_info
+                        })
 
-            if mapping_info is None:
-                # logger.warning(f"No mapping found for OSS KPI: {oss_kpi_name} from {oss_identifier}")
-                continue
+        # Process each standard KPI group
+        for standard_kpi_name, kpi_group in standard_kpi_groups.items():
+            # For each standard KPI, process each occurrence (there should typically be only one)
+            for kpi_info in kpi_group:
+                col = kpi_info['column_name']
+                mapping_info = kpi_info['mapping_info']
 
-            standard_kpi_name = mapping_info['standard_kpi_name']
-            multiplication_factor = mapping_info.get('multiplication_factor', 1.0)
-            lte_fdd_standard_kpi_id = mapping_info.get('lte_fdd_standard_kpi_id')
+                # Get numerator and denominator information
+                kpi_values_info = self.get_kpi_values_for_standard_kpi(df, standard_kpi_name, oss_identifier)
 
-            # Clean KPI value with multiplication factor
-            cleaned_value = self.clean_kpi_value(row['kpi_value_raw'], multiplication_factor)
+                # Process each row in the dataframe
+                for _, row in df.iterrows():
+                    # Get main KPI value
+                    multiplication_factor = mapping_info.get('multiplication_factor', 1.0)
+                    cleaned_value = self.clean_kpi_value(row[col], multiplication_factor)
 
-            if cleaned_value is None:
-                continue
+                    if cleaned_value is None:
+                        continue
 
-            # Determine data type
-            data_type = self.determine_data_type(row['kpi_value_raw'], standard_kpi_name)
+                    # Get numerator and denominator values
+                    numerator_value = None
+                    denominator_value = None
 
-            processed_row = {
-                'timestamp': row.get('timestamp'),
-                'cell_name': row.get('cell_name'),
-                'site_name': row.get('site_name'),
-                'lte_fdd_standard_kpi_id': lte_fdd_standard_kpi_id,
-                'standard_kpi_name': standard_kpi_name,
-                'kpi_value': cleaned_value,
-                'data_type': data_type,
-                'oss_id': oss_config['id'],
-                'oss_kpi_name': oss_kpi_name,
-                'file_name': file_name
-            }
-            processed_rows.append(processed_row)
+                    if kpi_values_info['numerator_value']:
+                        numerator_col = kpi_values_info['numerator_value']
+                        if numerator_col in row:
+                            # Get multiplication factor for numerator
+                            num_mapping_info = self.map_oss_kpi_to_standard(numerator_col, oss_identifier)
+                            num_mult_factor = num_mapping_info.get('multiplication_factor', 1.0) if num_mapping_info else 1.0
+                            numerator_value = self.clean_kpi_value(row[numerator_col], num_mult_factor)
+
+                    if kpi_values_info['denominator_value']:
+                        denominator_col = kpi_values_info['denominator_value']
+                        if denominator_col in row:
+                            # Get multiplication factor for denominator
+                            denom_mapping_info = self.map_oss_kpi_to_standard(denominator_col, oss_identifier)
+                            denom_mult_factor = denom_mapping_info.get('multiplication_factor', 1.0) if denom_mapping_info else 1.0
+                            denominator_value = self.clean_kpi_value(row[denominator_col], denom_mult_factor)
+
+                    # Determine data type
+                    data_type = self.determine_data_type(row[col], standard_kpi_name)
+
+                    processed_row = {
+                        'timestamp': row.get('timestamp'),
+                        'cell_name': row.get('cell_name'),
+                        'site_name': row.get('site_name'),
+                        'lte_fdd_standard_kpi_id': mapping_info.get('lte_fdd_standard_kpi_id'),
+                        'standard_kpi_name': standard_kpi_name,
+                        'kpi_value': cleaned_value,
+                        'data_type': data_type,
+                        'oss_id': oss_config['id'],
+                        'oss_kpi_name': col,
+                        'file_name': file_name,
+                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'] if kpi_values_info['numerator_kpi_id'] else None,
+                        'numerator_kpi_value': numerator_value,
+                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'] if kpi_values_info['denominator_kpi_id'] else None,
+                        'denominator_kpi_value': denominator_value
+                    }
+                    processed_rows.append(processed_row)
 
         if not processed_rows:
             logger.warning("No valid KPI mappings found after processing")
@@ -488,8 +607,14 @@ class KPIProcessor:
 
         return final_df
 
+    def convert_nan_to_none(self, value):
+        """Convert pandas NaN values to None for proper MySQL NULL insertion"""
+        if pd.isna(value):
+            return None
+        return value
+
     def insert_data_to_mysql(self, df: pd.DataFrame):
-        """Insert unpivoted data into MySQL database"""
+        """Insert unpivoted data into MySQL database with numerator/denominator support"""
         if df.empty:
             logger.warning("No data to insert")
             return
@@ -498,15 +623,17 @@ class KPIProcessor:
             connection = mysql.connector.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # Prepare insert query
+            # Prepare insert query with numerator/denominator columns
             insert_query = """
             INSERT INTO lte_fdd_kpi_day 
             (timestamp, cell_name, site_name, lte_fdd_standard_kpi_id, 
-             kpi_value, data_type, oss_id, file_name)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+             kpi_value, data_type, oss_id, file_name, 
+             numerator_kpi_id, numerator_kpi_value, 
+             denominator_kpi_id, denominator_kpi_value)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
-            # Convert dataframe to list of tuples
+            # Convert dataframe to list of tuples with proper None handling
             data_tuples = []
             for _, row in df.iterrows():
                 data_tuples.append((
@@ -514,12 +641,14 @@ class KPIProcessor:
                     row.get('cell_name'),
                     row.get('site_name'),
                     row.get('lte_fdd_standard_kpi_id'),
-                    # row.get('standard_kpi_name'),
                     row.get('kpi_value'),
                     row.get('data_type'),
                     row.get('oss_id'),
-                    # row.get('oss_kpi_name'),
-                    row.get('file_name')
+                    row.get('file_name'),
+                    self.convert_nan_to_none(row.get('numerator_kpi_id')),
+                    self.convert_nan_to_none(row.get('numerator_kpi_value')),
+                    self.convert_nan_to_none(row.get('denominator_kpi_id')),
+                    self.convert_nan_to_none(row.get('denominator_kpi_value'))
                 ))
 
             # Execute batch insert
@@ -530,6 +659,9 @@ class KPIProcessor:
 
         except Error as e:
             logger.error(f"Error inserting data to MySQL: {e}")
+            # Log the problematic data for debugging
+            if data_tuples:
+                logger.error(f"Sample data tuple: {data_tuples[0]}")
         finally:
             if connection and connection.is_connected():
                 cursor.close()
@@ -585,7 +717,7 @@ class KPIProcessor:
             # Normalize column names
             df = self.normalize_column_names(df)
 
-            # Convert to unpivoted format using database mappings
+            # Convert to unpivoted format using database mappings with numerator/denominator support
             unpivoted_df = self.unpivot_dataframe(df, oss_identifier, oss_config, original_filename)
 
             if unpivoted_df.empty:
@@ -670,7 +802,7 @@ class KPIProcessor:
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
 
-    def run_continuously(self, interval_minutes: int = 2):
+    def run_continuously(self, interval_minutes: int = 60):
         """Run the processor continuously with specified interval"""
         logger.info(f"Starting continuous processing with {interval_minutes} minute intervals")
 
@@ -695,10 +827,7 @@ if __name__ == "__main__":
     processor = KPIProcessor()
 
     # Run continuously (every 2 minutes)
-    processor.run_continuously(interval_minutes=2)
+    processor.run_continuously(interval_minutes=60)
 
     # Or run once
     # processor.process_new_files()
-
-    # oss_kpi_name VARCHAR(255),
-    # standard_kpi_name VARCHAR(255) NOT NULL,

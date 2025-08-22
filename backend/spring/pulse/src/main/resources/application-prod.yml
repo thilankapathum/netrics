@@ -8,3 +8,7 @@ spring:
 
   # DOCKER-COMPOSE.YML - ENVIRONMENT VARIABLES FOR CONTAINERIZATION WITHIN DOCKER NETWORK
   # ${ENVIRONMENT_VARIABLE:DefaultValue}
+
+  jpa:
+    hibernate:
+      ddl-auto: update

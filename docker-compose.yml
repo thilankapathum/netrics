@@ -123,3 +123,22 @@ services:
         condition: service_healthy
     networks:
       - private_net
+
+  kpi_processor_ltefdd_day:
+    image: thilankaw/netrics/kpi-processor-ltefdd-day:0.0.1
+    container_name: kpi_processor_ltefdd_day
+    env_file:
+      - .env
+    depends_on:
+      netrics_mysql:
+        condition: service_healthy
+      netrics-pulse:
+        condition: service_healthy
+    volumes:
+      - ./backend/python/pulse/files/day-average/ltefdd/ftp:/app/day-average/ltefdd/ftp
+      - ./backend/python/pulse/files/day-average/ltefdd/processed:/app/day-average/ltefdd/processed
+      - ./backend/python/pulse/files/day-average/ltefdd/temp:/app/day-average/ltefdd/temp
+      - ./backend/python/pulse/files/day-average/ltefdd/logs:/app/day-average/ltefdd/logs
+      - ./backend/python/pulse/config-ltefdd-day.json:/app/config-ltefdd-day.json
+    networks:
+      - private_net

@@ -1,10 +1,10 @@
 {
   "database": {
-    "host": "mysql",
-    "port": 3306,
-    "database": "netrics_pulse_db",
-    "user": "user",
-    "password": "password"
+    "host": "${MYSQL_HOST}",
+    "port": "${MYSQL_PORT}",
+    "database": "${MYSQL_DATABASE}",
+    "user": "${MYSQL_USER}",
+    "password": "${MYSQL_PASSWORD}"
   },
   "ftp_folder": "/app/day-average/ltefdd/ftp",
   "processed_folder": "/app/day-average/ltefdd/processed",
