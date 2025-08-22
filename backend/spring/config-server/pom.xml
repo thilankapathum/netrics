@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.thilankaw</groupId>
 	<artifactId>config-server</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>config-server</name>
 	<description>Configuration Server</description>
 	<url/>

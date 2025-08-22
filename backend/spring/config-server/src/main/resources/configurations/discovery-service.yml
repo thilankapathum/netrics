@@ -1,10 +1,15 @@
 eureka:
   instance:
-    hostname: localhost
+    hostname: ${DISCOVERY_HOST:localhost}
   client:
     register-with-eureka: false # Indicates that Discovery server should not register itself as a service in it.
     fetch-registry: false
     serviceUrl:
-      defaultZone: http://${eureka.instance.hostname}/${server.port}/eureka/
+      defaultZone: http://${eureka.instance.hostname}:8761/eureka/
 server:
   port: 8761
+
+#logging:
+#  level:
+#    com.netflix.discovery: DEBUG
+#    org.springframework.cloud.netflix.eureka: DEBUG

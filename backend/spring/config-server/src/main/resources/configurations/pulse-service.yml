@@ -3,3 +3,17 @@ server:
 eureka:
   instance:
     prefer-ip-address: true #To force Eureka to use host IP address instead of PC Name
+  client:
+    serviceUrl:
+      defaultZone: http://${DISCOVERY_HOST:localhost}:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # only expose safe endpoints
+  endpoint:
+    health:
+      show-details: never   # don’t leak DB status, etc.
+  server:
+    port: 9012

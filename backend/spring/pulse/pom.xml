@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.thilanka</groupId>
 	<artifactId>pulse</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>pulse</name>
 	<description>Netrics Pulse</description>
 	<url/>
@@ -51,6 +51,11 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
 
 		<dependency>
 			<groupId>com.mysql</groupId>

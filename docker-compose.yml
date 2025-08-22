@@ -1,26 +1,125 @@
 version: '3.8'
 
+networks:
+  public_net:
+    driver: bridge
+  private_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  mysql_data:
+
 services:
   netrics_mysql:
     image: mysql
     container_name: netrics_mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-#      MYSQL_DATABASE: kpi_database
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "8006:3306"
+#    expose:
+#      - "${MYSQL_PORT}"
     volumes:
       - mysql_data:/var/lib/mysql
       #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
     networks:
-      - netrics_net
+      - private_net
+      - public_net
     restart: unless-stopped
 
-volumes:
-  mysql_data:
+  config-server:
+    image: thilankaw/netrics/config-server:0.0.1
+    expose:
+      - "8003"
+    environment:
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+    depends_on:
+      netrics_mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8003/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - private_net
 
-networks:
-  netrics_net:
-    driver: bridge
+  discovery:
+    image: thilankaw/netrics/discovery:0.0.1
+    expose:
+      - "8761"
+    environment:
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - private_net
+    restart: unless-stopped
+
+  gateway:
+    image: thilankaw/netrics/gateway:0.0.1
+    ports:
+      - "8001:8001"
+    expose:
+      - "9001"
+    environment:
+      - GATEWAY_HOST=${GATEWAY_HOST}
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:9001/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      discovery:
+        condition: service_healthy
+      netrics-pulse:
+        condition: service_healthy
+    networks:
+      - private_net
+      - public_net
+
+  netrics-pulse:
+    image: thilankaw/netrics/pulse:0.0.1
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - NETRICS_PULSE_HOST=${NETRICS_PULSE_HOST}
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+    expose:
+      - "8012"
+      - "9012"
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:9012/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      netrics_mysql:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+    networks:
+      - private_net
