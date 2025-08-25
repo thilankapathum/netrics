@@ -110,7 +110,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ) pre
            \s
             ON curr.cell_name = pre.pre_cell_name
-            ORDER BY curr.calculated_kpi_value ASC
+            ORDER BY 
+                CASE
+                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
+                    ELSE curr.kpi_value
+                END ASC
             LIMIT :count
            \s""", nativeQuery = true)
     List<WorstCellCurrentPre> findWorstCellsWithPrevAvgAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
@@ -144,7 +148,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ) pre
             
             ON curr.cell_name = pre.pre_cell_name
-            ORDER BY curr.calculated_kpi_value DESC
+            ORDER BY
+                CASE
+                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
+                    ELSE curr.kpi_value
+                END DESC
             LIMIT :count
             """, nativeQuery = true)
     List<WorstCellCurrentPre> findWorstCellsWithPrevAvgDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
@@ -178,7 +186,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ) pre
             
             ON curr.cell_name = pre.pre_cell_name
-            ORDER BY curr.calculated_kpi_value ASC
+            ORDER BY
+                CASE
+                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
+                    ELSE curr.kpi_value
+                END ASC
             LIMIT :count
             """, nativeQuery = true)
     List<WorstCellCurrentPre> findWorstCellsWithPrevSumAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
@@ -212,7 +224,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ) pre
             
             ON curr.cell_name = pre.pre_cell_name
-            ORDER BY curr.calculated_kpi_value DESC
+            ORDER BY
+                CASE
+                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
+                    ELSE curr.kpi_value
+                END DESC
             LIMIT :count
             """, nativeQuery = true)
     List<WorstCellCurrentPre> findWorstCellsWithPrevSumDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
