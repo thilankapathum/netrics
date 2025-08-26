@@ -1,0 +1,126 @@
+<div>
+  <header>
+    <p>Pulse</p>
+  </header>
+  <div class="m-4 flex flex-col gap-6">
+    <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
+      <div>
+        <div class="tabs tabs-box tabs-xs">
+          <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-FDD" checked="checked"/>
+          <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-TDD"/>
+          <input type="radio" name="rat_tabs" class="tab" aria-label="GSM"/>
+          <input type="radio" name="rat_tabs" class="tab" aria-label="UMTS"/>
+        </div>
+      </div>
+      <div class="grow-1"></div>
+      <div class="flex flex-row gap-2">
+        <select class="select select-xs">
+          <option disabled selected>Region</option>
+          <option>Region 1</option>
+          <option>Region 2</option>
+          <option>Region 3</option>
+        </select>
+        <select class="select select-xs">
+          <option disabled selected>District</option>
+          <option>Ampara</option>
+          <option>Anuradhapura</option>
+          <option>Batticaloa</option>
+        </select>
+      </div>
+      <div>Busy Hour
+        <input type="checkbox" checked="checked"
+               class="toggle border-blue-200 bg-blue-50 text-blue-500 checked:border-green-200 checked:bg-green-50 checked:text-green-500"/>
+        Day Average
+      </div>
+      <div class="flex flex-row gap-2">
+        <p>Period</p>
+        <select class="select select-xs">
+          <option selected>Day</option>
+          <option>Week</option>
+          <option>Month</option>
+        </select>
+      </div>
+    </nav>
+    <section class=" flex flex-row justify-around items-center flex-wrap gap-3">
+      @for (kpi of basicKpi; track $index) {
+        <div class="stats border-stone-200 border grow">
+          <div class="stat">
+            <div class="stat-title">{{ kpi }}</div>
+            <div class="flex flex-row gap-1">
+              <div class="stat-value text-stone-600">99.3%</div>
+              <div class="stat-figure text-green-600">↗︎ 0.2%</div>
+            </div>
+            <div class="stat-desc">
+              <table class="table table-xs">
+                <tbody>
+                <tr>
+                  <td>RRC SSR</td>
+                  <td>99.8%</td>
+                  <td>↗︎</td>
+                </tr>
+                <tr>
+                  <td>E-RAB SSR</td>
+                  <td>99.8%</td>
+                  <td>↗︎</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+
+    <div class="flex flex-row gap-4 flex-wrap justify-around">
+      <section class=" flex flex-col gap-2 grow-1 border rounded-lg p-4 border-stone-200">
+        <div class="flex flex-row">
+          <h2 class="text-xl font-semibold">Worst Cells</h2>
+          <select class="select select-xs ml-auto">
+            <option disabled selected>KPI</option>
+            <option>E-RAB SSR</option>
+            <option>RRC SSR</option>
+            <option>E-RAB Drop Rate</option>
+          </select>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table table-xs">
+            <!-- head -->
+            <thead>
+            <tr >
+              <th class="font-semibold">#</th>
+              <th class="font-semibold">Cell Name</th>
+              <th class="font-semibold">KPI</th>
+              <th class="font-semibold">Value</th>
+              <th class="font-semibold">Difference</th>
+              <th class="font-semibold">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- row -->
+              @for (cell of worstCells; track cell.cellName; let i = $index) {
+                <tr class="hover:bg-stone-200">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ cell.cellName }}</td>
+                  <td>{{ cell.kpiLabel }}</td>
+                  <td [class.text-red-600]="cell.value! < 99.95">{{ cell.value | number :'1.2-2' }}</td>
+                  <td
+                    [class]="cell.improved ? 'text-green-600' : 'text-red-600 font-semibold'">{{ cell.difference | number: '1.2-2' }}
+                  </td>
+                  <td>
+                    <button class="btn btn-xs">Analyse</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bg-stone-300 grow-1">
+        KPI trend
+        <app-line-chart></app-line-chart>
+      </section>
+    </div>
+
+  </div>
+</div>

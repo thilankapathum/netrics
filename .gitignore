@@ -27,3 +27,6 @@ replay_pid*
 
 backend/python/pulse/files/
 backend/python/pulse/kpi_processor.log
+frontend/netrics/.angular
+frontend/netrics/node_modules
+frontend/node_modules
