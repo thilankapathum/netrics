@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.entity.BasicKpiSnapshot;
 import dev.thilanka.netrics.entity.WorstCell;
 import dev.thilanka.netrics.entity.KpiSnapshot;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
@@ -26,7 +27,7 @@ public class LteFddKpiDayController {
     }
 
     @GetMapping("snapshot/basic-kpi")
-    public ResponseEntity<List<KpiSnapshot>> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period){
+    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period){
         return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period));
     }
 

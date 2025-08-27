@@ -2,16 +2,18 @@ package dev.thilanka.netrics.entity;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class KpiSnapshot {
+public class BasicKpiSnapshot {
     private String kpiLabel;
-//    private boolean isBasic;
     private Double value;
     private Double previousValue;
     private Double difference;
     private boolean improved;
+    private List<KpiSnapshot> standardKpis;
 }

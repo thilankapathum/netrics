@@ -10,7 +10,7 @@ public interface LteFddKpiDayService {
 
     List<WorstCell> getWorstCellsByKpi(String kpiName, String period, int count);
 
-    List<KpiSnapshot> getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period);
+    BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period);
 
     List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period);
 

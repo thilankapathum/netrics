@@ -1,8 +1,12 @@
 import {Component} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {WorstCell} from '../../../../models/WorstCell';
+import {WorstCell} from '../../../../models/pulse/WorstCells';
 import {OnInit, ChangeDetectorRef} from '@angular/core';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
+import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
+import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
+import {BasicKpiDto} from '../../../../models/pulse/BasicKpiDto';
+import {BasicKpiSnapshot} from '../../../../models/pulse/BasicKpiSnapshot';
 
 @Component({
   selector: 'app-pulse',
@@ -12,13 +16,53 @@ import {LineChart} from '../../../../components/charts/linechart/line-chart/line
   styleUrl: './pulse.component.css'
 })
 export class PulseComponent implements OnInit {
+  basicKpiDtos: BasicKpiDto[] = [];
+  basicKpiSnapshots: BasicKpiSnapshot[] = [];
 
-  constructor(private cdr: ChangeDetectorRef) {
+  constructor(private cdr: ChangeDetectorRef,
+              private ltefddbasickpiservice: LtefddbasickpiService,
+              private ltefdddayservice: LtefdddayService) {
   }
 
   ngOnInit() {
     this.cdr.detectChanges(); // Force change detection
+    this.getAllBasicKpi();
+    this.getBasicKpiSnapshot(this.basicKpiDtos);
   }
+
+  getAllBasicKpi() {
+    this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
+      next: data => {
+        this.basicKpiDtos = data;
+        console.log("BasicKpiDtos:", this.basicKpiDtos);
+
+        this.getBasicKpiSnapshot(this.basicKpiDtos);
+        console.log("BasicKpiSnapshots:", this.basicKpiDtos);
+
+      }, error: error => {
+        console.log("Error getAllBasicKpi");
+        console.error(error);
+        alert("Error getAllBasicKpi");
+      }
+    })
+  }
+
+  getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
+    for (const kpi of basicKpiDto) {
+      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, 'day')
+        .subscribe({
+          next: data => {
+            this.basicKpiSnapshots.push(data);
+            // console.log("BasicKpiSnapshots:", this.basicKpiSnapshots);
+          }, error: error => {
+            console.log("Error getBasicKpiSnapshots:");
+            console.error(error);
+            alert("Error getBasicKpiSnapshots:");
+          }
+        })
+    }
+  }
+
 
   basicKpi: string[] = ['Accessibility', 'Retainability', 'Mobility', 'Availability', 'Utilization', 'Quality'];
 

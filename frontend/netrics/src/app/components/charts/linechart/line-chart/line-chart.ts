@@ -1,6 +1,14 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component, Input, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {ApexAxisChartSeries, ApexNonAxisChartSeries, ApexChart, ApexXAxis, ApexDataLabels, ApexStroke, ChartComponent} from 'ng-apexcharts';
+import {
+  ApexAxisChartSeries,
+  ApexNonAxisChartSeries,
+  ApexChart,
+  ApexXAxis,
+  ApexDataLabels,
+  ApexStroke,
+  ChartComponent
+} from 'ng-apexcharts';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -22,21 +30,37 @@ export class LineChart {
   @ViewChild("chart") chart!: ChartComponent;
   public chartOptions: Partial<ChartOptions>;
 
+  @Input() width: number = 250;
+
+  dataSales: number[] = [10, 41, 35, 51, 49, 62, 69, 91, 148]
+  dataProfits: number[] = [ 49, 62, 69, 91, 148, 10,41, 35, 51]
+  timeline: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
   constructor() {
     this.chartOptions = {
       series: [
         {
           name: "Sales",
-          data: [10, 41, 35, 51, 49, 62, 69, 91, 148]
+          data: this.dataSales
         },
         {
           name: "Profits",
-          data: [ 41, 35, 51, 49, 62, 69, 91, 148, 10]
+          data: this.dataProfits
         }
       ],
       chart: {
-        type: "line"
-        // height: 350
+        fontFamily: 'Inter',
+        type: "line",
+        height: this.width,
+        width: '100%',
+        animations: {
+          enabled : true,
+          speed : 300,
+          animateGradually :{
+            enabled : true,
+            delay : 150
+          }
+        },
       },
       dataLabels: {
         enabled: false
@@ -45,18 +69,8 @@ export class LineChart {
         curve: "smooth"
       },
       xaxis: {
-        categories: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep"
-        ]
-      }
+        categories: this.timeline
+      },
     };
   }
 }

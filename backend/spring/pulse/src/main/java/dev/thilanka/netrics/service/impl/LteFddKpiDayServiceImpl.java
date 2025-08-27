@@ -96,7 +96,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         KpiSnapshot snapshot = new KpiSnapshot();
 
         snapshot.setKpiLabel(standardKpi.getLabel());
-        snapshot.setBasic(false);
+//        snapshot.setBasic(false);
 
         if (kpiData.getCalculatedKpiValue() == null) {   //-- CalculatedValue == null -> Value should be taken from kpiValue
             snapshot.setValue(kpiData.getKpiValue());
@@ -123,10 +123,12 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
 
     @Override
-    public List<KpiSnapshot> getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
+    public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
 
         LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
+
+        BasicKpiSnapshot basicKpiSnapshot = new BasicKpiSnapshot();
 
         List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
@@ -134,15 +136,19 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period);
             kpiSnapshots.add(snapshot);
         }
+        basicKpiSnapshot.setStandardKpis(kpiSnapshots);
 
         //-- CREATE BASIC-KPI'S DATA
-        KpiSnapshot basicKpiSnapshot = new KpiSnapshot();
-        basicKpiSnapshot.setBasic(true);
+//        KpiSnapshot basicKpiSnapshot = new KpiSnapshot();
+//        basicKpiSnapshot.setBasic(true);
         basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
-        basicKpiSnapshot.setValue(1.0);
+
         basicKpiSnapshot.setPreviousValue(1.0);
 
         if (Objects.equals(basicKpi.getAggregation(), "MULTIPLY")) {
+
+            basicKpiSnapshot.setValue(1.0);
+
             //-- Calculate Value & Pre-Value by multiplying component Standard-KPI values. [IMPORTANT: Assume component Standard-KPI are percentages]
             for (KpiSnapshot snapshot : kpiSnapshots) {
                 basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue() / 100.0);
@@ -154,8 +160,10 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
             basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
 
-            kpiSnapshots.add(basicKpiSnapshot);
+//            kpiSnapshots.add(basicKpiSnapshot);
         } else if (Objects.equals(basicKpi.getAggregation(), "SUM")){
+
+            basicKpiSnapshot.setValue(0.0);
 
             //-- Calculate Value & Pre-Value by adding component Standard-KPI values.
             for (KpiSnapshot snapshot : kpiSnapshots) {
@@ -166,17 +174,17 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
             basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
 
-            kpiSnapshots.add(basicKpiSnapshot);
+//            kpiSnapshots.add(basicKpiSnapshot);
         } else {
             basicKpiSnapshot.setValue(null);
             basicKpiSnapshot.setPreviousValue(null);
             basicKpiSnapshot.setDifference(null);
             basicKpiSnapshot.setImproved(false);
 
-            kpiSnapshots.add(basicKpiSnapshot);
+//            kpiSnapshots.add(basicKpiSnapshot);
         }
 
-        return kpiSnapshots;
+        return basicKpiSnapshot;
     }
 
 

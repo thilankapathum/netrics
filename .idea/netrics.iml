@@ -8,6 +8,8 @@
       <excludeFolder url="file://$MODULE_DIR$/backend/python/pulse/files" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/netrics/.angular/cache" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/netrics/node_modules" />
+      <excludeFolder url="file://$MODULE_DIR$/frontend/netrics/.angular" />
+      <excludeFolder url="file://$MODULE_DIR$/frontend/node_modules" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
