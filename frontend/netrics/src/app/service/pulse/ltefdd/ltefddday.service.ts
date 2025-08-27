@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {UrlService} from '../../url/url-service';
 import {BasicKpiSnapshot} from '../../../models/pulse/BasicKpiSnapshot';
+import {WorstCell} from '../../../models/pulse/WorstCell';
+import {KpiDataDto} from '../../../models/pulse/KpiDataDto';
 
 @Injectable({
   providedIn: 'root'
@@ -15,5 +17,13 @@ export class LtefdddayService {
 
   getBasicKpiSnapshot(kpiName: string, period: string) {
     return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi?kpiName=${kpiName}&period=${period}`);
+  }
+
+  getWorstCellsByKpi(kpiName: string, period: string, count: number) {
+    return this.http.get<Array<WorstCell>>(`${this.baseUrl}/worst-cells?kpiName=${kpiName}&period=${period}&count=${count}`);
+  }
+
+  getDataByKpiAndCell(kpiName:string, cellName:string, period: string) {
+    return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell?kpiName=${kpiName}&cellName=${cellName}&period=${period}`);
   }
 }

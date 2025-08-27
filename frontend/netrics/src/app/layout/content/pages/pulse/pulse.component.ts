@@ -1,43 +1,51 @@
 import {Component} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {WorstCell} from '../../../../models/pulse/WorstCells';
+import {WorstCell} from '../../../../models/pulse/WorstCell';
 import {OnInit, ChangeDetectorRef} from '@angular/core';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
 import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
 import {BasicKpiDto} from '../../../../models/pulse/BasicKpiDto';
 import {BasicKpiSnapshot} from '../../../../models/pulse/BasicKpiSnapshot';
+import {FormsModule} from '@angular/forms';
+import {StandardKpiDto} from '../../../../models/pulse/StandardKpiDto';
+import {LtefddstandardkpiService} from '../../../../service/pulse/ltefdd/ltefddstandardkpi.service';
+import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 
 @Component({
   selector: 'app-pulse',
   standalone: true,
-  imports: [CommonModule, LineChart],
+  imports: [CommonModule, LineChart, FormsModule],
   templateUrl: './pulse.component.html',
   styleUrl: './pulse.component.css'
 })
 export class PulseComponent implements OnInit {
+
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
+  worstCells: WorstCell[] = [];
+  period: string = 'day';
+  standardKpis: StandardKpiDto[] = [];
+  selectedStandardKpi: string = '';
+  kpiData: KpiDataDto[] = [];
 
   constructor(private cdr: ChangeDetectorRef,
               private ltefddbasickpiservice: LtefddbasickpiService,
-              private ltefdddayservice: LtefdddayService) {
+              private ltefdddayservice: LtefdddayService,
+              private ltefddstandardkpiservice:LtefddstandardkpiService) {
   }
 
   ngOnInit() {
     this.cdr.detectChanges(); // Force change detection
     this.getAllBasicKpi();
-    this.getBasicKpiSnapshot(this.basicKpiDtos);
+    this.getAllStandardKpi();
   }
 
   getAllBasicKpi() {
     this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
       next: data => {
         this.basicKpiDtos = data;
-        console.log("BasicKpiDtos:", this.basicKpiDtos);
-
         this.getBasicKpiSnapshot(this.basicKpiDtos);
-        console.log("BasicKpiSnapshots:", this.basicKpiDtos);
 
       }, error: error => {
         console.log("Error getAllBasicKpi");
@@ -48,12 +56,12 @@ export class PulseComponent implements OnInit {
   }
 
   getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
+    this.basicKpiSnapshots = [];
     for (const kpi of basicKpiDto) {
-      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, 'day')
+      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.period)
         .subscribe({
           next: data => {
             this.basicKpiSnapshots.push(data);
-            // console.log("BasicKpiSnapshots:", this.basicKpiSnapshots);
           }, error: error => {
             console.log("Error getBasicKpiSnapshots:");
             console.error(error);
@@ -63,50 +71,57 @@ export class PulseComponent implements OnInit {
     }
   }
 
+  getWorstCellsByKpi(kpiName: string, period: string, count: number) {
+    this.worstCells = [];
+    this.ltefdddayservice.getWorstCellsByKpi(kpiName, period, count).subscribe({
+      next: data => {
+        this.worstCells = data;
+        // console.log("WorstCellsByKpi:", this.worstCells);
+      }, error: error => {
+        console.log("Error getWorstCellsByKpi:");
+        console.error(error);
+        alert("Error getWorstCellsByKpi:");
+      }
+    })
+  }
 
-  basicKpi: string[] = ['Accessibility', 'Retainability', 'Mobility', 'Availability', 'Utilization', 'Quality'];
+  selectPeriod(period: string) {
+    this.period = period;
+    this.ngOnInit();
+  }
 
-  worstCells: WorstCell[] = [
-    {
-      cellName: "KYUDW1-M-L85-B1",
-      kpiLabel: "E-RAB Setup Success Rate",
-      value: 99.92999999999999,
-      previousValue: 100,
-      difference: -0.07000000000000739,
-      improved: false
-    },
-    {
-      cellName: "KYUDW1-M-L85-A1",
-      kpiLabel: "E-RAB Setup Success Rate",
-      value: 99.94,
-      previousValue: 99.86999999999999,
-      difference: 0.07000000000000739,
-      improved: true
-    },
-    {
-      cellName: "KYUDW1-M-L18-A1",
-      kpiLabel: "E-RAB Setup Success Rate",
-      value: 99.97999999999999,
-      previousValue: 99.95,
-      difference: 0.029999999999986926,
-      improved: true
-    },
-    {
-      cellName: "KYUDW1-M-L85-C1",
-      kpiLabel: "E-RAB Setup Success Rate",
-      value: 99.99,
-      previousValue: 99.96000000000001,
-      difference: 0.029999999999986926,
-      improved: true
-    },
-    {
-      cellName: "KYUDW1-M-L18-B1",
-      kpiLabel: "E-RAB Setup Success Rate",
-      value: 99.99,
-      previousValue: 99.98,
-      difference: 0.009999999999990905,
-      improved: true
-    }
-  ]
+  selectKpi(kpi: string) {
+    this.getWorstCellsByKpi(kpi,this.period,10);
+    this.getDataByKpiAndCell(kpi,'KYUDW1-M-L85-B1','month')
+    // this.ngOnInit();
+  }
+
+  getAllStandardKpi() {
+    this.standardKpis = [];
+    this.ltefddstandardkpiservice.getAllStandardKpi().subscribe({
+      next: data => {
+        this.standardKpis = data;
+        // console.log("StandardKpis:", this.standardKpis);
+      }, error: error => {
+        console.log("Error getAllStandardKpi:");
+        console.error(error);
+        alert("Error getAllStandardKpi:");
+      }
+    })
+  }
+
+  getDataByKpiAndCell(kpiName: string, cellName:string, period: string) {
+    this.kpiData = [];
+    this.ltefdddayservice.getDataByKpiAndCell(kpiName, cellName, period).subscribe({
+      next: data => {
+        this.kpiData = data;
+        console.log("DataByKpiAndCell:", this.kpiData);
+      },error: error => {
+        console.log("Error getDataByKpiAndCell:");
+        console.error(error);
+        alert("Error getDataByKpiAndCell:");
+      }
+    })
+  }
 
 }

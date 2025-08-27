@@ -33,44 +33,16 @@
       </div>
       <div class="flex flex-row gap-2">
         <p>Period</p>
-        <select class="select select-xs">
-          <option selected>Day</option>
-          <option>Week</option>
-          <option>Month</option>
+        <select class="select select-xs" [(ngModel)]="period" (change)="selectPeriod(period)">
+          <option [value]="'day'" selected>Day</option>
+          <option [value]="'week'">Week</option>
+          <option [value]="'month'">Month</option>
         </select>
       </div>
     </nav>
-    <section class=" flex flex-row justify-around items-center flex-wrap gap-3">
-      <!--      @for (kpi of basicKpi; track $index) {-->
-      <!--        <div class="stats border-stone-200 border grow">-->
-      <!--          <div class="stat">-->
-      <!--            <div class="stat-title font-semibold">{{ kpi }}</div>-->
-      <!--            <div class="flex flex-row gap-1">-->
-      <!--              <div class="stat-value font-semibold text-stone-600">99.3%</div>-->
-      <!--              <div class="stat-figure text-green-400">↗︎ 0.2%</div>-->
-      <!--            </div>-->
-      <!--            <div class="stat-desc">-->
-      <!--              <table class="table table-xs">-->
-      <!--                <tbody>-->
-      <!--                <tr>-->
-      <!--                  <td>RRC SSR</td>-->
-      <!--                  <td>99.8%</td>-->
-      <!--                  <td>↗︎</td>-->
-      <!--                </tr>-->
-      <!--                <tr>-->
-      <!--                  <td>E-RAB SSR</td>-->
-      <!--                  <td>99.8%</td>-->
-      <!--                  <td>↗︎</td>-->
-      <!--                </tr>-->
-      <!--                </tbody>-->
-      <!--              </table>-->
-      <!--            </div>-->
-      <!--          </div>-->
-      <!--        </div>-->
-      <!--      }-->
-
+    <section class=" flex flex-row justify-around items-center flex-wrap gap-3 ">
       @for (snapshot of basicKpiSnapshots; track $index) {
-        <div class="stats border-stone-200 border grow">
+        <div class="stats border-stone-300 border grow bg-white">
           <div class="stat">
             <div class="stat-title font-semibold">{{ snapshot.kpiLabel }}</div>
             <div class="flex flex-row gap-1">
@@ -86,15 +58,12 @@
                     <tr>
                       <td>{{ standardKpi.kpiLabel }}</td>
                       <td>{{ standardKpi.value | number :'1.2-2' }}</td>
-                      <td [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'"> {{ standardKpi.difference | number :'1.2-2' }}︎</td>
+                      <td
+                        [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'"> {{ standardKpi.difference | number :'1.2-2' }}
+                        ︎
+                      </td>
                     </tr>
                   }
-
-                <!--                <tr>-->
-                <!--                  <td>E-RAB SSR</td>-->
-                <!--                  <td>99.8%</td>-->
-                <!--                  <td>↗︎</td>-->
-                <!--                </tr>-->
                 </tbody>
               </table>
             </div>
@@ -105,14 +74,14 @@
 
     <!--    <div class="flex flex-row gap-4 flex-wrap justify-around">-->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 ">
-      <section class=" flex flex-col gap-3 grow-1 border rounded-lg p-4 border-stone-200">
+      <section class=" flex flex-col gap-3 grow-1 border rounded-lg p-4 bg-white border-stone-300">
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
-          <select class="select select-xs ml-auto">
-            <option disabled selected>KPI</option>
-            <option>E-RAB SSR</option>
-            <option>RRC SSR</option>
-            <option>E-RAB Drop Rate</option>
+          <select class="select select-xs ml-auto" [(ngModel)]="selectedStandardKpi" (change)="selectKpi(selectedStandardKpi)">
+<!--            <option disabled selected>KPI</option>-->
+            @for (kpi of standardKpis; track $index){
+              <option [value]="kpi.kpiName" >{{kpi.label}}</option>
+            }
           </select>
         </div>
         <div class="overflow-x-auto">
@@ -152,9 +121,9 @@
           <button class="join-item btn btn-xs">»</button>
         </div>
       </section>
-      <section class="border rounded-lg p-4 border-stone-200">
+      <section class="border rounded-lg p-4 bg-white border-stone-300">
         <h2 class="text-xl font-semibold">KPI Trend</h2>
-        <app-line-chart [width]=1000></app-line-chart>
+        <app-line-chart [kpiData]="kpiData"></app-line-chart>
       </section>
     </div>
 
