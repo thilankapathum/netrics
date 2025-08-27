@@ -5,5 +5,6 @@ public record BasicKpiDto(
         String label,
         String worstOrder,
         Double threshold,
-        String aggregation) {
+        String aggregation,
+        String unit) {
 }

@@ -21,11 +21,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
 
     @Query(value = """
-            SELECT curr.label, curr.worst_order, curr.kpi_value, curr.calculated_kpi_value,
+            SELECT curr.label, curr.unit, curr.worst_order, curr.kpi_value, curr.calculated_kpi_value,
             pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM
             
-            (SELECT lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi_id id, lte_fdd_standard_kpi.worst_order worst_order,
+            (SELECT lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit, lte_fdd_standard_kpi_id id, lte_fdd_standard_kpi.worst_order worst_order,
             	AVG(kpi_value) kpi_value,
             	(SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
             FROM lte_fdd_kpi_day
@@ -51,11 +51,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
 
     @Query(value = """
-            SELECT curr.label, curr.worst_order, curr.kpi_value, curr.calculated_kpi_value,
+            SELECT curr.label, curr.unit, curr.worst_order, curr.kpi_value, curr.calculated_kpi_value,
             pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM
             
-            (SELECT lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi_id id, lte_fdd_standard_kpi.worst_order worst_order,
+            (SELECT lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit, lte_fdd_standard_kpi_id id, lte_fdd_standard_kpi.worst_order worst_order,
             	SUM(kpi_value) kpi_value,
             	(SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
             FROM lte_fdd_kpi_day
@@ -84,10 +84,10 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
     @Query(value = """
             SELECT
-                curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
+                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
-                SELECT cell_name, lte_fdd_standard_kpi.label label,
+                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
             	AVG(kpi_value) kpi_value,
                 (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
                 FROM lte_fdd_kpi_day
@@ -122,10 +122,10 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
     @Query(value = """
             SELECT
-                curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
+                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
-                SELECT cell_name, lte_fdd_standard_kpi.label label,
+                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
             	AVG(kpi_value) kpi_value,
                 (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
                 FROM lte_fdd_kpi_day
@@ -160,10 +160,10 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
     @Query(value = """
             SELECT
-                curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
+                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
-                SELECT cell_name, lte_fdd_standard_kpi.label label,
+                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
             	SUM(kpi_value) kpi_value,
                 (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
                 FROM lte_fdd_kpi_day
@@ -198,10 +198,10 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
     @Query(value = """
             SELECT
-                curr.cell_name, curr.label, curr.kpi_value, curr.calculated_kpi_value,
+                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
                 pre.pre_kpi_value, pre.pre_calculated_kpi_value
             FROM (
-                SELECT cell_name, lte_fdd_standard_kpi.label label,
+                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
             	SUM(kpi_value) kpi_value,
                 (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
                 FROM lte_fdd_kpi_day

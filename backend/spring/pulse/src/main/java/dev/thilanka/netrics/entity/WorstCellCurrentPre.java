@@ -10,8 +10,10 @@ import lombok.*;
 public class WorstCellCurrentPre {
     private String cellName;
     private String label;
+    private String unit;
     private Double kpiValue;
     private Double calculatedKpiValue;
     private Double preKpiValue;
     private Double preCalculatedKpiValue;
+
 }

@@ -97,6 +97,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         KpiSnapshot snapshot = new KpiSnapshot();
 
         snapshot.setKpiLabel(standardKpi.getLabel());
+        snapshot.setUnit(standardKpi.getUnit());
 //        snapshot.setBasic(false);
 
         if (kpiData.getCalculatedKpiValue() == null) {   //-- CalculatedValue == null -> Value should be taken from kpiValue
@@ -140,9 +141,8 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         basicKpiSnapshot.setStandardKpis(kpiSnapshots);
 
         //-- CREATE BASIC-KPI'S DATA
-//        KpiSnapshot basicKpiSnapshot = new KpiSnapshot();
-//        basicKpiSnapshot.setBasic(true);
         basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
+        basicKpiSnapshot.setUnit(basicKpi.getUnit());
 
         basicKpiSnapshot.setPreviousValue(1.0);
 
@@ -282,6 +282,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             finalWorstCell.setCellName(worstCell.getCellName());
             finalWorstCell.setKpiLabel(worstCell.getLabel());
             finalWorstCell.setValue(worstCell.getKpiValue());
+            finalWorstCell.setUnit(worstCell.getUnit());
 //            finalWorstCell.setBasic(isBasic);
 
             if (worstCell.getCalculatedKpiValue() == null) {

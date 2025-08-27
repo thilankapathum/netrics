@@ -9,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 public class KpiSnapshotCurrentPre {
     private String label;
+    private String unit;
     private String worstOrder;
     private Double kpiValue;
     private Double calculatedKpiValue;

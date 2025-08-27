@@ -105,11 +105,12 @@ public class Mapper {
                 .worstOrder(dto.worstOrder())
                 .threshold(dto.threshold())
                 .aggregation(dto.aggregation())
+                .unit(dto.unit())
                 .build();
     }
 
     public BasicKpiDto lteFddBasicKpiToDto(LteFddBasicKpi kpi) {
-        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation());
+        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit());
     }
 
 //-------- KpiData KpiDataDto -----------------------------------

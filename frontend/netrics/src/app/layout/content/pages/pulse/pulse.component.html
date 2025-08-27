@@ -40,16 +40,16 @@
         </select>
       </div>
     </nav>
-    <section class=" flex flex-row justify-around items-center flex-wrap items-stretch gap-2 ">
-      <!--    <section class=" grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ">-->
+    <section class=" flex flex-row justify-around items-center flex-wrap xl:flex-nowrap items-stretch gap-2 ">
+      <!--    <section class=" grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 ">-->
       @for (snapshot of basicKpiSnapshots; track $index) {
-        <div class="stats border-stone-300 border  bg-white">
+        <div class="stats border-stone-300 border  bg-white grow-1">
           <div class="stat">
             <div class="stat-title font-semibold">{{ snapshot.kpiLabel }}</div>
             <div class="flex flex-row gap-1">
-              <div class="stat-value font-semibold text-stone-600">{{ snapshot.value | number :'1.2-2' }}</div>
-              <div class="stat-figure "><span
-                [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'">{{ snapshot.difference | number :'1.2-2' }} </span>
+              <div class="stat-value font-semibold text-stone-600">{{ snapshot.value | number :'1.2-2' }}{{snapshot.unit}}</div>
+              <div class="stat-figure ">
+                <span [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'">{{ snapshot.difference | number :'1.2-2' }}{{snapshot.unit}}</span>
               </div>
             </div>
             <div class="stat-desc">
@@ -58,10 +58,9 @@
                   @for (standardKpi of snapshot.standardKpis; track $index) {
                     <tr>
                       <td>{{ standardKpi.kpiLabel }}</td>
-                      <td>{{ standardKpi.value | number :'1.2-2' }}</td>
+                      <td>{{ standardKpi.value | number :'1.2-2' }}{{standardKpi.unit}}</td>
                       <td
-                        [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'"> {{ standardKpi.difference | number :'1.2-2' }}
-                        ︎
+                        [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'"> {{ standardKpi.difference | number :'1.2-2' }}{{standardKpi.unit}}
                       </td>
                     </tr>
                   }
@@ -107,7 +106,9 @@
                   <td>{{ cell.cellName }}</td>
                   <td>{{ cell.kpiLabel }}</td>
                   <td [class.text-red-600]="cell.value! < 99.95">{{ cell.value | number :'1.2-2' }}
-                    <span [class]="cell.improved ? 'text-green-400' : 'text-red-600'">&nbsp;({{ cell.difference | number: '1.2-2' }})</span></td>
+                    <span
+                      [class]="cell.improved ? 'text-green-400' : 'text-red-600'">&nbsp;({{ cell.difference | number: '1.2-2' }}
+                      )</span></td>
                   <td>
                     <button class="btn btn-xs">Analyse</button>
                   </td>
@@ -123,12 +124,15 @@
         </div>
       </section>
       <section class=" flex flex-col gap-4 border rounded-lg p-4 bg-white border-stone-300">
-        <div class="flex flex-row gap-2" >
+        <div class="flex flex-row gap-2">
           <h2 class="text-xl font-semibold">KPI Trend</h2>
           <div class="tabs tabs-box tabs-xs ml-auto">
-            <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked" [(ngModel)]="selectedKpiTrendPeriod"  [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
-            <input type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"  [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
-            <input type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"  [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
+            <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
+                   [(ngModel)]="selectedKpiTrendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
+            <input type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"
+                   [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
+            <input type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"
+                   [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
         </div>
         <app-line-chart [kpiTrendData]="kpiTrendData"></app-line-chart>

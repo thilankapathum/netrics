@@ -6,5 +6,6 @@ export interface BasicKpiSnapshot {
   previousValue?: number;
   difference?: number;
   improved?: boolean;
+  unit?:string;
   standardKpis?: KpiSnapshot[];
 }

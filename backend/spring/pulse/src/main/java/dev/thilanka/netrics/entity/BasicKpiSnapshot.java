@@ -15,5 +15,6 @@ public class BasicKpiSnapshot {
     private Double previousValue;
     private Double difference;
     private boolean improved;
+    private String unit;
     private List<KpiSnapshot> standardKpis;
 }
