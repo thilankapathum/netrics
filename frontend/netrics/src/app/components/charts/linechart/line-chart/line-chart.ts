@@ -9,8 +9,8 @@ import {
   ApexStroke,
   ChartComponent
 } from 'ng-apexcharts';
-import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
+import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -19,6 +19,7 @@ export type ChartOptions = {
   yaxis: ApexYAxis;
   dataLabels: ApexDataLabels;
   stroke: ApexStroke;
+  legend: ApexLegend;
 };
 
 @Component({
@@ -31,14 +32,14 @@ export type ChartOptions = {
 export class LineChart implements OnInit, OnChanges {
 
   @ViewChild("chart") chart!: ChartComponent;
-  @Input() kpiData: KpiDataDto[] = [];
+  @Input() kpiTrendData: KpiTrendDto[] = [];
 
   public chartOptions: Partial<ChartOptions> = {
     series: [],
     chart: {
       fontFamily: 'Inter',
       type: 'line',
-      height: 200,
+      height: 225,
       width: '100%',
       animations: {
         enabled: true,
@@ -55,6 +56,11 @@ export class LineChart implements OnInit, OnChanges {
       labels: {
         formatter: (val: number) => val.toFixed(2)
       }
+    },
+    legend:{
+      show: true,
+      showForSingleSeries: true,
+      position: 'top',
     }
   };
 
@@ -65,8 +71,8 @@ export class LineChart implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['kpiData'] && this.kpiData) {
-      const series = this.buildSeries(this.kpiData);
+    if (changes['kpiTrendData'] && this.kpiTrendData) {
+      const series = this.buildSeries(this.kpiTrendData);
 
       if (this.chart) {
         this.chart.updateSeries(series, true);
@@ -79,8 +85,8 @@ export class LineChart implements OnInit, OnChanges {
     }
   }
 
-  private buildSeries(kpiDataDto: KpiDataDto[]): ApexAxisChartSeries {
-    const grouped = kpiDataDto.reduce((acc, curr) => {
+  private buildSeries(kpiTrendDataDto:KpiTrendDto[]): ApexAxisChartSeries {
+    const grouped = kpiTrendDataDto.reduce((acc, curr) => {
       const key = curr.kpiLabel ?? 'Unknown KPI';
       if (!acc[key]) {
         acc[key] = [];
@@ -97,7 +103,6 @@ export class LineChart implements OnInit, OnChanges {
       data
     }));
   }
-
 
   private round2(n: number): number {
     return Math.round((n + Number.EPSILON) * 100) / 100;

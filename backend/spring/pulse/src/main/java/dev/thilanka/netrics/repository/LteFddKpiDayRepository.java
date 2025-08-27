@@ -3,6 +3,7 @@ package dev.thilanka.netrics.repository;
 import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.entity.KpiData;
 import dev.thilanka.netrics.entity.KpiSnapshotCurrentPre;
+import dev.thilanka.netrics.entity.KpiTrend;
 import dev.thilanka.netrics.entity.WorstCellCurrentPre;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -236,18 +237,6 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
     // ----------------------------- KPI DATA BY CELL AND KPI ----------------------------------------------------------
 
-//    @Query(value = """
-//            SELECT timestamp, cell_name,  lte_fdd_standard_kpi.label label, kpi_value
-//            FROM lte_fdd_kpi_day
-//            LEFT JOIN lte_fdd_standard_kpi
-//            	ON lte_fdd_standard_kpi.id = lte_fdd_kpi_day.lte_fdd_standard_kpi_id
-//            WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//            	AND cell_name = :cellName
-//            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//                    AND (:timestamp)
-//            """, nativeQuery = true)
-//    List<KpiDataDto> findDataByKpiAndCel(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("cellName") String cellName);
-
 
     @Query(value = """
             SELECT timestamp, cell_name,  lte_fdd_standard_kpi.label label, kpi_value
@@ -261,4 +250,50 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             """, nativeQuery = true)
     List<KpiData> findDataByKpiAndCell(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("cellName") String cellName);
 
+
+
+    // ----------------------------- KPI TREND DATA BY KPI ----------------------------------------------------------
+
+
+    @Query(value = """
+            SELECT timestamp,
+            	lte_fdd_standard_kpi.label kpi_label,
+                COALESCE(
+                    CASE
+                    	WHEN lte_fdd_standard_kpi.unit = '%'
+                        THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                    END,
+                    AVG(kpi_value)
+                ) AS kpi_value
+            FROM lte_fdd_kpi_day
+            LEFT JOIN lte_fdd_standard_kpi
+                ON lte_fdd_standard_kpi.id = lte_fdd_standard_kpi_id
+            WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                                AND (:timestamp)
+            GROUP BY timestamp, lte_fdd_standard_kpi_id;
+            """, nativeQuery = true)
+    List<KpiTrend> findTrendDataAvgByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period);
+
+    @Query(value = """
+            SELECT timestamp,
+            	lte_fdd_standard_kpi.label kpi_label,
+                COALESCE(
+                    CASE
+                    	WHEN lte_fdd_standard_kpi.unit = '%'
+                        THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                    END,
+                    SUM(kpi_value)
+                ) AS kpi_value
+            FROM lte_fdd_kpi_day
+            LEFT JOIN lte_fdd_standard_kpi
+                ON lte_fdd_standard_kpi.id = lte_fdd_standard_kpi_id
+            WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                                AND (:timestamp)
+            GROUP BY timestamp, lte_fdd_standard_kpi_id;
+            """, nativeQuery = true)
+    List<KpiTrend> findTrendDataSumByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period);
 }

@@ -10,7 +10,7 @@ import {BasicKpiSnapshot} from '../../../../models/pulse/BasicKpiSnapshot';
 import {FormsModule} from '@angular/forms';
 import {StandardKpiDto} from '../../../../models/pulse/StandardKpiDto';
 import {LtefddstandardkpiService} from '../../../../service/pulse/ltefdd/ltefddstandardkpi.service';
-import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
+import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 
 @Component({
   selector: 'app-pulse',
@@ -24,15 +24,16 @@ export class PulseComponent implements OnInit {
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
   worstCells: WorstCell[] = [];
-  period: string = 'day';
+  granularity: string = 'day';
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi: string = '';
-  kpiData: KpiDataDto[] = [];
+  selectedKpiTrendPeriod: string = 'month';
+  kpiTrendData: KpiTrendDto[] = [];
 
   constructor(private cdr: ChangeDetectorRef,
               private ltefddbasickpiservice: LtefddbasickpiService,
               private ltefdddayservice: LtefdddayService,
-              private ltefddstandardkpiservice:LtefddstandardkpiService) {
+              private ltefddstandardkpiservice: LtefddstandardkpiService) {
   }
 
   ngOnInit() {
@@ -58,7 +59,7 @@ export class PulseComponent implements OnInit {
   getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
     this.basicKpiSnapshots = [];
     for (const kpi of basicKpiDto) {
-      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.period)
+      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity)
         .subscribe({
           next: data => {
             this.basicKpiSnapshots.push(data);
@@ -71,12 +72,11 @@ export class PulseComponent implements OnInit {
     }
   }
 
-  getWorstCellsByKpi(kpiName: string, period: string, count: number) {
+  getWorstCellsByKpi(kpiName: string, granularity: string, count: number) {
     this.worstCells = [];
-    this.ltefdddayservice.getWorstCellsByKpi(kpiName, period, count).subscribe({
+    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, count).subscribe({
       next: data => {
         this.worstCells = data;
-        // console.log("WorstCellsByKpi:", this.worstCells);
       }, error: error => {
         console.log("Error getWorstCellsByKpi:");
         console.error(error);
@@ -85,15 +85,14 @@ export class PulseComponent implements OnInit {
     })
   }
 
-  selectPeriod(period: string) {
-    this.period = period;
+  selectGranularity(granularity: string) {
+    this.granularity = granularity;
     this.ngOnInit();
   }
 
   selectKpi(kpi: string) {
-    this.getWorstCellsByKpi(kpi,this.period,10);
-    this.getDataByKpiAndCell(kpi,'KYUDW1-M-L85-B1','month')
-    // this.ngOnInit();
+    this.getWorstCellsByKpi(kpi, this.granularity, 100);
+    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod)
   }
 
   getAllStandardKpi() {
@@ -101,7 +100,10 @@ export class PulseComponent implements OnInit {
     this.ltefddstandardkpiservice.getAllStandardKpi().subscribe({
       next: data => {
         this.standardKpis = data;
-        // console.log("StandardKpis:", this.standardKpis);
+        if (this.standardKpis.length > 0) {
+          this.selectedStandardKpi = this.standardKpis[0].kpiName!;
+          this.selectKpi(this.selectedStandardKpi);
+        }
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
@@ -110,18 +112,21 @@ export class PulseComponent implements OnInit {
     })
   }
 
-  getDataByKpiAndCell(kpiName: string, cellName:string, period: string) {
-    this.kpiData = [];
-    this.ltefdddayservice.getDataByKpiAndCell(kpiName, cellName, period).subscribe({
+  onPeriodChange(event: Event) {
+    this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+  }
+
+  getTrendDataByKpi(kpiName: string, period: string) {
+    this.kpiTrendData = [];
+    this.ltefdddayservice.getDataByKpi(kpiName, period).subscribe({
       next: data => {
-        this.kpiData = data;
-        console.log("DataByKpiAndCell:", this.kpiData);
-      },error: error => {
-        console.log("Error getDataByKpiAndCell:");
+        this.kpiTrendData = data;
+        console.log("DataByKpi:", this.kpiTrendData);
+      }, error: error => {
+        console.log("Error getDataByKpi:");
         console.error(error);
-        alert("Error getDataByKpiAndCell:");
+        alert("Error getDataByKpi:");
       }
     })
   }
-
 }

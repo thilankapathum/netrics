@@ -1,9 +1,9 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.entity.BasicKpiSnapshot;
 import dev.thilanka.netrics.entity.WorstCell;
-import dev.thilanka.netrics.entity.KpiSnapshot;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -40,5 +40,11 @@ public class LteFddKpiDayController {
     public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period){
         List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiAndCell(kpiName, cellName, period);
         return ResponseEntity.ok(kpiDataDtos);
+    }
+
+    @GetMapping("kpi")
+    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period){
+        List<KpiTrendDto> kpiTrendDtos = lteFddKpiDayService.getTrendByKpi(kpiName, period);
+        return ResponseEntity.ok(kpiTrendDtos);
     }
 }

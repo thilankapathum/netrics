@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.ltefdd.*;
 import dev.thilanka.netrics.mapper.Mapper;
@@ -346,7 +347,42 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
                 .toList();
     }
 
+
+
     // ------------------------------ CELL KPI - END -------------------------------------------------------------------
+
+    // ------------------------------ KPI TREND - END -------------------------------------------------------------------
+
+    @Override
+    public List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period) {
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
+        LocalDateTime timestamp = getLatestDate();
+        List<KpiTrend> kpiTrends = new ArrayList<>();
+
+        switch (period) {
+            case "week" ->{
+                if (Objects.equals(standardKpi.getAggregation(), "SUM")){
+                    kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, 6L);
+                } else kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, 6L);
+            }
+            case "month" -> {
+                if (Objects.equals(standardKpi.getAggregation(), "SUM")){
+                    kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, 29L);
+                } else kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, 29L);
+            }
+            case "quarter" ->{
+                if (Objects.equals(standardKpi.getAggregation(), "SUM")){
+                    kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, 89L);
+                } else kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, 89L);
+            }
+        }
+        return kpiTrends.stream().map(mapper::kpiTrendToDto).toList();
+    }
+
+
+    // ------------------------------ KPI TREND - END -------------------------------------------------------------------
+
+
     @Override
     public List<KpiDataDto> findAll() {
         List<LteFddKpiDay> lteFddKpiDays = lteFddKpiDayRepository.findAll();

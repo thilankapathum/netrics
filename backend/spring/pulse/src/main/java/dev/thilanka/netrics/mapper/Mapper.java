@@ -2,6 +2,7 @@ package dev.thilanka.netrics.mapper;
 
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.KpiData;
+import dev.thilanka.netrics.entity.KpiTrend;
 import dev.thilanka.netrics.entity.Oss;
 import dev.thilanka.netrics.entity.ltefdd.*;
 import lombok.RequiredArgsConstructor;
@@ -115,6 +116,12 @@ public class Mapper {
 
     public KpiDataDto kpiDataToDto(KpiData kpiData) {
         return new KpiDataDto(kpiData.getTimestamp().toLocalDateTime(), kpiData.getCellName(), kpiData.getKpiLabel(), kpiData.getKpiValue());
+    }
+
+//-------- KpiTrend KpiTrendDto -----------------------------------
+
+    public KpiTrendDto kpiTrendToDto(KpiTrend kpiTrend){
+        return new KpiTrendDto(kpiTrend.getTimestamp(), kpiTrend.getKpiLabel(), kpiTrend.getKpiValue());
     }
 
 }
