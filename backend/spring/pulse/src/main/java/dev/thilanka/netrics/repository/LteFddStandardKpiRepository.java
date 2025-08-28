@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface LteFddStandardKpiRepository extends JpaRepository<LteFddStandardKpi, Long> {
     Optional<LteFddStandardKpi> findByKpiName(String kpiName);
+
+    Optional<LteFddStandardKpi> findByLabel(String label);
 }

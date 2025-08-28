@@ -1,13 +1,29 @@
+<dialog #analysisModal id="analyse_modal" class="modal">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">Hello!</h3>
+    <p class="py-4">Press ESC key or click the button below to close</p>
+<!--    <app-line-chart [kpiTrendData]="kpiData"></app-line-chart>-->
+    <app-linechart [chartSeries]="chartSeries" ></app-linechart>
+    <div class="modal-action">
+      <form method="dialog">
+        <!-- if there is a button in form, it will close the modal -->
+        <button class="btn">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+
 <div>
   <div class="m-4 flex flex-col gap-4">
     <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
       <div class="flex flex-col gap-y-0">
         <div class="text-sm font-medium"></div>
-        <div class="text-2xl font-bold">NETRICS PULSE</div>
+        <div class="text-2xl font-bold">WORST CELL</div>
       </div>
       <div class="grow-1"></div>
       <div>
-        <div class="tabs tabs-box tabs-xs border border-blue-50">
+        <div class="tabs tabs-box tabs-xs border border-stone-100">
           <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-FDD" checked="checked"/>
           <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-TDD"/>
           <input type="radio" name="rat_tabs" class="tab" aria-label="GSM"/>
@@ -16,26 +32,26 @@
       </div>
 
       <div class="flex flex-row gap-2">
-        <select class="select select-xs">
-          <option disabled selected>Region</option>
+        <select class="select select-sm border border-stone-200">
+          <option  disabled selected>Region</option>
           <option>Region 1</option>
           <option>Region 2</option>
           <option>Region 3</option>
         </select>
-        <select class="select select-xs">
+        <select class="select select-sm border border-stone-200">
           <option disabled selected>District</option>
           <option>Ampara</option>
           <option>Anuradhapura</option>
           <option>Batticaloa</option>
         </select>
       </div>
-      <div class="tabs tabs-box tabs-xs border border-green-50">
+      <div class="tabs tabs-box tabs-xs border border-stone-100 ">
         <input type="radio" name="aggregation_tabs" class="tab" aria-label="Day Average" checked="checked"/>
         <input type="radio" name="aggregation_tabs" class="tab" aria-label="Busy Hour"/>
       </div>
-      <div class="flex flex-row gap-2">
+      <div class="flex flex-row gap-2 items-center">
         <p>Granularity</p>
-        <select class="select select-xs" [(ngModel)]="granularity" (change)="selectGranularity(granularity)">
+        <select class="select select-sm border border-stone-200" [(ngModel)]="granularity" (change)="selectGranularity(granularity)">
           <option [value]="'day'" selected>Day</option>
           <option [value]="'week'">Week</option>
           <option [value]="'month'">Month</option>
@@ -54,7 +70,7 @@
               </div>
               <div class="stat-figure">
                 <span
-                  [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'">{{ snapshot.difference | number :'1.2-2' }}{{ snapshot.unit }}</span>
+                  [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'">@if (snapshot.difference! > 0) {+}{{ snapshot.difference | number :'1.2-2' }}{{ snapshot.unit }}</span>
               </div>
             </div>
             <div class="stat-desc">
@@ -67,7 +83,7 @@
                         <div class="font-semibold">
                           {{ standardKpi.value | number :'1.2-2' }}{{ standardKpi.unit }}
                           <span [class]="snapshot.improved ? 'text-green-400 font-normal' : 'text-red-600 font-normal'">
-                          ({{ standardKpi.difference | number :'1.2-2' }}{{ standardKpi.unit }})
+                          (@if (standardKpi.difference! > 0) {+}{{ standardKpi.difference | number :'1.2-2' }}{{ standardKpi.unit }})
                         </span>
                         </div>
                       </td>
@@ -86,7 +102,7 @@
       <section class=" flex flex-col gap-3 grow-1 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
-          <select class="select select-xs ml-auto" [(ngModel)]="selectedStandardKpi"
+          <select class="select select-sm ml-auto border border-stone-200" [(ngModel)]="selectedStandardKpi"
                   (change)="selectKpi(selectedStandardKpi)">
             <!--            <option disabled selected>KPI</option>-->
             @for (kpi of standardKpis; track $index) {
@@ -104,7 +120,7 @@
               <th class="font-semibold">KPI</th>
               <th class="font-semibold">Value</th>
               <!--              <th class="font-semibold">Difference</th>-->
-              <th class="font-semibold">Action</th>
+              <th class="font-semibold"></th>
             </tr>
             </thead>
             <tbody>
@@ -116,11 +132,10 @@
                   <td>{{ cell.kpiLabel }}</td>
                   <td [class.text-red-600]="cell.value! < 99.95">{{ cell.value | number :'1.2-2' }}{{ cell.unit }}
                     <span
-                      [class]="cell.improved ? 'text-green-400' : 'text-red-600'">&nbsp;({{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
-                      )
+                      [class]="cell.improved ? 'text-green-400' : 'text-red-600'">&nbsp;(@if (cell.difference! > 0) {+}{{ cell.difference | number: '1.2-2' }}{{ cell.unit }})
                     </span></td>
                   <td>
-                    <button class="btn btn-xs">Analyse</button>
+                    <button class="btn btn-xs" (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)" >Analyse</button>
                   </td>
                 </tr>
               }
@@ -133,7 +148,7 @@
           <button class="join-item btn btn-xs">»</button>
         </div>
       </section>
-      <section class=" flex flex-col gap-4 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
+      <section class=" flex flex-col gap-2 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
         <div class="flex flex-row gap-2">
           <h2 class="text-xl font-semibold">KPI Trend</h2>
           <div class="tabs tabs-box tabs-xs ml-auto">

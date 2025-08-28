@@ -28,6 +28,10 @@ export class LtefdddayService {
     return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell?kpiName=${kpiName}&cellName=${cellName}&period=${period}`);
   }
 
+  getDataByKpiLabelAndCell(kpiLabel:string, cellName:string, period: string) {
+    return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell-label?kpiLabel=${kpiLabel}&cellName=${cellName}&period=${period}`);
+  }
+
   getDataByKpi(kpiName:string, period: string) {
     return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi?kpiName=${kpiName}&period=${period}`)
   }

@@ -11,6 +11,7 @@ import {
 } from 'ng-apexcharts';
 import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
+import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -32,14 +33,16 @@ export type ChartOptions = {
 export class LineChart implements OnInit, OnChanges {
 
   @ViewChild("chart") chart!: ChartComponent;
-  @Input() kpiTrendData: KpiTrendDto[] = [];
+  // @Input() kpiTrendData: KpiTrendDto[] = [];  //-- Kpi Trend data with timestamp, kpiLabel & kpiValue only.
+  @Input() kpiTrendData: Array<KpiTrendDto | KpiDataDto> = [];
+  // @Input() kpiData: KpiDataDto[] = [];    //-- Kpi Trend data including cell
 
   public chartOptions: Partial<ChartOptions> = {
     series: [],
     chart: {
       fontFamily: 'Inter',
       type: 'line',
-      height: 225,
+      height: 215,
       width: '100%',
       animations: {
         enabled: true,
@@ -48,6 +51,9 @@ export class LineChart implements OnInit, OnChanges {
           enabled: true,
           delay: 150
         }
+      },
+      toolbar:{
+        show: false
       }
     },
     xaxis: {type: 'datetime'},
@@ -61,6 +67,10 @@ export class LineChart implements OnInit, OnChanges {
       show: true,
       showForSingleSeries: true,
       position: 'top',
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 2,
     }
   };
 
@@ -87,6 +97,26 @@ export class LineChart implements OnInit, OnChanges {
 
   private buildSeries(kpiTrendDataDto:KpiTrendDto[]): ApexAxisChartSeries {
     const grouped = kpiTrendDataDto.reduce((acc, curr) => {
+      const key = curr.kpiLabel ?? 'Unknown KPI';
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push({
+        x: new Date(curr.timestamp!),
+        y: this.round2(curr.kpiValue ?? 0)
+      });
+      return acc;
+    }, {} as Record<string, { x: Date; y: number }[]>);
+
+    return Object.entries(grouped).map(([name, data]) => ({
+      name,
+      data
+    }));
+  }
+
+
+  private buildSeriesWithCell(kpiDataDto:KpiDataDto[]): ApexAxisChartSeries {
+    const grouped = kpiDataDto.reduce((acc, curr) => {
       const key = curr.kpiLabel ?? 'Unknown KPI';
       if (!acc[key]) {
         acc[key] = [];

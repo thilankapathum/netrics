@@ -42,6 +42,12 @@ public class LteFddKpiDayController {
         return ResponseEntity.ok(kpiDataDtos);
     }
 
+    @GetMapping("cell-label")
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period){
+        List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
+        return ResponseEntity.ok(kpiDataDtos);
+    }
+
     @GetMapping("kpi")
     public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period){
         List<KpiTrendDto> kpiTrendDtos = lteFddKpiDayService.getTrendByKpi(kpiName, period);

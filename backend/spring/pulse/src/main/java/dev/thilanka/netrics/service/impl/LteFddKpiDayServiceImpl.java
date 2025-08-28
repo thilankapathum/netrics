@@ -348,6 +348,13 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
                 .toList();
     }
 
+    @Override
+    public List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period) {
+
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiLabel(kpiLabel);
+
+        return getDataByKpiAndCell(standardKpi.getKpiName(),cellName,period);
+    }
 
 
     // ------------------------------ CELL KPI - END -------------------------------------------------------------------

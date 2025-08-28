@@ -63,4 +63,11 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
                 .findByKpiName(kpiName)
                 .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
     }
+
+    @Override
+    public LteFddStandardKpi findByKpiLabel(String kpiLabel) {
+        return lteFddStandardKpiRepository
+                .findByLabel(kpiLabel)
+                .orElseThrow(()-> new RuntimeException("Standard KPI not found by: " + kpiLabel));
+    }
 }

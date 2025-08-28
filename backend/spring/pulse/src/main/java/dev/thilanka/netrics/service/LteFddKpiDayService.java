@@ -15,6 +15,8 @@ public interface LteFddKpiDayService {
 
     List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period);
 
+    List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period);
+
     List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period);
 
 }
