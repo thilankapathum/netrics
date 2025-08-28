@@ -19,6 +19,7 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: --max_allowed_packet=256M
     ports:
       - "8006:3306"
 #    expose:
@@ -125,7 +126,7 @@ services:
       - private_net
 
   kpi_processor_ltefdd_day:
-    image: thilankaw/netrics/kpi-processor-ltefdd-day:0.0.1
+    image: thilankaw/netrics/kpi-processor-ltefdd-day:0.0.2
     container_name: kpi_processor_ltefdd_day
     env_file:
       - .env

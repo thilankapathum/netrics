@@ -1,13 +1,12 @@
-<dialog #analysisModal id="analyse_modal" class="modal">
-  <div class="modal-box">
-    <h3 class="text-lg font-bold">Hello!</h3>
-    <p class="py-4">Press ESC key or click the button below to close</p>
-<!--    <app-line-chart [kpiTrendData]="kpiData"></app-line-chart>-->
+<dialog #analysisModal id="analyse_modal" class="modal w-full">
+  <div class="modal-box max-w-6xl">
+    <h3 class="text-lg font-bold">{{ analysisModalCell }}</h3>
     <app-linechart [chartSeries]="chartSeries" ></app-linechart>
     <div class="modal-action">
+      <button class="btn btn-outline btn-primary btn-xs">More</button>
       <form method="dialog">
         <!-- if there is a button in form, it will close the modal -->
-        <button class="btn">Close</button>
+        <button class="btn btn-xs">Close</button>
       </form>
     </div>
   </div>
@@ -127,7 +126,7 @@
             <!-- row -->
               @for (cell of worstCells; track cell.cellName; let i = $index) {
                 <tr class="hover:bg-stone-200">
-                  <td>{{ i + 1 }}</td>
+                  <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
                   <td>{{ cell.cellName }}</td>
                   <td>{{ cell.kpiLabel }}</td>
                   <td [class.text-red-600]="cell.value! < 99.95">{{ cell.value | number :'1.2-2' }}{{ cell.unit }}
@@ -143,9 +142,19 @@
           </table>
         </div>
         <div class="join justify-center">
-          <button class="join-item btn disabled btn-xs">«</button>
-          <button class="join-item btn btn-active btn-xs">1</button>
-          <button class="join-item btn btn-xs">»</button>
+          <div class="join justify-center mt-2">
+            <button class="join-item btn btn-xs"
+                    [disabled]="currentPage === 0"
+                    (click)="prevPage()">«</button>
+
+            <button class="join-item btn btn-active btn-xs">
+              {{ currentPage + 1 }} / {{ totalPages }}
+            </button>
+
+            <button class="join-item btn btn-xs"
+                    [disabled]="currentPage >= totalPages - 1"
+                    (click)="nextPage()">»</button>
+          </div>
         </div>
       </section>
       <section class=" flex flex-col gap-2 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">

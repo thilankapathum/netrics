@@ -10,9 +10,10 @@ import lombok.*;
 public class WorstCell {
     private String cellName;
     private String kpiLabel;
+    private String unit;
     private Double value;
     private Double previousValue;
     private Double difference;
     private boolean improved;
-    private String unit;
+
 }

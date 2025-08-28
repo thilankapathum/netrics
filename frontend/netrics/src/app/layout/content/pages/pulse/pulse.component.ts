@@ -13,8 +13,9 @@ import {LtefddstandardkpiService} from '../../../../service/pulse/ltefdd/ltefdds
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 import {Linechart} from '../../../../components/charts/linechart/linechart/linechart';
-import {ApexAxisChartSeries} from 'ng-apexcharts';
 import {Observable} from 'rxjs';
+import {ChartService} from '../../../../service/components/chart/chart.service';
+import {WorstCells} from '../../../../models/pulse/WorstCells';
 
 @Component({
   selector: 'app-pulse',
@@ -27,22 +28,28 @@ export class PulseComponent implements OnInit {
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
-  worstCells: WorstCell[] = [];
+  // worstCellsX: WorstCell[] = [];
   granularity: string = 'day';
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi: string = '';
   selectedKpiTrendPeriod: string = 'month';
   kpiTrendData: KpiTrendDto[] = [];
-  kpiData: KpiDataDto[] = [];
+  chartSeries: any = null;
+  analysisModalCell: string = '';
+  analysisModalKpiLabel: string = '';
 
-  chartSeries:any = null;
+  currentPage: number = 0;
+  pageSize: number = 5;
+  totalPages: number = 0;
+  worstCells: WorstCells[] = [];
 
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
   constructor(private cdr: ChangeDetectorRef,
               private ltefddbasickpiservice: LtefddbasickpiService,
               private ltefdddayservice: LtefdddayService,
-              private ltefddstandardkpiservice: LtefddstandardkpiService) {
+              private ltefddstandardkpiservice: LtefddstandardkpiService,
+              private chartService: ChartService) {
   }
 
   ngOnInit() {
@@ -83,18 +90,34 @@ export class PulseComponent implements OnInit {
     }
   }
 
-  getWorstCellsByKpi(kpiName: string, granularity: string, count: number) {
-    this.worstCells = [];
-    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, count).subscribe({
+  getWorstCellsByKpi(kpiName: string, granularity: string, page: number, size: number) {
+    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, page, size).subscribe({
       next: data => {
-        this.worstCells = data;
-      }, error: error => {
-        console.log("Error getWorstCellsByKpi:");
-        console.error(error);
-        alert("Error getWorstCellsByKpi:");
+        console.log("data", data);
+        this.worstCells = data.content;
+        console.log("WorstCells2:", this.worstCells);
+        this.totalPages = data.totalPages;
+        this.currentPage = data.number;
+      },
+      error: error => {
+        console.error("Error getWorstCellsByKpi:", error);
+        alert("Error getWorstCellsByKpi");
       }
-    })
+    });
   }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages - 1) {
+      this.getWorstCellsByKpi(this.selectedStandardKpi, "day", this.currentPage + 1, this.pageSize);
+    }
+  }
+
+  prevPage() {
+    if (this.currentPage > 0) {
+      this.getWorstCellsByKpi(this.selectedStandardKpi, "day", this.currentPage - 1, this.pageSize);
+    }
+  }
+
 
   selectGranularity(granularity: string) {
     this.granularity = granularity;
@@ -102,8 +125,9 @@ export class PulseComponent implements OnInit {
   }
 
   selectKpi(kpi: string) {
-    this.getWorstCellsByKpi(kpi, this.granularity, 100);
-    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod)
+    // this.getWorstCellsByKpiX(kpi, this.granularity, 8);
+    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
+    this.getWorstCellsByKpi(kpi, this.granularity, this.currentPage, this.pageSize);
   }
 
   getAllStandardKpi() {
@@ -132,7 +156,7 @@ export class PulseComponent implements OnInit {
     this.ltefdddayservice.getDataByKpi(kpiName, period).subscribe({
       next: data => {
         this.kpiTrendData = data;
-        console.log("DataByKpi:", this.kpiTrendData);
+        // console.log("DataByKpi:", this.kpiTrendData);
       }, error: error => {
         console.log("Error getDataByKpi:");
         console.error(error);
@@ -142,67 +166,25 @@ export class PulseComponent implements OnInit {
   }
 
   getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string): Observable<KpiDataDto[]> {
-    // let kpiDataDtos: KpiDataDto[] = [];
-    // this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period).subscribe({
-    //   next: data => {
-    //     kpiDataDtos = data;
-    //     console.log("getTrendDataByKpiLabelAndCell-kpiDataDtos:", kpiDataDtos);
-    //     console.log("getTrendDataByKpiLabelAndCell-data",data);
-    //   }, error: error => {
-    //     console.log("Error getDataByKpiLabel:");
-    //     console.error(error);
-    //     alert("Error getDataByKpiLabel:");
-    //   }
-    // })
-    // return kpiDataDtos;
-
-    return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel,cellName,period);
+    return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
   }
 
   openAnalysisModal(kpiLabel: string, cellName: string) {
-    console.log(kpiLabel, cellName);
-    this.getTrendDataByKpiLabelAndCell(kpiLabel,cellName,'quarter')
+    this.analysisModalCell = cellName;
+    this.analysisModalKpiLabel = kpiLabel;
+    this.getTrendDataByKpiLabelAndCell(kpiLabel, cellName, 'quarter')
       .subscribe({
         next: data => {
-          console.log(kpiLabel, cellName);
+          // console.log(kpiLabel, cellName);
           console.log("data:", data);
-          this.chartSeries = this.buildSeriesWithCell(data);
-          console.log("chartSeries:", this.chartSeries);
+          this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
+          // console.log("chartSeries:", this.chartSeries);
           this.analysisModal.nativeElement.showModal();
         }, error: err => {
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(err);
         }
       })
-    // let kpiDataDtos: KpiDataDto[] = this.getTrendDataByKpiLabelAndCell(kpiLabel,cellName,'quarter');
-    // // this.getTrendDataByKpiLabelAndCell(kpiLabel, cellName, 'quarter');
-    // console.log("openAnalysisModal-KpiDataDtos:" , kpiDataDtos)
-    // this.chartSeries = this.buildSeriesWithCell(kpiDataDtos);
-    // this.analysisModal.nativeElement.showModal();
-  }
-
-
-  private buildSeriesWithCell(kpiDataDto:KpiDataDto[]): ApexAxisChartSeries {
-    const grouped = kpiDataDto.reduce((acc, curr) => {
-      const key = curr.kpiLabel ?? 'Unknown KPI';
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push({
-        x: new Date(curr.timestamp!),
-        y: this.round2(curr.kpiValue ?? 0)
-      });
-      return acc;
-    }, {} as Record<string, { x: Date; y: number }[]>);
-
-    return Object.entries(grouped).map(([name, data]) => ({
-      name,
-      data
-    }));
-  }
-
-  private round2(n: number): number {
-    return Math.round((n + Number.EPSILON) * 100) / 100;
   }
 
 }

@@ -33,9 +33,7 @@ export type ChartOptions = {
 export class LineChart implements OnInit, OnChanges {
 
   @ViewChild("chart") chart!: ChartComponent;
-  // @Input() kpiTrendData: KpiTrendDto[] = [];  //-- Kpi Trend data with timestamp, kpiLabel & kpiValue only.
   @Input() kpiTrendData: Array<KpiTrendDto | KpiDataDto> = [];
-  // @Input() kpiData: KpiDataDto[] = [];    //-- Kpi Trend data including cell
 
   public chartOptions: Partial<ChartOptions> = {
     series: [],
@@ -97,26 +95,6 @@ export class LineChart implements OnInit, OnChanges {
 
   private buildSeries(kpiTrendDataDto:KpiTrendDto[]): ApexAxisChartSeries {
     const grouped = kpiTrendDataDto.reduce((acc, curr) => {
-      const key = curr.kpiLabel ?? 'Unknown KPI';
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push({
-        x: new Date(curr.timestamp!),
-        y: this.round2(curr.kpiValue ?? 0)
-      });
-      return acc;
-    }, {} as Record<string, { x: Date; y: number }[]>);
-
-    return Object.entries(grouped).map(([name, data]) => ({
-      name,
-      data
-    }));
-  }
-
-
-  private buildSeriesWithCell(kpiDataDto:KpiDataDto[]): ApexAxisChartSeries {
-    const grouped = kpiDataDto.reduce((acc, curr) => {
       const key = curr.kpiLabel ?? 'Unknown KPI';
       if (!acc[key]) {
         acc[key] = [];

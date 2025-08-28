@@ -609,7 +609,7 @@ class KPIProcessor:
 
     def convert_nan_to_none(self, value):
         """Convert pandas NaN values to None for proper MySQL NULL insertion"""
-        if pd.isna(value):
+        if pd.isna(value) or value == '' or str(value).strip().lower() == 'nan':
             return None
         return value
 

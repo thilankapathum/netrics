@@ -5,6 +5,7 @@ import {BasicKpiSnapshot} from '../../../models/pulse/BasicKpiSnapshot';
 import {WorstCell} from '../../../models/pulse/WorstCell';
 import {KpiDataDto} from '../../../models/pulse/KpiDataDto';
 import {KpiTrendDto} from '../../../models/pulse/KpiTrendDto';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -20,8 +21,14 @@ export class LtefdddayService {
     return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi?kpiName=${kpiName}&period=${period}`);
   }
 
-  getWorstCellsByKpi(kpiName: string, granularity: string, count: number) {
-    return this.http.get<Array<WorstCell>>(`${this.baseUrl}/worst-cells?kpiName=${kpiName}&period=${granularity}&count=${count}`);
+  // getWorstCellsByKpiX(kpiName: string, granularity: string, count: number) {
+  //   return this.http.get<Array<WorstCell>>(`${this.baseUrl}/worst-cells?kpiName=${kpiName}&period=${granularity}&count=${count}`);
+  // }
+
+  getWorstCellsByKpi(kpiName: string, period: string, page: number, size: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/worst-cells-page`, {
+      params: { kpiName, period, page, size }
+    });
   }
 
   getDataByKpiAndCell(kpiName:string, cellName:string, period: string) {
