@@ -1,6 +1,5 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {WorstCell} from '../../../../models/pulse/WorstCell';
 import {OnInit, ChangeDetectorRef} from '@angular/core';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
@@ -16,6 +15,7 @@ import {Linechart} from '../../../../components/charts/linechart/linechart/linec
 import {Observable} from 'rxjs';
 import {ChartService} from '../../../../service/components/chart/chart.service';
 import {WorstCells} from '../../../../models/pulse/WorstCells';
+import {AlertService} from '../../../../components/alert/alert.service';
 
 @Component({
   selector: 'app-pulse',
@@ -49,7 +49,8 @@ export class PulseComponent implements OnInit {
               private ltefddbasickpiservice: LtefddbasickpiService,
               private ltefdddayservice: LtefdddayService,
               private ltefddstandardkpiservice: LtefddstandardkpiService,
-              private chartService: ChartService) {
+              private chartService: ChartService,
+              private alertService: AlertService) {
   }
 
   ngOnInit() {
@@ -67,7 +68,7 @@ export class PulseComponent implements OnInit {
       }, error: error => {
         console.log("Error getAllBasicKpi");
         console.error(error);
-        alert("Error getAllBasicKpi");
+        this.alertService.error("Basic KPI retrieval failed");
       }
     })
   }
@@ -83,7 +84,7 @@ export class PulseComponent implements OnInit {
             }, error: error => {
               console.log("Error getBasicKpiSnapshots:");
               console.error(error);
-              alert("Error getBasicKpiSnapshots:");
+              this.alertService.error("Basic KPI Snapshot retrieval failed");
             }
           }
         )
@@ -98,10 +99,11 @@ export class PulseComponent implements OnInit {
         console.log("WorstCells2:", this.worstCells);
         this.totalPages = data.totalPages;
         this.currentPage = data.number;
+
       },
       error: error => {
         console.error("Error getWorstCellsByKpi:", error);
-        alert("Error getWorstCellsByKpi");
+        this.alertService.error("Worst cells retrieval failed");
       }
     });
   }
@@ -118,14 +120,12 @@ export class PulseComponent implements OnInit {
     }
   }
 
-
   selectGranularity(granularity: string) {
     this.granularity = granularity;
     this.ngOnInit();
   }
 
   selectKpi(kpi: string) {
-    // this.getWorstCellsByKpiX(kpi, this.granularity, 8);
     this.currentPage = 0;
     this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
     this.getWorstCellsByKpi(kpi, this.granularity, this.currentPage, this.pageSize);
@@ -143,7 +143,7 @@ export class PulseComponent implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        alert("Error getAllStandardKpi:");
+        this.alertService.error("Standard KPI retrieval failed");
       }
     })
   }
@@ -157,16 +157,16 @@ export class PulseComponent implements OnInit {
     this.ltefdddayservice.getDataByKpi(kpiName, period).subscribe({
       next: data => {
         this.kpiTrendData = data;
-        // console.log("DataByKpi:", this.kpiTrendData);
       }, error: error => {
         console.log("Error getDataByKpi:");
         console.error(error);
-        alert("Error getDataByKpi:");
+        this.alertService.error("Trend data retrieval failed");
       }
     })
   }
 
   getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string): Observable<KpiDataDto[]> {
+
     return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
   }
 
@@ -176,14 +176,13 @@ export class PulseComponent implements OnInit {
     this.getTrendDataByKpiLabelAndCell(kpiLabel, cellName, 'quarter')
       .subscribe({
         next: data => {
-          // console.log(kpiLabel, cellName);
           console.log("data:", data);
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
-          // console.log("chartSeries:", this.chartSeries);
           this.analysisModal.nativeElement.showModal();
         }, error: err => {
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(err);
+          this.alertService.error("KPI Data retrieval failed");
         }
       })
   }

@@ -98,6 +98,22 @@
 
     <!--    <div class="flex flex-row gap-4 flex-wrap justify-around">-->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 ">
+
+      <section class=" flex flex-col gap-2 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
+        <div class="flex flex-row gap-2">
+          <h2 class="text-xl font-semibold">KPI Trend</h2>
+          <div class="tabs tabs-box tabs-xs ml-auto">
+            <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
+                   [(ngModel)]="selectedKpiTrendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
+            <input type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"
+                   [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
+            <input type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"
+                   [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
+          </div>
+        </div>
+        <app-line-chart [kpiTrendData]="kpiTrendData"></app-line-chart>
+      </section>
+
       <section class=" flex flex-col gap-3 grow-1 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
@@ -156,20 +172,6 @@
                     (click)="nextPage()">»</button>
           </div>
         </div>
-      </section>
-      <section class=" flex flex-col gap-2 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
-        <div class="flex flex-row gap-2">
-          <h2 class="text-xl font-semibold">KPI Trend</h2>
-          <div class="tabs tabs-box tabs-xs ml-auto">
-            <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
-                   [(ngModel)]="selectedKpiTrendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
-            <input type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"
-                   [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
-            <input type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"
-                   [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
-          </div>
-        </div>
-        <app-line-chart [kpiTrendData]="kpiTrendData"></app-line-chart>
       </section>
     </div>
 
