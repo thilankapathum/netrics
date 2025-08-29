@@ -84,7 +84,9 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
 
     @Query(value = """
-            SELECT
+            
+            SELECT * FROM
+            (SELECT
             	curr.cell_name, curr.kpi_label, curr.unit, curr.value,
             	pre.previous_value, (curr.value - pre.previous_value) AS difference,
             	CASE
@@ -133,17 +135,37 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ORDER BY
             	CASE WHEN curr.worst_order = 'ASC' THEN curr.value END ASC,
             	CASE WHEN curr.worst_order = 'DESC' THEN curr.value END DESC
+            LIMIT 100
+            ) AS top100
             """,
             countQuery = """
                     SELECT COUNT(*)
-                            FROM (
-                                SELECT cell_name
-                                FROM lte_fdd_kpi_day
-                                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-                                    AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-                                        AND (:timestamp)
-                                GROUP BY cell_name
-                            ) AS count_query
+                                    FROM (
+                                        SELECT curr.cell_name
+                                        FROM (
+                                            SELECT cell_name,
+                                                COALESCE(
+                                                    CASE
+                                                        WHEN lte_fdd_standard_kpi.unit = '%'
+                                                        THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                                                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                                    END,
+                                                    AVG(kpi_value)
+                                                ) AS value,
+                                                lte_fdd_standard_kpi.worst_order
+                                            FROM lte_fdd_kpi_day
+                                            LEFT JOIN lte_fdd_standard_kpi
+                                                ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
+                                            WHERE lte_fdd_standard_kpi_id = :standardKpiId
+                                                AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                                                    AND (:timestamp)
+                                            GROUP BY cell_name
+                                            ORDER BY
+                                                CASE WHEN lte_fdd_standard_kpi.worst_order = 'ASC' THEN value END ASC,
+                                                CASE WHEN lte_fdd_standard_kpi.worst_order = 'DESC' THEN value END DESC
+                                            LIMIT 100
+                                        ) AS curr
+                                    ) AS count_query
             """, nativeQuery = true)
     Page<WorstCellsDto> findWorstCells(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, Pageable pageable);
 

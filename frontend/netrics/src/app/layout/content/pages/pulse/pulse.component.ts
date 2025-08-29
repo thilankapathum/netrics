@@ -126,6 +126,7 @@ export class PulseComponent implements OnInit {
 
   selectKpi(kpi: string) {
     // this.getWorstCellsByKpiX(kpi, this.granularity, 8);
+    this.currentPage = 0;
     this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
     this.getWorstCellsByKpi(kpi, this.granularity, this.currentPage, this.pageSize);
   }

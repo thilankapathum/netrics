@@ -62,7 +62,7 @@
       @for (snapshot of basicKpiSnapshots; track $index) {
         <div  class="stats grow-1 border border-stone-200 bg-white rounded-xl shadow-md/5" [ngClass]="snapshot.improved ? 'shadow-green-500' : 'shadow-red-500'">
           <div class="stat">
-            <div class="stat-title font-semibold">{{ snapshot.kpiLabel }}</div>
+            <div class="stat-title text-md font-semibold">{{ snapshot.kpiLabel }}</div>
             <div class="flex flex-row flex-wrap gap-x-2 gap-y-0">
               <div
                 class="stat-value font-semibold text-stone-600">{{ snapshot.value | number :'1.2-2' }}{{ snapshot.unit }}
@@ -110,7 +110,7 @@
           </select>
         </div>
         <div class="overflow-x-auto">
-          <table class="table table-xs">
+          <table class="table table-sm">
             <!-- head -->
             <thead>
             <tr>
