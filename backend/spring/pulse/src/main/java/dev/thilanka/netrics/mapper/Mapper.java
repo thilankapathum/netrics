@@ -4,6 +4,8 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.KpiData;
 import dev.thilanka.netrics.entity.KpiTrend;
 import dev.thilanka.netrics.entity.Oss;
+import dev.thilanka.netrics.entity.district.District;
+import dev.thilanka.netrics.entity.district.DistrictCode;
 import dev.thilanka.netrics.entity.ltefdd.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -123,6 +125,31 @@ public class Mapper {
 
     public KpiTrendDto kpiTrendToDto(KpiTrend kpiTrend){
         return new KpiTrendDto(kpiTrend.getTimestamp(), kpiTrend.getKpiLabel(), kpiTrend.getKpiValue());
+    }
+
+    //------- DISTRICT DISTRICT-DTO -------------------------------------
+
+    public DistrictDto districtToDto(District district){
+        return new DistrictDto(district.getName(), district.getCode());
+    }
+
+    public District toDistrict(DistrictDto dto){
+        return District.builder()
+                .code(dto.code())
+                .name(dto.name())
+                .build();
+    }
+    //------------- DISTRICT-CODE DTO --------------------------------------
+
+    public DistrictCodeDto districtCodeToDto(DistrictCode code){
+        return new DistrictCodeDto(code.getCode(), code.getCategory(), code.getDistrict().getName());
+    }
+
+    public DistrictCode toDistrictCode(DistrictCodeDto codeDto){
+        return DistrictCode.builder()
+                .code(codeDto.code())
+                .category(codeDto.category())
+                .build();       //-- District is not included.
     }
 
 }

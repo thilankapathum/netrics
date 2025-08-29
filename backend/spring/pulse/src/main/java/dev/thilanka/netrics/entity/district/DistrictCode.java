@@ -1,16 +1,17 @@
 package dev.thilanka.netrics.entity.district;
 
+import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Builder
 @Table(name = "district_codes")
 public class DistrictCode {
     @Id
@@ -23,4 +24,7 @@ public class DistrictCode {
     @ManyToOne
     @JoinColumn(name = "district_id")
     private District district;
+
+//    @OneToMany(mappedBy = "districtCode", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+//    private List<LteFddKpiDay> lteFddKpiDays;
 }
