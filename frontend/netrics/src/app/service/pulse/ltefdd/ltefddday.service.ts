@@ -17,9 +17,9 @@ export class LtefdddayService {
     this.baseUrl = `${this.urlService.getPulseUrl()}/ltefdd/kpiday`;
   }
 
-  getBasicKpiSnapshot(kpiName: string, period: string) {
+  getBasicKpiSnapshot(kpiName: string, period: string, districtName:string) {
     return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi`,
-      { params : {kpiName, period} });
+      { params : {kpiName, period, districtName} });
   }
 
   // getWorstCellsByKpiX(kpiName: string, granularity: string, count: number) {

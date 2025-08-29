@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiSnapshotDto;
 import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
@@ -103,6 +104,24 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
 
+    private KpiSnapshotDto getLatestKpiSnapshotWithDistrict(String kpiName, String period, String districtName) {
+
+        //-- GET KPI WITH LABEL, IS-BASIC, VALUE, PREVIOUS VALUE, DIFFERENCE, IMPROVED
+
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
+        LocalDateTime timestamp = getLatestDate();
+        District district = districtService.findDistrictByName(districtName);
+
+        return lteFddKpiDayRepository.findLatestKpiSnapshotByDistrict(
+                standardKpi.getId(),
+                timestamp,
+                getLatestPreviousDate(period),
+                getPeriod(period),
+                district.getId())
+                .orElseThrow(()->new RuntimeException("KPI Snapshot Query failed!"));
+    }
+
+
     @Override
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
 
@@ -116,6 +135,67 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
             KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period);
             kpiSnapshots.add(snapshot);
+        }
+        basicKpiSnapshot.setStandardKpis(kpiSnapshots);
+
+        //-- CREATE BASIC-KPI'S DATA
+        basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
+        basicKpiSnapshot.setUnit(basicKpi.getUnit());
+
+        basicKpiSnapshot.setPreviousValue(1.0);
+
+        if (Objects.equals(basicKpi.getAggregation(), "MULTIPLY")) {
+
+            basicKpiSnapshot.setValue(1.0);
+
+            //-- Calculate Value & Pre-Value by multiplying component Standard-KPI values. [IMPORTANT: Assume component Standard-KPI are percentages]
+            for (KpiSnapshot snapshot : kpiSnapshots) {
+                basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue() / 100.0);
+                basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * snapshot.getPreviousValue() / 100.0);
+            }
+            basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * 100.0); //-- To avoid presenting decimals as percentages
+            basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * 100.0); //-- To avoid presenting decimals as percentages
+
+            basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
+            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
+
+        } else if (Objects.equals(basicKpi.getAggregation(), "SUM")) {
+
+            basicKpiSnapshot.setValue(0.0);
+
+            //-- Calculate Value & Pre-Value by adding component Standard-KPI values.
+            for (KpiSnapshot snapshot : kpiSnapshots) {
+                basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() + snapshot.getValue());
+                basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() + snapshot.getPreviousValue());
+            }
+
+            basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
+            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
+
+        } else {
+            basicKpiSnapshot.setValue(null);
+            basicKpiSnapshot.setPreviousValue(null);
+            basicKpiSnapshot.setDifference(null);
+            basicKpiSnapshot.setImproved(false);
+        }
+
+        return basicKpiSnapshot;
+    }
+
+    @Override
+    public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName) {
+        //Todo
+        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
+                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
+
+        BasicKpiSnapshot basicKpiSnapshot = new BasicKpiSnapshot();
+
+        List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
+
+        for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
+            KpiSnapshotDto snapshotDto = getLatestKpiSnapshotWithDistrict(standardKpi.getKpiName(), period, districtName);
+
+            kpiSnapshots.add(mapper.toKpiSnapshot(snapshotDto));
         }
         basicKpiSnapshot.setStandardKpis(kpiSnapshots);
 

@@ -84,7 +84,7 @@ export class PulseComponent implements OnInit {
     this.basicKpiSnapshots = [];
     for (const kpi of basicKpiDto) {
       this.ltefdddayservice
-        .getBasicKpiSnapshot(kpi.kpiName!, this.granularity)
+        .getBasicKpiSnapshot(kpi.kpiName!, this.granularity,this.district)
         .subscribe({
             next: data => {
               this.basicKpiSnapshots.push(data);

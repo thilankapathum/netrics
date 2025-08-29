@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiSnapshotDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
@@ -78,6 +79,70 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             ON curr.id = pre.id
             """, nativeQuery = true)
     Optional<KpiSnapshotCurrentPre> findLatestSumKpiSnapshotWithPre(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("PreTimestamp") LocalDateTime preTimestamp, @Param("period") Long period);
+
+
+
+
+
+    @Query(value = """
+            SELECT
+            	curr.kpi_label, curr.unit, curr.value,
+            	pre.previous_value, (curr.value - pre.previous_value) AS difference,
+            		CASE
+            			WHEN curr.worst_order = 'ASC' AND (curr.value - pre.previous_value) > 0 THEN 1
+            			WHEN curr.worst_order = 'DESC' AND (curr.value - pre.previous_value) < 0 THEN 1
+            			ELSE 0
+            		END AS improved
+            FROM (
+            	SELECT lte_fdd_standard_kpi.label kpi_label, lte_fdd_standard_kpi.unit unit,
+            		lte_fdd_standard_kpi.worst_order worst_order,
+            		COALESCE(
+            			CASE
+            				WHEN lte_fdd_standard_kpi.unit = '%'
+            				THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+            				ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+            			END,
+            			AVG(kpi_value)
+            		) AS value
+            	FROM lte_fdd_kpi_day
+            	LEFT JOIN lte_fdd_standard_kpi
+            		ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
+            	JOIN district_codes dc
+            		ON dc.id = district_code_id
+            	JOIN districts d
+            		ON d.id = dc.district_id
+            	WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            		AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+            			AND (:timestamp)
+            		AND d.id = :districtId
+            	GROUP BY kpi_label
+            ) AS curr
+            LEFT JOIN (
+            	SELECT lte_fdd_standard_kpi.label pre_kpi_label, lte_fdd_standard_kpi.unit unit,
+            		COALESCE(
+            			CASE
+            				WHEN lte_fdd_standard_kpi.unit = '%'
+            				THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+            				ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+            			END,
+            			AVG(kpi_value)
+            		) AS previous_value
+            	FROM lte_fdd_kpi_day
+            	LEFT JOIN lte_fdd_standard_kpi
+            		ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
+            	JOIN district_codes dc
+            		ON dc.id = district_code_id
+            	JOIN districts d
+            		ON d.id = dc.district_id
+            	WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            		AND timestamp BETWEEN DATE_SUB(:preTimestamp, INTERVAL :period DAY)
+            			AND (:preTimestamp)
+            		AND d.id = :districtId
+            	GROUP BY pre_kpi_label
+            ) AS pre
+            ON curr.kpi_label = pre.pre_kpi_label
+            """, nativeQuery = true)
+    Optional<KpiSnapshotDto> findLatestKpiSnapshotByDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("districtId") Long districtId);
 
 
     //  -------------------------- WORST CELLS WITH PREVIOUS - START -------------------------------------------------------

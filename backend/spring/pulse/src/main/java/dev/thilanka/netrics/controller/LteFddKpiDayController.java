@@ -31,25 +31,14 @@ public class LteFddKpiDayController {
     }
 
     @GetMapping("snapshot/basic-kpi")
-    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period) {
-        return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period));
+    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName) {
+
+        if (Objects.equals(districtName, "All Districts") || districtName == null){
+            return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period));
+        } else {
+            return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName));
+        }
     }
-
-//    @GetMapping("worst-cells")
-//    public ResponseEntity<List<WorstCell>> getWorstCellsByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam int count){
-//        return ResponseEntity.ok(lteFddKpiDayService.getWorstCellsByKpi(kpiName, period,count));
-//    }
-
-//    @GetMapping("worst-cells-page")
-//    public Page<WorstCellsDto> getWorstCellsByKpiPage(
-//            @RequestParam String kpiName,
-//            @RequestParam String period,
-//            @RequestParam int page,
-//            @RequestParam int size) {
-//
-//        return lteFddKpiDayService.getWorstCellsByKpiPage(kpiName, period, page, size);
-//
-//    }
 
     @GetMapping("worst-cells-page")
     public Page<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(
