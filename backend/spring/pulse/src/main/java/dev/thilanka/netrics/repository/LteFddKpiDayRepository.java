@@ -169,159 +169,105 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             """, nativeQuery = true)
     Page<WorstCellsDto> findWorstCells(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, Pageable pageable);
 
-//
-//    @Query(value = """
-//            SELECT
-//                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
-//                pre.pre_kpi_value, pre.pre_calculated_kpi_value
-//            FROM (
-//                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
-//            	AVG(kpi_value) kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                LEFT JOIN lte_fdd_standard_kpi
-//                        ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//                    AND (:timestamp)
-//                GROUP BY cell_name
-//            ) curr
-//           \s
-//            LEFT JOIN (
-//                SELECT cell_name pre_cell_name,
-//            	AVG(kpi_value) pre_kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS pre_calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:preTimestamp, INTERVAL :period DAY)
-//                    AND (:preTimestamp)
-//                GROUP BY pre_cell_name
-//            ) pre
-//           \s
-//            ON curr.cell_name = pre.pre_cell_name
-//            ORDER BY
-//                CASE
-//                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
-//                    ELSE curr.kpi_value
-//                END ASC
-//            LIMIT :count
-//           \s""", nativeQuery = true)
-//    List<WorstCellCurrentPre> findWorstCellsWithPrevAvgAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
-//
-//    @Query(value = """
-//            SELECT
-//                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
-//                pre.pre_kpi_value, pre.pre_calculated_kpi_value
-//            FROM (
-//                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
-//            	AVG(kpi_value) kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                LEFT JOIN lte_fdd_standard_kpi
-//                        ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//                    AND (:timestamp)
-//                GROUP BY cell_name
-//            ) curr
-//
-//            LEFT JOIN (
-//                SELECT cell_name pre_cell_name,
-//            	AVG(kpi_value) pre_kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS pre_calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:preTimestamp, INTERVAL :period DAY)
-//                    AND (:preTimestamp)
-//                GROUP BY pre_cell_name
-//            ) pre
-//
-//            ON curr.cell_name = pre.pre_cell_name
-//            ORDER BY
-//                CASE
-//                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
-//                    ELSE curr.kpi_value
-//                END DESC
-//            LIMIT :count
-//            """, nativeQuery = true)
-//    List<WorstCellCurrentPre> findWorstCellsWithPrevAvgDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
-//
-//    @Query(value = """
-//            SELECT
-//                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
-//                pre.pre_kpi_value, pre.pre_calculated_kpi_value
-//            FROM (
-//                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
-//            	SUM(kpi_value) kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                LEFT JOIN lte_fdd_standard_kpi
-//                        ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//                    AND (:timestamp)
-//                GROUP BY cell_name
-//            ) curr
-//
-//            LEFT JOIN (
-//                SELECT cell_name pre_cell_name,
-//            	SUM(kpi_value) pre_kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS pre_calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:preTimestamp, INTERVAL :period DAY)
-//                    AND (:preTimestamp)
-//                GROUP BY pre_cell_name
-//            ) pre
-//
-//            ON curr.cell_name = pre.pre_cell_name
-//            ORDER BY
-//                CASE
-//                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
-//                    ELSE curr.kpi_value
-//                END ASC
-//            LIMIT :count
-//            """, nativeQuery = true)
-//    List<WorstCellCurrentPre> findWorstCellsWithPrevSumAsc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
-//
-//    @Query(value = """
-//            SELECT
-//                curr.cell_name, curr.label, curr.unit, curr.kpi_value, curr.calculated_kpi_value,
-//                pre.pre_kpi_value, pre.pre_calculated_kpi_value
-//            FROM (
-//                SELECT cell_name, lte_fdd_standard_kpi.label label, lte_fdd_standard_kpi.unit unit,
-//            	SUM(kpi_value) kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                LEFT JOIN lte_fdd_standard_kpi
-//                        ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
-//                    AND (:timestamp)
-//                GROUP BY cell_name
-//            ) curr
-//
-//            LEFT JOIN (
-//                SELECT cell_name pre_cell_name,
-//            	SUM(kpi_value) pre_kpi_value,
-//                (SUM(numerator_kpi_value) / SUM(denominator_kpi_value)) AS pre_calculated_kpi_value
-//                FROM lte_fdd_kpi_day
-//                WHERE lte_fdd_standard_kpi_id = :standardKpiId
-//                AND timestamp BETWEEN DATE_SUB(:preTimestamp, INTERVAL :period DAY)
-//                    AND (:preTimestamp)
-//                GROUP BY pre_cell_name
-//            ) pre
-//
-//            ON curr.cell_name = pre.pre_cell_name
-//            ORDER BY
-//                CASE
-//                    WHEN curr.calculated_kpi_value IS NOT NULL THEN curr.calculated_kpi_value
-//                    ELSE curr.kpi_value
-//                END DESC
-//            LIMIT :count
-//            """, nativeQuery = true)
-//    List<WorstCellCurrentPre> findWorstCellsWithPrevSumDesc(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("count") int count);
 
+    @Query(value = """
+            SELECT * FROM
+                        (SELECT
+                        	curr.cell_name, curr.kpi_label, curr.unit, curr.value,
+                        	pre.previous_value, (curr.value - pre.previous_value) AS difference,
+                        	CASE
+                        		WHEN curr.worst_order = 'ASC' AND (curr.value - pre.previous_value) > 0 THEN 1
+                        		WHEN curr.worst_order = 'DESC' AND (curr.value - pre.previous_value) < 0 THEN 1
+                        		ELSE 0
+                        	END AS improved
+                        FROM (
+                        	SELECT cell_name, lte_fdd_standard_kpi.label kpi_label, lte_fdd_standard_kpi.unit unit,
+                        		lte_fdd_standard_kpi.worst_order worst_order,
+                        		COALESCE(
+                        			CASE
+                        				WHEN lte_fdd_standard_kpi.unit = '%'
+                        				THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                        				ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                        			END,
+                        			AVG(kpi_value)
+                        		) AS value
+                        	FROM lte_fdd_kpi_day
+                        	LEFT JOIN lte_fdd_standard_kpi
+                        		ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
+            				JOIN district_codes dc
+            					ON dc.id = district_code_id
+            				JOIN districts d
+            					ON d.id = dc.district_id
+                        	WHERE lte_fdd_standard_kpi_id = :standardKpiId
+                        		AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                        			AND (:timestamp)
+            					AND d.id = :districtId
+                        	GROUP BY cell_name
+                        ) AS curr
+                        LEFT JOIN (
+                        	SELECT cell_name pre_cell_name, lte_fdd_standard_kpi.unit unit,
+                        		COALESCE(
+                        			CASE
+                        				WHEN lte_fdd_standard_kpi.unit = '%'
+                        				THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                        				ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                        			END,
+                        			AVG(kpi_value)
+                        		) AS previous_value
+                        	FROM lte_fdd_kpi_day
+                        	LEFT JOIN lte_fdd_standard_kpi
+                        		ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
+            				JOIN district_codes dc
+            					ON dc.id = district_code_id
+            				JOIN districts d
+            					ON d.id = dc.district_id
+            				WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            					AND timestamp BETWEEN DATE_SUB(:preTimestamp, INTERVAL :period DAY)
+            						AND (:preTimestamp)
+            					AND d.id = :districtId
+            				GROUP BY pre_cell_name
+                        	) AS pre
+                        ON curr.cell_name = pre.pre_cell_name
+                        ORDER BY
+                        	CASE WHEN curr.worst_order = 'ASC' THEN curr.value END ASC,
+                        	CASE WHEN curr.worst_order = 'DESC' THEN curr.value END DESC
+                        LIMIT 100
+            ) AS top100
+            """, countQuery = """
+            SELECT COUNT(*)
+            FROM (
+                    SELECT curr.cell_name
+                    FROM (
+                        SELECT cell_name,
+                            COALESCE(
+                                CASE
+                                    WHEN lte_fdd_standard_kpi.unit = '%'
+                                    THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                                    ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                END,
+                                AVG(kpi_value)
+                            ) AS value,
+                            lte_fdd_standard_kpi.worst_order
+                        FROM lte_fdd_kpi_day
+                        LEFT JOIN lte_fdd_standard_kpi
+                            ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
+                        JOIN district_codes dc
+            				ON dc.id = district_code_id
+            			JOIN districts d
+            				ON d.id = dc.district_id
+                        WHERE lte_fdd_standard_kpi_id = :standardKpiId
+                            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                                AND (:timestamp)
+                            AND d.id = :districtId
+                        GROUP BY cell_name
+                        ORDER BY
+                            CASE WHEN lte_fdd_standard_kpi.worst_order = 'ASC' THEN value END ASC,
+                            CASE WHEN lte_fdd_standard_kpi.worst_order = 'DESC' THEN value END DESC
+                        LIMIT 100
+                    ) AS curr
+            ) AS count_query
+            """, nativeQuery = true)
+    Page<WorstCellsDto> findWorstCellsByDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, Pageable pageable, @Param("districtId") Long districtId);
 
     // ----------------------------- KPI DATA BY CELL AND KPI ----------------------------------------------------------
 
@@ -384,4 +330,11 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             GROUP BY timestamp, lte_fdd_standard_kpi_id;
             """, nativeQuery = true)
     List<KpiTrend> findTrendDataSumByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period);
+
+
+    @Query(value = """
+            SELECT * FROM lte_fdd_kpi_day
+            WHERE district_code_id IS NULL
+            """, nativeQuery = true)
+    List<LteFddKpiDay> findKpiWithoutDistrict();
 }

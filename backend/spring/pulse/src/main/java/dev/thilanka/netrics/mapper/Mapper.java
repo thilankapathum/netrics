@@ -152,4 +152,16 @@ public class Mapper {
                 .build();       //-- District is not included.
     }
 
+    //-----------------LTEFDDKPIDAY KPIDAYDTO ----------------------------------
+
+//    public KpiDayDto LteFddKpiDayToKpiDayDto(LteFddKpiDay kpiDay){
+//        return new KpiDayDto(kpiDay.getTimestamp(),
+//                kpiDay.getCellName(),
+//                kpiDay.getSiteName(), kpiDay.getKpiValue(), kpiDay.getNumeratorKpiValue(), kpiDay.getDenominatorKpiValue(),
+//                kpiDay.getDataType(), kpiDay.getFileName(), kpiDay.getLteFddStandardKpi().getId(),
+//                kpiDay.getNumeratorKpi().getId(),
+//                kpiDay.getDenominatorKpi().getId(),
+//                kpiDay.getOss().getId(),kpiDay.getDistrictCode().getId());
+//    }
+
 }

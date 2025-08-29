@@ -16,6 +16,8 @@ import {Observable} from 'rxjs';
 import {ChartService} from '../../../../service/components/chart/chart.service';
 import {WorstCells} from '../../../../models/pulse/WorstCells';
 import {AlertService} from '../../../../components/alert/alert.service';
+import {DistrictDto} from '../../../../models/pulse/DistrictDto';
+import {DistrictService} from '../../../../service/pulse/district/district.service';
 
 @Component({
   selector: 'app-pulse',
@@ -43,6 +45,9 @@ export class PulseComponent implements OnInit {
   totalPages: number = 0;
   worstCells: WorstCells[] = [];
 
+  districts: DistrictDto[] = [{name: 'All Districts', code: 'ALLDIST'}];
+  district:string = 'All Districts';
+
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
   constructor(private cdr: ChangeDetectorRef,
@@ -50,13 +55,15 @@ export class PulseComponent implements OnInit {
               private ltefdddayservice: LtefdddayService,
               private ltefddstandardkpiservice: LtefddstandardkpiService,
               private chartService: ChartService,
-              private alertService: AlertService) {
+              private alertService: AlertService,
+              private districtService: DistrictService,) {
   }
 
   ngOnInit() {
     this.cdr.detectChanges(); // Force change detection
     this.getAllBasicKpi();
     this.getAllStandardKpi();
+    this.getAllDistricts();
   }
 
   getAllBasicKpi() {
@@ -92,7 +99,7 @@ export class PulseComponent implements OnInit {
   }
 
   getWorstCellsByKpi(kpiName: string, granularity: string, page: number, size: number) {
-    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, page, size).subscribe({
+    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity,this.district, page, size).subscribe({
       next: data => {
         console.log("data", data);
         this.worstCells = data.content;
@@ -110,19 +117,27 @@ export class PulseComponent implements OnInit {
 
   nextPage() {
     if (this.currentPage < this.totalPages - 1) {
-      this.getWorstCellsByKpi(this.selectedStandardKpi, "day", this.currentPage + 1, this.pageSize);
+      this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, this.currentPage + 1, this.pageSize);
     }
   }
 
   prevPage() {
     if (this.currentPage > 0) {
-      this.getWorstCellsByKpi(this.selectedStandardKpi, "day", this.currentPage - 1, this.pageSize);
+      this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, this.currentPage - 1, this.pageSize);
     }
   }
 
   selectGranularity(granularity: string) {
     this.granularity = granularity;
     this.ngOnInit();
+  }
+
+  selectDistrict(district:string){
+    this.district = district;
+    // this.getWorstCellsByKpi()
+    this.ngOnInit();
+
+
   }
 
   selectKpi(kpi: string) {
@@ -185,6 +200,22 @@ export class PulseComponent implements OnInit {
           this.alertService.error("KPI Data retrieval failed");
         }
       })
+  }
+
+  getAllDistricts() {
+    this.districts = [{name: 'All Districts', code: 'ALLDIST'}];
+    this.districtService.getAllDistricts().subscribe({
+      next: data => {
+        for (let d of data){
+          this.districts.push(d);
+        }
+
+      }, error: error => {
+        console.log("Error getAllDistricts");
+        console.error(error);
+        this.alertService.error("District retrieval failed");
+      }
+    });
   }
 
 }

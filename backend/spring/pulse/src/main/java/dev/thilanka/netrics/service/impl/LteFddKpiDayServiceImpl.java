@@ -4,10 +4,12 @@ import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
+import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.ltefdd.*;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddBasicKpiRepository;
 import dev.thilanka.netrics.repository.LteFddKpiDayRepository;
+import dev.thilanka.netrics.service.DistrictService;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     private final LteFddKpiDayRepository lteFddKpiDayRepository;
     private final LteFddStandardKpiService lteFddStandardKpiService;
     private final LteFddBasicKpiRepository lteFddBasicKpiRepository;
+    private final DistrictService districtService;
     private final Mapper mapper;
 
     private static boolean checkImproved(String worstOrder, Double difference) {
@@ -176,6 +179,19 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         return lteFddKpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), pageable);
     }
 
+    @Override
+    public Page<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(String kpiName, String period, String districtName, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
+        District district = districtService.findDistrictByName(districtName);
+        LocalDateTime timestamp = getLatestDate();
+        LocalDateTime preTimestamp = getLatestPreviousDate(period);
+
+        return lteFddKpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), pageable, district.getId());
+    }
+
+
+
 
     // ------------------------------ WORST-CELLS END ------------------------------------------------------------------
 
@@ -235,6 +251,12 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
                 .toList();
     }
 
+    @Override
+    public KpiDataDto createLteFddKpiDay(LteFddKpiDay kpiDay) {
+        LteFddKpiDay savedKpiDay = lteFddKpiDayRepository.save(kpiDay);
+        return mapper.LteFddKpiDayToKpiDataDto(savedKpiDay);
+    }
+
     private LocalDateTime getLatestDate() {
         return lteFddKpiDayRepository.getLatestDate();
     }
@@ -285,6 +307,11 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             }
         }
         return null;
+    }
+
+    @Override
+    public List<LteFddKpiDay> getKpiWithoutDistrict() {
+        return lteFddKpiDayRepository.findKpiWithoutDistrict();
     }
 
 }

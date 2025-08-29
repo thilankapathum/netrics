@@ -31,17 +31,19 @@
       </div>
 
       <div class="flex flex-row gap-2">
-        <select class="select select-sm border border-stone-200">
+        <select disabled class="select select-sm border border-stone-200">
           <option  disabled selected>Region</option>
           <option>Region 1</option>
           <option>Region 2</option>
           <option>Region 3</option>
         </select>
-        <select class="select select-sm border border-stone-200">
-          <option disabled selected>District</option>
-          <option>Ampara</option>
-          <option>Anuradhapura</option>
-          <option>Batticaloa</option>
+        <select class="select select-sm border border-stone-200" [(ngModel)]="district" (change)="selectDistrict(district)">
+<!--          <option>Ampara</option>-->
+<!--          <option>Anuradhapura</option>-->
+<!--          <option>Batticaloa</option>-->
+          @for (d of districts; track d.name){
+            <option [value]="d.name">{{ d.name }}</option>
+          }
         </select>
       </div>
       <div class="tabs tabs-box tabs-xs border border-stone-100 ">

@@ -19,7 +19,8 @@ public class DistrictServiceImpl implements DistrictService {
 
     @Override
     public List<DistrictDto> getAll() {
-        List<District> districts = districtRepository.findAll();
+//        List<District> districts = districtRepository.findAll();
+        List<District> districts = districtRepository.findAllDistrictsAsc();
         return districts.stream().map(mapper::districtToDto).toList();
     }
 

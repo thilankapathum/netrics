@@ -18,28 +18,32 @@ export class LtefdddayService {
   }
 
   getBasicKpiSnapshot(kpiName: string, period: string) {
-    return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi?kpiName=${kpiName}&period=${period}`);
+    return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi`,
+      { params : {kpiName, period} });
   }
 
   // getWorstCellsByKpiX(kpiName: string, granularity: string, count: number) {
   //   return this.http.get<Array<WorstCell>>(`${this.baseUrl}/worst-cells?kpiName=${kpiName}&period=${granularity}&count=${count}`);
   // }
 
-  getWorstCellsByKpi(kpiName: string, period: string, page: number, size: number): Observable<any> {
+  getWorstCellsByKpi(kpiName: string, period: string, districtName:string, page: number, size: number): Observable<any> {
     return this.http.get(`${this.baseUrl}/worst-cells-page`, {
-      params: { kpiName, period, page, size }
+      params: { kpiName, period, districtName, page, size }
     });
   }
 
   getDataByKpiAndCell(kpiName:string, cellName:string, period: string) {
-    return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell?kpiName=${kpiName}&cellName=${cellName}&period=${period}`);
+    return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell`,
+      { params : {kpiName, cellName, period} });
   }
 
   getDataByKpiLabelAndCell(kpiLabel:string, cellName:string, period: string) {
-    return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell-label?kpiLabel=${kpiLabel}&cellName=${cellName}&period=${period}`);
+    return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell-label`,
+      { params: {kpiLabel, cellName, period} });
   }
 
   getDataByKpi(kpiName:string, period: string) {
-    return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi?kpiName=${kpiName}&period=${period}`)
+    return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi`,
+      {params : {kpiName, period} });
   }
 }
