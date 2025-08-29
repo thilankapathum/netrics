@@ -38,9 +38,6 @@
           <option>Region 3</option>
         </select>
         <select class="select select-sm border border-stone-200" [(ngModel)]="district" (change)="selectDistrict(district)">
-<!--          <option>Ampara</option>-->
-<!--          <option>Anuradhapura</option>-->
-<!--          <option>Batticaloa</option>-->
           @for (d of districts; track d.name){
             <option [value]="d.name">{{ d.name }}</option>
           }

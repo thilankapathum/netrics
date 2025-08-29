@@ -169,7 +169,7 @@ export class PulseComponent implements OnInit {
 
   getTrendDataByKpi(kpiName: string, period: string) {
     this.kpiTrendData = [];
-    this.ltefdddayservice.getDataByKpi(kpiName, period).subscribe({
+    this.ltefdddayservice.getDataByKpi(kpiName, period, this.district).subscribe({
       next: data => {
         this.kpiTrendData = data;
       }, error: error => {

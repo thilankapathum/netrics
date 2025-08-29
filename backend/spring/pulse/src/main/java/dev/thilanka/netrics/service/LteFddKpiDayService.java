@@ -24,6 +24,8 @@ public interface LteFddKpiDayService {
 
     List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period);
 
+    List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName);
+
     Page<WorstCellsDto> getWorstCellsByKpiPage(String kpiName, String period, int page, int size);
 
     List<LteFddKpiDay> getKpiWithoutDistrict();

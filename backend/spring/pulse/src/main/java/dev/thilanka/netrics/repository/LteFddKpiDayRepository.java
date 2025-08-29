@@ -333,6 +333,63 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
 
 
     @Query(value = """
+            SELECT timestamp,
+            	lte_fdd_standard_kpi.label kpi_label,
+                COALESCE(
+                    CASE
+                    	WHEN lte_fdd_standard_kpi.unit = '%'
+                        THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                    END,
+                    AVG(kpi_value)
+                ) AS kpi_value
+            FROM lte_fdd_kpi_day
+            LEFT JOIN lte_fdd_standard_kpi
+                ON lte_fdd_standard_kpi.id = lte_fdd_standard_kpi_id
+            JOIN district_codes dc
+                ON dc.id = district_code_id
+            JOIN districts d
+                ON d.id = dc.district_id
+            WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                    AND (:timestamp)
+                AND d.id = :districtId
+            GROUP BY timestamp, lte_fdd_standard_kpi_id;
+            """, nativeQuery = true)
+    List<KpiTrend> findTrendDataAvgByKpiAndDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("districtId") Long districtId);
+
+    @Query(value = """
+            SELECT timestamp,
+            	lte_fdd_standard_kpi.label kpi_label,
+                COALESCE(
+                    CASE
+                    	WHEN lte_fdd_standard_kpi.unit = '%'
+                        THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
+                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                    END,
+                    SUM(kpi_value)
+                ) AS kpi_value
+            FROM lte_fdd_kpi_day
+            LEFT JOIN lte_fdd_standard_kpi
+                ON lte_fdd_standard_kpi.id = lte_fdd_standard_kpi_id
+            JOIN district_codes dc
+                ON dc.id = district_code_id
+            JOIN districts d
+                ON d.id = dc.district_id
+            WHERE lte_fdd_standard_kpi_id = :standardKpiId
+            AND timestamp BETWEEN DATE_SUB(:timestamp, INTERVAL :period DAY)
+                    AND (:timestamp)
+                AND d.id = :districtId
+            GROUP BY timestamp, lte_fdd_standard_kpi_id;
+            """, nativeQuery = true)
+    List<KpiTrend> findTrendDataSumByKpiAndDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("districtId") Long districtId);
+
+
+
+
+
+
+    @Query(value = """
             SELECT * FROM lte_fdd_kpi_day
             WHERE district_code_id IS NULL
             """, nativeQuery = true)

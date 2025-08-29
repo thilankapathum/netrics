@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -78,8 +79,15 @@ public class LteFddKpiDayController {
     }
 
     @GetMapping("kpi")
-    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period) {
-        List<KpiTrendDto> kpiTrendDtos = lteFddKpiDayService.getTrendByKpi(kpiName, period);
+    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName) {
+        List<KpiTrendDto> kpiTrendDtos = new ArrayList<>();
+
+        if (Objects.equals(districtName, "All Districts") || districtName == null){
+            kpiTrendDtos = lteFddKpiDayService.getTrendByKpi(kpiName, period);
+        } else {
+            kpiTrendDtos = lteFddKpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName);
+        }
+
         return ResponseEntity.ok(kpiTrendDtos);
     }
 }

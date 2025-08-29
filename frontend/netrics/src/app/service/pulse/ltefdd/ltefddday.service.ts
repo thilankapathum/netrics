@@ -42,8 +42,8 @@ export class LtefdddayService {
       { params: {kpiLabel, cellName, period} });
   }
 
-  getDataByKpi(kpiName:string, period: string) {
+  getDataByKpi(kpiName:string, period: string, districtName:string) {
     return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi`,
-      {params : {kpiName, period} });
+      {params : {kpiName, period, districtName} });
   }
 }

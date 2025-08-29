@@ -237,6 +237,20 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         return kpiTrends.stream().map(mapper::kpiTrendToDto).toList();
     }
 
+    @Override
+    public List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName) {
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
+        District district = districtService.findDistrictByName(districtName);
+        LocalDateTime timestamp = getLatestDate();
+        List<KpiTrend> kpiTrends = new ArrayList<>();
+
+        if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
+            kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId());
+        } else kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId());
+
+        return kpiTrends.stream().map(mapper::kpiTrendToDto).toList();
+    }
+
 
     // ------------------------------ KPI TREND - END -------------------------------------------------------------------
 
