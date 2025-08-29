@@ -25,6 +25,6 @@ public class DistrictCode {
     @JoinColumn(name = "district_id")
     private District district;
 
-//    @OneToMany(mappedBy = "districtCode", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-//    private List<LteFddKpiDay> lteFddKpiDays;
+    @OneToMany(mappedBy = "districtCode", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddKpiDay> lteFddKpiDays;
 }

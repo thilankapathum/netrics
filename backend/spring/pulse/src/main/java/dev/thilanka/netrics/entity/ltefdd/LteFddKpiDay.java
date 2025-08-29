@@ -48,7 +48,7 @@ public class LteFddKpiDay {
     @JoinColumn(name = "oss_id")
     private Oss oss;
 
-//    @ManyToOne
-//    @JoinColumn(name = "district_code_id")
-//    private DistrictCode districtCode;
+    @ManyToOne
+    @JoinColumn(name = "district_code_id")
+    private DistrictCode districtCode;
 }

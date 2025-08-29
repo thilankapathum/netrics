@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-ltefdd-day.json'):
+    def __init__(self, config_file='config-ltefdd-day-dev.json'):
         """Initialize KPI Processor with configuration"""
         # load_dotenv()
 
@@ -53,6 +53,7 @@ class KPIProcessor:
         self.kpi_mappings = {}  # Will hold OSS to standard KPI mappings
         self.oss_configs = {}  # Will hold OSS configuration info
         self.standard_kpi_mappings = {}  # Will hold standard KPI to numerator/denominator mappings
+        self.district_codes = {}  # Will hold district code mappings
 
         # Load configuration from database
         self.load_database_configuration()
@@ -201,6 +202,24 @@ class KPIProcessor:
 
             logger.info(f"Loaded {len(mapping_data)} KPI mappings")
 
+            # Load district codes
+            logger.info("Loading district codes from database...")
+            cursor.execute("""
+                SELECT id, category, code, district_id 
+                FROM district_codes
+                ORDER BY LENGTH(code) DESC
+            """)
+            district_data = cursor.fetchall()
+
+            for district in district_data:
+                self.district_codes[district['code']] = {
+                    'id': district['id'],
+                    'category': district['category'],
+                    'district_id': district['district_id']
+                }
+
+            logger.info(f"Loaded {len(self.district_codes)} district codes")
+
         except Error as e:
             logger.error(f"Error loading database configuration: {e}")
             raise
@@ -209,6 +228,22 @@ class KPIProcessor:
                 cursor.close()
                 connection.close()
 
+    def get_district_code_id(self, cell_name: str) -> Optional[int]:
+        """Get district code ID based on cell name prefix"""
+        if not cell_name or pd.isna(cell_name):
+            return None
+
+        cell_name = str(cell_name).strip()
+
+        # Try to match prefixes (ordered by length descending to match longer prefixes first)
+        for code, district_info in self.district_codes.items():
+            if cell_name.startswith(code):
+                logger.debug(f"Matched cell '{cell_name}' with district code '{code}' (ID: {district_info['id']})")
+                return district_info['id']
+
+        logger.debug(f"No district code found for cell: {cell_name}")
+        return None
+
     def create_database_tables(self):
         """Create necessary database tables"""
         connection = None
@@ -216,7 +251,7 @@ class KPIProcessor:
             connection = mysql.connector.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # Create unpivoted KPI table (updated schema with numerator/denominator columns)
+            # Create unpivoted KPI table (updated schema with numerator/denominator and district_code_id columns)
             create_table_query = """
             CREATE TABLE IF NOT EXISTS lte_fdd_kpi_day (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -232,14 +267,17 @@ class KPIProcessor:
                 numerator_kpi_value DECIMAL(15,3) NULL,
                 denominator_kpi_id BIGINT NULL,
                 denominator_kpi_value DECIMAL(15,3) NULL,
+                district_code_id BIGINT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_timestamp (timestamp),
                 INDEX idx_cell_name (cell_name),
                 INDEX idx_oss_id (oss_id),
+                INDEX idx_district_code_id (district_code_id),
                 FOREIGN KEY (lte_fdd_standard_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
                 FOREIGN KEY (numerator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
                 FOREIGN KEY (denominator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
-                FOREIGN KEY (oss_id) REFERENCES oss(id)
+                FOREIGN KEY (oss_id) REFERENCES oss(id),
+                FOREIGN KEY (district_code_id) REFERENCES district_codes(id)
             )
             """
 
@@ -549,6 +587,9 @@ class KPIProcessor:
                     if cleaned_value is None:
                         continue
 
+                    # Get district code ID based on cell name
+                    district_code_id = self.get_district_code_id(row.get('cell_name'))
+
                     # Get numerator and denominator values
                     numerator_value = None
                     denominator_value = None
@@ -586,7 +627,8 @@ class KPIProcessor:
                         'numerator_kpi_id': kpi_values_info['numerator_kpi_id'] if kpi_values_info['numerator_kpi_id'] else None,
                         'numerator_kpi_value': numerator_value,
                         'denominator_kpi_id': kpi_values_info['denominator_kpi_id'] if kpi_values_info['denominator_kpi_id'] else None,
-                        'denominator_kpi_value': denominator_value
+                        'denominator_kpi_value': denominator_value,
+                        'district_code_id': district_code_id  # Add district code ID
                     }
                     processed_rows.append(processed_row)
 
@@ -603,7 +645,9 @@ class KPIProcessor:
 
         # Log statistics
         unique_kpis = final_df['standard_kpi_name'].unique()
+        unique_districts = final_df['district_code_id'].value_counts()
         logger.info(f"Processed {len(unique_kpis)} unique standard KPIs: {list(unique_kpis)}")
+        logger.info(f"District code distribution: {dict(unique_districts)}")
 
         return final_df
 
@@ -614,7 +658,7 @@ class KPIProcessor:
         return value
 
     def insert_data_to_mysql(self, df: pd.DataFrame):
-        """Insert unpivoted data into MySQL database with numerator/denominator support"""
+        """Insert unpivoted data into MySQL database with numerator/denominator and district code support"""
         if df.empty:
             logger.warning("No data to insert")
             return
@@ -623,14 +667,14 @@ class KPIProcessor:
             connection = mysql.connector.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # Prepare insert query with numerator/denominator columns
+            # Prepare insert query with numerator/denominator and district_code_id columns
             insert_query = """
             INSERT INTO lte_fdd_kpi_day 
             (timestamp, cell_name, site_name, lte_fdd_standard_kpi_id, 
              kpi_value, data_type, oss_id, file_name, 
              numerator_kpi_id, numerator_kpi_value, 
-             denominator_kpi_id, denominator_kpi_value)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             denominator_kpi_id, denominator_kpi_value, district_code_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
             # Convert dataframe to list of tuples with proper None handling
@@ -648,7 +692,8 @@ class KPIProcessor:
                     self.convert_nan_to_none(row.get('numerator_kpi_id')),
                     self.convert_nan_to_none(row.get('numerator_kpi_value')),
                     self.convert_nan_to_none(row.get('denominator_kpi_id')),
-                    self.convert_nan_to_none(row.get('denominator_kpi_value'))
+                    self.convert_nan_to_none(row.get('denominator_kpi_value')),
+                    self.convert_nan_to_none(row.get('district_code_id'))  # Add district code ID
                 ))
 
             # Execute batch insert
@@ -826,7 +871,7 @@ if __name__ == "__main__":
     # Initialize and run the processor
     processor = KPIProcessor()
 
-    # Run continuously (every 2 minutes)
+    # Run continuously (every 60 minutes)
     processor.run_continuously(interval_minutes=60)
 
     # Or run once
