@@ -66,6 +66,33 @@ export class PulseComponent implements OnInit {
     this.getAllDistricts();
   }
 
+  selectGranularity(granularity: string) {
+    this.granularity = granularity;
+    this.ngOnInit();
+  }
+
+  selectDistrict(district:string){
+    this.district = district;
+    this.ngOnInit();
+  }
+
+  getAllDistricts() {
+    this.districts = [{name: 'All Districts', code: 'ALLDIST'}];
+    this.districtService.getAllDistricts().subscribe({
+      next: data => {
+        for (let d of data){
+          this.districts.push(d);
+        }
+      }, error: error => {
+        console.log("Error getAllDistricts");
+        console.error(error);
+        this.alertService.error("District retrieval failed");
+      }
+    });
+  }
+
+  //------- BASIC KPI SNAPSHOTS ---------
+
   getAllBasicKpi() {
     this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
       next: data => {
@@ -98,6 +125,12 @@ export class PulseComponent implements OnInit {
     }
   }
 
+  get sortedBasicKpiSnapshots():BasicKpiSnapshot[]{
+    return this.basicKpiSnapshots.sort((a,b) => a.kpiLabel!.localeCompare(b.kpiLabel!));
+  }
+
+  //----------- WORST CELLS ----------------
+
   getWorstCellsByKpi(kpiName: string, granularity: string, page: number, size: number) {
     this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity,this.district, page, size).subscribe({
       next: data => {
@@ -127,19 +160,6 @@ export class PulseComponent implements OnInit {
     }
   }
 
-  selectGranularity(granularity: string) {
-    this.granularity = granularity;
-    this.ngOnInit();
-  }
-
-  selectDistrict(district:string){
-    this.district = district;
-    // this.getWorstCellsByKpi()
-    this.ngOnInit();
-
-
-  }
-
   selectKpi(kpi: string) {
     this.currentPage = 0;
     this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
@@ -163,27 +183,7 @@ export class PulseComponent implements OnInit {
     })
   }
 
-  onPeriodChange(event: Event) {
-    this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
-  }
-
-  getTrendDataByKpi(kpiName: string, period: string) {
-    this.kpiTrendData = [];
-    this.ltefdddayservice.getDataByKpi(kpiName, period, this.district).subscribe({
-      next: data => {
-        this.kpiTrendData = data;
-      }, error: error => {
-        console.log("Error getDataByKpi:");
-        console.error(error);
-        this.alertService.error("Trend data retrieval failed");
-      }
-    })
-  }
-
-  getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string): Observable<KpiDataDto[]> {
-
-    return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
-  }
+  //---------- OPEN ANALYSIS MODAL (DIALOG) ----------------
 
   openAnalysisModal(kpiLabel: string, cellName: string) {
     this.analysisModalCell = cellName;
@@ -202,20 +202,27 @@ export class PulseComponent implements OnInit {
       })
   }
 
-  getAllDistricts() {
-    this.districts = [{name: 'All Districts', code: 'ALLDIST'}];
-    this.districtService.getAllDistricts().subscribe({
-      next: data => {
-        for (let d of data){
-          this.districts.push(d);
-        }
+  //------------- KPI TREND CHART ----------------
 
+  onPeriodChange(event: Event) {
+    this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+  }
+
+  getTrendDataByKpi(kpiName: string, period: string) {
+    this.kpiTrendData = [];
+    this.ltefdddayservice.getDataByKpi(kpiName, period, this.district).subscribe({
+      next: data => {
+        this.kpiTrendData = data;
       }, error: error => {
-        console.log("Error getAllDistricts");
+        console.log("Error getDataByKpi:");
         console.error(error);
-        this.alertService.error("District retrieval failed");
+        this.alertService.error("Trend data retrieval failed");
       }
-    });
+    })
+  }
+
+  getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string): Observable<KpiDataDto[]> {
+    return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
   }
 
 }

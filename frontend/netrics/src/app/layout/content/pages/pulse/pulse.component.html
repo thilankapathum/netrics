@@ -16,17 +16,17 @@
 <div>
   <div class="m-4 flex flex-col gap-4">
     <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
-      <div class="flex flex-col gap-y-0">
+      <div class="flex flex-col gap-y-0 grow-1">
         <div class="text-sm font-medium"></div>
         <div class="text-2xl font-bold">WORST CELL</div>
       </div>
-      <div class="grow-1"></div>
+<!--      <div class="grow-1"></div>-->
       <div>
         <div class="tabs tabs-box tabs-xs border border-stone-100">
           <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-FDD" checked="checked"/>
-          <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-TDD"/>
-          <input type="radio" name="rat_tabs" class="tab" aria-label="GSM"/>
-          <input type="radio" name="rat_tabs" class="tab" aria-label="UMTS"/>
+          <input disabled type="radio" name="rat_tabs" class="tab" aria-label="LTE-TDD"/>
+          <input disabled type="radio" name="rat_tabs" class="tab" aria-label="GSM"/>
+          <input disabled type="radio" name="rat_tabs" class="tab" aria-label="UMTS"/>
         </div>
       </div>
 
@@ -45,7 +45,7 @@
       </div>
       <div class="tabs tabs-box tabs-xs border border-stone-100 ">
         <input type="radio" name="aggregation_tabs" class="tab" aria-label="Day Average" checked="checked"/>
-        <input type="radio" name="aggregation_tabs" class="tab" aria-label="Busy Hour"/>
+        <input disabled type="radio" name="aggregation_tabs" class="tab" aria-label="Busy Hour"/>
       </div>
       <div class="flex flex-row gap-2 items-center">
         <p>Granularity</p>
@@ -56,9 +56,11 @@
         </select>
       </div>
     </nav>
+
+<!--    KPI SNAPSHOT SECTION-->
     <!--    <section class=" flex flex-row justify-around items-center flex-wrap xl:flex-nowrap items-stretch gap-2 ">-->
     <section class=" grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 ">
-      @for (snapshot of basicKpiSnapshots; track $index) {
+      @for (snapshot of sortedBasicKpiSnapshots; track $index) {
         <div  class="stats grow-1 border border-stone-200 bg-white rounded-xl shadow-md/5" [ngClass]="snapshot.improved ? 'shadow-green-500' : 'shadow-red-500'">
           <div class="stat">
             <div class="stat-title text-md font-semibold">{{ snapshot.kpiLabel }}</div>
@@ -98,6 +100,8 @@
     <!--    <div class="flex flex-row gap-4 flex-wrap justify-around">-->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 ">
 
+<!--      KPI TREND SECTION-->
+
       <section class=" flex flex-col gap-2 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
         <div class="flex flex-row gap-2">
           <h2 class="text-xl font-semibold">KPI Trend</h2>
@@ -112,6 +116,9 @@
         </div>
         <app-line-chart [kpiTrendData]="kpiTrendData"></app-line-chart>
       </section>
+
+
+<!--      WORST CELLS SECTION-->
 
       <section class=" flex flex-col gap-3 grow-1 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
         <div class="flex flex-row">
