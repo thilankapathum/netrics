@@ -16,4 +16,6 @@ public interface LteFddStandardKpiService {
     LteFddStandardKpi findByKpiName(String s);
 
     LteFddStandardKpi findByKpiLabel(String kpiLabel);
+
+    List<StandardKpiDto> getAllStandardKpi();
 }

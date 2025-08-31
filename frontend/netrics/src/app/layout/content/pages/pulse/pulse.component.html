@@ -1,7 +1,7 @@
 <dialog #analysisModal id="analyse_modal" class="modal w-full">
   <div class="modal-box max-w-6xl">
     <h3 class="text-lg font-bold">{{ analysisModalCell }}</h3>
-    <app-linechart [chartSeries]="chartSeries" ></app-linechart>
+    <app-linechart [chartSeries]="chartSeries"></app-linechart>
     <div class="modal-action">
       <button class="btn btn-outline btn-primary btn-xs">More</button>
       <form method="dialog">
@@ -13,14 +13,14 @@
 </dialog>
 
 
-<div>
-  <div class="m-4 flex flex-col gap-4">
+<div class="bg-purpl-600">
+  <div class="flex flex-col gap-4">
     <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
       <div class="flex flex-col gap-y-0 grow-1">
         <div class="text-sm font-medium"></div>
         <div class="text-2xl font-bold">WORST CELL</div>
       </div>
-<!--      <div class="grow-1"></div>-->
+      <!--      <div class="grow-1"></div>-->
       <div>
         <div class="tabs tabs-box tabs-xs border border-stone-100">
           <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-FDD" checked="checked"/>
@@ -32,13 +32,14 @@
 
       <div class="flex flex-row gap-2">
         <select disabled class="select select-sm border border-stone-200">
-          <option  disabled selected>Region</option>
+          <option disabled selected>Region</option>
           <option>Region 1</option>
           <option>Region 2</option>
           <option>Region 3</option>
         </select>
-        <select class="select select-sm border border-stone-200" [(ngModel)]="district" (change)="selectDistrict(district)">
-          @for (d of districts; track d.name){
+        <select class="select select-sm border border-stone-200" [(ngModel)]="district"
+                (change)="selectDistrict(district)">
+          @for (d of districts; track d.name) {
             <option [value]="d.name">{{ d.name }}</option>
           }
         </select>
@@ -49,30 +50,45 @@
       </div>
       <div class="flex flex-row gap-2 items-center">
         <p>Granularity</p>
-        <select class="select select-sm border border-stone-200" [(ngModel)]="granularity" (change)="selectGranularity(granularity)">
-          <option [value]="'day'" selected>Day</option>
-          <option [value]="'week'">Week</option>
-          <option [value]="'month'">Month</option>
+        <select class="select select-sm border border-stone-200" [(ngModel)]="granularity"
+                (change)="selectGranularity(granularity)">
+          <option [value]="'day'" selected>Last Day</option>
+          <option [value]="'week'">Last Week</option>
+          <option [value]="'month'">Last Month</option>
         </select>
       </div>
     </nav>
 
-<!--    KPI SNAPSHOT SECTION-->
-    <!--    <section class=" flex flex-row justify-around items-center flex-wrap xl:flex-nowrap items-stretch gap-2 ">-->
-    <section class=" grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 ">
-      @for (snapshot of sortedBasicKpiSnapshots; track $index) {
-        <div  class="stats grow-1 border border-stone-200 bg-white rounded-xl shadow-md/5" [ngClass]="snapshot.improved ? 'shadow-green-500' : 'shadow-red-500'">
-          <div class="stat">
-            <div class="stat-title text-md font-semibold">{{ snapshot.kpiLabel }}</div>
+    <!--    KPI SNAPSHOT SECTION-->
+    <section>
+      <!--      @if (loadingBasicKpi){-->
+      <!--        <progress class="progress w-56"></progress>-->
+      <!--      }-->
+      <div class="stats w-full flex flex-wrap border border-stone-200 bg-white rounded-xl shadow-md/5">
+        @for (snapshot of sortedBasicKpiSnapshots; track $index) {
+          <div class="stat w-1/2 md:w-1/3 lg:w-1/6">
+            <div class="stat-title text-md font-semibold">
+              {{ snapshot.kpiLabel }}
+            </div>
+
             <div class="flex flex-row flex-wrap gap-x-2 gap-y-0">
-              <div
-                class="stat-value font-semibold text-stone-600">{{ snapshot.value | number :'1.2-2' }}{{ snapshot.unit }}
+              <div class="stat-value font-semibold text-stone-600">
+                <span [class]="isBasicKpiValueRed(snapshot) ? 'text-red-600' : ''">
+                  {{ snapshot.value | number: '1.2-2' }}<span class="text-sm font-bold">{{ snapshot.unit }}</span>
+                </span>
               </div>
               <div class="stat-figure">
-                <span
-                  [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'">@if (snapshot.difference! > 0) {+}{{ snapshot.difference | number :'1.2-2' }}{{ snapshot.unit }}</span>
+            <span
+              [class]="snapshot.improved ? 'text-green-400' : 'text-red-600'"
+            >
+              @if (snapshot.difference! > 0) {
+                +
+              }
+              {{ snapshot.difference | number: '1.2-2' }}{{ snapshot.unit }}
+            </span>
               </div>
             </div>
+
             <div class="stat-desc">
               <table class="table table-xs">
                 <tbody>
@@ -81,10 +97,15 @@
                       <td>
                         <div>{{ standardKpi.kpiLabel }}</div>
                         <div class="font-semibold">
-                          {{ standardKpi.value | number :'1.2-2' }}{{ standardKpi.unit }}
-                          <span [class]="snapshot.improved ? 'text-green-400 font-normal' : 'text-red-600 font-normal'">
-                          (@if (standardKpi.difference! > 0) {+}{{ standardKpi.difference | number :'1.2-2' }}{{ standardKpi.unit }})
-                        </span>
+
+                          <span [class]="isKpiValueRed(standardKpi) ? 'text-red-600' : ''">
+                            {{ standardKpi.value | number: '1.2-2' }}{{ standardKpi.unit }}
+                            <span [class]="snapshot.improved ? 'text-green-400 font-normal' : 'text-red-600 font-normal'">
+                              (@if (standardKpi.difference! > 0) {+}{{standardKpi.difference | number: '1.2-2'}}{{ standardKpi.unit }})
+                            </span>
+
+                          </span>
+
                         </div>
                       </td>
                     </tr>
@@ -93,14 +114,15 @@
               </table>
             </div>
           </div>
-        </div>
-      }
+        }
+      </div>
     </section>
+
 
     <!--    <div class="flex flex-row gap-4 flex-wrap justify-around">-->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 ">
 
-<!--      KPI TREND SECTION-->
+      <!--      KPI TREND SECTION-->
 
       <section class=" flex flex-col gap-2 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
         <div class="flex flex-row gap-2">
@@ -118,7 +140,7 @@
       </section>
 
 
-<!--      WORST CELLS SECTION-->
+      <!--      WORST CELLS SECTION-->
 
       <section class=" flex flex-col gap-3 grow-1 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
         <div class="flex flex-row">
@@ -151,12 +173,18 @@
                   <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
                   <td>{{ cell.cellName }}</td>
                   <td>{{ cell.kpiLabel }}</td>
-                  <td [class.text-red-600]="cell.value! < 99.95">{{ cell.value | number :'1.2-2' }}{{ cell.unit }}
+                  <td>
+                    <span [class]="isKpiValueRed(cell) ? 'text-red-600 font-semibold' : ''">
+                      {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
+                    </span>
                     <span
-                      [class]="cell.improved ? 'text-green-400' : 'text-red-600'">&nbsp;(@if (cell.difference! > 0) {+}{{ cell.difference | number: '1.2-2' }}{{ cell.unit }})
+                      [class]="cell.improved ? 'text-green-400' : 'text-red-600'">&nbsp;(@if (cell.difference! > 0) {
+                      +
+                    }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }})
                     </span></td>
                   <td>
-                    <button class="btn btn-xs" (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)" >Analyse</button>
+                    <button class="btn btn-xs btn-ghost" (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)">
+                      <span class="material-symbols-outlined text-stone-600">troubleshoot</span></button>
                   </td>
                 </tr>
               }
@@ -167,7 +195,8 @@
           <div class="join justify-center gap-2 mt-2">
             <button class="join-item btn btn-xs"
                     [disabled]="currentPage === 0"
-                    (click)="prevPage()">«</button>
+                    (click)="prevPage()">«
+            </button>
 
             <button class="join-item btn btn-active btn-xs">
               {{ currentPage + 1 }} / {{ totalPages }}
@@ -175,7 +204,8 @@
 
             <button class="join-item btn btn-xs"
                     [disabled]="currentPage >= totalPages - 1"
-                    (click)="nextPage()">»</button>
+                    (click)="nextPage()">»
+            </button>
           </div>
         </div>
       </section>

@@ -1,6 +1,5 @@
-import {Component, ElementRef, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {OnInit, ChangeDetectorRef} from '@angular/core';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
 import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
@@ -18,6 +17,7 @@ import {WorstCells} from '../../../../models/pulse/WorstCells';
 import {AlertService} from '../../../../components/alert/alert.service';
 import {DistrictDto} from '../../../../models/pulse/DistrictDto';
 import {DistrictService} from '../../../../service/pulse/district/district.service';
+import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
 
 @Component({
   selector: 'app-pulse',
@@ -30,7 +30,6 @@ export class PulseComponent implements OnInit {
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
-  // worstCellsX: WorstCell[] = [];
   granularity: string = 'day';
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi: string = '';
@@ -47,6 +46,8 @@ export class PulseComponent implements OnInit {
 
   districts: DistrictDto[] = [{name: 'All Districts', code: 'ALLDIST'}];
   district:string = 'All Districts';
+
+  loadingBasicKpi: boolean = false;
 
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
@@ -68,12 +69,16 @@ export class PulseComponent implements OnInit {
 
   selectGranularity(granularity: string) {
     this.granularity = granularity;
-    this.ngOnInit();
+    this.cdr.detectChanges(); // Force change detection
+    this.getAllBasicKpi();
+    this.selectKpi(this.selectedStandardKpi);
   }
 
   selectDistrict(district:string){
     this.district = district;
-    this.ngOnInit();
+    this.cdr.detectChanges(); // Force change detection
+    this.getAllBasicKpi();
+    this.selectKpi(this.selectedStandardKpi);
   }
 
   getAllDistricts() {
@@ -91,15 +96,46 @@ export class PulseComponent implements OnInit {
     });
   }
 
+
+  isBasicKpiValueRed(snapshot: BasicKpiSnapshot):boolean {
+    const basicKpi =  this.basicKpiDtos.find(kpi => kpi.label == snapshot.kpiLabel);
+    if (!basicKpi || basicKpi.threshold == null || !basicKpi.worstOrder) {
+      return false;
+    }
+    if (basicKpi.worstOrder === 'ASC') {
+      return snapshot.value! < basicKpi.threshold;
+    }
+    if (basicKpi.worstOrder === 'DESC') {
+      return snapshot.value! > basicKpi.threshold;
+    }
+    return false;
+  }
+
+  isKpiValueRed(item: KpiSnapshot | WorstCells):boolean {
+    const standardKpi = this.standardKpis.find(kpi => kpi.label == item.kpiLabel);
+    if (!standardKpi || standardKpi.threshold == null || !standardKpi.worstOrder) {
+      return false;
+    }
+    if (standardKpi.worstOrder === 'ASC') {
+      return item.value! < standardKpi.threshold;
+    }
+    if (standardKpi.worstOrder === 'DESC') {
+      return item.value! > standardKpi.threshold;
+    }
+    return false;
+  }
+
   //------- BASIC KPI SNAPSHOTS ---------
 
   getAllBasicKpi() {
+    this.loadingBasicKpi = true;
     this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
       next: data => {
         this.basicKpiDtos = data;
         this.getBasicKpiSnapshot(this.basicKpiDtos);
-
+        this.loadingBasicKpi = false;
       }, error: error => {
+        this.loadingBasicKpi = false;
         console.log("Error getAllBasicKpi");
         console.error(error);
         this.alertService.error("Basic KPI retrieval failed");
@@ -126,7 +162,7 @@ export class PulseComponent implements OnInit {
   }
 
   get sortedBasicKpiSnapshots():BasicKpiSnapshot[]{
-    return this.basicKpiSnapshots.sort((a,b) => a.kpiLabel!.localeCompare(b.kpiLabel!));
+    return this.basicKpiSnapshots.sort((a, b) => a.kpiLabel!.localeCompare(b.kpiLabel!))
   }
 
   //----------- WORST CELLS ----------------

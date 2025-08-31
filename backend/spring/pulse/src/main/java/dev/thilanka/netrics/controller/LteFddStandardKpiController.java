@@ -18,7 +18,7 @@ public class LteFddStandardKpiController {
 
     @GetMapping
     public ResponseEntity<List<StandardKpiDto>> getAllLteFddStandardKpi() {
-        List<StandardKpiDto> standardKpiDtos = lteFddStandardKpiService.getAll();
+        List<StandardKpiDto> standardKpiDtos = lteFddStandardKpiService.getAllStandardKpi();
         return ResponseEntity.ok(standardKpiDtos);
     }
 
