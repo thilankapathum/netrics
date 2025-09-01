@@ -13,7 +13,7 @@
 </dialog>
 
 
-<div class="bg-purpl-600">
+<div>
   <div class="flex flex-col gap-3">
     <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
       <div class="flex flex-col gap-y-0 grow-1">
@@ -22,7 +22,7 @@
       </div>
       <!--      <div class="grow-1"></div>-->
       <div>
-        <div class="tabs tabs-box tabs-xs border border-stone-100">
+        <div class="tabs tabs-box tabs-xs">
           <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-FDD" checked="checked"/>
           <input disabled type="radio" name="rat_tabs" class="tab" aria-label="LTE-TDD"/>
           <input disabled type="radio" name="rat_tabs" class="tab" aria-label="GSM"/>
@@ -31,26 +31,26 @@
       </div>
 
       <div class="flex flex-row join">
-        <select disabled class="select select-sm border border-stone-200 join-item">
+        <select disabled class="select select-sm join-item">
           <option disabled selected>Region</option>
           <option>Region 1</option>
           <option>Region 2</option>
           <option>Region 3</option>
         </select>
-        <select class="select select-sm border border-stone-200 join-item" [(ngModel)]="district"
+        <select class="select select-sm border join-item" [(ngModel)]="district"
                 (change)="selectDistrict(district)">
           @for (d of districts; track d.name) {
             <option [value]="d.name">{{ d.name }}</option>
           }
         </select>
       </div>
-      <div class="tabs tabs-box tabs-xs border border-stone-100 ">
+      <div class="tabs tabs-box tabs-xs">
         <input type="radio" name="aggregation_tabs" class="tab" aria-label="Day Average" checked="checked"/>
         <input disabled type="radio" name="aggregation_tabs" class="tab" aria-label="Busy Hour"/>
       </div>
       <div class="flex flex-row gap-2 items-center">
         <p>Granularity</p>
-        <select class="select select-sm border border-stone-200" [(ngModel)]="granularity"
+        <select class="select select-sm border" [(ngModel)]="granularity"
                 (change)="selectGranularity(granularity)">
           <option [value]="'day'" selected>Last Day</option>
           <option [value]="'week'">Last Week</option>
@@ -64,7 +64,7 @@
       <!--      @if (loadingBasicKpi){-->
       <!--        <progress class="progress w-56"></progress>-->
       <!--      }-->
-      <div class="stats w-full flex flex-wrap border border-stone-200 bg-white rounded-xl shadow-md/5">
+      <div class="stats w-full flex flex-wrap border border-base-300 bg-base-100 rounded-xl shadow-md/5">
         @for (snapshot of sortedBasicKpiSnapshots; track $index) {
           <div class="stat w-1/2 md:w-1/3 lg:w-1/6">
             <div class="stat-title text-md font-semibold">
@@ -72,8 +72,8 @@
             </div>
 
             <div class="flex flex-row flex-wrap gap-x-2 gap-y-0">
-              <div class="stat-value font-semibold text-stone-600">
-                <span [class]="isBasicKpiValueRed(snapshot) ? 'text-red-600' : ''">
+              <div class="stat-value font-semibold text-base-content">
+                <span [class]="isBasicKpiValueRed(snapshot) ? 'text-error' : ''">
                   {{ snapshot.value | number: '1.2-2' }}<span class="text-sm font-bold">{{ snapshot.unit }}</span>
                 </span>
               </div>
@@ -93,7 +93,7 @@
                         <div>{{ standardKpi.kpiLabel }}</div>
                         <div class="font-semibold">
 
-                          <span [class]="isKpiValueRed(standardKpi) ? 'text-red-600' : ''">
+                          <span [class]="isKpiValueRed(standardKpi) ? 'text-error' : ''">
                             {{ standardKpi.value | number: '1.2-2' }}{{ standardKpi.unit }}
                             <span class="badge badge-soft badge-xs font-normal"  [class]="snapshot.improved ? 'badge-success' : 'badge-error'">
                               @if (standardKpi.difference! > 0) {+}{{standardKpi.difference | number: '1.2-2'}}{{ standardKpi.unit }}
@@ -119,7 +119,7 @@
 
       <!--      KPI TREND SECTION-->
 
-      <section class=" flex flex-col gap-2 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
+      <section class=" flex flex-col gap-2 p-4 border border-base-300 rounded-xl bg-base-100 shadow-lg/5">
         <div class="flex flex-row gap-2">
           <h2 class="text-xl font-semibold">KPI Trend</h2>
           <div class="tabs tabs-box tabs-xs ml-auto">
@@ -137,10 +137,10 @@
 
       <!--      WORST CELLS SECTION-->
 
-      <section class=" flex flex-col gap-3 grow-1 p-4 border border-stone-200 rounded-xl bg-white shadow-lg/5">
+      <section class=" flex flex-col gap-3 grow-1 p-4 border border-base-300 rounded-xl bg-base-100 shadow-lg/5">
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
-          <select class="select select-sm ml-auto border border-stone-200" [(ngModel)]="selectedStandardKpi"
+          <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
                   (change)="selectKpi(selectedStandardKpi)">
             <!--            <option disabled selected>KPI</option>-->
             @for (kpi of standardKpis; track $index) {
@@ -164,12 +164,12 @@
             <tbody>
             <!-- row -->
               @for (cell of worstCells; track cell.cellName; let i = $index) {
-                <tr class="hover:bg-stone-100">
+                <tr class="hover:bg-base-200">
                   <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
                   <td>{{ cell.cellName }}</td>
                   <td>{{ cell.kpiLabel }}</td>
                   <td>
-                    <span [class]="isKpiValueRed(cell) ? 'text-red-600 font-semibold' : ''">
+                    <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
                       {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
                     </span> &nbsp;
                     <span class="badge badge-soft badge-sm"
@@ -178,7 +178,7 @@
                   </td>
                   <td>
                     <button class="btn btn-xs btn-ghost" (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)">
-                      <span class="material-symbols-outlined text-stone-600 text-xs">troubleshoot</span></button>
+                      <span class="material-symbols-outlined text-base-content text-xs">troubleshoot</span></button>
                   </td>
                 </tr>
               }
