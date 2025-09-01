@@ -1,30 +1,73 @@
-<!--<div class="flex h-[100%] w-full flex-col justify-start">-->
-<!--&lt;!&ndash;  Logo&ndash;&gt;-->
-<!--  <div class="z-50 flex min-h-[56px] w-64 items-center justify-between bg-white px-6 pt-3 dark:bg-stone-800">-->
-<!--    <div class="text-xl font-bold text-stone-800 dark:text-white">-->
-<!--      NETRICS-->
-<!--    </div>-->
-<!--  </div>-->
+<div class="drawer 2xl:drawer-open">
+  <input id="my-drawer-2" type="checkbox" class="drawer-toggle"/>
+  <div class="drawer-side">
+    <label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
 
-<!--&lt;!&ndash;  UserName&ndash;&gt;-->
-<!--  <div class="flex items-center gap-5 border-y-[1.5px] border-stone-200 px-8 py-4 dark:border-stone-600">-->
-<!--    IMAGE-->
-<!--    <div>-->
-<!--      <h3 class="text-md font-bold tracking-wide dark:text-stone-200">-->
-<!--        Thilanka W-->
-<!--      </h3>-->
-<!--      <div class="mt-1 flex items-start gap-2">-->
-<!--&lt;!&ndash;        <div class="mt-[0.1rem] h-3 w-3 text-stone-500 dark:text-stone-400 "  >&ndash;&gt;-->
-<!--&lt;!&ndash;          Admin&ndash;&gt;-->
-<!--&lt;!&ndash;        </div>&ndash;&gt;-->
-<!--        <p class="text-xs text-stone-500">Admin</p>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--  </div>-->
-<!--&lt;!&ndash;  Navbar Links&ndash;&gt;-->
-<!--</div>-->
+    <ul class="menu bg-bas-200 bg-white text-base-content min-h-full w-[240px] p-4 gap-1">
+      <!-- Sidebar content here -->
+      <div class="flex flex-row items-center gap-1">
+<!--        <span class="material-symbols-outlined text-blue-900 text-xs">network_intel_node</span>-->
+        <span class="text-2xl font-semibold logo text-stone-600 2xl:hidden">
+          Netrics
+        </span>
+      </div>
+      <div class="border-t  mt-1 mb-4 2xl:my-4 border-base-100"></div>
+      <li>
+        <a class="flex flex-row items-center gap-4 border border-base-300 bg-base-200">
+          <span class="material-symbols-outlined text-neutral-800">cardiology</span>
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-800">Pulse</span>
+            <span class="font-normal text-xs text-neutral-500">Worst Cell Analysis</span>
+          </div>
+        </a>
+      </li>
+      <li class="">
+        <a class="flex flex-row items-center gap-4 hover:bg-base-300">
+          <span class="material-symbols-outlined text-neutral-600">flare</span>
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-600">Flare</span>
+            <span class="font-normal text-xs text-neutral-400">KPI Anomaly Detection</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a class="flex flex-row items-center gap-4 hover:bg-base-300">
+          <span class="material-symbols-outlined text-neutral-600">event</span>
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-600">Surge</span>
+            <span class="font-normal text-xs text-neutral-400">Special Event Monitoring</span>
+          </div>
+        </a>
+      </li>
+      <div class="border-t  my-2 2xl:my-4 border-neutral-100"></div>
+      <li>
+        <a class="flex flex-row items-center gap-4 hover:bg-base-300">
+          <span class="material-symbols-outlined text-neutral-600">infrared</span>
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-600">Beam</span>
+            <span class="font-normal text-xs text-neutral-400">Azimuth & Tilt Tracking</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a class="flex flex-row items-center gap-4 hover:bg-base-300">
+          <span class="material-symbols-outlined text-neutral-600">list_alt_check</span>
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-600">Mark</span>
+            <span class="font-normal text-xs text-neutral-400">Service Verification Checklist</span>
+          </div>
+        </a>
+      </li>
 
-
-<div class="">
-SIDEBAR
+      <li class="mt-auto">
+        <a class="flex flex-row items-center gap-4 hover:bg-base-300">
+          <span class="material-symbols-outlined text-neutral-600">settings</span>
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-600">App Settings</span>
+            <!--            <span class="font-normal text-xs text-neutral-400">Service Verification Checklist</span>-->
+          </div>
+        </a>
+      </li>
+    </ul>
+  </div>
 </div>
