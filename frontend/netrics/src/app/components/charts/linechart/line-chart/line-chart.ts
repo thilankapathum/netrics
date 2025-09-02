@@ -101,7 +101,8 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         },
         toolbar: {
           show: false
-        }
+        },
+        background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)'
       },
       xaxis: {
         type: 'datetime',
@@ -196,6 +197,25 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
           ...this.chartOptions.theme?.monochrome,
           shadeTo: isDark ? 'dark' : 'light'
         }
+      },
+      chart: {
+        ...this.chartOptions,
+        background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)',
+        type: 'line',
+        height: 215,
+        width: '100%',
+        animations: {
+          enabled: true,
+          speed: 300,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          }
+        },
+        toolbar: {
+          show: false
+        },
+        // type: this.chartOptions.chart?.type
       }
     };
 

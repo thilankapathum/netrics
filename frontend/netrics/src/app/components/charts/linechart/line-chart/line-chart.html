@@ -1,14 +1,30 @@
+<!--<div>-->
+<!--  <apx-chart-->
+<!--    *ngIf="showChart"-->
+<!--    #chart-->
+<!--    [series]="chartOptions?.series!"-->
+<!--    [chart]="chartOptions?.chart!"-->
+<!--    [xaxis]="chartOptions?.xaxis!"-->
+<!--    [yaxis]="chartOptions?.yaxis!"-->
+<!--    [stroke]="chartOptions?.stroke!"-->
+<!--    [dataLabels]="chartOptions?.dataLabels!"-->
+<!--    [legend]="chartOptions?.legend!"-->
+<!--    [theme]="chartOptions?.theme!">-->
+<!--  </apx-chart>-->
+<!--</div>-->
+
 <div>
-  <apx-chart
-    *ngIf="showChart"
-    #chart
-    [series]="chartOptions?.series!"
-    [chart]="chartOptions?.chart!"
-    [xaxis]="chartOptions?.xaxis!"
-    [yaxis]="chartOptions?.yaxis!"
-    [stroke]="chartOptions?.stroke!"
-    [dataLabels]="chartOptions?.dataLabels!"
-    [legend]="chartOptions?.legend!"
-    [theme]="chartOptions?.theme!">
-  </apx-chart>
+  @if (showChart) {
+    <apx-chart
+      #chart
+      [series]="chartOptions?.series!"
+      [chart]="chartOptions?.chart!"
+      [xaxis]="chartOptions?.xaxis!"
+      [yaxis]="chartOptions?.yaxis!"
+      [stroke]="chartOptions?.stroke!"
+      [dataLabels]="chartOptions?.dataLabels!"
+      [legend]="chartOptions?.legend!"
+      [theme]="chartOptions?.theme!">
+    </apx-chart>
+  }
 </div>
