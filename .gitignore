@@ -30,3 +30,6 @@ backend/python/pulse/kpi_processor.log
 frontend/netrics/.angular
 frontend/netrics/node_modules
 frontend/node_modules
+frontend/netrics/src/resources/fonts
+frontend/netrics/src/fonts.css
+frontend/netrics/src/assets/fonts
