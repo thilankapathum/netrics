@@ -1,5 +1,6 @@
-import { Component, OnInit, Renderer2, Inject } from '@angular/core';
+import {Component, OnInit, Renderer2, Inject, Injector} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import {DaisyUiThemeService} from '../../service/components/theme/daisy-ui-theme.service';
 
 @Component({
   selector: 'app-navbar',
@@ -11,23 +12,26 @@ export class Navbar implements OnInit {
 
   constructor(
     private renderer: Renderer2,
-    @Inject(DOCUMENT) private document: Document
+    @Inject(DOCUMENT) private document: Document,
+    private themeService:DaisyUiThemeService
   ) {}
 
   ngOnInit() {
     // Load saved theme preference or default to light
     const savedTheme = localStorage.getItem('theme') || 'netrics_light';
     this.isDarkMode = savedTheme === 'netrics_dark';
-    this.applyTheme(savedTheme);
+    // this.applyTheme(savedTheme);
+    this.themeService.setTheme(savedTheme);
   }
 
   onThemeToggle(event: Event) {
     const checkbox = event.target as HTMLInputElement;
     this.isDarkMode = checkbox.checked;
     const theme = this.isDarkMode ? 'netrics_dark' : 'netrics_light';
+    this.themeService.setTheme(theme);
 
-    this.applyTheme(theme);
-    this.saveThemePreference(theme);
+    // this.applyTheme(theme);
+    // this.saveThemePreference(theme);
   }
 
   private applyTheme(theme: string) {

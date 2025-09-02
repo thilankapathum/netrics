@@ -1,5 +1,5 @@
-import {Component, input, Input, OnChanges, OnInit, SimpleChanges, ViewChild} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {Component, Inject, input, Input, OnChanges, OnInit, OnDestroy, Renderer2, SimpleChanges, ViewChild} from '@angular/core';
+import {CommonModule, DOCUMENT} from '@angular/common';
 import {
   ApexAxisChartSeries,
   ApexNonAxisChartSeries,
@@ -12,6 +12,8 @@ import {
 import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
+import {DaisyUiThemeService} from '../../../../service/components/theme/daisy-ui-theme.service';
+import {Subscription} from 'rxjs';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -21,6 +23,7 @@ export type ChartOptions = {
   dataLabels: ApexDataLabels;
   stroke: ApexStroke;
   legend: ApexLegend;
+  theme: ApexTheme;
 };
 
 @Component({
@@ -30,10 +33,11 @@ export type ChartOptions = {
   templateUrl: './line-chart.html',
   styleUrls: ['./line-chart.css']
 })
-export class LineChart implements OnInit, OnChanges {
+export class LineChart implements OnInit, OnChanges, OnDestroy {
 
   @ViewChild("chart") chart!: ChartComponent;
   @Input() kpiTrendData: Array<KpiTrendDto | KpiDataDto> = [];
+  private themeSub!: Subscription;
 
   public chartOptions: Partial<ChartOptions> = {
     series: [],
@@ -50,32 +54,70 @@ export class LineChart implements OnInit, OnChanges {
           delay: 150
         }
       },
-      toolbar:{
+      toolbar: {
         show: false
       }
     },
-    xaxis: {type: 'datetime'},
+    xaxis: {
+      type: 'datetime',
+      labels: {
+        // style: {colors: '#fff'}
+      }
+    },
     yaxis: {
       title: {text: 'KPI Value'},
       labels: {
-        formatter: (val: number) => val.toFixed(2)
+        formatter: (val: number) => val.toFixed(2),
+        // style: {colors: '#fff'}
       }
     },
-    legend:{
+    legend: {
       show: true,
       showForSingleSeries: true,
       position: 'top',
+      labels:{
+
+      }
     },
     stroke: {
       curve: 'smooth',
       width: 2,
+    },
+    theme: {
+      mode: 'light', // Initialize with a default mode
+      palette: 'palette1',
+      monochrome: {
+        enabled: false,
+        color: '#255aee',
+        shadeTo: 'dark',
+        shadeIntensity: 0.65
+      },
     }
   };
 
-  constructor(private ltefdddayservice: LtefdddayService) {
+  constructor(private ltefdddayservice: LtefdddayService,
+              private themeService: DaisyUiThemeService) {
   }
 
   ngOnInit(): void {
+    // Set initial theme
+    this.setTheme(this.themeService.getCurrentTheme());
+
+    // Subscribe to theme changes
+    this.themeSub = this.themeService.theme$.subscribe(theme => {
+      this.setTheme(theme);
+
+      // Update the chart with new theme
+      if (this.chart) {
+        this.chart.updateOptions(this.chartOptions, true, true);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if(this.themeSub){
+      this.themeSub.unsubscribe();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -93,7 +135,7 @@ export class LineChart implements OnInit, OnChanges {
     }
   }
 
-  private buildSeries(kpiTrendDataDto:KpiTrendDto[]): ApexAxisChartSeries {
+  private buildSeries(kpiTrendDataDto: KpiTrendDto[]): ApexAxisChartSeries {
     const grouped = kpiTrendDataDto.reduce((acc, curr) => {
       const key = curr.kpiLabel ?? 'Unknown KPI';
       if (!acc[key]) {
@@ -114,5 +156,17 @@ export class LineChart implements OnInit, OnChanges {
 
   private round2(n: number): number {
     return Math.round((n + Number.EPSILON) * 100) / 100;
+  }
+
+  private setTheme(theme: string): void {
+    if (!this.chartOptions.theme) {
+      this.chartOptions.theme = {};
+    }
+
+    if (theme === 'netrics_dark') {
+      this.chartOptions.theme.mode = 'dark';
+    } else if (theme === 'netrics_light') {
+      this.chartOptions.theme.mode = 'light';
+    }
   }
 }
