@@ -9,6 +9,7 @@ import {
   ApexStroke,
   ChartComponent
 } from 'ng-apexcharts';
+import {DaisyUiThemeService} from '../../../../service/components/theme/daisy-ui-theme.service';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -29,53 +30,34 @@ export type ChartOptions = {
 export class Linechart implements OnInit, OnChanges {
   @ViewChild("chart") chart!: ChartComponent;
   @Input() chartSeries: any;
+  public chartOptions: Partial<ChartOptions> = {};
 
-  public chartOptions: Partial<ChartOptions> = {
-    series: [],
-    chart: {
-      fontFamily: 'Inter',
-      type: 'line',
-      height: 215,
-      width: '100%',
-      animations: {
-        enabled: true,
-        speed: 300,
-        animateGradually: {
-          enabled: true,
-          delay: 150
-        }
-      },
-      toolbar: {
-        show: false
-      }
-    },
-    xaxis: {type: 'datetime'},
-    yaxis: {
-      title: {text: 'KPI Value'},
-      labels: {
-        formatter: (val: number) => val.toFixed(2)
-      }
-    },
-    legend: {
-      show: true,
-      showForSingleSeries: true,
-      position: 'top',
-    },
-    stroke: {
-      curve: 'smooth',
-      width: 2,
-    }
-  };
+  currentTheme:string ='';
+  isDark:boolean = false;
 
-  constructor() {
+  constructor(
+    private themeService: DaisyUiThemeService
+  ) {
   }
 
   ngOnInit(): void {
+     this.currentTheme = this.themeService.getCurrentTheme();
+    console.log("currentTheme", this.currentTheme);
+    this.isDark = this.currentTheme === 'netrics_dark';
+    console.log("isDark", this.isDark);
+    this.initializeChart();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     const series = this.chartSeries;
+
+    console.log("currentTheme-changes", this.currentTheme);
+    console.log("isDark-changes", this.isDark);
     console.log("series-InChart", series);
+
+    // this.initializeChart();
+
+
     if (this.chart) {
       this.chart.updateSeries(series, true);
     } else {
@@ -84,6 +66,50 @@ export class Linechart implements OnInit, OnChanges {
         series: series
       };
     }
+  }
+
+
+  private initializeChart(): void {
+
+
+    this.chartOptions = {
+      series: [],
+      chart: {
+        fontFamily: 'Inter',
+        type: 'line',
+        height: 215,
+        width: '100%',
+        animations: {
+          enabled: true,
+          speed: 300,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          }
+        },
+        toolbar: {
+          show: false
+        },
+        background: this.isDark ? 'oklch(0.647 0.311 319.903)' : 'oklch(0.899 0.159 184.319)'
+        // background: 'oklch(0.899 0.159 184.319)'
+      },
+      xaxis: {type: 'datetime'},
+      yaxis: {
+        title: {text: 'KPI Value'},
+        labels: {
+          formatter: (val: number) => val.toFixed(2)
+        }
+      },
+      legend: {
+        show: true,
+        showForSingleSeries: true,
+        position: 'top',
+      },
+      stroke: {
+        curve: 'smooth',
+        width: 2,
+      }
+    };
   }
 
 }
