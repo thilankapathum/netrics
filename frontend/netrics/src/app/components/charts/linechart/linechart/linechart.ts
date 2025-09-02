@@ -21,6 +21,7 @@ export type ChartOptions = {
   stroke: ApexStroke;
   legend: ApexLegend;
   theme: ApexTheme;
+  grid: ApexGrid;
 };
 
 @Component({
@@ -30,14 +31,15 @@ export type ChartOptions = {
   styleUrl: './linechart.css'
 })
 export class Linechart implements OnInit, OnChanges, OnDestroy {
+
   @ViewChild("chart") chart!: ChartComponent;
   @Input() chartSeries: any;
   public chartOptions: Partial<ChartOptions> = {};
 
-  public showChart = true;
+  public showChart:boolean = true;
 
-  currentTheme: string = '';
-  isDark: boolean = false;
+  // currentTheme: string = '';
+  // isDark: boolean = false;
 
   private themeSub!: Subscription;
 
@@ -47,12 +49,9 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.currentTheme = this.themeService.getCurrentTheme();
-    console.log("currentTheme", this.currentTheme);
-    this.isDark = this.currentTheme === 'netrics_dark';
-    console.log("isDark", this.isDark);
+    // this.currentTheme = this.themeService.getCurrentTheme();
+    // this.isDark = this.currentTheme === 'netrics_dark';
     this.initializeChart();
-
 
     // Subscribe to theme changes
     this.themeSub = this.themeService.theme$.subscribe(theme => {
@@ -62,13 +61,6 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     const series = this.chartSeries;
-
-    console.log("currentTheme-changes", this.currentTheme);
-    console.log("isDark-changes", this.isDark);
-    console.log("series-InChart", series);
-
-    // this.initializeChart();
-
 
     if (this.chart) {
       this.chart.updateSeries(series, true);
@@ -88,13 +80,15 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
 
 
   ngOnDestroy(): void {
-    // if (this.themeSub) {
-    //   this.themeSub.unsubscribe();
-    // }
+    if (this.themeSub) {
+      this.themeSub.unsubscribe();
+    }
   }
 
 
   private initializeChart(): void {
+    const currentTheme = this.themeService.getCurrentTheme();
+    const isDark = currentTheme === 'netrics_dark';
 
     // Hide chart temporarily to force re-render
     this.showChart = false;
@@ -104,7 +98,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
       chart: {
         fontFamily: 'Inter',
         type: 'line',
-        height: 215,
+        height: 300,
         width: '100%',
         animations: {
           enabled: true,
@@ -117,28 +111,26 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
         toolbar: {
           show: false
         },
-        background: this.isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)'
-        // background: 'oklch(0.899 0.159 184.319)'
+        background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)'
       },
       xaxis: {
         type: 'datetime',
         labels: {
           style: {
-            colors: this.isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         }
       },
       yaxis: {
         title: {
-          // text: 'KPI Value',
           style: {
-            color: this.isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+            color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         },
         labels: {
           formatter: (val: number) => val.toFixed(2),
           style: {
-            colors: this.isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         }
       },
@@ -147,20 +139,24 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
         showForSingleSeries: true,
         position: 'top',
         labels: {
-          colors: this.isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+          colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
         }
       },
       stroke: {
         curve: 'smooth',
         width: 2,
       },
+      grid: {
+        show: true,
+        borderColor: isDark ? 'oklch(37% 0.013 285.805)' : 'oklch(92% 0.013 255.508)'
+      },
       theme: {
-        mode: this.isDark ? 'dark' : 'light',
+        mode: isDark ? 'dark' : 'light',
         palette: 'palette1',
         monochrome: {
           enabled: false,
           color: '#255aee',
-          shadeTo: this.isDark ? 'dark' : 'light',
+          shadeTo: isDark ? 'dark' : 'light',
           shadeIntensity: 0.65
         },
       }
@@ -212,6 +208,10 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
           colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
         }
       },
+      grid: {
+        show: true,
+        borderColor: isDark ? 'oklch(37% 0.013 285.805)' : 'oklch(92% 0.013 255.508)'
+      },
       theme: {
         ...this.chartOptions.theme,
         mode: isDark ? 'dark' : 'light',
@@ -224,7 +224,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
         ...this.chartOptions,
         background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)',
         type: 'line',
-        height: 215,
+        height: 300,
         width: '100%',
         animations: {
           enabled: true,

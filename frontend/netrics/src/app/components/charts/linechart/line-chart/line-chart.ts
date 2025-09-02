@@ -140,8 +140,8 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         width: 2,
       },
       grid: {
-        show: false,
-        borderColor: '#ff004f'
+        show: true,
+        borderColor: isDark ? 'oklch(37% 0.013 285.805)' : 'oklch(92% 0.013 255.508)'
       },
       theme: {
         mode: isDark ? 'dark' : 'light',
@@ -196,8 +196,8 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         }
       },
       grid: {
-        show: false,
-        borderColor: '#da00ff'
+        show: true,
+        borderColor: isDark ? 'oklch(37% 0.013 285.805)' : 'oklch(92% 0.013 255.508)'
       },
       theme: {
         ...this.chartOptions.theme,
