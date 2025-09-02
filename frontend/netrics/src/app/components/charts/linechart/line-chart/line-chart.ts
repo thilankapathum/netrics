@@ -24,6 +24,7 @@ export type ChartOptions = {
   stroke: ApexStroke;
   legend: ApexLegend;
   theme: ApexTheme;
+  grid: ApexGrid;
 };
 
 @Component({
@@ -58,7 +59,7 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if(this.themeSub){
+    if (this.themeSub) {
       this.themeSub.unsubscribe();
     }
   }
@@ -108,7 +109,7 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         type: 'datetime',
         labels: {
           style: {
-            colors: isDark ? '#a6adba' : '#374151'
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         }
       },
@@ -116,13 +117,13 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         title: {
           // text: 'KPI Value',
           style: {
-            color: isDark ? '#a6adba' : '#374151'
+            color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         },
         labels: {
           formatter: (val: number) => val.toFixed(2),
           style: {
-            colors: isDark ? '#a6adba' : '#374151'
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         }
       },
@@ -131,12 +132,16 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         showForSingleSeries: true,
         position: 'top',
         labels: {
-          colors: isDark ? '#a6adba' : '#374151'
+          colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
         }
       },
       stroke: {
         curve: 'smooth',
         width: 2,
+      },
+      grid: {
+        show: false,
+        borderColor: '#ff004f'
       },
       theme: {
         mode: isDark ? 'dark' : 'light',
@@ -165,7 +170,7 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         labels: {
           ...this.chartOptions.xaxis?.labels,
           style: {
-            colors: isDark ? '#a6adba' : '#374151'
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         }
       },
@@ -174,21 +179,25 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
         title: {
           ...this.chartOptions.yaxis?.title,
           style: {
-            color: isDark ? '#a6adba' : '#374151'
+            color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         },
         labels: {
           ...this.chartOptions.yaxis?.labels,
           style: {
-            colors: isDark ? '#a6adba' : '#374151'
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
         }
       },
       legend: {
         ...this.chartOptions.legend,
         labels: {
-          colors: isDark ? '#a6adba' : '#374151'
+          colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
         }
+      },
+      grid: {
+        show: false,
+        borderColor: '#da00ff'
       },
       theme: {
         ...this.chartOptions.theme,
