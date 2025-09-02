@@ -102,6 +102,39 @@ body,
   @apply text-base-content;
 }
 
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', ui-rounded;
+  font-weight: 300;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+/* Recommended icon sizes */
+span.tsize-20 {
+  font-size: 20px;
+  font-variation-settings: 'OPSZ' 20;
+}
+span.tsize-24 {
+  font-size: 24px;
+  font-variation-settings: 'OPSZ' 24;
+}
+span.tsize-40 {
+  font-size: 40px;
+  font-variation-settings: 'OPSZ' 40;
+}
+span.tsize-48 {
+  font-size: 48px;
+  font-variation-settings: 'OPSZ' 48;
+}
+
 /* Force visibility for debugging */
 /*section, table, tr, td, th, div {*/
 /*  visibility: visible !important;*/

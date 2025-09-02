@@ -176,9 +176,11 @@
                       [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0){+}{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
                     </span>
                   </td>
-                  <td>
-                    <button class="btn btn-xs btn-ghost" (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)">
-                      <span class="material-symbols-outlined text-base-content text-xs">troubleshoot</span></button>
+                  <td class="p-0">
+                    <button class="btn btn-ghost btn-xs p-0" (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)">
+                      <span class="material-symbols-outlined text-base-content tsize-20">troubleshoot</span>
+<!--                      <i class="fa-solid fa-magnifying-glass-chart text-neutral"></i>-->
+                    </button>
                   </td>
                 </tr>
               }
