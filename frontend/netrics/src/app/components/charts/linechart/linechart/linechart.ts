@@ -1,4 +1,4 @@
-import {Component, Input, OnChanges, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {
   ApexAxisChartSeries,
@@ -10,6 +10,7 @@ import {
   ChartComponent
 } from 'ng-apexcharts';
 import {DaisyUiThemeService} from '../../../../service/components/theme/daisy-ui-theme.service';
+import {Subscription} from 'rxjs';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -28,13 +29,17 @@ export type ChartOptions = {
   templateUrl: './linechart.html',
   styleUrl: './linechart.css'
 })
-export class Linechart implements OnInit, OnChanges {
+export class Linechart implements OnInit, OnChanges, OnDestroy {
   @ViewChild("chart") chart!: ChartComponent;
   @Input() chartSeries: any;
   public chartOptions: Partial<ChartOptions> = {};
 
+  public showChart = true;
+
   currentTheme: string = '';
   isDark: boolean = false;
+
+  private themeSub!: Subscription;
 
   constructor(
     private themeService: DaisyUiThemeService
@@ -47,6 +52,12 @@ export class Linechart implements OnInit, OnChanges {
     this.isDark = this.currentTheme === 'netrics_dark';
     console.log("isDark", this.isDark);
     this.initializeChart();
+
+
+    // Subscribe to theme changes
+    this.themeSub = this.themeService.theme$.subscribe(theme => {
+      this.updateChartTheme(theme);
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -66,11 +77,27 @@ export class Linechart implements OnInit, OnChanges {
         ...this.chartOptions,
         series: series
       };
+
+      // Force re-render when data changes
+      this.showChart = false;
+      setTimeout(() => {
+        this.showChart = true;
+      }, 0);
     }
   }
 
 
+  ngOnDestroy(): void {
+    // if (this.themeSub) {
+    //   this.themeSub.unsubscribe();
+    // }
+  }
+
+
   private initializeChart(): void {
+
+    // Hide chart temporarily to force re-render
+    this.showChart = false;
 
     this.chartOptions = {
       series: [],
@@ -138,6 +165,85 @@ export class Linechart implements OnInit, OnChanges {
         },
       }
     };
+
+    // Show chart again in next tick to force re-render
+    setTimeout(() => {
+      this.showChart = true;
+    }, 10);
+  }
+
+
+  private updateChartTheme(theme: string): void {
+    const isDark = theme === 'netrics_dark';
+
+    // Hide chart temporarily to force re-render
+    this.showChart = false;
+
+    // Update chart options with new theme
+    this.chartOptions = {
+      ...this.chartOptions,
+      xaxis: {
+        ...this.chartOptions.xaxis,
+        labels: {
+          ...this.chartOptions.xaxis?.labels,
+          style: {
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+          }
+        }
+      },
+      yaxis: {
+        ...this.chartOptions.yaxis,
+        title: {
+          ...this.chartOptions.yaxis?.title,
+          style: {
+            color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+          }
+        },
+        labels: {
+          ...this.chartOptions.yaxis?.labels,
+          style: {
+            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+          }
+        }
+      },
+      legend: {
+        ...this.chartOptions.legend,
+        labels: {
+          colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+        }
+      },
+      theme: {
+        ...this.chartOptions.theme,
+        mode: isDark ? 'dark' : 'light',
+        monochrome: {
+          ...this.chartOptions.theme?.monochrome,
+          shadeTo: isDark ? 'dark' : 'light'
+        }
+      },
+      chart: {
+        ...this.chartOptions,
+        background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)',
+        type: 'line',
+        height: 215,
+        width: '100%',
+        animations: {
+          enabled: true,
+          speed: 300,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          }
+        },
+        toolbar: {
+          show: false
+        }
+      }
+    };
+
+    // Show chart again in next tick to force re-render
+    setTimeout(() => {
+      this.showChart = true;
+    }, 10);
   }
 
 }
