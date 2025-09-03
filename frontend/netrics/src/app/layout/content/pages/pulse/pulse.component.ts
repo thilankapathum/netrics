@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {CommonModule, DecimalPipe} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
 import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
@@ -22,7 +22,7 @@ import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
 @Component({
   selector: 'app-pulse',
   standalone: true,
-  imports: [CommonModule, LineChart, FormsModule, Linechart],
+  imports: [CommonModule, LineChart, FormsModule, Linechart, DecimalPipe, DecimalPipe, DecimalPipe],
   templateUrl: './pulse.component.html',
   styleUrl: './pulse.component.css'
 })
