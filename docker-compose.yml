@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 
 networks:
   public_net:
@@ -125,21 +125,32 @@ services:
     networks:
       - private_net
 
-  kpi_processor_ltefdd_day:
-    image: thilankaw/netrics/kpi-processor-ltefdd-day:0.0.2
-    container_name: kpi_processor_ltefdd_day
-    env_file:
-      - .env
-    depends_on:
-      netrics_mysql:
-        condition: service_healthy
-      netrics-pulse:
-        condition: service_healthy
-    volumes:
-      - ./backend/python/pulse/files/day-average/ltefdd/ftp:/app/day-average/ltefdd/ftp
-      - ./backend/python/pulse/files/day-average/ltefdd/processed:/app/day-average/ltefdd/processed
-      - ./backend/python/pulse/files/day-average/ltefdd/temp:/app/day-average/ltefdd/temp
-      - ./backend/python/pulse/files/day-average/ltefdd/logs:/app/day-average/ltefdd/logs
-      - ./backend/python/pulse/config-ltefdd-day.json:/app/config-ltefdd-day.json
+#  kpi_processor_ltefdd_day:
+#    image: thilankaw/netrics/kpi-processor-ltefdd-day:0.0.2
+#    container_name: kpi_processor_ltefdd_day
+#    env_file:
+#      - .env
+#    depends_on:
+#      netrics_mysql:
+#        condition: service_healthy
+#      netrics-pulse:
+#        condition: service_healthy
+#    volumes:
+#      - ./backend/python/pulse/files/day-average/ltefdd/ftp:/app/day-average/ltefdd/ftp
+#      - ./backend/python/pulse/files/day-average/ltefdd/processed:/app/day-average/ltefdd/processed
+#      - ./backend/python/pulse/files/day-average/ltefdd/temp:/app/day-average/ltefdd/temp
+#      - ./backend/python/pulse/files/day-average/ltefdd/logs:/app/day-average/ltefdd/logs
+#      - ./backend/python/pulse/config-ltefdd-day.json:/app/config-ltefdd-day.json
+#    networks:
+#      - private_net
+
+  netrics-frontend:
+    container_name: netrics-frontend
+    image: thilankaw/netrics/frontend:0.0.1
+    ports:
+      - 8000:80   # Remember to Enable CORS in BeansConfig for localhost:4200
     networks:
-      - private_net
+      - public_net
+    depends_on:
+      gateway:
+        condition: service_healthy
