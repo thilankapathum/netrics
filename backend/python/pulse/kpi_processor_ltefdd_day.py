@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-ltefdd-day-dev.json'):
+    def __init__(self, config_file='config-ltefdd-day.json'):
         """Initialize KPI Processor with configuration"""
         # load_dotenv()
 
