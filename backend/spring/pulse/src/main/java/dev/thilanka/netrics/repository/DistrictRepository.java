@@ -13,7 +13,7 @@ public interface DistrictRepository extends JpaRepository<District,Long> {
 
     @Query(value = """
             SELECT * FROM districts
-            ORDER BY districts.name ASC;
+            ORDER BY LOWER(districts.name) ASC
             """ , nativeQuery = true)
     List<District> findAllDistrictsAsc();
 }

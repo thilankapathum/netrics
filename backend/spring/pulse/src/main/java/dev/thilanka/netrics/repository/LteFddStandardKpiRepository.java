@@ -13,7 +13,7 @@ public interface LteFddStandardKpiRepository extends JpaRepository<LteFddStandar
     Optional<LteFddStandardKpi> findByLabel(String label);
 
     @Query(value = """
-            SELECT * FROM netrics_pulse_db.lte_fdd_standard_kpi
+            SELECT * FROM lte_fdd_standard_kpi
             WHERE type = 'standard'
             """, nativeQuery = true)
     List<LteFddStandardKpi> findAllStandardKpi();
