@@ -6,6 +6,6 @@ public record KpiSnapshotDto(
          Double value,
          Double previousValue,
          Double difference,
-         Long improved
+         Integer improved
 ) {
 }
