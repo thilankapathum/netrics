@@ -183,8 +183,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             lte_fdd_standard_kpi.worst_order AS worst_order,
                             COALESCE(
                                 CASE
-                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                    ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0)) * 100
+                                    ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                 END,
                                 AVG(kpi_value)
                             ) AS value
@@ -201,8 +201,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             lte_fdd_standard_kpi.unit AS unit,
                             COALESCE(
                                 CASE
-                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                    ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0)) * 100
+                                    ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                 END,
                                 AVG(kpi_value)
                             ) AS previous_value
@@ -217,19 +217,19 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                     ORDER BY
                         CASE WHEN curr.worst_order = 'ASC' THEN curr.value END ASC,
                         CASE WHEN curr.worst_order = 'DESC' THEN curr.value END DESC
-                    LIMIT 100
+                    LIMIT 25
                 ) AS top100
             """,
             countQuery = """
                     SELECT COUNT(*) FROM (
                             SELECT curr.cell_name
                             FROM (
-                                SELECT\s
+                                SELECT
                                     cell_name,
                                     COALESCE(
                                         CASE
-                                            WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                            ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                            WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0)) * 100
+                                            ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                         END,
                                         AVG(kpi_value)
                                     ) AS value,
@@ -245,8 +245,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                                                  THEN COALESCE(
                                                         CASE
                                                             WHEN lte_fdd_standard_kpi.unit = '%'
-                                                            THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                                            ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                                            THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                                                            ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                                         END,
                                                         AVG(kpi_value)
                                                       )
@@ -255,13 +255,13 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                                                  THEN COALESCE(
                                                         CASE
                                                             WHEN lte_fdd_standard_kpi.unit = '%'
-                                                            THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                                            ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                                            THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                                                            ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                                         END,
                                                         AVG(kpi_value)
                                                       )
                                             END DESC
-                                LIMIT 100
+                                LIMIT 25
                             ) AS curr
                         ) AS count_query
             """, nativeQuery = true)
@@ -287,8 +287,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             lte_fdd_standard_kpi.worst_order AS worst_order,
                             COALESCE(
                                 CASE
-                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                    ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                                    ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                 END,
                                 AVG(kpi_value)
                             ) AS value
@@ -310,8 +310,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             lte_fdd_standard_kpi.unit AS unit,
                             COALESCE(
                                 CASE
-                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                    ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                                    ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                 END,
                                 AVG(kpi_value)
                             ) AS previous_value
@@ -331,7 +331,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                     ORDER BY
                         CASE WHEN curr.worst_order = 'ASC' THEN curr.value END ASC,
                         CASE WHEN curr.worst_order = 'DESC' THEN curr.value END DESC
-                    LIMIT 100
+                    LIMIT 25
                 ) AS top100
             """, countQuery = """
             SELECT COUNT(*) FROM (
@@ -341,8 +341,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             cell_name,
                             COALESCE(
                                 CASE
-                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                    ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                    WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                                    ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                 END,
                                 AVG(kpi_value)
                             ) AS value,
@@ -363,8 +363,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                                  THEN COALESCE(
                                         CASE
                                             WHEN lte_fdd_standard_kpi.unit = '%'
-                                            THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                            ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                            THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                                            ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                         END,
                                         AVG(kpi_value)
                                       )
@@ -373,13 +373,13 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                                  THEN COALESCE(
                                         CASE
                                             WHEN lte_fdd_standard_kpi.unit = '%'
-                                            THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                                            ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                                            THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                                            ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                                         END,
                                         AVG(kpi_value)
                                       )
                             END DESC
-                        LIMIT 100
+                        LIMIT 25
                     ) AS curr
                 ) AS count_query
             """, nativeQuery = true)
@@ -415,8 +415,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 lte_fdd_standard_kpi.label AS kpi_label,
                 COALESCE(
                     CASE
-                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                        ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                     END,
                     AVG(kpi_value)
                 ) AS kpi_value
@@ -435,8 +435,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 lte_fdd_standard_kpi.label AS kpi_label,
                 COALESCE(
                     CASE
-                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                        ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                     END,
                     SUM(kpi_value)
                 ) AS kpi_value
@@ -456,8 +456,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 lte_fdd_standard_kpi.label AS kpi_label,
                 COALESCE(
                     CASE
-                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                        ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                     END,
                     AVG(kpi_value)
                 ) AS kpi_value
@@ -482,8 +482,8 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 lte_fdd_standard_kpi.label AS kpi_label,
                 COALESCE(
                     CASE
-                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))*100
-                        ELSE (SUM(numerator_kpi_value)/SUM(denominator_kpi_value))
+                        WHEN lte_fdd_standard_kpi.unit = '%' THEN (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))*100
+                        ELSE (SUM(numerator_kpi_value) / NULLIF(SUM(denominator_kpi_value),0))
                     END,
                     SUM(kpi_value)
                 ) AS kpi_value
