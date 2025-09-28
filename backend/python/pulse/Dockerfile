@@ -2,11 +2,13 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies for numpy/pandas to compile correctly
+# Install system dependencies for numpy/pandas and PostgreSQL
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     libopenblas-dev \
+    libpq-dev \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements.txt

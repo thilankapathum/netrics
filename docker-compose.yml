@@ -1,5 +1,3 @@
-#version: '3.8'
-
 networks:
   public_net:
     driver: bridge
@@ -12,7 +10,6 @@ volumes:
   postgres_data:
 
 services:
-
   postgres:
     image: postgres:17-alpine
     container_name: postgres
@@ -36,32 +33,6 @@ services:
       retries: 5
       start_period: 10s
 
-  netrics_mysql:
-    image: mysql
-    container_name: netrics_mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    command: --max_allowed_packet=256M
-    ports:
-      - "8006:3306"
-#    expose:
-#      - "${MYSQL_PORT}"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-    networks:
-      - private_net
-      - public_net
-    restart: unless-stopped
-
   config-server:
     image: thilankaw/netrics/config-server:0.0.1
     expose:
@@ -70,7 +41,7 @@ services:
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
     depends_on:
-      netrics_mysql:
+      postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8003/actuator/health"]
@@ -117,21 +88,21 @@ services:
     depends_on:
       discovery:
         condition: service_healthy
-      netrics-pulse:
+      pulse:
         condition: service_healthy
     networks:
       - private_net
       - public_net
 
-  netrics-pulse:
-    image: thilankaw/netrics/pulse:0.0.1
+  pulse:
+    image: thilankaw/netrics/pulse:0.0.2
     environment:
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - NETRICS_PULSE_HOST=${NETRICS_PULSE_HOST}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PULSE_HOST=${PULSE_HOST}
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
     expose:
@@ -143,22 +114,22 @@ services:
       timeout: 3s
       retries: 10
     depends_on:
-      netrics_mysql:
+      postgres:
         condition: service_healthy
       discovery:
         condition: service_healthy
     networks:
       - private_net
 
-  kpi_processor_ltefdd_day:
-    image: thilankaw/netrics/kpi-processor-ltefdd-day:0.0.2
-    container_name: kpi_processor_ltefdd_day
+  kpip-ltefdd-day:
+    image: thilankaw/netrics/kpip-ltefdd-day:0.0.3
+    container_name: kpip-ltefdd-day
     env_file:
       - .env
     depends_on:
-      netrics_mysql:
+      postgres:
         condition: service_healthy
-      netrics-pulse:
+      pulse:
         condition: service_healthy
     volumes:
 #      - ./backend/python/pulse/files/day-average/ltefdd/ftp:/app/day-average/ltefdd/ftp
@@ -174,11 +145,11 @@ services:
     networks:
       - private_net
 
-  netrics-frontend:
-    container_name: netrics-frontend
-    image: thilankaw/netrics/frontend:0.0.1
+  frontend:
+    container_name: frontend
+    image: thilankaw/netrics/frontend:0.0.2
     ports:
-      - 8000:80   # Remember to Enable CORS in BeansConfig for localhost:4200
+      - "8000:80"   # Remember to Enable CORS in BeansConfig for localhost:4200
     networks:
       - public_net
     depends_on:
