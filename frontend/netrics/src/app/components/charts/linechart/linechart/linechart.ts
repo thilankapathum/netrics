@@ -116,6 +116,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
       xaxis: {
         type: 'datetime',
         labels: {
+          datetimeUTC: false,
           style: {
             colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }

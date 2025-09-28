@@ -11,7 +11,24 @@ spring:
               uri: lb:http://PULSE-SERVICE
               predicates:
                 - Path=/api/v1/pulse/**
-
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://172.19.95.160:4200"
+                  - "http://172.19.95.160:8000"
+                  - "http://localhost:4200"
+                  - "http://localhost:8000"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+                maxAge: 3600  # Cache preflight response for 1 hour
 server:
   port: 8001
 

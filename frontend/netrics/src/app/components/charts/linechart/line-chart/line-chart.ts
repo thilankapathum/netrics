@@ -68,6 +68,8 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
     if (changes['kpiTrendData'] && this.kpiTrendData) {
       const series = this.buildSeries(this.kpiTrendData);
 
+      console.log('ngOnChanges series:', series);
+
       this.chartOptions = {
         ...this.chartOptions,
         series: series
@@ -84,6 +86,8 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
   private initializeChart(): void {
     const currentTheme = this.themeService.getCurrentTheme();
     const isDark = currentTheme === 'netrics_dark';
+
+    console.log('initializeChart series', this.kpiTrendData, this.buildSeries(this.kpiTrendData));
 
     this.chartOptions = {
       series: this.kpiTrendData ? this.buildSeries(this.kpiTrendData) : [],
@@ -108,6 +112,7 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
       xaxis: {
         type: 'datetime',
         labels: {
+          datetimeUTC: false,
           style: {
             colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
@@ -249,7 +254,7 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
 
     return Object.entries(grouped).map(([name, data]) => ({
       name,
-      data
+      data: data.sort((a, b) => a.x.getTime() - b.x.getTime()),
     }));
   }
 

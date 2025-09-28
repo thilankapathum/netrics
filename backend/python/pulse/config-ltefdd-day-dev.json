@@ -1,12 +1,12 @@
 {
   "database": {
     "host": "localhost",
-    "port": 8006,
-    "database": "netrics_pulse_db",
-    "user": "root",
-    "password": "root"
+    "port": 8032,
+    "database": "pulse_db",
+    "user": "pguser",
+    "password": "password"
   },
-  "ftp_folder": ".\\files\\day-average\\ltefdd\\ftp",
-  "processed_folder": ".\\files\\day-average\\ltefdd\\processed",
-  "temp_folder": ".\\files\\day-average\\ltefdd\\temp"
+  "ftp_folder": ".\\backend\\python\\files\\day-average\\ltefdd\\ftp",
+  "processed_folder": ".\\backend\\python\\files\\day-average\\ltefdd\\processed",
+  "temp_folder": ".\\backend\\python\\files\\day-average\\ltefdd\\temp"
 }

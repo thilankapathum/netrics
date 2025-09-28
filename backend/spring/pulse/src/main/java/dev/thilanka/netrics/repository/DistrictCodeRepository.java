@@ -11,7 +11,7 @@ public interface DistrictCodeRepository extends JpaRepository<DistrictCode,Long>
 
     @Query(value = """
             SELECT * FROM district_codes
-            WHERE :cellName LIKE CONCAT(district_codes.code, '%')
+            WHERE :cellName LIKE district_codes.code || '%'
             ORDER BY LENGTH(district_codes.code) DESC
             """, nativeQuery = true)
     Optional<DistrictCode> findDistrictCodeByPrefix(@Param("cellName") String cellName);

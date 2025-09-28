@@ -1,10 +1,10 @@
 {
   "database": {
-    "host": "${MYSQL_HOST}",
-    "port": "${MYSQL_PORT}",
-    "database": "${MYSQL_DATABASE}",
-    "user": "${MYSQL_USER}",
-    "password": "${MYSQL_PASSWORD}"
+    "host": "${POSTGRES_HOST}",
+    "port": "${POSTGRES_PORT}",
+    "database": "${POSTGRES_DB}",
+    "user": "${POSTGRES_USER}",
+    "password": "${POSTGRES_PASSWORD}"
   },
   "ftp_folder": "/app/day-average/ltefdd/ftp",
   "processed_folder": "/app/day-average/ltefdd/processed",

@@ -1,8 +1,9 @@
 import os
 import zipfile
 import pandas as pd
-import mysql.connector
-from mysql.connector import Error
+import psycopg2
+from psycopg2 import Error
+from psycopg2.extras import RealDictCursor
 import logging
 import time
 import shutil
@@ -29,18 +30,18 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-ltefdd-day-dev.json'):
+    def __init__(self, config_file='config-ltefdd-day.json'):
         """Initialize KPI Processor with configuration"""
         # load_dotenv()
 
         self.config = self.load_config(config_file)
 
         self.db_config = {
-            "host": os.getenv("MYSQL_HOST", self.config["database"].get("host")),
-            "port": int(os.getenv("MYSQL_PORT", self.config["database"].get("port", 3306))),
-            "database": os.getenv("MYSQL_DATABASE", self.config["database"].get("database")),
-            "user": os.getenv("MYSQL_USER", self.config["database"].get("user")),
-            "password": os.getenv("MYSQL_PASSWORD", self.config["database"].get("password")),
+            "host": os.getenv("POSTGRES_HOST", self.config["database"].get("host")),
+            "port": int(os.getenv("POSTGRES_PORT", self.config["database"].get("port", 5432))),
+            "database": os.getenv("POSTGRES_DB", self.config["database"].get("database")),
+            "user": os.getenv("POSTGRES_USER", self.config["database"].get("user")),
+            "password": os.getenv("POSTGRES_PASSWORD", self.config["database"].get("password")),
         }
 
         # self.db_config = self.config['database']
@@ -75,11 +76,11 @@ class KPIProcessor:
         """Create a default configuration file with minimal settings"""
         default_config = {
             "database": {
-                "host": "mysql",
-                "port": 3306,
-                "database": "netrics_pulse_db",
-                "user": "root",
-                "password": "root"
+                "host": "postgres",
+                "port": 5432,
+                "database": "pulse_db",
+                "user": "pguser",
+                "password": "pgpassword"
             },
             "ftp_folder": "/app/day-average/ltefdd/ftp",
             "processed_folder": "/app/day-average/ltefdd/processed",
@@ -96,8 +97,8 @@ class KPIProcessor:
         """Load configuration from database tables"""
         connection = None
         try:
-            connection = mysql.connector.connect(**self.db_config)
-            cursor = connection.cursor(dictionary=True)
+            connection = psycopg2.connect(**self.db_config)
+            cursor = connection.cursor(cursor_factory=RealDictCursor)
 
             # Load standard KPIs
             logger.info("Loading standard KPIs from database...")
@@ -224,7 +225,7 @@ class KPIProcessor:
             logger.error(f"Error loading database configuration: {e}")
             raise
         finally:
-            if connection and connection.is_connected():
+            if connection:
                 cursor.close()
                 connection.close()
 
@@ -248,19 +249,19 @@ class KPIProcessor:
         """Create necessary database tables"""
         connection = None
         try:
-            connection = mysql.connector.connect(**self.db_config)
+            connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
             # Create unpivoted KPI table (updated schema with numerator/denominator and district_code_id columns)
             create_table_query = """
             CREATE TABLE IF NOT EXISTS lte_fdd_kpi_day (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                timestamp DATETIME NOT NULL,
+                id BIGSERIAL PRIMARY KEY,
+                timestamp TIMESTAMP NOT NULL,
                 cell_name VARCHAR(31),
                 site_name VARCHAR(63),
                 lte_fdd_standard_kpi_id BIGINT,
                 kpi_value DECIMAL(15,3),
-                data_type ENUM('percentage', 'integer', 'decimal') DEFAULT 'decimal',
+                data_type VARCHAR(20) CHECK (data_type IN ('percentage', 'integer', 'decimal')) DEFAULT 'decimal',
                 oss_id BIGINT,
                 file_name VARCHAR(255),
                 numerator_kpi_id BIGINT NULL,
@@ -268,27 +269,30 @@ class KPIProcessor:
                 denominator_kpi_id BIGINT NULL,
                 denominator_kpi_value DECIMAL(15,3) NULL,
                 district_code_id BIGINT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_timestamp (timestamp),
-                INDEX idx_cell_name (cell_name),
-                INDEX idx_oss_id (oss_id),
-                INDEX idx_district_code_id (district_code_id),
-                FOREIGN KEY (lte_fdd_standard_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
-                FOREIGN KEY (numerator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
-                FOREIGN KEY (denominator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
-                FOREIGN KEY (oss_id) REFERENCES oss(id),
-                FOREIGN KEY (district_code_id) REFERENCES district_codes(id)
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
 
             cursor.execute(create_table_query)
+
+            # Create indexes
+            indexes = [
+                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_timestamp ON lte_fdd_kpi_day(timestamp)",
+                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_cell_name ON lte_fdd_kpi_day(cell_name)",
+                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_oss_id ON lte_fdd_kpi_day(oss_id)",
+                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_district_code_id ON lte_fdd_kpi_day(district_code_id)"
+            ]
+
+            for index_query in indexes:
+                cursor.execute(index_query)
+
             connection.commit()
             logger.info("Database tables created successfully")
 
         except Error as e:
             logger.error(f"Error creating database tables: {e}")
         finally:
-            if connection and connection.is_connected():
+            if connection:
                 cursor.close()
                 connection.close()
 
@@ -652,19 +656,19 @@ class KPIProcessor:
         return final_df
 
     def convert_nan_to_none(self, value):
-        """Convert pandas NaN values to None for proper MySQL NULL insertion"""
+        """Convert pandas NaN values to None for proper PostgreSQL NULL insertion"""
         if pd.isna(value) or value == '' or str(value).strip().lower() == 'nan':
             return None
         return value
 
-    def insert_data_to_mysql(self, df: pd.DataFrame):
-        """Insert unpivoted data into MySQL database with numerator/denominator and district code support"""
+    def insert_data_to_postgresql(self, df: pd.DataFrame):
+        """Insert unpivoted data into PostgreSQL database with numerator/denominator and district code support"""
         if df.empty:
             logger.warning("No data to insert")
             return
 
         try:
-            connection = mysql.connector.connect(**self.db_config)
+            connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
             # Prepare insert query with numerator/denominator and district_code_id columns
@@ -703,12 +707,12 @@ class KPIProcessor:
             logger.info(f"Inserted {len(data_tuples)} records into database")
 
         except Error as e:
-            logger.error(f"Error inserting data to MySQL: {e}")
+            logger.error(f"Error inserting data to PostgreSQL: {e}")
             # Log the problematic data for debugging
             if data_tuples:
                 logger.error(f"Sample data tuple: {data_tuples[0]}")
         finally:
-            if connection and connection.is_connected():
+            if connection:
                 cursor.close()
                 connection.close()
 
@@ -770,7 +774,7 @@ class KPIProcessor:
                 return
 
             # Insert into database
-            self.insert_data_to_mysql(unpivoted_df)
+            self.insert_data_to_postgresql(unpivoted_df)
 
             logger.info(f"Successfully processed {file_path}")
 

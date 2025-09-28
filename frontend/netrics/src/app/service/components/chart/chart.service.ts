@@ -22,7 +22,7 @@ export class ChartService {
 
     return Object.entries(grouped).map(([name, data]) => ({
       name,
-      data
+      data: data.sort((a, b) => a.x.getTime() - b.x.getTime())
     }));
   }
 

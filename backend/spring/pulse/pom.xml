@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.thilanka</groupId>
 	<artifactId>pulse</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<name>pulse</name>
 	<description>Netrics Pulse</description>
 	<url/>
@@ -62,6 +62,13 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

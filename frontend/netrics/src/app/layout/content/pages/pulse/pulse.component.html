@@ -30,14 +30,14 @@
         </div>
       </div>
 
-      <div class="flex flex-row w-64 join">
+      <div class="flex flex-row join">
         <select disabled class="select select-sm join-item">
           <option selected>Region</option>
           <option>Region 1</option>
           <option>Region 2</option>
           <option>Region 3</option>
         </select>
-        <select class="select select-sm join-item" [(ngModel)]="district"
+        <select class="select select-sm border join-item w-48" [(ngModel)]="district"
                 (change)="selectDistrict(district)">
           @for (d of districts; track d.name) {
             <option [value]="d.name">{{ d.name }}</option>
