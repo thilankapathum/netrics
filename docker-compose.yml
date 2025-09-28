@@ -8,6 +8,7 @@ networks:
 volumes:
   mysql_data:
   postgres_data:
+  redis-data:
 
 services:
   postgres:
@@ -32,6 +33,20 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+#    expose:
+#      - "6379"
+    command: ["redis-server", "--save", "60", "1"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - private_net
+
 
   config-server:
     image: thilankaw/netrics/config-server:0.0.1
