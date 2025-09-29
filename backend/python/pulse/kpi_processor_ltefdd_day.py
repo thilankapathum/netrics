@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-ltefdd-day.json'):
+    def __init__(self, config_file='config-ltefdd-day-dev.json'):
         """Initialize KPI Processor with configuration"""
         # load_dotenv()
 
@@ -668,6 +668,7 @@ class KPIProcessor:
             return
 
         try:
+            logger.info(f"Preparing data insert...")
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
@@ -701,6 +702,7 @@ class KPIProcessor:
                 ))
 
             # Execute batch insert
+            logger.info(f"Inserting records into database...")
             cursor.executemany(insert_query, data_tuples)
             connection.commit()
 
@@ -790,8 +792,10 @@ class KPIProcessor:
             processed_path = os.path.join(self.processed_folder, filename)
             shutil.move(file_path, processed_path)
             logger.info(f"Moved {filename} to processed folder")
+            logger.info(f"========== END FILE ==========")
         except Exception as e:
             logger.error(f"Error moving file to processed folder: {e}")
+            logger.info(f"========== END FILE ==========")
 
     def cleanup_temp_files(self):
         """Clean up temporary files"""

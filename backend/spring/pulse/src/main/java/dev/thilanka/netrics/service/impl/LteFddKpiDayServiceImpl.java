@@ -14,6 +14,7 @@ import dev.thilanka.netrics.service.DistrictService;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
 import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +53,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     //------------------------------- KPI-SNAPSHOT START ---------------------------------------------------------------
 
 
+//    @Cacheable(value = "kpiSnapshotCurrPre", key = "")
     private KpiSnapshotCurrentPre getLatestKpiSnapshotWithPre(LteFddStandardKpi standardKpi, String period) {
 
         //-- GET KPI WITH LABEL, WORST-ORDER, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
@@ -123,7 +125,9 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
 
     @Override
+    @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
+        System.out.println("BASIC KPI SNAPSHOT QUERYING FROM DB");
 
         LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
@@ -183,6 +187,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
+    @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName) {
         //Todo
         LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
