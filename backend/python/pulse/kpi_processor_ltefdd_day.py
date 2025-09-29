@@ -12,6 +12,7 @@ import re
 from typing import Dict, List, Optional, Tuple
 import json
 import sys
+import requests
 from pathlib import Path
 
 # Force UTF-8 encoding for stdout
@@ -43,6 +44,8 @@ class KPIProcessor:
             "user": os.getenv("POSTGRES_USER", self.config["database"].get("user")),
             "password": os.getenv("POSTGRES_PASSWORD", self.config["database"].get("password")),
         }
+
+        self.clear_redis_cache_url = self.config['clear_redis_cache_url']
 
         # self.db_config = self.config['database']
         self.ftp_folder = self.config['ftp_folder']
@@ -92,6 +95,19 @@ class KPIProcessor:
 
         logger.info(f"Created default config file: {config_file}")
         return default_config
+
+    def clear_redis_cache(self):
+        try:
+            # url = "http://localhost:8012/api/v1/pulse/cache/evict-all"
+            url = self.clear_redis_cache_url
+            response = requests.post(url, timeout=10)
+            if response.status_code == 200:
+                logger.info("Redis cache cleared")
+            else:
+                logger.error(f"Failed to clear redis cache: {response.status_code}, body: {response.text}")
+        except Exception as e:
+            logger.error(f"Failed to clear redis cache: {e}")
+
 
     def load_database_configuration(self):
         """Load configuration from database tables"""
@@ -707,6 +723,7 @@ class KPIProcessor:
             connection.commit()
 
             logger.info(f"Inserted {len(data_tuples)} records into database")
+            self.clear_redis_cache()
 
         except Error as e:
             logger.error(f"Error inserting data to PostgreSQL: {e}")
