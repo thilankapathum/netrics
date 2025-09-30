@@ -22,11 +22,10 @@ services:
       PGDATA: /var/lib/postgresql/data
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "8032:${POSTGRES_PORT}"
+    expose:
+      - "${POSTGRES_PORT}"
     networks:
       - private_net
-      - public_net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pguser -d pulse_db"]
@@ -57,20 +56,26 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    ports:
-      - "6379:6379"
-#    expose:
-#      - "6379"
+#    ports:
+#      - "6379:6379"
+    expose:
+      - "6379"
     command: ["redis-server", "--save", "60", "1"]
     volumes:
       - redis-data:/data
     networks:
       - private_net
-      - public_net
+#      - public_net
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 
   config-server:
-    image: thilankaw/netrics/config-server:0.0.1
+    image: thilankaw/netrics/config-server:0.0.2
     expose:
       - "8003"
     environment:
@@ -131,7 +136,7 @@ services:
       - public_net
 
   pulse:
-    image: thilankaw/netrics/pulse:0.0.2
+    image: thilankaw/netrics/pulse:0.0.3
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -141,6 +146,8 @@ services:
       - PULSE_HOST=${PULSE_HOST}
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     expose:
       - "8012"
       - "9012"
@@ -152,13 +159,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       discovery:
         condition: service_healthy
     networks:
       - private_net
 
   kpip-ltefdd-day:
-    image: thilankaw/netrics/kpip-ltefdd-day:0.0.3
+    image: thilankaw/netrics/kpip-ltefdd-day:0.0.4
     container_name: kpip-ltefdd-day
     env_file:
       - .env

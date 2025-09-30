@@ -9,11 +9,12 @@ eureka:
 spring:
   cache:
     type: redis
-  redis:
-    host: localhost
-#    host: ${REDIS_HOST:localhost}
-    port: 6379
-#    port: ${REDIS_PORT:6379}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+#    host: redis
+#    port: 6379
 
 management:
   endpoints:

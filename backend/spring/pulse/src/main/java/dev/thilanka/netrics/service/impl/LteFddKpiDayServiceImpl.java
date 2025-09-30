@@ -125,10 +125,8 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
 
     @Override
-    @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period")
+    @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period) {
-        System.out.println("BASIC KPI SNAPSHOT QUERYING FROM DB");
-
         LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
@@ -187,7 +185,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
-    @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName")
+    @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName) {
         //Todo
         LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
@@ -297,6 +295,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
+//    @Cacheable(value = "kpiData", key = "#kpiLabel + '_' + #period + '_' + #cellName")
     public List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period) {
 
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiLabel(kpiLabel);
@@ -310,6 +309,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     // ------------------------------ KPI TREND - END -------------------------------------------------------------------
 
     @Override
+//    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period")
     public List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
         LocalDateTime timestamp = getLatestDate();
@@ -323,6 +323,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
+//    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #districtName")
     public List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
         District district = districtService.findDistrictByName(districtName);

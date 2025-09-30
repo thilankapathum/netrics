@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.thilanka</groupId>
 	<artifactId>pulse</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3</version>
 	<name>pulse</name>
 	<description>Netrics Pulse</description>
 	<url/>

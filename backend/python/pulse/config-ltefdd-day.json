@@ -9,5 +9,5 @@
   "ftp_folder": "/app/day-average/ltefdd/ftp",
   "processed_folder": "/app/day-average/ltefdd/processed",
   "temp_folder": "/app/day-average/ltefdd/temp",
-  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-all"
+  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-and-warmup"
 }

@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-ltefdd-day-dev.json'):
+    def __init__(self, config_file='config-ltefdd-day.json'):
         """Initialize KPI Processor with configuration"""
         # load_dotenv()
 
@@ -100,7 +100,7 @@ class KPIProcessor:
         try:
             # url = "http://localhost:8012/api/v1/pulse/cache/evict-all"
             url = self.clear_redis_cache_url
-            response = requests.post(url, timeout=10)
+            response = requests.post(url, timeout=300)
             if response.status_code == 200:
                 logger.info("Redis cache cleared")
             else:
