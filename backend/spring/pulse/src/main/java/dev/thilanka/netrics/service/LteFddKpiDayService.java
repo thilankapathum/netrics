@@ -30,8 +30,12 @@ public interface LteFddKpiDayService {
 
     Page<WorstCellsDto> getWorstCellsByKpiPage(String kpiName, String period, int page, int size);
 
+    List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period);
+
     List<LteFddKpiDay> getKpiWithoutDistrict();
 
     Page<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(String kpiName, String period, String districtName, int page, int size);
+
+    List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName);
 
 }

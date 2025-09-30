@@ -261,6 +261,16 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
+    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period")
+    public List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period) {
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
+        LocalDateTime timestamp = getLatestDate();
+        LocalDateTime preTimestamp = getLatestPreviousDate(period);
+
+        return lteFddKpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period));
+    }
+
+    @Override
     public Page<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(String kpiName, String period, String districtName, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
@@ -271,7 +281,17 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         return lteFddKpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), pageable, district.getId());
     }
 
+    @Override
+    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #districtName")
+    public List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName) {
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
+        District district = districtService.findDistrictByName(districtName);
+        LocalDateTime timestamp = getLatestDate();
+        LocalDateTime preTimestamp = getLatestPreviousDate(period);
 
+        return lteFddKpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId());
+
+    }
 
 
     // ------------------------------ WORST-CELLS END ------------------------------------------------------------------

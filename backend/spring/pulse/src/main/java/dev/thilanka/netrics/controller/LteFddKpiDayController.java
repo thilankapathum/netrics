@@ -55,6 +55,19 @@ public class LteFddKpiDayController {
         }
     }
 
+    @GetMapping("worst-cells")
+    public List<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(
+            @RequestParam String kpiName,
+            @RequestParam String period,
+            @RequestParam String districtName) {
+
+        if (Objects.equals(districtName, "All Districts") || districtName == null){
+            return lteFddKpiDayService.getWorstCellsByKpi(kpiName, period);
+        } else {
+            return lteFddKpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName);
+        }
+    }
+
     @GetMapping("cell")
     public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period) {
         List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiAndCell(kpiName, cellName, period);
