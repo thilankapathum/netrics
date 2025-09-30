@@ -97,6 +97,7 @@ class KPIProcessor:
         return default_config
 
     def clear_redis_cache(self):
+        logger.info("Clearing redis cache...")
         try:
             # url = "http://localhost:8012/api/v1/pulse/cache/evict-all"
             url = self.clear_redis_cache_url

@@ -1,9 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
-import dev.thilanka.netrics.dto.KpiDataDto;
-import dev.thilanka.netrics.dto.KpiSnapshotDto;
-import dev.thilanka.netrics.dto.KpiTrendDto;
-import dev.thilanka.netrics.dto.WorstCellsDto;
+import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.ltefdd.*;
@@ -24,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -309,7 +307,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     // ------------------------------ KPI TREND - END -------------------------------------------------------------------
 
     @Override
-//    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period")
+    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period")
     public List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
         LocalDateTime timestamp = getLatestDate();
@@ -319,11 +317,11 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, getPeriod(period));
         } else kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, getPeriod(period));
 
-        return kpiTrends.stream().map(mapper::kpiTrendToDto).toList();
+        return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
 
     @Override
-//    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #districtName")
+    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #districtName")
     public List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName);
         District district = districtService.findDistrictByName(districtName);
@@ -334,7 +332,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
             kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId());
         } else kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId());
 
-        return kpiTrends.stream().map(mapper::kpiTrendToDto).toList();
+        return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
 
 
