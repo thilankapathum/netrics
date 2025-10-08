@@ -45,6 +45,7 @@ export class PulseComponent implements OnInit {
   totalPages: number = 0;
   allWorstCells: WorstCells[] = [];
   worstCells: WorstCells[] = [];
+  excludeZeroes: boolean = false;
 
   districts: DistrictDto[] = [{name: 'All Districts', code: 'ALLDIST'}];
   district:string = 'All Districts';
@@ -169,26 +170,12 @@ export class PulseComponent implements OnInit {
 
   //----------- WORST CELLS ----------------
 
-  getWorstCellsByKpiPage(kpiName: string, granularity: string, page: number, size: number) {
-    this.ltefdddayservice.getWorstCellsByKpiPage(kpiName, granularity,this.district, page, size).subscribe({
-      next: data => {
-        console.log("data", data);
-        this.worstCells = data.content;
-        console.log("WorstCells2:", this.worstCells);
-        this.totalPages = data.totalPages;
-        this.currentPage = data.number;
-
-      },
-      error: error => {
-        console.error("Error getWorstCellsByKpiPage:", error);
-        this.alertService.error("Worst cells retrieval failed");
-      }
-    });
+  onExcludeZeroesChange(event:Event){
+    this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
   }
 
-
   getWorstCellsByKpi(kpiName: string, granularity: string) {
-    this.ltefdddayservice.getWorstCellsByKpi(kpiName,granularity,this.district).subscribe({
+    this.ltefdddayservice.getWorstCellsByKpi(kpiName,granularity,this.district,this.excludeZeroes).subscribe({
       next: data => {
         console.log("all-worstcell-data", data);
         this.allWorstCells = data;
@@ -213,23 +200,16 @@ export class PulseComponent implements OnInit {
   }
 
   nextPage() {
-    // if (this.currentPage < this.totalPages - 1) {
-    //   this.getWorstCellsByKpiPage(this.selectedStandardKpi, this.granularity, this.currentPage + 1, this.pageSize);
-    // }
     this.setPage(this.currentPage + 1);
   }
 
   prevPage() {
-    // if (this.currentPage > 0) {
-    //   this.getWorstCellsByKpiPage(this.selectedStandardKpi, this.granularity, this.currentPage - 1, this.pageSize);
-    // }
     this.setPage(this.currentPage - 1);
   }
 
   selectKpi(kpi: string) {
     this.currentPage = 0;
     this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
-    // this.getWorstCellsByKpiPage(kpi, this.granularity, this.currentPage, this.pageSize);
     this.getWorstCellsByKpi(kpi,this.granularity);
   }
 

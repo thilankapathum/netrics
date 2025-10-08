@@ -12,8 +12,6 @@ import java.util.List;
 public interface LteFddKpiDayService {
     List<KpiDataDto> findAll();
 
-//    List<WorstCell> getWorstCellsByKpi(String kpiName, String period, int count);
-
     KpiDataDto createLteFddKpiDay(LteFddKpiDay kpiDay);
 
     BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period);
@@ -28,14 +26,14 @@ public interface LteFddKpiDayService {
 
     List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName);
 
-    Page<WorstCellsDto> getWorstCellsByKpiPage(String kpiName, String period, int page, int size);
-
     List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period);
+
+    List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period);
 
     List<LteFddKpiDay> getKpiWithoutDistrict();
 
-    Page<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(String kpiName, String period, String districtName, int page, int size);
-
     List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName);
+
+    List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName);
 
 }

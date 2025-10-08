@@ -202,6 +202,10 @@
                       [disabled]="currentPage >= totalPages - 1"
                       (click)="nextPage()">»
               </button>
+              <label class="label ms-4 text-xs">
+                <input type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)" class="checkbox checkbox-sm" />
+                Exclude zeroes
+              </label>
             </div>
           </div>
         </div>

@@ -12,9 +12,6 @@ import dev.thilanka.netrics.service.LteFddKpiDayService;
 import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -51,7 +48,6 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     //------------------------------- KPI-SNAPSHOT START ---------------------------------------------------------------
 
 
-//    @Cacheable(value = "kpiSnapshotCurrPre", key = "")
     private KpiSnapshotCurrentPre getLatestKpiSnapshotWithPre(LteFddStandardKpi standardKpi, String period) {
 
         //-- GET KPI WITH LABEL, WORST-ORDER, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
@@ -251,16 +247,6 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
 
     @Override
-    public Page<WorstCellsDto> getWorstCellsByKpiPage(String kpiName, String period, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
-        LocalDateTime timestamp = getLatestDate();
-        LocalDateTime preTimestamp = getLatestPreviousDate(period);
-
-        return lteFddKpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), pageable);
-    }
-
-    @Override
     @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period")
     public List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
@@ -271,14 +257,13 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
-    public Page<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(String kpiName, String period, String districtName, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + 'excludeZeroes'")
+    public List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period) {
         LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
-        District district = districtService.findDistrictByName(districtName);
         LocalDateTime timestamp = getLatestDate();
         LocalDateTime preTimestamp = getLatestPreviousDate(period);
 
-        return lteFddKpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), pageable, district.getId());
+        return lteFddKpiDayRepository.findWorstCellsExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period));
     }
 
     @Override
@@ -290,6 +275,18 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         LocalDateTime preTimestamp = getLatestPreviousDate(period);
 
         return lteFddKpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId());
+
+    }
+
+    @Override
+    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #districtName + 'excludeZeroes'")
+    public List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName) {
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName);
+        District district = districtService.findDistrictByName(districtName);
+        LocalDateTime timestamp = getLatestDate();
+        LocalDateTime preTimestamp = getLatestPreviousDate(period);
+
+        return lteFddKpiDayRepository.findWorstCellsByDistrictExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId());
 
     }
 

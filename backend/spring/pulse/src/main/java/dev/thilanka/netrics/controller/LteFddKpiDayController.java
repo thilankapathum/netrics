@@ -40,31 +40,21 @@ public class LteFddKpiDayController {
         }
     }
 
-    @GetMapping("worst-cells-page")
-    public Page<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(
-            @RequestParam String kpiName,
-            @RequestParam String period,
-            @RequestParam String districtName,
-            @RequestParam int page,
-            @RequestParam int size) {
-
-        if (Objects.equals(districtName, "All Districts") || districtName == null){
-            return lteFddKpiDayService.getWorstCellsByKpiPage(kpiName, period, page, size);
-        } else {
-            return lteFddKpiDayService.getWorstCellsByKpiAndDistrictPage(kpiName, period, districtName, page, size);
-        }
-    }
-
     @GetMapping("worst-cells")
     public List<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(
             @RequestParam String kpiName,
             @RequestParam String period,
-            @RequestParam String districtName) {
+            @RequestParam String districtName,
+            @RequestParam boolean excludeZeroes) {
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
-            return lteFddKpiDayService.getWorstCellsByKpi(kpiName, period);
+            if (excludeZeroes){
+                return lteFddKpiDayService.getWorstCellsByKpiExcludeZeroes(kpiName, period);
+            } else return lteFddKpiDayService.getWorstCellsByKpi(kpiName, period);
         } else {
-            return lteFddKpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName);
+            if (excludeZeroes) {
+                return lteFddKpiDayService.getWorstCellsByKpiAndDistrictExcludeZeroes(kpiName, period, districtName);
+            } else return lteFddKpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName);
         }
     }
 

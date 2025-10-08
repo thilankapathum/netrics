@@ -22,18 +22,8 @@ export class LtefdddayService {
       { params : {kpiName, period, districtName} });
   }
 
-  // getWorstCellsByKpiX(kpiName: string, granularity: string, count: number) {
-  //   return this.http.get<Array<WorstCell>>(`${this.baseUrl}/worst-cells?kpiName=${kpiName}&period=${granularity}&count=${count}`);
-  // }
-
-  getWorstCellsByKpiPage(kpiName: string, period: string, districtName:string, page: number, size: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/worst-cells-page`, {
-      params: { kpiName, period, districtName, page, size }
-    });
-  }
-
-  getWorstCellsByKpi(kpiName: string, period: string, districtName:string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/worst-cells`,{ params: { kpiName, period, districtName } });
+  getWorstCellsByKpi(kpiName: string, period: string, districtName:string, excludeZeroes:boolean): Observable<any> {
+    return this.http.get(`${this.baseUrl}/worst-cells`,{ params: { kpiName, period, districtName, excludeZeroes } });
   }
 
   getDataByKpiAndCell(kpiName:string, cellName:string, period: string) {
