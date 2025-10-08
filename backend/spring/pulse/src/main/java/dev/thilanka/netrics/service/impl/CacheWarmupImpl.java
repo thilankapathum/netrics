@@ -72,4 +72,8 @@ public class CacheWarmupImpl implements CacheWarmup {
             }
         }
     }
+
+    private void warmupLteFddWorstCellCache(){
+
+    }
 }

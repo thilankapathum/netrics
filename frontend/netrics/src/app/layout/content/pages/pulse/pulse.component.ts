@@ -18,6 +18,7 @@ import {AlertService} from '../../../../components/alert/alert.service';
 import {DistrictDto} from '../../../../models/pulse/DistrictDto';
 import {DistrictService} from '../../../../service/pulse/district/district.service';
 import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
+import {WorstCell} from '../../../../models/pulse/WorstCell';
 
 @Component({
   selector: 'app-pulse',
@@ -42,6 +43,7 @@ export class PulseComponent implements OnInit {
   currentPage: number = 0;
   pageSize: number = 5;
   totalPages: number = 0;
+  allWorstCells: WorstCells[] = [];
   worstCells: WorstCells[] = [];
 
   districts: DistrictDto[] = [{name: 'All Districts', code: 'ALLDIST'}];
@@ -167,8 +169,8 @@ export class PulseComponent implements OnInit {
 
   //----------- WORST CELLS ----------------
 
-  getWorstCellsByKpi(kpiName: string, granularity: string, page: number, size: number) {
-    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity,this.district, page, size).subscribe({
+  getWorstCellsByKpiPage(kpiName: string, granularity: string, page: number, size: number) {
+    this.ltefdddayservice.getWorstCellsByKpiPage(kpiName, granularity,this.district, page, size).subscribe({
       next: data => {
         console.log("data", data);
         this.worstCells = data.content;
@@ -178,28 +180,57 @@ export class PulseComponent implements OnInit {
 
       },
       error: error => {
+        console.error("Error getWorstCellsByKpiPage:", error);
+        this.alertService.error("Worst cells retrieval failed");
+      }
+    });
+  }
+
+
+  getWorstCellsByKpi(kpiName: string, granularity: string) {
+    this.ltefdddayservice.getWorstCellsByKpi(kpiName,granularity,this.district).subscribe({
+      next: data => {
+        console.log("all-worstcell-data", data);
+        this.allWorstCells = data;
+        console.log("allWorstCells", this.allWorstCells);
+        this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
+        this.setPage(0);
+      },
+      error: error => {
         console.error("Error getWorstCellsByKpi:", error);
         this.alertService.error("Worst cells retrieval failed");
       }
     });
   }
 
+  setPage(page: number) {
+    if (page < 0 || page > this.totalPages) return;
+
+    this.currentPage = page;
+    const start = page * this.pageSize;
+    const end = start + this.pageSize;
+    this.worstCells = this.allWorstCells.slice(start,end)
+  }
+
   nextPage() {
-    if (this.currentPage < this.totalPages - 1) {
-      this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, this.currentPage + 1, this.pageSize);
-    }
+    // if (this.currentPage < this.totalPages - 1) {
+    //   this.getWorstCellsByKpiPage(this.selectedStandardKpi, this.granularity, this.currentPage + 1, this.pageSize);
+    // }
+    this.setPage(this.currentPage + 1);
   }
 
   prevPage() {
-    if (this.currentPage > 0) {
-      this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, this.currentPage - 1, this.pageSize);
-    }
+    // if (this.currentPage > 0) {
+    //   this.getWorstCellsByKpiPage(this.selectedStandardKpi, this.granularity, this.currentPage - 1, this.pageSize);
+    // }
+    this.setPage(this.currentPage - 1);
   }
 
   selectKpi(kpi: string) {
     this.currentPage = 0;
     this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
-    this.getWorstCellsByKpi(kpi, this.granularity, this.currentPage, this.pageSize);
+    // this.getWorstCellsByKpiPage(kpi, this.granularity, this.currentPage, this.pageSize);
+    this.getWorstCellsByKpi(kpi,this.granularity);
   }
 
   getAllStandardKpi() {
