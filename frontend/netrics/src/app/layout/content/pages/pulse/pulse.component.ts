@@ -11,7 +11,7 @@ import {LtefddstandardkpiService} from '../../../../service/pulse/ltefdd/ltefdds
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 import {Linechart} from '../../../../components/charts/linechart/linechart/linechart';
-import {Observable} from 'rxjs';
+import {forkJoin, Observable} from 'rxjs';
 import {ChartService} from '../../../../service/components/chart/chart.service';
 import {WorstCells} from '../../../../models/pulse/WorstCells';
 import {AlertService} from '../../../../components/alert/alert.service';
@@ -51,6 +51,8 @@ export class PulseComponent implements OnInit {
   district:string = 'All Districts';
 
   loadingBasicKpi: boolean = false;
+  loadingWorstCells: boolean = false;
+  loadingKpiTrend: boolean = false;
 
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
@@ -130,13 +132,39 @@ export class PulseComponent implements OnInit {
 
   //------- BASIC KPI SNAPSHOTS ---------
 
+  // getAllBasicKpi() {
+  //   this.loadingBasicKpi = true;
+  //   this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
+  //     next: data => {
+  //       this.basicKpiDtos = data;
+  //       this.getBasicKpiSnapshot(this.basicKpiDtos);
+  //       this.loadingBasicKpi = false;
+  //     }, error: error => {
+  //       this.loadingBasicKpi = false;
+  //       console.log("Error getAllBasicKpi");
+  //       console.error(error);
+  //       this.alertService.error("Basic KPI retrieval failed");
+  //     }
+  //   })
+  // }
+
   getAllBasicKpi() {
     this.loadingBasicKpi = true;
+    this.basicKpiSnapshots = [];
     this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
       next: data => {
         this.basicKpiDtos = data;
-        this.getBasicKpiSnapshot(this.basicKpiDtos);
-        this.loadingBasicKpi = false;
+        this.getBasicKpiSnapshot(this.basicKpiDtos).subscribe({
+          next: snapshots => {
+            this.basicKpiSnapshots = snapshots
+            this.loadingBasicKpi = false;
+          }, error: error => {
+            console.log("Error getAllBasicKpiSnapshots");
+            console.error(error);
+            this.alertService.error("Basic KPI Snapshot retrieval failed");
+          }
+        })
+        // this.loadingBasicKpi = false;
       }, error: error => {
         this.loadingBasicKpi = false;
         console.log("Error getAllBasicKpi");
@@ -146,22 +174,29 @@ export class PulseComponent implements OnInit {
     })
   }
 
+  // getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
+  //   this.basicKpiSnapshots = [];
+  //   for (const kpi of basicKpiDto) {
+  //     this.ltefdddayservice
+  //       .getBasicKpiSnapshot(kpi.kpiName!, this.granularity,this.district)
+  //       .subscribe({
+  //           next: data => {
+  //             this.basicKpiSnapshots.push(data);
+  //           }, error: error => {
+  //             console.log("Error getBasicKpiSnapshots:");
+  //             console.error(error);
+  //             this.alertService.error("Basic KPI Snapshot retrieval failed");
+  //           }
+  //         }
+  //       )
+  //   }
+  // }
+
   getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
-    this.basicKpiSnapshots = [];
-    for (const kpi of basicKpiDto) {
-      this.ltefdddayservice
-        .getBasicKpiSnapshot(kpi.kpiName!, this.granularity,this.district)
-        .subscribe({
-            next: data => {
-              this.basicKpiSnapshots.push(data);
-            }, error: error => {
-              console.log("Error getBasicKpiSnapshots:");
-              console.error(error);
-              this.alertService.error("Basic KPI Snapshot retrieval failed");
-            }
-          }
-        )
-    }
+    const requests = basicKpiDto.map(kpi =>
+      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity,this.district)
+    );
+    return forkJoin([...requests]);
   }
 
   get sortedBasicKpiSnapshots():BasicKpiSnapshot[]{
@@ -175,6 +210,7 @@ export class PulseComponent implements OnInit {
   }
 
   getWorstCellsByKpi(kpiName: string, granularity: string) {
+    this.loadingWorstCells = true;
     this.ltefdddayservice.getWorstCellsByKpi(kpiName,granularity,this.district,this.excludeZeroes).subscribe({
       next: data => {
         console.log("all-worstcell-data", data);
@@ -182,10 +218,12 @@ export class PulseComponent implements OnInit {
         console.log("allWorstCells", this.allWorstCells);
         this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
         this.setPage(0);
+        this.loadingWorstCells = false;
       },
       error: error => {
         console.error("Error getWorstCellsByKpi:", error);
         this.alertService.error("Worst cells retrieval failed");
+        this.loadingWorstCells = false;
       }
     });
   }
@@ -256,14 +294,17 @@ export class PulseComponent implements OnInit {
   }
 
   getTrendDataByKpi(kpiName: string, period: string) {
+    this.loadingKpiTrend = true;
     this.kpiTrendData = [];
     this.ltefdddayservice.getDataByKpi(kpiName, period, this.district).subscribe({
       next: data => {
         this.kpiTrendData = data;
+        this.loadingKpiTrend = false;
       }, error: error => {
         console.log("Error getDataByKpi:");
         console.error(error);
         this.alertService.error("Trend data retrieval failed");
+        this.loadingKpiTrend = false;
       }
     })
   }

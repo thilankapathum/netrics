@@ -61,9 +61,12 @@
 
     <!--    KPI SNAPSHOT SECTION-->
     <section>
-      <!--      @if (loadingBasicKpi){-->
-      <!--        <progress class="progress w-56"></progress>-->
-      <!--      }-->
+      @if (loadingBasicKpi) {
+        <!--              <progress class="progress w-56"></progress>-->
+        <div class="flex w-full flex-col gap-4 mb-2">
+          <div class="skeleton h-48 w-full"></div>
+        </div>
+      }
       <div class="stats w-full flex flex-wrap border border-base-300 bg-base-100 rounded-xl shadow-md/5">
         @for (snapshot of sortedBasicKpiSnapshots; track $index) {
           <div class="stat w-1/2 md:w-1/3 lg:w-1/6">
@@ -79,7 +82,9 @@
               </div>
               <div class="stat-figure">
                 <span class="badge badge-soft badge-sm" [class]="snapshot.improved ? 'badge-success' : 'badge-error'">
-                  @if (snapshot.difference! > 0) {+}{{ snapshot.difference | number: '1.2-2' }}{{ snapshot.unit }}
+                  @if (snapshot.difference! > 0) {
+                    +
+                  }{{ snapshot.difference | number: '1.2-2' }}{{ snapshot.unit }}
                 </span>
               </div>
             </div>
@@ -95,8 +100,11 @@
 
                           <span [class]="isKpiValueRed(standardKpi) ? 'text-error' : ''">
                             {{ standardKpi.value | number: '1.2-2' }}{{ standardKpi.unit }}
-                            <span class="badge badge-soft badge-xs font-normal"  [class]="snapshot.improved ? 'badge-success' : 'badge-error'">
-                              @if (standardKpi.difference! > 0) {+}{{standardKpi.difference | number: '1.2-2'}}{{ standardKpi.unit }}
+                            <span class="badge badge-soft badge-xs font-normal"
+                                  [class]="snapshot.improved ? 'badge-success' : 'badge-error'">
+                              @if (standardKpi.difference! > 0) {
+                                +
+                              }{{ standardKpi.difference | number: '1.2-2' }}{{ standardKpi.unit }}
                             </span>
 
                           </span>
@@ -131,7 +139,12 @@
                    [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
         </div>
-        <app-line-chart [kpiTrendData]="kpiTrendData"></app-line-chart>
+        @if (loadingKpiTrend) {
+          <div class="flex w-full flex-col gap-4 mb-2">
+            <div class="skeleton h-64 w-full"></div>
+          </div>
+        }
+        <app-line-chart [hidden]="loadingKpiTrend" [kpiTrendData]="kpiTrendData"></app-line-chart>
       </section>
 
 
@@ -149,7 +162,17 @@
           </select>
         </div>
         <div class="overflow-x-auto">
-          <table class="table table-sm">
+          @if (loadingWorstCells) {
+            <div class="flex w-full flex-col gap-6 py-2">
+              <div class="skeleton h-6 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+            </div>
+          }
+          <table [hidden]="loadingWorstCells" class="table table-sm">
             <!-- head -->
             <thead>
             <tr>
@@ -173,13 +196,16 @@
                       {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
                     </span> &nbsp;
                     <span class="badge badge-soft badge-sm"
-                      [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0){+}{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
+                          [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0) {
+                      +
+                    }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
                     </span>
                   </td>
                   <td class="p-0">
-                    <button class="btn btn-ghost btn-xs p-0" (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)">
+                    <button class="btn btn-ghost btn-xs p-0"
+                            (click)="openAnalysisModal(cell.kpiLabel!, cell.cellName!)">
                       <span class="material-symbols-outlined text-base-content tsize-20">troubleshoot</span>
-<!--                      <i class="fa-solid fa-magnifying-glass-chart text-neutral"></i>-->
+                      <!--                      <i class="fa-solid fa-magnifying-glass-chart text-neutral"></i>-->
                     </button>
                   </td>
                 </tr>
@@ -203,7 +229,8 @@
                       (click)="nextPage()">»
               </button>
               <label class="label ms-4 text-xs">
-                <input type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)" class="checkbox checkbox-sm" />
+                <input type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)"
+                       class="checkbox checkbox-sm"/>
                 Exclude zeroes
               </label>
             </div>
