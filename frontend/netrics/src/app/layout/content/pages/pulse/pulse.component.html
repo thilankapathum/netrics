@@ -3,7 +3,7 @@
     <h3 class="text-lg font-bold">{{ analysisModalCell }}</h3>
     <app-linechart [chartSeries]="chartSeries"></app-linechart>
     <div class="modal-action">
-      <button class="btn btn-outline btn-primary btn-xs">More</button>
+      <a class="btn btn-outline btn-primary btn-xs" [routerLink]="getRouterLinkForCell()">More</a>
       <form method="dialog">
         <!-- if there is a button in form, it will close the modal -->
         <button class="btn btn-xs">Close</button>
@@ -23,10 +23,11 @@
       <!--      <div class="grow-1"></div>-->
       <div>
         <div class="tabs tabs-box tabs-xs border border-base-300">
-          <input type="radio" name="rat_tabs" class="tab" aria-label="LTE-FDD" checked="checked"/>
-          <input disabled type="radio" name="rat_tabs" class="tab" aria-label="LTE-TDD"/>
-          <input disabled type="radio" name="rat_tabs" class="tab" aria-label="GSM"/>
-          <input disabled type="radio" name="rat_tabs" class="tab" aria-label="UMTS"/>
+<!--          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD" checked="checked"/>-->
+          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD" [checked]="selectedRat() === 'ltefdd'" (change)="setSelectedRat($any($event.target).value)"/>
+          <input  type="radio" name="rat_tabs" class="tab" value="ltetdd" aria-label="LTE-TDD" [checked]="selectedRat() === 'ltetdd'" (change)="setSelectedRat($any($event.target).value)" />
+          <input  type="radio" name="rat_tabs" class="tab" value="gsm" aria-label="GSM" [checked]="selectedRat() === 'gsm'" (change)="setSelectedRat($any($event.target).value)" />
+          <input  type="radio" name="rat_tabs" class="tab" value="umts" aria-label="UMTS" [checked]="selectedRat() === 'umts'" (change)="setSelectedRat($any($event.target).value)" />
         </div>
       </div>
 
@@ -101,7 +102,7 @@
                           <span [class]="isKpiValueRed(standardKpi) ? 'text-error' : ''">
                             {{ standardKpi.value | number: '1.2-2' }}{{ standardKpi.unit }}
                             <span class="badge badge-soft badge-xs font-normal"
-                                  [class]="snapshot.improved ? 'badge-success' : 'badge-error'">
+                                  [class]="standardKpi.improved ? 'badge-success' : 'badge-error'">
                               @if (standardKpi.difference! > 0) {
                                 +
                               }{{ standardKpi.difference | number: '1.2-2' }}{{ standardKpi.unit }}

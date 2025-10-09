@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
 import {CommonModule, DecimalPipe} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
@@ -19,15 +19,18 @@ import {DistrictDto} from '../../../../models/pulse/DistrictDto';
 import {DistrictService} from '../../../../service/pulse/district/district.service';
 import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
 import {WorstCell} from '../../../../models/pulse/WorstCell';
+import {Router, RouterLink} from '@angular/router';
 
 @Component({
   selector: 'app-pulse',
   standalone: true,
-  imports: [CommonModule, LineChart, FormsModule, Linechart, DecimalPipe, DecimalPipe, DecimalPipe],
+  imports: [CommonModule, LineChart, FormsModule, Linechart, DecimalPipe, DecimalPipe, DecimalPipe, RouterLink],
   templateUrl: './pulse.component.html',
   styleUrl: './pulse.component.css'
 })
 export class PulseComponent implements OnInit {
+
+  selectedRat = signal<'ltefdd' | 'ltetdd' | 'umts' | 'gsm'>('ltefdd');
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
@@ -48,7 +51,7 @@ export class PulseComponent implements OnInit {
   excludeZeroes: boolean = false;
 
   districts: DistrictDto[] = [{name: 'All Districts', code: 'ALLDIST'}];
-  district:string = 'All Districts';
+  district: string = 'All Districts';
 
   loadingBasicKpi: boolean = false;
   loadingWorstCells: boolean = false;
@@ -62,7 +65,8 @@ export class PulseComponent implements OnInit {
               private ltefddstandardkpiservice: LtefddstandardkpiService,
               private chartService: ChartService,
               private alertService: AlertService,
-              private districtService: DistrictService,) {
+              private districtService: DistrictService,
+              private router: Router) {
   }
 
   ngOnInit() {
@@ -79,7 +83,7 @@ export class PulseComponent implements OnInit {
     this.selectKpi(this.selectedStandardKpi);
   }
 
-  selectDistrict(district:string){
+  selectDistrict(district: string) {
     this.district = district;
     this.cdr.detectChanges(); // Force change detection
     this.getAllBasicKpi();
@@ -90,7 +94,7 @@ export class PulseComponent implements OnInit {
     this.districts = [{name: 'All Districts', code: 'ALLDIST'}];
     this.districtService.getAllDistricts().subscribe({
       next: data => {
-        for (let d of data){
+        for (let d of data) {
           this.districts.push(d);
         }
       }, error: error => {
@@ -101,9 +105,14 @@ export class PulseComponent implements OnInit {
     });
   }
 
+  setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'umts' | 'gsm'): void {
+    this.selectedRat.set(rat);
+    console.log(this.selectedRat());
+  }
 
-  isBasicKpiValueRed(snapshot: BasicKpiSnapshot):boolean {
-    const basicKpi =  this.basicKpiDtos.find(kpi => kpi.label == snapshot.kpiLabel);
+
+  isBasicKpiValueRed(snapshot: BasicKpiSnapshot): boolean {
+    const basicKpi = this.basicKpiDtos.find(kpi => kpi.label == snapshot.kpiLabel);
     if (!basicKpi || basicKpi.threshold == null || !basicKpi.worstOrder) {
       return false;
     }
@@ -116,7 +125,7 @@ export class PulseComponent implements OnInit {
     return false;
   }
 
-  isKpiValueRed(item: KpiSnapshot | WorstCells):boolean {
+  isKpiValueRed(item: KpiSnapshot | WorstCells): boolean {
     const standardKpi = this.standardKpis.find(kpi => kpi.label == item.kpiLabel);
     if (!standardKpi || standardKpi.threshold == null || !standardKpi.worstOrder) {
       return false;
@@ -131,22 +140,6 @@ export class PulseComponent implements OnInit {
   }
 
   //------- BASIC KPI SNAPSHOTS ---------
-
-  // getAllBasicKpi() {
-  //   this.loadingBasicKpi = true;
-  //   this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
-  //     next: data => {
-  //       this.basicKpiDtos = data;
-  //       this.getBasicKpiSnapshot(this.basicKpiDtos);
-  //       this.loadingBasicKpi = false;
-  //     }, error: error => {
-  //       this.loadingBasicKpi = false;
-  //       console.log("Error getAllBasicKpi");
-  //       console.error(error);
-  //       this.alertService.error("Basic KPI retrieval failed");
-  //     }
-  //   })
-  // }
 
   getAllBasicKpi() {
     this.loadingBasicKpi = true;
@@ -174,44 +167,26 @@ export class PulseComponent implements OnInit {
     })
   }
 
-  // getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
-  //   this.basicKpiSnapshots = [];
-  //   for (const kpi of basicKpiDto) {
-  //     this.ltefdddayservice
-  //       .getBasicKpiSnapshot(kpi.kpiName!, this.granularity,this.district)
-  //       .subscribe({
-  //           next: data => {
-  //             this.basicKpiSnapshots.push(data);
-  //           }, error: error => {
-  //             console.log("Error getBasicKpiSnapshots:");
-  //             console.error(error);
-  //             this.alertService.error("Basic KPI Snapshot retrieval failed");
-  //           }
-  //         }
-  //       )
-  //   }
-  // }
-
   getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
     const requests = basicKpiDto.map(kpi =>
-      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity,this.district)
+      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity, this.district)
     );
     return forkJoin([...requests]);
   }
 
-  get sortedBasicKpiSnapshots():BasicKpiSnapshot[]{
+  get sortedBasicKpiSnapshots(): BasicKpiSnapshot[] {
     return this.basicKpiSnapshots.sort((a, b) => a.kpiLabel!.localeCompare(b.kpiLabel!))
   }
 
   //----------- WORST CELLS ----------------
 
-  onExcludeZeroesChange(event:Event){
+  onExcludeZeroesChange(event: Event) {
     this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
   }
 
   getWorstCellsByKpi(kpiName: string, granularity: string) {
     this.loadingWorstCells = true;
-    this.ltefdddayservice.getWorstCellsByKpi(kpiName,granularity,this.district,this.excludeZeroes).subscribe({
+    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, this.district, this.excludeZeroes).subscribe({
       next: data => {
         console.log("all-worstcell-data", data);
         this.allWorstCells = data;
@@ -234,7 +209,7 @@ export class PulseComponent implements OnInit {
     this.currentPage = page;
     const start = page * this.pageSize;
     const end = start + this.pageSize;
-    this.worstCells = this.allWorstCells.slice(start,end)
+    this.worstCells = this.allWorstCells.slice(start, end)
   }
 
   nextPage() {
@@ -248,7 +223,7 @@ export class PulseComponent implements OnInit {
   selectKpi(kpi: string) {
     this.currentPage = 0;
     this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
-    this.getWorstCellsByKpi(kpi,this.granularity);
+    this.getWorstCellsByKpi(kpi, this.granularity);
   }
 
   getAllStandardKpi() {
@@ -313,4 +288,18 @@ export class PulseComponent implements OnInit {
     return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
   }
 
+  getRouterLinkForCell(): string[] {
+    switch (this.selectedRat()) {
+      case "ltefdd":
+        return ['/pulse/cell/ltefdd', this.analysisModalCell];
+      case "ltetdd":
+        return ['/pulse/cell/ltetdd', this.analysisModalCell];
+      case "umts":
+        return ['/pulse/cell/umts', this.analysisModalCell];
+      case "gsm":
+        return ['/pulse/cell/gsm', this.analysisModalCell];
+      default:
+        return ['/pulse/cell/ltefdd', this.analysisModalCell];
+    }
+  }
 }
