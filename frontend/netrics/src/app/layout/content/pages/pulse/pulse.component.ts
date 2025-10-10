@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, effect, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
 import {CommonModule, DecimalPipe} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
@@ -30,7 +30,7 @@ import {Router, RouterLink} from '@angular/router';
 })
 export class PulseComponent implements OnInit {
 
-  selectedRat = signal<'ltefdd' | 'ltetdd' | 'umts' | 'gsm'>('ltefdd');
+  selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
@@ -71,9 +71,9 @@ export class PulseComponent implements OnInit {
 
   ngOnInit() {
     this.cdr.detectChanges(); // Force change detection
+    this.getAllDistricts();
     this.getAllBasicKpi();
     this.getAllStandardKpi();
-    this.getAllDistricts();
   }
 
   selectGranularity(granularity: string) {
@@ -105,9 +105,41 @@ export class PulseComponent implements OnInit {
     });
   }
 
-  setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'umts' | 'gsm'): void {
+  setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): void {
     this.selectedRat.set(rat);
-    console.log(this.selectedRat());
+    // console.log(this.selectedRat());
+
+    switch (rat) {
+      case "ltefdd":
+        this.getLteFddBasicKpi();
+        this.getLteFddTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+        this.getLteFddWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
+        break;
+      case "ltetdd":
+        this.getLteTddBasicKpi();
+        this.getLteTddTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+        this.getLteTddWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
+        break;
+      case "nr":
+        this.getNrBasicKpi();
+        this.getNrTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+        this.getNrWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
+        break;
+      case "umts":
+        this.getUmtsBasicKpi();
+        this.getUmtsTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+        this.getUmtsWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
+        break;
+      case "gsm":
+        this.getGsmBasicKpi();
+        this.getGsmTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+        this.getGsmWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
+        break;
+      default:
+        this.getLteFddBasicKpi();
+        this.getLteFddTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+        this.getLteFddWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
+    }
   }
 
 
@@ -139,15 +171,34 @@ export class PulseComponent implements OnInit {
     return false;
   }
 
-  //------- BASIC KPI SNAPSHOTS ---------
+  //------- BASIC KPI  ---------
 
   getAllBasicKpi() {
+    //TODO: This method may not be required except for OnInit
     this.loadingBasicKpi = true;
     this.basicKpiSnapshots = [];
+
+    let selectedRat1 = this.selectedRat();
+    if (selectedRat1 === "ltefdd") {
+      this.getLteFddBasicKpi();
+    } else if (selectedRat1 === "ltetdd") {
+      this.getLteTddBasicKpi();
+    } else if (selectedRat1 === "umts") {
+      this.getUmtsBasicKpi();
+    } else if (selectedRat1 === "gsm") {
+      this.getGsmBasicKpi();
+    } else {
+      this.getLteFddBasicKpi();
+    }
+  }
+
+  getLteFddBasicKpi() {
+    console.log('Get LteFDDBasicKpi');
+
     this.ltefddbasickpiservice.getAllBasicKpi().subscribe({
       next: data => {
         this.basicKpiDtos = data;
-        this.getBasicKpiSnapshot(this.basicKpiDtos).subscribe({
+        this.getLteFddBasicKpiSnapshot(this.basicKpiDtos).subscribe({
           next: snapshots => {
             this.basicKpiSnapshots = snapshots
             this.loadingBasicKpi = false;
@@ -164,15 +215,62 @@ export class PulseComponent implements OnInit {
         console.error(error);
         this.alertService.error("Basic KPI retrieval failed");
       }
-    })
+    });
   }
 
-  getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
+  getLteTddBasicKpi() {
+    console.log('Get LteTddBasicKpi');
+    this.basicKpiDtos = [];
+    this.basicKpiSnapshots = [];
+    this.getLteTddBasicKpiSnapshot(this.basicKpiDtos);
+  }
+
+  private getNrBasicKpi() {
+    console.log('Get NrBasicKpi');
+    this.basicKpiDtos = [];
+    this.basicKpiSnapshots = [];
+    this.getNrBasicKpiSnapshot(this.basicKpiDtos);
+  }
+
+  getUmtsBasicKpi() {
+    console.log('Get UMTSBasicKpi');
+    this.basicKpiDtos = [];
+    this.basicKpiSnapshots = [];
+    this.getUmtsBasicKpiSnapshot(this.basicKpiDtos);
+  }
+
+  getGsmBasicKpi() {
+    console.log('Get GSM Basic KPI');
+    this.basicKpiDtos = [];
+    this.basicKpiSnapshots = [];
+    this.getGsmBasicKpiSnapshot(this.basicKpiDtos);
+  }
+
+  //------- BASIC KPI SNAPSHOTS ---------
+
+  private getLteFddBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
     const requests = basicKpiDto.map(kpi =>
       this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity, this.district)
     );
     return forkJoin([...requests]);
   }
+
+  private getLteTddBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
+    console.log('Get LteTddBasicKpiSnapshot for KPI');
+  }
+
+  private getNrBasicKpiSnapshot(basicKpiDtos: BasicKpiDto[]) {
+    console.log('Get NrBasicKpiSnapshot for KPI');
+  }
+
+  private getUmtsBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
+    console.log('Get UmtsBasicKpiSnapshot for KPI');
+  }
+
+  private getGsmBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
+    console.log('Get GsmBasicKpiSnapshot for KPI');
+  }
+
 
   get sortedBasicKpiSnapshots(): BasicKpiSnapshot[] {
     return this.basicKpiSnapshots.sort((a, b) => a.kpiLabel!.localeCompare(b.kpiLabel!))
@@ -181,10 +279,10 @@ export class PulseComponent implements OnInit {
   //----------- WORST CELLS ----------------
 
   onExcludeZeroesChange(event: Event) {
-    this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
+    this.getLteFddWorstCellsByKpi(this.selectedStandardKpi, this.granularity);
   }
 
-  getWorstCellsByKpi(kpiName: string, granularity: string) {
+  getLteFddWorstCellsByKpi(kpiName: string, granularity: string) {
     this.loadingWorstCells = true;
     this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, this.district, this.excludeZeroes).subscribe({
       next: data => {
@@ -201,6 +299,31 @@ export class PulseComponent implements OnInit {
         this.loadingWorstCells = false;
       }
     });
+
+  }
+
+  getLteTddWorstCellsByKpi(kpiName: string, granularity: string) {
+    this.loadingWorstCells = true;
+    console.log('Get LteTddWorstCellsByKpi');
+    //TODO: Configure worst cell retrieval
+  }
+
+  getNrWorstCellsByKpi(kpiName: string, granularity: string) {
+    this.loadingWorstCells = true;
+    console.log('Get NrWorstCellsByKpi');
+    //TODO: Configure worst cell retrieval
+  }
+
+  getUmtsWorstCellsByKpi(kpiName: string, granularity: string) {
+    this.loadingWorstCells = true;
+    console.log('Get UmtsWorstCellsByKpi');
+    //TODO: Configure worst cell retrieval
+  }
+
+  getGsmWorstCellsByKpi(kpiName: string, granularity: string) {
+    this.loadingWorstCells = true;
+    console.log('Get GsmWorstCellsByKpi');
+    //TODO: Configure worst cell retrieval
   }
 
   setPage(page: number) {
@@ -222,8 +345,8 @@ export class PulseComponent implements OnInit {
 
   selectKpi(kpi: string) {
     this.currentPage = 0;
-    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
-    this.getWorstCellsByKpi(kpi, this.granularity);
+    this.getLteFddTrendDataByKpi(kpi, this.selectedKpiTrendPeriod);
+    this.getLteFddWorstCellsByKpi(kpi, this.granularity);
   }
 
   getAllStandardKpi() {
@@ -265,10 +388,11 @@ export class PulseComponent implements OnInit {
   //------------- KPI TREND CHART ----------------
 
   onPeriodChange(event: Event) {
-    this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+    this.getLteFddTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod);
+    //TODO: configure for other RATs
   }
 
-  getTrendDataByKpi(kpiName: string, period: string) {
+  getLteFddTrendDataByKpi(kpiName: string, period: string) {
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
     this.ltefdddayservice.getDataByKpi(kpiName, period, this.district).subscribe({
@@ -281,12 +405,45 @@ export class PulseComponent implements OnInit {
         this.alertService.error("Trend data retrieval failed");
         this.loadingKpiTrend = false;
       }
-    })
+    });
   }
 
+  getLteTddTrendDataByKpi(kpiName: string, period: string) {
+    this.loadingKpiTrend = true;
+    this.kpiTrendData = [];
+    //TODO: configure data retrieval
+    console.log('Retrieving LteTddTrendDataByKpi');
+  }
+
+  getNrTrendDataByKpi(kpiName: string, period: string) {
+    this.loadingKpiTrend = true;
+    this.kpiTrendData = [];
+    //TODO: configure data retrieval
+    console.log('Retrieving NrTrendDataByKpi');
+  }
+
+  getUmtsTrendDataByKpi(kpiName: string, period: string) {
+    this.loadingKpiTrend = true;
+    this.kpiTrendData = [];
+    //TODO: configure data retrieval
+    console.log('Retrieving UmtsTrendDataByKpi');
+  }
+
+  getGsmTrendDataByKpi(kpiName: string, period: string) {
+    this.loadingKpiTrend = true;
+    this.kpiTrendData = [];
+    //TODO: configure data retrieval
+    console.log('Retrieving GsmTrendDataByKpi');
+  }
+
+  //============ MODAL KPI TREND CHART =================
+
   getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string): Observable<KpiDataDto[]> {
+    //TODO: configure for other RATs
     return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
   }
+
+  //============ ROUTER-LINK ===========================
 
   getRouterLinkForCell(): string[] {
     switch (this.selectedRat()) {
