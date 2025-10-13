@@ -6,10 +6,10 @@ import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.ltefdd.KpiMappingToOss;
 import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
 import dev.thilanka.netrics.mapper.Mapper;
-import dev.thilanka.netrics.repository.LteFddKpiMappingRepository;
-import dev.thilanka.netrics.repository.LteFddStandardKpiRepository;
+import dev.thilanka.netrics.repository.KpiMappingRepository;
+import dev.thilanka.netrics.repository.StandardKpiRepository;
 import dev.thilanka.netrics.repository.OssRepository;
-import dev.thilanka.netrics.service.LteFddKpiMappingToOssService;
+import dev.thilanka.netrics.service.KpiMappingToOssService;
 import dev.thilanka.netrics.service.StandardKpiService;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +20,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssService {
-    private final LteFddKpiMappingRepository lteFddKpiMappingRepository;
-    private final LteFddStandardKpiRepository lteFddStandardKpiRepository;
+public class KpiMappingToOssServiceImpl implements KpiMappingToOssService {
+    private final KpiMappingRepository kpiMappingRepository;
+    private final StandardKpiRepository standardKpiRepository;
     private final StandardKpiService standardKpiService;
     private final RatService ratService;
     private final OssRepository ossRepository;
@@ -33,7 +33,7 @@ public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssSe
 
         Rat rat = ratService.findRatByName(ratName);
 
-        List<KpiMappingToOss> kpi = lteFddKpiMappingRepository.findByRatId(rat.getId());
+        List<KpiMappingToOss> kpi = kpiMappingRepository.findByRatId(rat.getId());
 
         return kpi
                 .stream()
@@ -60,7 +60,7 @@ public class LteFddKpiMappingToOssServiceImpl implements LteFddKpiMappingToOssSe
                 .rat(rat)
                 .build();
 
-        KpiMappingToOss savedMapping = lteFddKpiMappingRepository.save(kpiMappingToOss);
+        KpiMappingToOss savedMapping = kpiMappingRepository.save(kpiMappingToOss);
 
         return mapper.LteFddKpiMappingToDto(savedMapping);
     }

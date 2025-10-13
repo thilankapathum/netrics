@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/pulse/ltefdd/standardkpi")
 @RequiredArgsConstructor
-public class LteFddStandardKpiController {
+public class StandardKpiController {
     private final StandardKpiService standardKpiService;
 
     @GetMapping

@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 
-public interface LteFddBasicKpiService {
+public interface BasicKpiService {
     List<BasicKpiDto> getAllByRat(String ratName);
 
     BasicKpiDto createBasicKpi(@Valid BasicKpiDto dto);

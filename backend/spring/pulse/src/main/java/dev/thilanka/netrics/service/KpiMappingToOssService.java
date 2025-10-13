@@ -5,7 +5,7 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 
-public interface LteFddKpiMappingToOssService {
+public interface KpiMappingToOssService {
     List<KpiMappingToOssDto> getAll(String ratName);
 
     KpiMappingToOssDto createLteFddKpiMapping(@Valid KpiMappingToOssDto dto);

@@ -9,7 +9,7 @@ import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.DistrictCodeRepository;
 import dev.thilanka.netrics.service.DistrictCodeService;
 import dev.thilanka.netrics.service.DistrictService;
-import dev.thilanka.netrics.service.LteFddKpiDayService;
+import dev.thilanka.netrics.service.KpiDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +21,7 @@ import java.util.List;
 public class DistrictCodeServiceImpl implements DistrictCodeService {
     private final DistrictCodeRepository districtCodeRepository;
     private final DistrictService districtService;
-    private final LteFddKpiDayService lteFddKpiDayService;
+    private final KpiDayService kpiDayService;
     private final Mapper mapper;
 
     @Override
@@ -58,11 +58,11 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     }
 
     private List<KpiDataDto> updateLteFddKpiDayWithoutDistrict() {
-        List<KpiDay> kpiList = lteFddKpiDayService.getKpiWithoutDistrict();
+        List<KpiDay> kpiList = kpiDayService.getKpiWithoutDistrict();
         List<KpiDataDto> kpiDayDtos = new ArrayList<>();
         for (KpiDay kpi : kpiList) {
             kpi.setDistrictCode(getDistrictCodeByCellName(kpi.getCellName()));
-            kpiDayDtos.add(lteFddKpiDayService.createLteFddKpiDay(kpi));
+            kpiDayDtos.add(kpiDayService.createLteFddKpiDay(kpi));
         }
         return kpiDayDtos;
 

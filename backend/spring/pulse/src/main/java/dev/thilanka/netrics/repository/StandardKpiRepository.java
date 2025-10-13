@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface LteFddStandardKpiRepository extends JpaRepository<StandardKpi, Long> {
+public interface StandardKpiRepository extends JpaRepository<StandardKpi, Long> {
     Optional<StandardKpi> findByKpiNameAndRatId(String kpiName, Long ratId);
 
     Optional<StandardKpi> findByLabel(String label);

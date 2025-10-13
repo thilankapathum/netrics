@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface LteFddKpiDayRepository extends JpaRepository<KpiDay, Long> {
+public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
 
     @Query(value = "SELECT DISTINCT timestamp FROM lte_fdd_kpi_day WHERE lte_fdd_kpi_day.rat_id = :ratId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     LocalDateTime getLatestDate(@Param("ratId") Long ratId);

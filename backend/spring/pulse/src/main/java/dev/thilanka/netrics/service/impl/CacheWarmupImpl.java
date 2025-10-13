@@ -12,8 +12,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class CacheWarmupImpl implements CacheWarmup {
-    private final LteFddKpiDayService lteFddKpiDayService;
-    private final LteFddBasicKpiService lteFddBasicKpiService;
+    private final KpiDayService kpiDayService;
+    private final BasicKpiService basicKpiService;
     private final DistrictService districtService;
     private final StandardKpiService standardKpiService;
     private final String[] periods = {"day"};
@@ -28,13 +28,13 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     private void warmupLteFddBasicKpiSnapshotCache() {
-        List<BasicKpiDto> basicKpis = lteFddBasicKpiService.getAllByRat("ltefdd"); //TODO
+        List<BasicKpiDto> basicKpis = basicKpiService.getAllByRat("ltefdd"); //TODO
         List<DistrictDto> districts = districtService.getAll();
         for (String period : periods) {
             for (BasicKpiDto dto : basicKpis) {
                 try {
                     //TODO: Implement better RAT name
-                    lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, "ltefdd");
+                    kpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, "ltefdd");
                     System.out.println("Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period);
                 } catch (Exception e) {
                     System.out.println("Error warming cache for: " + dto.kpiName() + "-" + period);
@@ -43,7 +43,7 @@ public class CacheWarmupImpl implements CacheWarmup {
                 for (DistrictDto district : districts) {
                     try {
                         // TODO: Implement better RAT name
-                        lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), "ltefdd");
+                        kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), "ltefdd");
                         System.out.println("Cache BasicKpi warmed-up: " + dto.kpiName() +"-"+ period +"-"+ district.name());
                     } catch (Exception e) {
                         System.out.println("Error warming cache for: " + dto.kpiName() +"-" + period +"-" + district.name());
@@ -61,7 +61,7 @@ public class CacheWarmupImpl implements CacheWarmup {
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
             try {
                 //TODO: Implement Better RAT name
-                lteFddKpiDayService.getTrendByKpi(standardKpi.kpiName(), "month", "ltefdd");
+                kpiDayService.getTrendByKpi(standardKpi.kpiName(), "month", "ltefdd");
                 System.out.println("Cache LteFddKpiTrend warmed-up (month): " + standardKpi.kpiName());
             } catch (Exception e) {
                 System.out.println("Error while warming cache for (month): " + standardKpi.kpiName());
@@ -69,7 +69,7 @@ public class CacheWarmupImpl implements CacheWarmup {
             for (DistrictDto district : districts) {
                 try {
                     //TODO: Implement better RAT name
-                    lteFddKpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), "ltefdd");
+                    kpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), "ltefdd");
                     System.out.println("Cache LteFddKpiTrend warmed-up (month): " + standardKpi.kpiName() +"-" + district.name());
                 } catch (Exception e) {
                     System.out.println("Error while warming cache for (month): " + standardKpi.kpiName()+ "-" + district.name());
@@ -85,7 +85,7 @@ public class CacheWarmupImpl implements CacheWarmup {
         for (StandardKpiDto standardKpi: lteFddStandardKpis){
             try{
                 //TODO: Implement better RAT name
-                lteFddKpiDayService.getWorstCellsByKpi(standardKpi.kpiName(),"day", "ltefdd");
+                kpiDayService.getWorstCellsByKpi(standardKpi.kpiName(),"day", "ltefdd");
                 System.out.println("Cache LteFddWorstCells warmed-up: " + standardKpi.kpiName());
             } catch (Exception e){
                 System.out.println("Error while warming cache for: " + standardKpi.kpiName());
@@ -94,7 +94,7 @@ public class CacheWarmupImpl implements CacheWarmup {
             for (DistrictDto district: districts){
                 try {
                     //TODO: Implement better RAT name
-                    lteFddKpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", district.name(), "ltefdd");
+                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", district.name(), "ltefdd");
                     System.out.println("Cache LteFddWorstCell warmed-up: " + standardKpi.kpiName() + "-" + district.name());
                 } catch (Exception e){
                     System.out.println("Error while warming up: " + standardKpi.kpiName() + "-" + district.name());

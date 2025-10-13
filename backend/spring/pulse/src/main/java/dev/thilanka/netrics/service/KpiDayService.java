@@ -8,7 +8,7 @@ import dev.thilanka.netrics.entity.ltefdd.KpiDay;
 
 import java.util.List;
 
-public interface LteFddKpiDayService {
+public interface KpiDayService {
     List<KpiDataDto> findAll();
 
     KpiDataDto createLteFddKpiDay(KpiDay kpiDay);

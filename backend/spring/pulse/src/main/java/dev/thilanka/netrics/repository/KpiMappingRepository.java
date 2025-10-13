@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface LteFddKpiMappingRepository extends JpaRepository<KpiMappingToOss, Long> {
+public interface KpiMappingRepository extends JpaRepository<KpiMappingToOss, Long> {
 
     List<KpiMappingToOss> findByRatId(Long ratId);
 }

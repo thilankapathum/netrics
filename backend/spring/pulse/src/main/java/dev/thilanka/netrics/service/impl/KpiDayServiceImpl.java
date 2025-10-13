@@ -5,10 +5,10 @@ import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.ltefdd.*;
 import dev.thilanka.netrics.mapper.Mapper;
-import dev.thilanka.netrics.repository.LteFddBasicKpiRepository;
-import dev.thilanka.netrics.repository.LteFddKpiDayRepository;
+import dev.thilanka.netrics.repository.BasicKpiRepository;
+import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.DistrictService;
-import dev.thilanka.netrics.service.LteFddKpiDayService;
+import dev.thilanka.netrics.service.KpiDayService;
 import dev.thilanka.netrics.service.StandardKpiService;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
+public class KpiDayServiceImpl implements KpiDayService {
 
     //-- Snapshot: Single whole KPI value considering the KPI and Period
     //-- Standard KPI: KPIs like 'E-RAB Setup Success Rate', 'DL Volume (Kbyte)'
@@ -31,9 +31,9 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     //-- Latest: Last day (newest) KPI
     //-- Compact: Contains only 'kpiLabel', 'value', 'difference with previous period', 'up/down with previous period'
 
-    private final LteFddKpiDayRepository lteFddKpiDayRepository;
+    private final KpiDayRepository kpiDayRepository;
     private final StandardKpiService standardKpiService;
-    private final LteFddBasicKpiRepository lteFddBasicKpiRepository;
+    private final BasicKpiRepository basicKpiRepository;
     private final RatService ratService;
     private final DistrictService districtService;
     private final Mapper mapper;
@@ -54,14 +54,14 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
         //-- GET KPI WITH LABEL, WORST-ORDER, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
 
-        LocalDateTime timestamp = lteFddKpiDayRepository.getLatestDate(ratId);
+        LocalDateTime timestamp = kpiDayRepository.getLatestDate(ratId);
 
         LocalDateTime preTimestamp = getLatestPreviousDate(period, ratId);
         if (standardKpi.getAggregation().equals("SUM")) {
-            return lteFddKpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), ratId)
+            return kpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), ratId)
                     .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
         } else {
-            return lteFddKpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), ratId)
+            return kpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), ratId)
                     .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
         }
     }
@@ -110,7 +110,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         LocalDateTime timestamp = getLatestDate(ratId);
         District district = districtService.findDistrictByName(districtName);
 
-        return lteFddKpiDayRepository.findLatestKpiSnapshotByDistrict(
+        return kpiDayRepository.findLatestKpiSnapshotByDistrict(
                         standardKpi.getId(),
                         timestamp,
                         getLatestPreviousDate(period, ratId),
@@ -125,7 +125,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-        BasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
+        BasicKpi basicKpi = basicKpiRepository.findByKpiName(basicKpiName, rat.getId())
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
 
@@ -188,7 +188,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName) {
         //Todo
         Rat rat = ratService.findRatByName(ratName);
-        BasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
+        BasicKpi basicKpi = basicKpiRepository.findByKpiName(basicKpiName, rat.getId())
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
 
@@ -261,7 +261,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         LocalDateTime timestamp = getLatestDate(rat.getId());
         LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
 
-        return lteFddKpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), rat.getId());
+        return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), rat.getId());
     }
 
     @Override
@@ -272,7 +272,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         LocalDateTime timestamp = getLatestDate(rat.getId());
         LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
 
-        return lteFddKpiDayRepository.findWorstCellsExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), rat.getId());
+        return kpiDayRepository.findWorstCellsExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), rat.getId());
     }
 
     @Override
@@ -284,7 +284,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         LocalDateTime timestamp = getLatestDate(rat.getId());
         LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
 
-        return lteFddKpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId(), rat.getId());
+        return kpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId(), rat.getId());
 
     }
 
@@ -297,7 +297,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         LocalDateTime timestamp = getLatestDate(rat.getId());
         LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
 
-        return lteFddKpiDayRepository.findWorstCellsByDistrictExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId(), rat.getId());
+        return kpiDayRepository.findWorstCellsByDistrictExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId(), rat.getId());
 
     }
 
@@ -314,7 +314,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
 
-        List<KpiData> kpiData = lteFddKpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, getPeriod(period), cellName, rat.getId());
+        List<KpiData> kpiData = kpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, getPeriod(period), cellName, rat.getId());
 
         return kpiData.stream()
                 .map(mapper::kpiDataToDto)
@@ -344,9 +344,9 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         List<KpiTrend> kpiTrends = new ArrayList<>();
 
         if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-            kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, getPeriod(period), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, getPeriod(period), rat.getId());
         } else
-            kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, getPeriod(period), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, getPeriod(period), rat.getId());
 
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
@@ -361,9 +361,9 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
         List<KpiTrend> kpiTrends = new ArrayList<>();
 
         if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-            kpiTrends = lteFddKpiDayRepository.findTrendDataSumByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId(), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataSumByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId(), rat.getId());
         } else
-            kpiTrends = lteFddKpiDayRepository.findTrendDataAvgByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId(), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataAvgByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId(), rat.getId());
 
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
@@ -374,7 +374,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
     @Override
     public List<KpiDataDto> findAll() {
-        List<KpiDay> kpiDays = lteFddKpiDayRepository.findAll();
+        List<KpiDay> kpiDays = kpiDayRepository.findAll();
 
         return kpiDays
                 .stream()
@@ -384,12 +384,12 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
     @Override
     public KpiDataDto createLteFddKpiDay(KpiDay kpiDay) {
-        KpiDay savedKpiDay = lteFddKpiDayRepository.save(kpiDay);
+        KpiDay savedKpiDay = kpiDayRepository.save(kpiDay);
         return mapper.LteFddKpiDayToKpiDataDto(savedKpiDay);
     }
 
     private LocalDateTime getLatestDate(Long ratId) {
-        return lteFddKpiDayRepository.getLatestDate(ratId);
+        return kpiDayRepository.getLatestDate(ratId);
     }
 
     private LocalDateTime getLatestPreviousDate(String period, Long ratId) {
@@ -442,7 +442,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
     @Override
     public List<KpiDay> getKpiWithoutDistrict() {
-        return lteFddKpiDayRepository.findKpiWithoutDistrict();
+        return kpiDayRepository.findKpiWithoutDistrict();
     }
 
 }

@@ -5,9 +5,9 @@ import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
 import dev.thilanka.netrics.entity.ltefdd.StandardRawKpiMapping;
 import dev.thilanka.netrics.mapper.Mapper;
-import dev.thilanka.netrics.repository.LteFddStandardRawKpiMappingRepository;
+import dev.thilanka.netrics.repository.StandardRawKpiMappingRepository;
 import dev.thilanka.netrics.service.StandardKpiService;
-import dev.thilanka.netrics.service.LteFddStandardRawKpiMappingService;
+import dev.thilanka.netrics.service.StandardRawKpiMappingService;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,8 +17,8 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRawKpiMappingService {
-    private final LteFddStandardRawKpiMappingRepository lteFddStandardRawKpiMappingRepository;
+public class StandardRawKpiMappingServiceImpl implements StandardRawKpiMappingService {
+    private final StandardRawKpiMappingRepository standardRawKpiMappingRepository;
     private final RatService ratService;
     private final Mapper mapper;
     private final StandardKpiService standardKpiService;
@@ -27,7 +27,7 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
     public List<StandardRawKpiMappingDto> getAll(String ratName) {
 
         Rat rat = ratService.findRatByName(ratName);
-        List<StandardRawKpiMapping> mappings = lteFddStandardRawKpiMappingRepository.findByRat(rat);
+        List<StandardRawKpiMapping> mappings = standardRawKpiMappingRepository.findByRat(rat);
 
         return mappings
                 .stream()
@@ -51,7 +51,7 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
                 .rat(rat)
                 .build();
 
-        StandardRawKpiMapping savedMapping = lteFddStandardRawKpiMappingRepository.save(mapping);
+        StandardRawKpiMapping savedMapping = standardRawKpiMappingRepository.save(mapping);
         return mapper.lteFddStandardRawKpiMappingToDto(savedMapping);
     }
 

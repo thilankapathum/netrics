@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface LteFddStandardRawKpiMappingRepository extends JpaRepository<StandardRawKpiMapping, Long> {
+public interface StandardRawKpiMappingRepository extends JpaRepository<StandardRawKpiMapping, Long> {
 
     List<StandardRawKpiMapping> findByRat(Rat rat);
 }
