@@ -17,8 +17,8 @@ public class LteFddKpiMappingToOssController {
     private final LteFddKpiMappingToOssService lteFddKpiMappingToOssService;
 
     @GetMapping
-    public ResponseEntity<List<KpiMappingToOssDto>> getAll(){
-        List<KpiMappingToOssDto> dto = lteFddKpiMappingToOssService.getAll();
+    public ResponseEntity<List<KpiMappingToOssDto>> getAll(@RequestParam("ratName") String ratName){
+        List<KpiMappingToOssDto> dto = lteFddKpiMappingToOssService.getAll(ratName);
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 

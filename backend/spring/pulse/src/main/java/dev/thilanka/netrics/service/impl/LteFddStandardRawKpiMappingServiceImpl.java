@@ -1,12 +1,15 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.StandardRawKpiMappingDto;
+import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardRawKpiMapping;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddStandardRawKpiMappingRepository;
+import dev.thilanka.netrics.repository.RatRepository;
 import dev.thilanka.netrics.service.LteFddStandardKpiService;
 import dev.thilanka.netrics.service.LteFddStandardRawKpiMappingService;
+import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +20,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRawKpiMappingService {
     private final LteFddStandardRawKpiMappingRepository lteFddStandardRawKpiMappingRepository;
+    private final RatService ratService;
     private final Mapper mapper;
     private final LteFddStandardKpiService lteFddStandardKpiService;
 
     @Override
-    public List<StandardRawKpiMappingDto> getAll() {
-        List<LteFddStandardRawKpiMapping> mappings = lteFddStandardRawKpiMappingRepository.findAll();
+    public List<StandardRawKpiMappingDto> getAll(String ratName) {
+
+        Rat rat = ratService.findRatByName(ratName);
+        List<LteFddStandardRawKpiMapping> mappings = lteFddStandardRawKpiMappingRepository.findByRat(rat);
 
         return mappings
                 .stream()
@@ -33,14 +39,17 @@ public class LteFddStandardRawKpiMappingServiceImpl implements LteFddStandardRaw
     @Override
     public StandardRawKpiMappingDto createMapping(StandardRawKpiMappingDto dto) {
 
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(dto.standardKpi());
-        LteFddStandardKpi numerator = lteFddStandardKpiService.findByKpiName(dto.numerator());
-        LteFddStandardKpi denominator = lteFddStandardKpiService.findByKpiName(dto.denominator());
+        Rat rat = ratService.findRatByName(dto.ratName());
+
+        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(dto.standardKpi(), dto.ratName());
+        LteFddStandardKpi numerator = lteFddStandardKpiService.findByKpiName(dto.numerator(), dto.ratName());
+        LteFddStandardKpi denominator = lteFddStandardKpiService.findByKpiName(dto.denominator(), dto.ratName());
 
         LteFddStandardRawKpiMapping mapping = LteFddStandardRawKpiMapping.builder()
                 .standardKpi(standardKpi)
                 .numerator(numerator)
                 .denominator(denominator)
+                .rat(rat)
                 .build();
 
         LteFddStandardRawKpiMapping savedMapping = lteFddStandardRawKpiMappingRepository.save(mapping);

@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.entity.ltefdd;
 
 import dev.thilanka.netrics.entity.Oss;
+import dev.thilanka.netrics.entity.Rat;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,4 +27,8 @@ public class LteFddKpiMappingToOss {
     @ManyToOne
     @JoinColumn(name = "lteFddStandardKpi_id")
     private LteFddStandardKpi lteFddStandardKpi;
+
+    @ManyToOne
+    @JoinColumn(name = "rat_id")
+    private Rat rat;
 }

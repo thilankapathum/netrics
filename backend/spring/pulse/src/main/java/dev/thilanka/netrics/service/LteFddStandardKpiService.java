@@ -13,9 +13,11 @@ public interface LteFddStandardKpiService {
 
     List<StandardKpiDto> createKpis(@Valid List<StandardKpiDto> dtos);
 
-    LteFddStandardKpi findByKpiName(String s);
+    LteFddStandardKpi findByKpiName(String kpiName, String ratName);
 
-    LteFddStandardKpi findByKpiLabel(String kpiLabel);
+    LteFddStandardKpi findByKpiNameAndRatId(String kpiName, Long ratId);
 
-    List<StandardKpiDto> getAllStandardKpi();
+    LteFddStandardKpi findByKpiLabel(String kpiLabel, String ratName);
+
+    List<StandardKpiDto> getAllStandardKpiByRat(String ratName);
 }

@@ -17,7 +17,7 @@ import java.util.Optional;
 
 public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long> {
 
-    @Query(value = "SELECT DISTINCT timestamp FROM lte_fdd_kpi_day WHERE rat_id = :ratId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT DISTINCT timestamp FROM lte_fdd_kpi_day WHERE lte_fdd_kpi_day.rat_id = :ratId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     LocalDateTime getLatestDate(@Param("ratId") Long ratId);
 
 
@@ -37,7 +37,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                        ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                 WHERE timestamp BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                   AND lte_fdd_standard_kpi_id = :standardKpiId
-                  AND rat_id = :ratId
+                  AND lte_fdd_kpi_day.rat_id = :ratId
                 GROUP BY lte_fdd_standard_kpi.label,
                          lte_fdd_standard_kpi.unit,
                          lte_fdd_standard_kpi.id,
@@ -51,7 +51,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 FROM lte_fdd_kpi_day
                 WHERE timestamp BETWEEN (:PreTimestamp ::DATE - (:period * INTERVAL '1 day')) AND :PreTimestamp
                   AND lte_fdd_standard_kpi_id = :standardKpiId
-                  AND rat_id = :ratId
+                  AND lte_fdd_kpi_day.rat_id = :ratId
                 GROUP BY lte_fdd_standard_kpi_id
             ) pre
             ON curr.id = pre.id;
@@ -75,7 +75,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                        ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                 WHERE "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                   AND lte_fdd_kpi_day.lte_fdd_standard_kpi_id = :standardKpiId
-                  AND rat_id = :ratId
+                  AND lte_fdd_kpi_day.rat_id = :ratId
                 GROUP BY lte_fdd_standard_kpi.label,
                          lte_fdd_standard_kpi.unit,
                          lte_fdd_kpi_day.lte_fdd_standard_kpi_id,
@@ -89,7 +89,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 FROM lte_fdd_kpi_day
                 WHERE "timestamp" BETWEEN (:PreTimestamp ::DATE - (:period * INTERVAL '1 day')) AND :PreTimestamp
                   AND lte_fdd_kpi_day.lte_fdd_standard_kpi_id = :standardKpiId
-                  AND rat_id = :ratId
+                  AND lte_fdd_kpi_day.rat_id = :ratId
                 GROUP BY lte_fdd_kpi_day.lte_fdd_standard_kpi_id
             ) pre
             ON curr.id = pre.id;
@@ -134,7 +134,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 WHERE lte_fdd_standard_kpi_id = :standardKpiId
                   AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                   AND d.id = :districtId
-                  AND rat_id = :ratId
+                  AND lte_fdd_kpi_day.rat_id = :ratId
                 GROUP BY lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
             ) AS curr
             LEFT JOIN (
@@ -158,7 +158,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 WHERE lte_fdd_standard_kpi_id = :standardKpiId
                   AND "timestamp" BETWEEN (:preTimestamp ::DATE - (:period * INTERVAL '1 day')) AND :preTimestamp
                   AND d.id = :districtId
-                  AND rat_id = :ratId
+                  AND lte_fdd_kpi_day.rat_id = :ratId
                 GROUP BY lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit
             ) AS pre
             ON curr.kpi_label = pre.pre_kpi_label;
@@ -198,7 +198,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
@@ -217,7 +217,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:preTimestamp ::DATE - (:period * INTERVAL '1 day')) AND :preTimestamp
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.unit
                     ) AS pre
                     ON curr.cell_name = pre.pre_cell_name
@@ -246,7 +246,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                                     ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                                 WHERE lte_fdd_standard_kpi_id = :standardKpiId
                                   AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
-                                  AND rat_id = :ratId
+                                  AND lte_fdd_kpi_day.rat_id = :ratId
                                 GROUP BY cell_name, lte_fdd_standard_kpi.worst_order, lte_fdd_standard_kpi.unit
                                 ORDER BY
                                             CASE WHEN lte_fdd_standard_kpi.worst_order = 'ASC'
@@ -309,7 +309,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND d.id = :districtId
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
@@ -333,7 +333,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:preTimestamp ::DATE - (:period * INTERVAL '1 day')) AND :preTimestamp
                           AND d.id = :districtId
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.unit
                     ) AS pre
                     ON curr.cell_name = pre.pre_cell_name
@@ -366,7 +366,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND d.id = :districtId
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                         ORDER BY
                             CASE WHEN lte_fdd_standard_kpi.worst_order = 'ASC'
@@ -426,7 +426,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
@@ -445,7 +445,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                             ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:preTimestamp ::DATE - (:period * INTERVAL '1 day')) AND :preTimestamp
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.unit
                     ) AS pre
                     ON curr.cell_name = pre.pre_cell_name
@@ -475,7 +475,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                                     ON lte_fdd_kpi_day.lte_fdd_standard_kpi_id = lte_fdd_standard_kpi.id
                                 WHERE lte_fdd_standard_kpi_id = :standardKpiId
                                   AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
-                                  AND rat_id = ratId
+                                  AND lte_fdd_kpi_day.rat_id = ratId
                                 GROUP BY cell_name, lte_fdd_standard_kpi.worst_order, lte_fdd_standard_kpi.unit
                                 ORDER BY
                                             CASE WHEN lte_fdd_standard_kpi.worst_order = 'ASC'
@@ -538,7 +538,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND d.id = :districtId
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
@@ -562,7 +562,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:preTimestamp ::DATE - (:period * INTERVAL '1 day')) AND :preTimestamp
                           AND d.id = :districtId
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.unit
                     ) AS pre
                     ON curr.cell_name = pre.pre_cell_name
@@ -596,7 +596,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND d.id = :districtId
-                          AND rat_id = :ratId
+                          AND lte_fdd_kpi_day.rat_id = :ratId
                         GROUP BY cell_name, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                         ORDER BY
                             CASE WHEN lte_fdd_standard_kpi.worst_order = 'ASC'
@@ -641,7 +641,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             WHERE lte_fdd_standard_kpi_id = :standardKpiId
               AND cell_name = :cellName
               AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
-              AND rat_id = :ratId
+              AND lte_fdd_kpi_day.rat_id = :ratId
             
             """, nativeQuery = true)
     List<KpiData> findDataByKpiAndCell(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("cellName") String cellName, @Param("ratId") Long ratId);
@@ -667,7 +667,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 ON lte_fdd_standard_kpi.id = lte_fdd_standard_kpi_id
             WHERE lte_fdd_standard_kpi_id = :standardKpiId
               AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
-              AND rat_id = :ratId
+              AND lte_fdd_kpi_day.rat_id = :ratId
             GROUP BY "timestamp", lte_fdd_standard_kpi_id, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit
             """, nativeQuery = true)
     List<KpiTrend> findTrendDataAvgByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("ratId") Long ratId);
@@ -688,7 +688,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
                 ON lte_fdd_standard_kpi.id = lte_fdd_standard_kpi_id
             WHERE lte_fdd_standard_kpi_id = :standardKpiId
               AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
-              AND rat_id = :ratId
+              AND lte_fdd_kpi_day.rat_id = :ratId
             GROUP BY "timestamp", lte_fdd_standard_kpi_id, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit
             """, nativeQuery = true)
     List<KpiTrend> findTrendDataSumByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("ratId") Long ratId);
@@ -715,7 +715,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             WHERE lte_fdd_standard_kpi_id = :standardKpiId
               AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
               AND d.id = :districtId
-              AND rat_id = :ratId
+              AND lte_fdd_kpi_day.rat_id = :ratId
             GROUP BY "timestamp", lte_fdd_standard_kpi_id, lte_fdd_standard_kpi.label,lte_fdd_standard_kpi.unit;
             
             """, nativeQuery = true)
@@ -742,7 +742,7 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             WHERE lte_fdd_standard_kpi_id = :standardKpiId
               AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
               AND d.id = :districtId
-              AND rat_id = :ratId
+              AND lte_fdd_kpi_day.rat_id = :ratId
             GROUP BY "timestamp", lte_fdd_standard_kpi_id, lte_fdd_standard_kpi.label,lte_fdd_standard_kpi.unit;
             
             """, nativeQuery = true)

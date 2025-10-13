@@ -73,7 +73,8 @@ public class Mapper {
                 mapping.getOssKpiName(),
                 mapping.getMultiplicationFactor(),
                 mapping.getOss().getIdentifier(),
-                mapping.getLteFddStandardKpi().getKpiName());
+                mapping.getLteFddStandardKpi().getKpiName(),
+                mapping.getRat().getName());
     }
 
 // ----- CellKpiData -----
@@ -95,7 +96,8 @@ public class Mapper {
         return new StandardRawKpiMappingDto(
                 mapping.getStandardKpi().getKpiName(),
                 mapping.getNumerator().getKpiName(),
-                mapping.getDenominator().getKpiName()
+                mapping.getDenominator().getKpiName(),
+                mapping.getRat().getName()
         );
     }
 

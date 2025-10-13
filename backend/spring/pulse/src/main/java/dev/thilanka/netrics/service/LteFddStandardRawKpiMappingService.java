@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 public interface LteFddStandardRawKpiMappingService {
-    List<StandardRawKpiMappingDto> getAll();
+    List<StandardRawKpiMappingDto> getAll(String ratName);
 
     StandardRawKpiMappingDto createMapping(StandardRawKpiMappingDto dto);
 

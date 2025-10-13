@@ -55,7 +55,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     private void warmupLteFddKpiTrendCache() {
-        List<StandardKpiDto> lteFddStandardKpis = lteFddStandardKpiService.getAllStandardKpi();
+        List<StandardKpiDto> lteFddStandardKpis = lteFddStandardKpiService.getAllStandardKpiByRat("ltefdd"); //TODO
         List<DistrictDto> districts = districtService.getAll();
 
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
@@ -79,7 +79,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     private void warmupLteFddWorstCellCache(){
-        List<StandardKpiDto> lteFddStandardKpis = lteFddStandardKpiService.getAllStandardKpi();
+        List<StandardKpiDto> lteFddStandardKpis = lteFddStandardKpiService.getAllStandardKpiByRat("ltefdd"); //TODO
         List<DistrictDto> districts = districtService.getAll();
 
         for (StandardKpiDto standardKpi: lteFddStandardKpis){
