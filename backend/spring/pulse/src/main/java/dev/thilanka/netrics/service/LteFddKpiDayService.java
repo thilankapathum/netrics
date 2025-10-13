@@ -14,26 +14,26 @@ public interface LteFddKpiDayService {
 
     KpiDataDto createLteFddKpiDay(LteFddKpiDay kpiDay);
 
-    BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period);
+    BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName);
 
-    BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName);
+    BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName);
 
-    List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period);
+    List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period, String ratName);
 
-    List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period);
+    List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period, String ratName);
 
-    List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period);
+    List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period, String ratName);
 
-    List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName);
+    List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName, String ratName);
 
-    List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period);
+    List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period, String ratName);
 
-    List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period);
+    List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName);
 
     List<LteFddKpiDay> getKpiWithoutDistrict();
 
-    List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName);
+    List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName, String ratName);
 
-    List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName);
+    List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName, String ratName);
 
 }

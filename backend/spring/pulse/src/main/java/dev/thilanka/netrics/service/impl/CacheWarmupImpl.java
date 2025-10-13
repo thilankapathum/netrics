@@ -33,7 +33,8 @@ public class CacheWarmupImpl implements CacheWarmup {
         for (String period : periods) {
             for (BasicKpiDto dto : basicKpis) {
                 try {
-                    lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period);
+                    //TODO: Implement better RAT name
+                    lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, "ltefdd");
                     System.out.println("Cache LteFddBasicKpi warmed-up: " + dto.kpiName() + "-" + period);
                 } catch (Exception e) {
                     System.out.println("Error warming cache for: " + dto.kpiName() + "-" + period);
@@ -41,7 +42,8 @@ public class CacheWarmupImpl implements CacheWarmup {
                 }
                 for (DistrictDto district : districts) {
                     try {
-                        lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name());
+                        // TODO: Implement better RAT name
+                        lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), "ltefdd");
                         System.out.println("Cache LteFddBasicKpi warmed-up: " + dto.kpiName() +"-"+ period +"-"+ district.name());
                     } catch (Exception e) {
                         System.out.println("Error warming cache for: " + dto.kpiName() +"-" + period +"-" + district.name());
@@ -58,14 +60,16 @@ public class CacheWarmupImpl implements CacheWarmup {
 
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
             try {
-                lteFddKpiDayService.getTrendByKpi(standardKpi.kpiName(), "month");
+                //TODO: Implement Better RAT name
+                lteFddKpiDayService.getTrendByKpi(standardKpi.kpiName(), "month", "ltefdd");
                 System.out.println("Cache LteFddKpiTrend warmed-up (month): " + standardKpi.kpiName());
             } catch (Exception e) {
                 System.out.println("Error while warming cache for (month): " + standardKpi.kpiName());
             }
             for (DistrictDto district : districts) {
                 try {
-                    lteFddKpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name());
+                    //TODO: Implement better RAT name
+                    lteFddKpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), "ltefdd");
                     System.out.println("Cache LteFddKpiTrend warmed-up (month): " + standardKpi.kpiName() +"-" + district.name());
                 } catch (Exception e) {
                     System.out.println("Error while warming cache for (month): " + standardKpi.kpiName()+ "-" + district.name());
@@ -80,7 +84,8 @@ public class CacheWarmupImpl implements CacheWarmup {
 
         for (StandardKpiDto standardKpi: lteFddStandardKpis){
             try{
-                lteFddKpiDayService.getWorstCellsByKpi(standardKpi.kpiName(),"day");
+                //TODO: Implement better RAT name
+                lteFddKpiDayService.getWorstCellsByKpi(standardKpi.kpiName(),"day", "ltefdd");
                 System.out.println("Cache LteFddWorstCells warmed-up: " + standardKpi.kpiName());
             } catch (Exception e){
                 System.out.println("Error while warming cache for: " + standardKpi.kpiName());
@@ -88,7 +93,8 @@ public class CacheWarmupImpl implements CacheWarmup {
 
             for (DistrictDto district: districts){
                 try {
-                    lteFddKpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", district.name());
+                    //TODO: Implement better RAT name
+                    lteFddKpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", district.name(), "ltefdd");
                     System.out.println("Cache LteFddWorstCell warmed-up: " + standardKpi.kpiName() + "-" + district.name());
                 } catch (Exception e){
                     System.out.println("Error while warming up: " + standardKpi.kpiName() + "-" + district.name());

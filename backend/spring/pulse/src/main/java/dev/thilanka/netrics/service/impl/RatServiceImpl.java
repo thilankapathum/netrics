@@ -26,7 +26,7 @@ public class RatServiceImpl implements RatService {
     }
 
     @Override
-    public RatDto getRatByName(String name) {
+    public RatDto getRatDtoByName(String name) {
         Rat rat = ratRepository.findByName(name)
                 .orElseThrow(()-> new RuntimeException("RAT not found by name: " + name));
 
@@ -34,7 +34,7 @@ public class RatServiceImpl implements RatService {
     }
 
     @Override
-    public RatDto getRatByLabel(String label) {
+    public RatDto getRatDtoByLabel(String label) {
         Rat rat = ratRepository.findByLabel(label)
                 .orElseThrow(() -> new RuntimeException("RAT not found by label: " + label));
         return mapper.toRatDto(rat);
@@ -45,6 +45,12 @@ public class RatServiceImpl implements RatService {
         Rat rat = mapper.ratDtoToRat(dto);
         Rat savedRat = ratRepository.save(rat);
         return mapper.toRatDto(savedRat);
+    }
+
+    @Override
+    public Rat findRatByName(String name) {
+        return ratRepository.findByName(name)
+                .orElseThrow(()-> new RuntimeException("RAT not found by: " + name));
     }
 
     @Override

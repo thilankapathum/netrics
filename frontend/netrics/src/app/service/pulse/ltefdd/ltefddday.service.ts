@@ -12,32 +12,38 @@ import {Observable} from 'rxjs';
 })
 export class LtefdddayService {
   private readonly baseUrl: string;
+  private readonly ratName:string = 'ltefdd';
 
   constructor(private http: HttpClient, private urlService: UrlService) {
     this.baseUrl = `${this.urlService.getPulseUrl()}/ltefdd/kpiday`;
   }
 
   getBasicKpiSnapshot(kpiName: string, period: string, districtName:string) {
+    const ratName = this.ratName;
     return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi`,
-      { params : {kpiName, period, districtName} });
+      { params : {kpiName, period, districtName, ratName} });
   }
 
   getWorstCellsByKpi(kpiName: string, period: string, districtName:string, excludeZeroes:boolean): Observable<any> {
-    return this.http.get(`${this.baseUrl}/worst-cells`,{ params: { kpiName, period, districtName, excludeZeroes } });
+    const ratName: string = this.ratName;
+    return this.http.get(`${this.baseUrl}/worst-cells`,{ params: { kpiName, period, districtName, excludeZeroes, ratName } });
   }
 
   getDataByKpiAndCell(kpiName:string, cellName:string, period: string) {
+    const ratName: string = this.ratName;
     return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell`,
-      { params : {kpiName, cellName, period} });
+      { params : {kpiName, cellName, period, ratName} });
   }
 
   getDataByKpiLabelAndCell(kpiLabel:string, cellName:string, period: string) {
+    const ratName: string = this.ratName;
     return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell-label`,
-      { params: {kpiLabel, cellName, period} });
+      { params: {kpiLabel, cellName, period, ratName } });
   }
 
   getDataByKpi(kpiName:string, period: string, districtName:string) {
+    const ratName: string = this.ratName;
     return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi`,
-      {params : {kpiName, period, districtName} });
+      {params : {kpiName, period, districtName, ratName} });
   }
 }

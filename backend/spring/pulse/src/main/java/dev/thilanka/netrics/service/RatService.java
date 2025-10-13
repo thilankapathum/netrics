@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.RatDto;
+import dev.thilanka.netrics.entity.Rat;
 
 import java.util.List;
 
@@ -8,11 +9,13 @@ public interface RatService {
 
     List<RatDto> getAll();
 
-    RatDto getRatByName(String name);
+    RatDto getRatDtoByName(String name);
 
-    RatDto getRatByLabel(String label);
+    RatDto getRatDtoByLabel(String label);
 
     RatDto createRat(RatDto dto);
+
+    Rat findRatByName(String name);
 
     List<RatDto> createRatList(List<RatDto> ratDtos);
 }

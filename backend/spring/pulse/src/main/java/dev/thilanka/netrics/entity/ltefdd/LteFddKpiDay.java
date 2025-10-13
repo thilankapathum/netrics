@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.entity.ltefdd;
 
 import dev.thilanka.netrics.entity.Oss;
+import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.district.DistrictCode;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -51,4 +52,8 @@ public class LteFddKpiDay {
     @ManyToOne
     @JoinColumn(name = "district_code_id")
     private DistrictCode districtCode;
+
+    @ManyToOne
+    @JoinColumn(name = "rat_id")
+    private Rat rat;
 }

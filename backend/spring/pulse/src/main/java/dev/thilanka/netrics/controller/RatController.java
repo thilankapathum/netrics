@@ -3,7 +3,6 @@ package dev.thilanka.netrics.controller;
 import dev.thilanka.netrics.dto.RatDto;
 import dev.thilanka.netrics.service.RatService;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,13 +36,13 @@ public class RatController {
 
     @GetMapping("name/{name}")
     public ResponseEntity<RatDto> findByName(@PathVariable("name") String name){
-        RatDto ratDto = ratService.getRatByName(name);
+        RatDto ratDto = ratService.getRatDtoByName(name);
         return ResponseEntity.ok(ratDto);
     }
 
     @GetMapping("label/{label}")
     public ResponseEntity<RatDto> findByLabel(@PathVariable("label") String label){
-        RatDto ratDto = ratService.getRatByLabel(label);
+        RatDto ratDto = ratService.getRatDtoByLabel(label);
         return ResponseEntity.ok(ratDto);
     }
 }

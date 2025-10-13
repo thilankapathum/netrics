@@ -1,8 +1,11 @@
 package dev.thilanka.netrics.entity;
 
 
+import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,4 +22,7 @@ public class Rat {
     private String name;
     @Column(unique = true, nullable = false)
     private String label;
+
+    @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddKpiDay> kpiDays;
 }

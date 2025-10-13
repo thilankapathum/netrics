@@ -31,12 +31,12 @@ public class LteFddKpiDayController {
     }
 
     @GetMapping("snapshot/basic-kpi")
-    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName) {
+    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName) {
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
-            return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period));
+            return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period, ratName));
         } else {
-            return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName));
+            return ResponseEntity.ok(lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName, ratName));
         }
     }
 
@@ -45,39 +45,40 @@ public class LteFddKpiDayController {
             @RequestParam String kpiName,
             @RequestParam String period,
             @RequestParam String districtName,
-            @RequestParam boolean excludeZeroes) {
+            @RequestParam boolean excludeZeroes,
+            @RequestParam String ratName) {
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
             if (excludeZeroes){
-                return lteFddKpiDayService.getWorstCellsByKpiExcludeZeroes(kpiName, period);
-            } else return lteFddKpiDayService.getWorstCellsByKpi(kpiName, period);
+                return lteFddKpiDayService.getWorstCellsByKpiExcludeZeroes(kpiName, period, ratName);
+            } else return lteFddKpiDayService.getWorstCellsByKpi(kpiName, period,ratName);
         } else {
             if (excludeZeroes) {
-                return lteFddKpiDayService.getWorstCellsByKpiAndDistrictExcludeZeroes(kpiName, period, districtName);
-            } else return lteFddKpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName);
+                return lteFddKpiDayService.getWorstCellsByKpiAndDistrictExcludeZeroes(kpiName, period, districtName, ratName);
+            } else return lteFddKpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName, ratName);
         }
     }
 
     @GetMapping("cell")
-    public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period) {
-        List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiAndCell(kpiName, cellName, period);
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName) {
+        List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName);
         return ResponseEntity.ok(kpiDataDtos);
     }
 
     @GetMapping("cell-label")
-    public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period) {
-        List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period);
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName) {
+        List<KpiDataDto> kpiDataDtos = lteFddKpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName);
         return ResponseEntity.ok(kpiDataDtos);
     }
 
     @GetMapping("kpi")
-    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName) {
+    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName) {
         List<KpiTrendDto> kpiTrendDtos = new ArrayList<>();
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
-            kpiTrendDtos = lteFddKpiDayService.getTrendByKpi(kpiName, period);
+            kpiTrendDtos = lteFddKpiDayService.getTrendByKpi(kpiName, period, ratName);
         } else {
-            kpiTrendDtos = lteFddKpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName);
+            kpiTrendDtos = lteFddKpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName, ratName);
         }
 
         return ResponseEntity.ok(kpiTrendDtos);
