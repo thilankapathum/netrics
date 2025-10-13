@@ -22,10 +22,13 @@ services:
       PGDATA: /var/lib/postgresql/data
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    expose:
-      - "${POSTGRES_PORT}"
+    ports:
+      - "8032:5432"
+#    expose:
+#      - "${POSTGRES_PORT}"
     networks:
       - private_net
+      - public_net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pguser -d pulse_db"]
@@ -56,16 +59,16 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-#    ports:
-#      - "6379:6379"
-    expose:
-      - "6379"
+    ports:
+      - "6379:6379"
+#    expose:
+#      - "6379"
     command: ["redis-server", "--save", "60", "1"]
     volumes:
       - redis-data:/data
     networks:
       - private_net
-#      - public_net
+      - public_net
     healthcheck:
       test: ["CMD","redis-cli","ping"]
       interval: 10s

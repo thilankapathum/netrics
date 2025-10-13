@@ -1,10 +1,7 @@
 package dev.thilanka.netrics.mapper;
 
 import dev.thilanka.netrics.dto.*;
-import dev.thilanka.netrics.entity.KpiData;
-import dev.thilanka.netrics.entity.KpiSnapshot;
-import dev.thilanka.netrics.entity.KpiTrend;
-import dev.thilanka.netrics.entity.Oss;
+import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
 import dev.thilanka.netrics.entity.ltefdd.*;
@@ -170,6 +167,19 @@ public class Mapper {
     public KpiSnapshot toKpiSnapshot(KpiSnapshotDto dto) {
         return new KpiSnapshot(dto.kpiLabel(), dto.unit(), dto.value(), dto.previousValue(), dto.difference(),
                 dto.improved() > 0);
+    }
+
+    //================ RAT =====================
+
+    public RatDto toRatDto(Rat rat){
+        return new RatDto(rat.getName(),rat.getLabel());
+    }
+
+    public Rat ratDtoToRat(RatDto dto){
+        return Rat.builder()
+                .name(dto.name())
+                .label(dto.label())
+                .build();
     }
 
 }
