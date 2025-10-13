@@ -12,7 +12,7 @@ export class LtefddstandardkpiService {
   private readonly ratName:string = 'ltefdd';
 
   constructor(private http: HttpClient, private urlService: UrlService) {
-    this.baseUrl = `${this.urlService.getPulseUrl()}/ltefdd/standardkpi`;
+    this.baseUrl = `${this.urlService.getPulseUrl()}/standardkpi`;
   }
 
   getAllStandardKpi(){

@@ -125,7 +125,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-        BasicKpi basicKpi = basicKpiRepository.findByKpiName(basicKpiName, rat.getId())
+        BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(basicKpiName, rat)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
 
@@ -188,7 +188,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName) {
         //Todo
         Rat rat = ratService.findRatByName(ratName);
-        BasicKpi basicKpi = basicKpiRepository.findByKpiName(basicKpiName, rat.getId())
+        BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(basicKpiName, rat)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
 

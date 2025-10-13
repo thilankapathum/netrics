@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("/api/v1/pulse/ltefdd/kpiday")
+@RequestMapping("/api/v1/pulse/kpiday")
 @RequiredArgsConstructor
 public class KpiDayController {
     private final KpiDayService kpiDayService;

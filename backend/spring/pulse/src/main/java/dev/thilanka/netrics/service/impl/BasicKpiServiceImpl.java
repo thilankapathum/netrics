@@ -40,8 +40,7 @@ public class BasicKpiServiceImpl implements BasicKpiService {
     @Override
     public BasicKpi findByKpiName(String kpiName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-        BasicKpi basicKpi = basicKpiRepository.findByKpiName(kpiName, rat.getId())
+        return basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
                 .orElseThrow(()-> new RuntimeException("Basic KPI not found by: " + kpiName));
-        return basicKpi;
     }
 }

@@ -15,7 +15,7 @@ export class LtefdddayService {
   private readonly ratName:string = 'ltefdd';
 
   constructor(private http: HttpClient, private urlService: UrlService) {
-    this.baseUrl = `${this.urlService.getPulseUrl()}/ltefdd/kpiday`;
+    this.baseUrl = `${this.urlService.getPulseUrl()}/kpiday`;
   }
 
   getBasicKpiSnapshot(kpiName: string, period: string, districtName:string) {
