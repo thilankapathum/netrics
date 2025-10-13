@@ -8,6 +8,7 @@ public record StandardKpiDto(
         String worstOrder,
         Double threshold,
         String aggregation,
-        String basicKpi
+        String basicKpi,
+        String ratName
         ) {
 }

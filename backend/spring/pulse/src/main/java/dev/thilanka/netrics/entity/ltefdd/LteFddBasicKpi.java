@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.entity.ltefdd;
 
+import dev.thilanka.netrics.entity.Rat;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,4 +29,8 @@ public class LteFddBasicKpi {
 
     @OneToMany(mappedBy = "lteFddBasicKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddStandardKpi> lteFddStandardKpis;
+
+    @ManyToOne
+    @JoinColumn(name = "rat_id")
+    private Rat rat;
 }

@@ -5,12 +5,14 @@ import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
 import dev.thilanka.netrics.entity.ltefdd.*;
+import dev.thilanka.netrics.repository.RatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class Mapper {
+    private final RatRepository ratRepository;
 
 // ----- OSS -----
 
@@ -43,7 +45,8 @@ public class Mapper {
                 lteFddStandardKpi.getWorstOrder(),
                 lteFddStandardKpi.getThreshold(),
                 lteFddStandardKpi.getAggregation(),
-                basicKpi);
+                basicKpi,
+                "ltefdd");      //TODO: Implement correct RAT Name
     }
 
     public LteFddStandardKpi toLteFddStandardKpi(StandardKpiDto standardKpiDto) {
@@ -99,6 +102,9 @@ public class Mapper {
 // ----- LteFddBasicKpi -----
 
     public LteFddBasicKpi toLteFddBasicKpi(BasicKpiDto dto) {
+        Rat rat = ratRepository.findByName(dto.ratName())
+                .orElseThrow(()-> new RuntimeException("RAT not found by name: " + dto.ratName()));
+
         return LteFddBasicKpi.builder()
                 .kpiName(dto.kpiName())
                 .label(dto.label())
@@ -106,11 +112,12 @@ public class Mapper {
                 .threshold(dto.threshold())
                 .aggregation(dto.aggregation())
                 .unit(dto.unit())
+                .rat(rat)
                 .build();
     }
 
     public BasicKpiDto lteFddBasicKpiToDto(LteFddBasicKpi kpi) {
-        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit());
+        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit(),kpi.getRat().getName());
     }
 
 //-------- KpiData KpiDataDto -----------------------------------

@@ -124,10 +124,10 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName) {
-        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
+        Rat rat = ratService.findRatByName(ratName);
+        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
-        Rat rat = ratService.findRatByName(ratName);
 
         BasicKpiSnapshot basicKpiSnapshot = new BasicKpiSnapshot();
 
@@ -187,10 +187,10 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName) {
         //Todo
-        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName)
+        Rat rat = ratService.findRatByName(ratName);
+        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
-        Rat rat = ratService.findRatByName(ratName);
 
         BasicKpiSnapshot basicKpiSnapshot = new BasicKpiSnapshot();
 

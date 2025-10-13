@@ -17,8 +17,8 @@ public class LteFddBasicKpiController {
     private final LteFddBasicKpiService lteFddBasicKpiService;
 
     @GetMapping
-    ResponseEntity<List<BasicKpiDto>> getAll(){
-        List<BasicKpiDto> dtos = lteFddBasicKpiService.getAll();
+    ResponseEntity<List<BasicKpiDto>> getAllByRat(@RequestParam String ratName){
+        List<BasicKpiDto> dtos = lteFddBasicKpiService.getAllByRat(ratName);
         return ResponseEntity.ok(dtos);
     }
 

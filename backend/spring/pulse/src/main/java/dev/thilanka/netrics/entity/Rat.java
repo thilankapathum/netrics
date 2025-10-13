@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.entity;
 
 
+import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpi;
 import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,4 +26,7 @@ public class Rat {
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<LteFddKpiDay> kpiDays;
+
+    @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<LteFddBasicKpi> basicKpis;
 }

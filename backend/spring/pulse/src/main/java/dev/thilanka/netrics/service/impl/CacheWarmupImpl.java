@@ -28,7 +28,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     private void warmupLteFddBasicKpiSnapshotCache() {
-        List<BasicKpiDto> basicKpis = lteFddBasicKpiService.getAll();
+        List<BasicKpiDto> basicKpis = lteFddBasicKpiService.getAllByRat("ltefdd"); //TODO
         List<DistrictDto> districts = districtService.getAll();
         for (String period : periods) {
             for (BasicKpiDto dto : basicKpis) {

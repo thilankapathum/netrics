@@ -1,12 +1,14 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.StandardKpiDto;
+import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpi;
 import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddStandardKpiRepository;
 import dev.thilanka.netrics.service.LteFddBasicKpiService;
 import dev.thilanka.netrics.service.LteFddStandardKpiService;
+import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.Objects;
 public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     private final LteFddStandardKpiRepository lteFddStandardKpiRepository;
     private final LteFddBasicKpiService lteFddBasicKpiService;
+    private final RatService ratService;
     private final Mapper mapper;
 
     @Override
@@ -35,10 +38,11 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     public StandardKpiDto createKpi(StandardKpiDto kpiDto) {
 
         LteFddStandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
+//        Rat rat = ratService.findRatByName(kpiDto.ratName());
 
         if (!Objects.equals(kpiDto.basicKpi(), "")) {
             System.out.println("Basic KPI: " + kpiDto.basicKpi());
-            LteFddBasicKpi basicKpi = lteFddBasicKpiService.findByKpiName(kpiDto.basicKpi());
+            LteFddBasicKpi basicKpi = lteFddBasicKpiService.findByKpiName(kpiDto.basicKpi(), kpiDto.ratName());
             kpi.setLteFddBasicKpi(basicKpi);
         }
 

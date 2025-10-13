@@ -6,5 +6,6 @@ public record BasicKpiDto(
         String worstOrder,
         Double threshold,
         String aggregation,
-        String unit) {
+        String unit,
+        String ratName) {
 }

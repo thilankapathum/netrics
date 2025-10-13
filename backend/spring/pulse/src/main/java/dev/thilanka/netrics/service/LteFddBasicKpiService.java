@@ -7,9 +7,9 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 public interface LteFddBasicKpiService {
-    List<BasicKpiDto> getAll();
+    List<BasicKpiDto> getAllByRat(String ratName);
 
     BasicKpiDto createBasicKpi(@Valid BasicKpiDto dto);
 
-    LteFddBasicKpi findByKpiName(String kpiName);
+    LteFddBasicKpi findByKpiName(String kpiName, String ratName);
 }
