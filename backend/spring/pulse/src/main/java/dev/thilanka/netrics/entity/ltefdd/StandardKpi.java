@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 @Entity
 @Table(name = "lte_fdd_standard_kpi")
-public class LteFddStandardKpi {
+public class StandardKpi {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,31 +29,31 @@ public class LteFddStandardKpi {
     private Double threshold;
     private String aggregation;
 
-    @OneToMany(mappedBy = "lteFddStandardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiMappingToOss> lteFddKpiMappingToOsses;
+    @OneToMany(mappedBy = "standardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiMappingToOss> kpiMappingToOsses;
 
-    @OneToMany(mappedBy = "lteFddStandardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiDay> lteFddKpiDays;
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiDay> kpiDays;
 
     @OneToMany(mappedBy = "numeratorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiDay> lteFddKpiDaysNumerator;
+    private List<KpiDay> kpiDaysNumerator;
 
     @OneToMany(mappedBy = "denominatorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiDay> lteFddKpiDaysDenominator;
+    private List<KpiDay> kpiDaysDenominator;
 
 
     @OneToOne(mappedBy = "standardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private LteFddStandardRawKpiMapping standardKpi;
+    private StandardRawKpiMapping standardKpi;
 
     @OneToOne(mappedBy = "numerator", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
-    private  LteFddStandardRawKpiMapping numerator;
+    private StandardRawKpiMapping numerator;
 
     @OneToOne(mappedBy = "denominator", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private LteFddStandardRawKpiMapping denominator;
+    private StandardRawKpiMapping denominator;
 
     @ManyToOne
     @JoinColumn(name = "lte_fdd_basic_kpi_id")
-    private LteFddBasicKpi lteFddBasicKpi;
+    private BasicKpi basicKpi;
 
     @ManyToOne
     @JoinColumn(name = "rat_id")

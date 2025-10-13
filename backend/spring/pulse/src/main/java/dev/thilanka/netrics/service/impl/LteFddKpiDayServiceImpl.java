@@ -9,7 +9,7 @@ import dev.thilanka.netrics.repository.LteFddBasicKpiRepository;
 import dev.thilanka.netrics.repository.LteFddKpiDayRepository;
 import dev.thilanka.netrics.service.DistrictService;
 import dev.thilanka.netrics.service.LteFddKpiDayService;
-import dev.thilanka.netrics.service.LteFddStandardKpiService;
+import dev.thilanka.netrics.service.StandardKpiService;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -32,7 +32,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     //-- Compact: Contains only 'kpiLabel', 'value', 'difference with previous period', 'up/down with previous period'
 
     private final LteFddKpiDayRepository lteFddKpiDayRepository;
-    private final LteFddStandardKpiService lteFddStandardKpiService;
+    private final StandardKpiService standardKpiService;
     private final LteFddBasicKpiRepository lteFddBasicKpiRepository;
     private final RatService ratService;
     private final DistrictService districtService;
@@ -50,7 +50,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     //------------------------------- KPI-SNAPSHOT START ---------------------------------------------------------------
 
 
-    private KpiSnapshotCurrentPre getLatestKpiSnapshotWithPre(LteFddStandardKpi standardKpi, String period, Long ratId) {
+    private KpiSnapshotCurrentPre getLatestKpiSnapshotWithPre(StandardKpi standardKpi, String period, Long ratId) {
 
         //-- GET KPI WITH LABEL, WORST-ORDER, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
 
@@ -70,7 +70,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
         //-- GET KPI WITH LABEL, IS-BASIC, VALUE, PREVIOUS VALUE, DIFFERENCE, IMPROVED
 
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiNameAndRatId(kpiName,ratId);
+        StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName,ratId);
         KpiSnapshotCurrentPre kpiData = getLatestKpiSnapshotWithPre(standardKpi, period, ratId);
 
         KpiSnapshot snapshot = new KpiSnapshot();
@@ -106,7 +106,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
         //-- GET KPI WITH LABEL, IS-BASIC, VALUE, PREVIOUS VALUE, DIFFERENCE, IMPROVED
 
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiNameAndRatId(kpiName, ratId);
+        StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName, ratId);
         LocalDateTime timestamp = getLatestDate(ratId);
         District district = districtService.findDistrictByName(districtName);
 
@@ -125,7 +125,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
+        BasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
 
@@ -133,7 +133,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
         List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
-        for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
+        for (StandardKpi standardKpi : basicKpi.getStandardKpis()) {
             KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period, rat.getId());
             kpiSnapshots.add(snapshot);
         }
@@ -188,7 +188,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName) {
         //Todo
         Rat rat = ratService.findRatByName(ratName);
-        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
+        BasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(basicKpiName, rat.getId())
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
 
@@ -196,7 +196,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
         List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
-        for (LteFddStandardKpi standardKpi : basicKpi.getLteFddStandardKpis()) {
+        for (StandardKpi standardKpi : basicKpi.getStandardKpis()) {
             KpiSnapshotDto snapshotDto = getLatestKpiSnapshotWithDistrict(standardKpi.getKpiName(), period, districtName, rat.getId());
 
             kpiSnapshots.add(mapper.toKpiSnapshot(snapshotDto));
@@ -256,7 +256,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period, String ratName) {
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName, ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
         LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
@@ -267,7 +267,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + 'excludeZeroes' + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName) {
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName, ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
         LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
@@ -278,7 +278,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName, String ratName) {
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName,ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName,ratName);
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
@@ -291,7 +291,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #districtName + 'excludeZeroes' + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName, String ratName) {
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(kpiName, ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
@@ -310,7 +310,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     public List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period, String ratName) {
 
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName, ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
 
@@ -325,7 +325,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 //    @Cacheable(value = "kpiData", key = "#kpiLabel + '_' + #period + '_' + #cellName")
     public List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period, String ratName) {
 
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiLabel(kpiLabel, ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiLabel(kpiLabel, ratName);
 
         return getDataByKpiAndCell(standardKpi.getKpiName(), cellName, period, ratName);
     }
@@ -338,7 +338,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #ratName")
     public List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period, String ratName) {
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName, ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
         List<KpiTrend> kpiTrends = new ArrayList<>();
@@ -354,7 +354,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     @Override
     @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName, String ratName) {
-        LteFddStandardKpi standardKpi = lteFddStandardKpiService.findByKpiName(standardKpiName, ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = getLatestDate(rat.getId());
@@ -374,17 +374,17 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
 
     @Override
     public List<KpiDataDto> findAll() {
-        List<LteFddKpiDay> lteFddKpiDays = lteFddKpiDayRepository.findAll();
+        List<KpiDay> kpiDays = lteFddKpiDayRepository.findAll();
 
-        return lteFddKpiDays
+        return kpiDays
                 .stream()
                 .map(mapper::LteFddKpiDayToKpiDataDto)
                 .toList();
     }
 
     @Override
-    public KpiDataDto createLteFddKpiDay(LteFddKpiDay kpiDay) {
-        LteFddKpiDay savedKpiDay = lteFddKpiDayRepository.save(kpiDay);
+    public KpiDataDto createLteFddKpiDay(KpiDay kpiDay) {
+        KpiDay savedKpiDay = lteFddKpiDayRepository.save(kpiDay);
         return mapper.LteFddKpiDayToKpiDataDto(savedKpiDay);
     }
 
@@ -441,7 +441,7 @@ public class LteFddKpiDayServiceImpl implements LteFddKpiDayService {
     }
 
     @Override
-    public List<LteFddKpiDay> getKpiWithoutDistrict() {
+    public List<KpiDay> getKpiWithoutDistrict() {
         return lteFddKpiDayRepository.findKpiWithoutDistrict();
     }
 

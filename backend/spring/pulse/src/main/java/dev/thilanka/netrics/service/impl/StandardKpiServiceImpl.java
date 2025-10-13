@@ -2,12 +2,12 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.StandardKpiDto;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpi;
-import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
+import dev.thilanka.netrics.entity.ltefdd.BasicKpi;
+import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddStandardKpiRepository;
 import dev.thilanka.netrics.service.LteFddBasicKpiService;
-import dev.thilanka.netrics.service.LteFddStandardKpiService;
+import dev.thilanka.netrics.service.StandardKpiService;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
+public class StandardKpiServiceImpl implements StandardKpiService {
     private final LteFddStandardKpiRepository lteFddStandardKpiRepository;
     private final LteFddBasicKpiService lteFddBasicKpiService;
     private final RatService ratService;
@@ -26,7 +26,7 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
 
     @Override
     public List<StandardKpiDto> getAll() {
-        List<LteFddStandardKpi> kpis = lteFddStandardKpiRepository.findAll();
+        List<StandardKpi> kpis = lteFddStandardKpiRepository.findAll();
 
         return kpis
                 .stream()
@@ -37,16 +37,16 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     @Override
     public StandardKpiDto createKpi(StandardKpiDto kpiDto) {
 
-        LteFddStandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
+        StandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
         Rat rat = ratService.findRatByName(kpiDto.ratName());
 
         if (!Objects.equals(kpiDto.basicKpi(), "")) {
             System.out.println("Basic KPI: " + kpiDto.basicKpi());
-            LteFddBasicKpi basicKpi = lteFddBasicKpiService.findByKpiName(kpiDto.basicKpi(), kpiDto.ratName());
-            kpi.setLteFddBasicKpi(basicKpi);
+            BasicKpi basicKpi = lteFddBasicKpiService.findByKpiName(kpiDto.basicKpi(), kpiDto.ratName());
+            kpi.setBasicKpi(basicKpi);
         }
 
-        LteFddStandardKpi savedKpi = lteFddStandardKpiRepository.save(kpi);
+        StandardKpi savedKpi = lteFddStandardKpiRepository.save(kpi);
         return mapper.lteFddStandardKpiToDto(savedKpi);
     }
 
@@ -62,7 +62,7 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     }
 
     @Override
-    public LteFddStandardKpi findByKpiName(String kpiName, String ratName) {
+    public StandardKpi findByKpiName(String kpiName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
 
         return lteFddStandardKpiRepository
@@ -71,14 +71,14 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     }
 
     @Override
-    public LteFddStandardKpi findByKpiNameAndRatId(String kpiName, Long ratId) {
+    public StandardKpi findByKpiNameAndRatId(String kpiName, Long ratId) {
         return lteFddStandardKpiRepository
                 .findByKpiNameAndRatId(kpiName, ratId)
                 .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
     }
 
     @Override
-    public LteFddStandardKpi findByKpiLabel(String kpiLabel, String ratName) {
+    public StandardKpi findByKpiLabel(String kpiLabel, String ratName) {
         return lteFddStandardKpiRepository
                 .findByLabel(kpiLabel)
                 .orElseThrow(()-> new RuntimeException("Standard KPI not found by: " + kpiLabel));
@@ -88,7 +88,7 @@ public class LteFddStandardKpiServiceImpl implements LteFddStandardKpiService {
     public List<StandardKpiDto> getAllStandardKpiByRat(String ratName) {
         Rat rat = ratService.findRatByName(ratName);
 
-        List<LteFddStandardKpi> standardKpis = lteFddStandardKpiRepository.findAllStandardKpiByRat(rat.getId());
+        List<StandardKpi> standardKpis = lteFddStandardKpiRepository.findAllStandardKpiByRat(rat.getId());
         return standardKpis.stream().map(mapper::lteFddStandardKpiToDto).toList();
     }
 }

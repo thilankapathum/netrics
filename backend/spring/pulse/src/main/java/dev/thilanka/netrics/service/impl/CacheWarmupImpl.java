@@ -15,7 +15,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     private final LteFddKpiDayService lteFddKpiDayService;
     private final LteFddBasicKpiService lteFddBasicKpiService;
     private final DistrictService districtService;
-    private final LteFddStandardKpiService lteFddStandardKpiService;
+    private final StandardKpiService standardKpiService;
     private final String[] periods = {"day"};
 
 
@@ -35,7 +35,7 @@ public class CacheWarmupImpl implements CacheWarmup {
                 try {
                     //TODO: Implement better RAT name
                     lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, "ltefdd");
-                    System.out.println("Cache LteFddBasicKpi warmed-up: " + dto.kpiName() + "-" + period);
+                    System.out.println("Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period);
                 } catch (Exception e) {
                     System.out.println("Error warming cache for: " + dto.kpiName() + "-" + period);
 //                    e.printStackTrace();
@@ -44,7 +44,7 @@ public class CacheWarmupImpl implements CacheWarmup {
                     try {
                         // TODO: Implement better RAT name
                         lteFddKpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), "ltefdd");
-                        System.out.println("Cache LteFddBasicKpi warmed-up: " + dto.kpiName() +"-"+ period +"-"+ district.name());
+                        System.out.println("Cache BasicKpi warmed-up: " + dto.kpiName() +"-"+ period +"-"+ district.name());
                     } catch (Exception e) {
                         System.out.println("Error warming cache for: " + dto.kpiName() +"-" + period +"-" + district.name());
 //                        e.printStackTrace();
@@ -55,7 +55,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     private void warmupLteFddKpiTrendCache() {
-        List<StandardKpiDto> lteFddStandardKpis = lteFddStandardKpiService.getAllStandardKpiByRat("ltefdd"); //TODO
+        List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat("ltefdd"); //TODO
         List<DistrictDto> districts = districtService.getAll();
 
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
@@ -79,7 +79,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     private void warmupLteFddWorstCellCache(){
-        List<StandardKpiDto> lteFddStandardKpis = lteFddStandardKpiService.getAllStandardKpiByRat("ltefdd"); //TODO
+        List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat("ltefdd"); //TODO
         List<DistrictDto> districts = districtService.getAll();
 
         for (StandardKpiDto standardKpi: lteFddStandardKpis){

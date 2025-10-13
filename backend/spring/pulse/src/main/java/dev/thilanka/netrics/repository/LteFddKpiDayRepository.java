@@ -1,12 +1,9 @@
 package dev.thilanka.netrics.repository;
 
-import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiSnapshotDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import dev.thilanka.netrics.entity.ltefdd.KpiDay;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long> {
+public interface LteFddKpiDayRepository extends JpaRepository<KpiDay, Long> {
 
     @Query(value = "SELECT DISTINCT timestamp FROM lte_fdd_kpi_day WHERE lte_fdd_kpi_day.rat_id = :ratId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     LocalDateTime getLatestDate(@Param("ratId") Long ratId);
@@ -757,5 +754,5 @@ public interface LteFddKpiDayRepository extends JpaRepository<LteFddKpiDay, Long
             SELECT * FROM lte_fdd_kpi_day
             WHERE district_code_id IS NULL
             """, nativeQuery = true)
-    List<LteFddKpiDay> findKpiWithoutDistrict();
+    List<KpiDay> findKpiWithoutDistrict();
 }

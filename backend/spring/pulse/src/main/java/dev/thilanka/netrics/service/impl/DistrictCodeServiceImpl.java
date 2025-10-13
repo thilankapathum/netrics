@@ -4,7 +4,7 @@ import dev.thilanka.netrics.dto.DistrictCodeDto;
 import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
+import dev.thilanka.netrics.entity.ltefdd.KpiDay;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.DistrictCodeRepository;
 import dev.thilanka.netrics.service.DistrictCodeService;
@@ -58,9 +58,9 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     }
 
     private List<KpiDataDto> updateLteFddKpiDayWithoutDistrict() {
-        List<LteFddKpiDay> kpiList = lteFddKpiDayService.getKpiWithoutDistrict();
+        List<KpiDay> kpiList = lteFddKpiDayService.getKpiWithoutDistrict();
         List<KpiDataDto> kpiDayDtos = new ArrayList<>();
-        for (LteFddKpiDay kpi : kpiList) {
+        for (KpiDay kpi : kpiList) {
             kpi.setDistrictCode(getDistrictCodeByCellName(kpi.getCellName()));
             kpiDayDtos.add(lteFddKpiDayService.createLteFddKpiDay(kpi));
         }

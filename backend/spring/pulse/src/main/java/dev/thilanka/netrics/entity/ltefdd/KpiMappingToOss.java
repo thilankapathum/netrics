@@ -13,7 +13,7 @@ import lombok.*;
 @Entity
 @Table(name = "lte_fdd_kpi_mapping",
 uniqueConstraints = {@UniqueConstraint(columnNames = {"lte_fdd_standard_kpi_id", "oss_id"})})
-public class LteFddKpiMappingToOss {
+public class KpiMappingToOss {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,7 +26,7 @@ public class LteFddKpiMappingToOss {
 
     @ManyToOne
     @JoinColumn(name = "lteFddStandardKpi_id")
-    private LteFddStandardKpi lteFddStandardKpi;
+    private StandardKpi standardKpi;
 
     @ManyToOne
     @JoinColumn(name = "rat_id")

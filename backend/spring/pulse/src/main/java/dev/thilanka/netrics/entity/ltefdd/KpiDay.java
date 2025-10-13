@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "lte_fdd_kpi_day",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","lte_fdd_standard_kpi_id", "oss_id"})})
-public class LteFddKpiDay {
+public class KpiDay {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,15 +35,15 @@ public class LteFddKpiDay {
 
     @ManyToOne
     @JoinColumn(name = "lte_fdd_standard_kpi_id")
-    private LteFddStandardKpi lteFddStandardKpi;
+    private StandardKpi standardKpi;
 
     @ManyToOne
     @JoinColumn(name = "numerator_kpi_id")
-    private LteFddStandardKpi numeratorKpi;
+    private StandardKpi numeratorKpi;
 
     @ManyToOne
     @JoinColumn(name = "denominator_kpi_id")
-    private LteFddStandardKpi denominatorKpi;
+    private StandardKpi denominatorKpi;
 
     @ManyToOne
     @JoinColumn(name = "oss_id")

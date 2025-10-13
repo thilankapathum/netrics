@@ -1,7 +1,7 @@
 package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.BasicKpiDto;
-import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpi;
+import dev.thilanka.netrics.entity.ltefdd.BasicKpi;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -11,5 +11,5 @@ public interface LteFddBasicKpiService {
 
     BasicKpiDto createBasicKpi(@Valid BasicKpiDto dto);
 
-    LteFddBasicKpi findByKpiName(String kpiName, String ratName);
+    BasicKpi findByKpiName(String kpiName, String ratName);
 }

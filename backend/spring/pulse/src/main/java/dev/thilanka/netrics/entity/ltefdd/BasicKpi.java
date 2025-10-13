@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 @Entity
 @Table(name = "lte_fdd_basic_kpi")
-public class LteFddBasicKpi {
+public class BasicKpi {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,8 +27,8 @@ public class LteFddBasicKpi {
     private String aggregation;
     private String unit;
 
-    @OneToMany(mappedBy = "lteFddBasicKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddStandardKpi> lteFddStandardKpis;
+    @OneToMany(mappedBy = "basicKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<StandardKpi> standardKpis;
 
     @ManyToOne
     @JoinColumn(name = "rat_id")

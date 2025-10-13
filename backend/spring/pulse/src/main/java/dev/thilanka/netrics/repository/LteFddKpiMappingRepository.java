@@ -1,11 +1,11 @@
 package dev.thilanka.netrics.repository;
 
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiMappingToOss;
+import dev.thilanka.netrics.entity.ltefdd.KpiMappingToOss;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface LteFddKpiMappingRepository extends JpaRepository<LteFddKpiMappingToOss, Long> {
+public interface LteFddKpiMappingRepository extends JpaRepository<KpiMappingToOss, Long> {
 
-    List<LteFddKpiMappingToOss> findByRatId(Long ratId);
+    List<KpiMappingToOss> findByRatId(Long ratId);
 }

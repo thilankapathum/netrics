@@ -2,7 +2,7 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.BasicKpiDto;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.ltefdd.LteFddBasicKpi;
+import dev.thilanka.netrics.entity.ltefdd.BasicKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.LteFddBasicKpiRepository;
 import dev.thilanka.netrics.service.LteFddBasicKpiService;
@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +22,7 @@ public class LteFddBasicKpiServiceImpl implements LteFddBasicKpiService {
     @Override
     public List<BasicKpiDto> getAllByRat(String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-        List<LteFddBasicKpi> kpis = lteFddBasicKpiRepository.findByRatId(rat.getId());
+        List<BasicKpi> kpis = lteFddBasicKpiRepository.findByRatId(rat.getId());
 
         return kpis
                 .stream()
@@ -33,15 +32,15 @@ public class LteFddBasicKpiServiceImpl implements LteFddBasicKpiService {
 
     @Override
     public BasicKpiDto createBasicKpi(BasicKpiDto dto) {
-        LteFddBasicKpi kpi = mapper.toLteFddBasicKpi(dto);
-        LteFddBasicKpi savedKpi = lteFddBasicKpiRepository.save(kpi);
+        BasicKpi kpi = mapper.toLteFddBasicKpi(dto);
+        BasicKpi savedKpi = lteFddBasicKpiRepository.save(kpi);
         return mapper.lteFddBasicKpiToDto(savedKpi);
     }
 
     @Override
-    public LteFddBasicKpi findByKpiName(String kpiName, String ratName) {
+    public BasicKpi findByKpiName(String kpiName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-        LteFddBasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(kpiName, rat.getId())
+        BasicKpi basicKpi = lteFddBasicKpiRepository.findByKpiName(kpiName, rat.getId())
                 .orElseThrow(()-> new RuntimeException("Basic KPI not found by: " + kpiName));
         return basicKpi;
     }

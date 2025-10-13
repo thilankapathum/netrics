@@ -4,15 +4,14 @@ import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
-import org.springframework.data.domain.Page;
+import dev.thilanka.netrics.entity.ltefdd.KpiDay;
 
 import java.util.List;
 
 public interface LteFddKpiDayService {
     List<KpiDataDto> findAll();
 
-    KpiDataDto createLteFddKpiDay(LteFddKpiDay kpiDay);
+    KpiDataDto createLteFddKpiDay(KpiDay kpiDay);
 
     BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName);
 
@@ -30,7 +29,7 @@ public interface LteFddKpiDayService {
 
     List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName);
 
-    List<LteFddKpiDay> getKpiWithoutDistrict();
+    List<KpiDay> getKpiWithoutDistrict();
 
     List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName, String ratName);
 

@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.entity.district;
 
-import dev.thilanka.netrics.entity.ltefdd.LteFddKpiDay;
+import dev.thilanka.netrics.entity.ltefdd.KpiDay;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,5 +26,5 @@ public class DistrictCode {
     private District district;
 
     @OneToMany(mappedBy = "districtCode", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiDay> lteFddKpiDays;
+    private List<KpiDay> kpiDays;
 }

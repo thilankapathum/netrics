@@ -29,29 +29,29 @@ public class Mapper {
     }
 
 
-// ----- LteFddStandardKpi -----
+// ----- StandardKpi -----
 
-    public StandardKpiDto lteFddStandardKpiToDto(LteFddStandardKpi lteFddStandardKpi) {
+    public StandardKpiDto lteFddStandardKpiToDto(StandardKpi standardKpi) {
 
         String basicKpi = "";
-        if (lteFddStandardKpi.getLteFddBasicKpi() != null)
-            basicKpi = lteFddStandardKpi.getLteFddBasicKpi().getKpiName();
+        if (standardKpi.getBasicKpi() != null)
+            basicKpi = standardKpi.getBasicKpi().getKpiName();
 
         return new StandardKpiDto(
-                lteFddStandardKpi.getKpiName(),
-                lteFddStandardKpi.getLabel(),
-                lteFddStandardKpi.getUnit(),
-                lteFddStandardKpi.getType(),
-                lteFddStandardKpi.getWorstOrder(),
-                lteFddStandardKpi.getThreshold(),
-                lteFddStandardKpi.getAggregation(),
+                standardKpi.getKpiName(),
+                standardKpi.getLabel(),
+                standardKpi.getUnit(),
+                standardKpi.getType(),
+                standardKpi.getWorstOrder(),
+                standardKpi.getThreshold(),
+                standardKpi.getAggregation(),
                 basicKpi,
                 "ltefdd");      //TODO: Implement correct RAT Name
     }
 
-    public LteFddStandardKpi toLteFddStandardKpi(StandardKpiDto standardKpiDto) {
+    public StandardKpi toLteFddStandardKpi(StandardKpiDto standardKpiDto) {
 
-        return LteFddStandardKpi
+        return StandardKpi
                 .builder()
                 .kpiName(standardKpiDto.kpiName())
                 .label(standardKpiDto.label())
@@ -65,33 +65,33 @@ public class Mapper {
         //-- Basic KPI should be queried and set in the Service because otherwise Mapper will throw Circular Dependency (if Service is injected to Mapper)
     }
 
-// ----- LteFddKpiMappingToOss -----
+// ----- KpiMappingToOss -----
 
-    public KpiMappingToOssDto LteFddKpiMappingToDto(LteFddKpiMappingToOss mapping) {
+    public KpiMappingToOssDto LteFddKpiMappingToDto(KpiMappingToOss mapping) {
 
         return new KpiMappingToOssDto(
                 mapping.getOssKpiName(),
                 mapping.getMultiplicationFactor(),
                 mapping.getOss().getIdentifier(),
-                mapping.getLteFddStandardKpi().getKpiName(),
+                mapping.getStandardKpi().getKpiName(),
                 mapping.getRat().getName());
     }
 
 // ----- CellKpiData -----
 
-    public KpiDataDto LteFddKpiDayToKpiDataDto(LteFddKpiDay kpiDay) {
+    public KpiDataDto LteFddKpiDayToKpiDataDto(KpiDay kpiDay) {
 
         return new KpiDataDto(
                 kpiDay.getTimestamp(),
                 kpiDay.getCellName(),
-                kpiDay.getLteFddStandardKpi().getKpiName(),
+                kpiDay.getStandardKpi().getKpiName(),
                 kpiDay.getKpiValue()
         );
     }
 
-    // ----- LteFddStandardRawKpiMapping -----
+    // ----- StandardRawKpiMapping -----
 
-    public StandardRawKpiMappingDto lteFddStandardRawKpiMappingToDto(LteFddStandardRawKpiMapping mapping) {
+    public StandardRawKpiMappingDto lteFddStandardRawKpiMappingToDto(StandardRawKpiMapping mapping) {
 
         return new StandardRawKpiMappingDto(
                 mapping.getStandardKpi().getKpiName(),
@@ -101,13 +101,13 @@ public class Mapper {
         );
     }
 
-// ----- LteFddBasicKpi -----
+// ----- BasicKpi -----
 
-    public LteFddBasicKpi toLteFddBasicKpi(BasicKpiDto dto) {
+    public BasicKpi toLteFddBasicKpi(BasicKpiDto dto) {
         Rat rat = ratRepository.findByName(dto.ratName())
                 .orElseThrow(()-> new RuntimeException("RAT not found by name: " + dto.ratName()));
 
-        return LteFddBasicKpi.builder()
+        return BasicKpi.builder()
                 .kpiName(dto.kpiName())
                 .label(dto.label())
                 .worstOrder(dto.worstOrder())
@@ -118,7 +118,7 @@ public class Mapper {
                 .build();
     }
 
-    public BasicKpiDto lteFddBasicKpiToDto(LteFddBasicKpi kpi) {
+    public BasicKpiDto lteFddBasicKpiToDto(BasicKpi kpi) {
         return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit(),kpi.getRat().getName());
     }
 
@@ -161,11 +161,11 @@ public class Mapper {
 
     //-----------------LTEFDDKPIDAY KPIDAYDTO ----------------------------------
 
-//    public KpiDayDto LteFddKpiDayToKpiDayDto(LteFddKpiDay kpiDay){
+//    public KpiDayDto LteFddKpiDayToKpiDayDto(KpiDay kpiDay){
 //        return new KpiDayDto(kpiDay.getTimestamp(),
 //                kpiDay.getCellName(),
 //                kpiDay.getSiteName(), kpiDay.getKpiValue(), kpiDay.getNumeratorKpiValue(), kpiDay.getDenominatorKpiValue(),
-//                kpiDay.getDataType(), kpiDay.getFileName(), kpiDay.getLteFddStandardKpi().getId(),
+//                kpiDay.getDataType(), kpiDay.getFileName(), kpiDay.getStandardKpi().getId(),
 //                kpiDay.getNumeratorKpi().getId(),
 //                kpiDay.getDenominatorKpi().getId(),
 //                kpiDay.getOss().getId(),kpiDay.getDistrictCode().getId());

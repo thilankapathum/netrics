@@ -24,17 +24,17 @@ public class Rat {
     private String label;
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiDay> kpiDays;
+    private List<KpiDay> kpiDays;
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddBasicKpi> basicKpis;
+    private List<BasicKpi> basicKpis;
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddStandardKpi> standardKpis;
+    private List<StandardKpi> standardKpis;
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddStandardRawKpiMapping> kpiMappings;
+    private List<StandardRawKpiMapping> kpiMappings;
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<LteFddKpiMappingToOss> kpiMappingToOsses;
+    private List<KpiMappingToOss> kpiMappingToOsses;
 }

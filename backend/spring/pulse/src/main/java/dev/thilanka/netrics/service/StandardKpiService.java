@@ -1,23 +1,23 @@
 package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.StandardKpiDto;
-import dev.thilanka.netrics.entity.ltefdd.LteFddStandardKpi;
+import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
-public interface LteFddStandardKpiService {
+public interface StandardKpiService {
     List<StandardKpiDto> getAll();
 
     StandardKpiDto createKpi(@Valid StandardKpiDto dto);
 
     List<StandardKpiDto> createKpis(@Valid List<StandardKpiDto> dtos);
 
-    LteFddStandardKpi findByKpiName(String kpiName, String ratName);
+    StandardKpi findByKpiName(String kpiName, String ratName);
 
-    LteFddStandardKpi findByKpiNameAndRatId(String kpiName, Long ratId);
+    StandardKpi findByKpiNameAndRatId(String kpiName, Long ratId);
 
-    LteFddStandardKpi findByKpiLabel(String kpiLabel, String ratName);
+    StandardKpi findByKpiLabel(String kpiLabel, String ratName);
 
     List<StandardKpiDto> getAllStandardKpiByRat(String ratName);
 }

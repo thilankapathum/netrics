@@ -12,22 +12,22 @@ import lombok.*;
 @Entity
 @Table(name = "lte_fdd_standard_raw_kpi_mapping",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"standard_kpi_id", "numerator_id","denominator_id"})})
-public class LteFddStandardRawKpiMapping {
+public class StandardRawKpiMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne
     @JoinColumn(name = "standard_kpi_id")
-    private LteFddStandardKpi standardKpi;
+    private StandardKpi standardKpi;
 
     @OneToOne
     @JoinColumn(name = "numerator_id")
-    private LteFddStandardKpi numerator;
+    private StandardKpi numerator;
 
     @OneToOne
     @JoinColumn(name = "denominator_id")
-    private LteFddStandardKpi denominator;
+    private StandardKpi denominator;
 
     @ManyToOne
     @JoinColumn(name = "rat_id")
