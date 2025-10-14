@@ -156,7 +156,7 @@
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
           <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
-                  (change)="selectKpi(selectedStandardKpi)">
+                  (change)="selectKpi(selectedStandardKpi, selectedRat())">
             <!--            <option disabled selected>KPI</option>-->
             @for (kpi of standardKpis; track $index) {
               <option [value]="kpi.kpiName">{{ kpi.label }}</option>
