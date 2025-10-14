@@ -1,7 +1,6 @@
 package dev.thilanka.netrics.entity;
 
 
-import dev.thilanka.netrics.entity.ltefdd.*;
 import jakarta.persistence.*;
 import lombok.*;
 

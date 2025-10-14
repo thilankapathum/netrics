@@ -2,7 +2,7 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.BasicKpiDto;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.ltefdd.BasicKpi;
+import dev.thilanka.netrics.entity.BasicKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
 import dev.thilanka.netrics.service.BasicKpiService;

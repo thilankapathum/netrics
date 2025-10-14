@@ -2,14 +2,16 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.DistrictCodeDto;
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
-import dev.thilanka.netrics.entity.ltefdd.KpiDay;
+import dev.thilanka.netrics.entity.KpiDay;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.DistrictCodeRepository;
 import dev.thilanka.netrics.service.DistrictCodeService;
 import dev.thilanka.netrics.service.DistrictService;
 import dev.thilanka.netrics.service.KpiDayService;
+import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     private final DistrictCodeRepository districtCodeRepository;
     private final DistrictService districtService;
     private final KpiDayService kpiDayService;
+    private final RatService ratService;
     private final Mapper mapper;
 
     @Override
@@ -34,12 +37,16 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     public DistrictCodeDto createDistrictCode(DistrictCodeDto dto) {
 
         District district = districtService.findDistrictByName(dto.districtName());
+        List<Rat> rats = ratService.findAll();
 
         DistrictCode districtCode = mapper.toDistrictCode(dto);
         districtCode.setDistrict(district);
 
         DistrictCode savedDistrictCode = districtCodeRepository.save(districtCode);
-        updateLteFddKpiDayWithoutDistrict();    //todo: Update for other RATs
+
+        for (Rat rat : rats) {
+            updateKpiDayWithoutDistrict(rat.getName());
+        }
 
         return mapper.districtCodeToDto(savedDistrictCode);
 
@@ -57,14 +64,13 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
         return districtCodeDtos;
     }
 
-    private List<KpiDataDto> updateLteFddKpiDayWithoutDistrict() {
-        List<KpiDay> kpiList = kpiDayService.getKpiWithoutDistrict();
+    private void updateKpiDayWithoutDistrict(String ratName) {
+        List<KpiDay> kpiList = kpiDayService.getKpiWithoutDistrict(ratName);
         List<KpiDataDto> kpiDayDtos = new ArrayList<>();
         for (KpiDay kpi : kpiList) {
             kpi.setDistrictCode(getDistrictCodeByCellName(kpi.getCellName()));
             kpiDayDtos.add(kpiDayService.createLteFddKpiDay(kpi));
         }
-        return kpiDayDtos;
 
         //todo: Check for cells which match with new district_code only
     }

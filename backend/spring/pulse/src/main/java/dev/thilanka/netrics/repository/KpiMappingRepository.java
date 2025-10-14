@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.repository;
 
-import dev.thilanka.netrics.entity.ltefdd.KpiMappingToOss;
+import dev.thilanka.netrics.entity.KpiMappingToOss;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

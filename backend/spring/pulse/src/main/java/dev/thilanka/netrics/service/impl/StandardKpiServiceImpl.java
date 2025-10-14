@@ -2,8 +2,8 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.StandardKpiDto;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.ltefdd.BasicKpi;
-import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
+import dev.thilanka.netrics.entity.BasicKpi;
+import dev.thilanka.netrics.entity.StandardKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.StandardKpiRepository;
 import dev.thilanka.netrics.service.BasicKpiService;
@@ -39,10 +39,8 @@ public class StandardKpiServiceImpl implements StandardKpiService {
 
         StandardKpi kpi = mapper.toStandardKpi(kpiDto);
         Rat rat = ratService.findRatByName(kpiDto.ratName());
-//        System.out.println("RAT: " + rat.getName());
 
         if (!Objects.equals(kpiDto.basicKpi(), "")) {
-//            System.out.println("Basic KPI: " + kpiDto.basicKpi());
             BasicKpi basicKpi = basicKpiService.findByKpiName(kpiDto.basicKpi(), rat);
             kpi.setBasicKpi(basicKpi);
         }

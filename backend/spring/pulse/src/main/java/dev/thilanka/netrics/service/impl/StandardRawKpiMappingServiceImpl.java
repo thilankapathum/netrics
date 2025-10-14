@@ -2,8 +2,8 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.StandardRawKpiMappingDto;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
-import dev.thilanka.netrics.entity.ltefdd.StandardRawKpiMapping;
+import dev.thilanka.netrics.entity.StandardKpi;
+import dev.thilanka.netrics.entity.StandardRawKpiMapping;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.StandardRawKpiMappingRepository;
 import dev.thilanka.netrics.service.StandardKpiService;

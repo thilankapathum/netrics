@@ -3,7 +3,7 @@ package dev.thilanka.netrics.repository;
 import dev.thilanka.netrics.dto.KpiSnapshotDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
-import dev.thilanka.netrics.entity.ltefdd.KpiDay;
+import dev.thilanka.netrics.entity.KpiDay;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -752,7 +752,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
 
     @Query(value = """
             SELECT * FROM lte_fdd_kpi_day
-            WHERE district_code_id IS NULL
+            WHERE district_code_id IS NULL AND rat_id = :ratId
             """, nativeQuery = true)
-    List<KpiDay> findKpiWithoutDistrict();
+    List<KpiDay> findKpiWithoutDistrict(@Param("ratId") Long ratId);
 }

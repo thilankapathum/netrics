@@ -26,6 +26,11 @@ public class RatServiceImpl implements RatService {
     }
 
     @Override
+    public List<Rat> findAll() {
+        return ratRepository.findAll();
+    }
+
+    @Override
     public RatDto getRatDtoByName(String name) {
         Rat rat = ratRepository.findByName(name)
                 .orElseThrow(()-> new RuntimeException("RAT not found by name: " + name));

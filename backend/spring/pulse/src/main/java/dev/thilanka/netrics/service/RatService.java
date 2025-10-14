@@ -9,6 +9,8 @@ public interface RatService {
 
     List<RatDto> getAll();
 
+    List<Rat> findAll();
+
     RatDto getRatDtoByName(String name);
 
     RatDto getRatDtoByLabel(String label);

@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.entity.district;
 
-import dev.thilanka.netrics.entity.ltefdd.KpiDay;
+import dev.thilanka.netrics.entity.KpiDay;
 import jakarta.persistence.*;
 import lombok.*;
 

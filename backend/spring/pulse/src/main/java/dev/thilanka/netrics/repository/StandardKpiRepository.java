@@ -1,7 +1,7 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
+import dev.thilanka.netrics.entity.StandardKpi;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

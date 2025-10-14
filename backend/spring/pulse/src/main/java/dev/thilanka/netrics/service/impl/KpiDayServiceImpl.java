@@ -3,7 +3,6 @@ package dev.thilanka.netrics.service.impl;
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
-import dev.thilanka.netrics.entity.ltefdd.*;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
@@ -186,7 +185,6 @@ public class KpiDayServiceImpl implements KpiDayService {
     @Override
     @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName) {
-        //Todo
         Rat rat = ratService.findRatByName(ratName);
         BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(basicKpiName, rat)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
@@ -441,8 +439,9 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
-    public List<KpiDay> getKpiWithoutDistrict() {
-        return kpiDayRepository.findKpiWithoutDistrict();
+    public List<KpiDay> getKpiWithoutDistrict(String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        return kpiDayRepository.findKpiWithoutDistrict(rat.getId());
     }
 
 }

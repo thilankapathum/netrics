@@ -2,7 +2,7 @@ package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.StandardKpiDto;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.ltefdd.StandardKpi;
+import dev.thilanka.netrics.entity.StandardKpi;
 import jakarta.validation.Valid;
 
 import java.util.List;

@@ -4,7 +4,7 @@ import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
-import dev.thilanka.netrics.entity.ltefdd.KpiDay;
+import dev.thilanka.netrics.entity.KpiDay;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public interface KpiDayService {
 
     List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName);
 
-    List<KpiDay> getKpiWithoutDistrict();
+    List<KpiDay> getKpiWithoutDistrict(String ratName);
 
     List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName, String ratName);
 

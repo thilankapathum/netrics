@@ -4,7 +4,6 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
-import dev.thilanka.netrics.entity.ltefdd.*;
 import dev.thilanka.netrics.repository.RatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

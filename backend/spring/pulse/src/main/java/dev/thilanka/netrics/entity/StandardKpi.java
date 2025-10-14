@@ -1,6 +1,5 @@
-package dev.thilanka.netrics.entity.ltefdd;
+package dev.thilanka.netrics.entity;
 
-import dev.thilanka.netrics.entity.Rat;
 import jakarta.persistence.*;
 import lombok.*;
 
