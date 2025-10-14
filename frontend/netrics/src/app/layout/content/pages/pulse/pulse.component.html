@@ -53,7 +53,7 @@
       <div class="flex flex-row gap-2 items-center">
         <p>Granularity</p>
         <select class="select select-sm border" [(ngModel)]="granularity"
-                (change)="selectGranularity(granularity)">
+                (change)="selectGranularity(granularity())">
           <option [value]="'day'" selected>Last Day</option>
           <option [value]="'week'">Last Week</option>
           <option [value]="'month'">Last Month</option>
@@ -156,7 +156,7 @@
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
           <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
-                  (change)="selectKpi(selectedStandardKpi, selectedRat())">
+                  (change)="selectKpi(selectedStandardKpi(), selectedRat())">
             <!--            <option disabled selected>KPI</option>-->
             @for (kpi of standardKpis; track $index) {
               <option [value]="kpi.kpiName">{{ kpi.label }}</option>

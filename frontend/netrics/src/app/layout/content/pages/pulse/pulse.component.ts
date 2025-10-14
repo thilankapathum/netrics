@@ -34,10 +34,10 @@ export class PulseComponent implements OnInit {
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
-  granularity: string = 'day';
+  granularity = signal<'day' | 'week' | 'month'>('day')
   standardKpis: StandardKpiDto[] = [];
-  selectedStandardKpi: string = '';
-  selectedKpiTrendPeriod: string = 'month';
+  selectedStandardKpi = signal('');
+  selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
   kpiTrendData: KpiTrendDto[] = [];
   chartSeries: any = null;
   analysisModalCell: string = '';
@@ -72,22 +72,22 @@ export class PulseComponent implements OnInit {
   ngOnInit() {
     this.cdr.detectChanges(); // Force change detection
     this.getAllDistricts();
-    this.getAllBasicKpi();
-    this.getAllStandardKpi("ltefdd");
+    this.getBasicKpi(this.selectedRat())
+    this.getAllStandardKpi(this.selectedRat());
   }
 
-  selectGranularity(granularity: string) {
-    this.granularity = granularity;
+  selectGranularity(granularity: 'day' | 'week' | 'month') {
+    this.granularity.set(granularity);
     this.cdr.detectChanges(); // Force change detection
-    this.getAllBasicKpi();
-    this.selectKpi(this.selectedStandardKpi, this.selectedRat());
+    this.getBasicKpi(this.selectedRat());
+    this.selectKpi(this.selectedStandardKpi(), this.selectedRat());
   }
 
   selectDistrict(district: string) {
     this.district = district;
     this.cdr.detectChanges(); // Force change detection
-    this.getAllBasicKpi();
-    this.selectKpi(this.selectedStandardKpi, this.selectedRat());
+    this.getBasicKpi(this.selectedRat());
+    this.selectKpi(this.selectedStandardKpi(), this.selectedRat());
   }
 
   getAllDistricts() {
@@ -107,44 +107,31 @@ export class PulseComponent implements OnInit {
 
   setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): void {
     this.selectedRat.set(rat);
-    // console.log(this.selectedRat());
 
     switch (rat) {
       case "ltefdd":
         this.getBasicKpi("ltefdd");
         this.getAllStandardKpi("ltefdd");
-        this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod, "ltefdd");
-        this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, "ltefdd");
         break;
       case "ltetdd":
         this.getBasicKpi("ltetdd");
         this.getAllStandardKpi("ltetdd");
-        this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod, "ltetdd");
-        this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, "ltetdd");
         break;
       case "nr":
         this.getBasicKpi("nr");
         this.getAllStandardKpi("nr");
-        this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod, "nr");
-        this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, "nr");
         break;
       case "umts":
         this.getBasicKpi("umts");
         this.getAllStandardKpi("umts");
-        this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod, "umts");
-        this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, "umts");
         break;
       case "gsm":
         this.getBasicKpi("gsm");
         this.getAllStandardKpi("gsm");
-        this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod, "gsm");
-        this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, "gsm");
         break;
       default:
         this.getBasicKpi("ltefdd");
         this.getAllStandardKpi("ltefdd");
-        this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod, "ltefdd");
-        this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, "ltefdd");
     }
   }
 
@@ -179,33 +166,10 @@ export class PulseComponent implements OnInit {
 
   //------- BASIC KPI  ---------
 
-  getAllBasicKpi() {
-    //TODO: This method may not be required except for OnInit
+  getBasicKpi(ratName: string) {
     this.loadingBasicKpi = true;
-    this.basicKpiSnapshots = [];
-
-    let selectedRat1 = this.selectedRat();
-    if (selectedRat1 === "ltefdd") {
-      this.getBasicKpi("ltefdd");
-    } else if (selectedRat1 === "ltetdd") {
-      this.getBasicKpi("ltetdd");
-
-    } else if (selectedRat1 === "umts") {
-      this.getBasicKpi("umts");
-
-    } else if (selectedRat1 === "gsm") {
-      this.getBasicKpi("gsm");
-
-    } else {
-      this.getBasicKpi("ltefdd");
-
-    }
-  }
-
-  getBasicKpi(ratName:string) {
-    console.log('Get LteFDDBasicKpi');
     this.basicKpiDtos = [];
-
+    this.basicKpiSnapshots = [];
     this.ltefddbasickpiservice.getAllBasicKpi(ratName).subscribe({
       next: data => {
         this.basicKpiDtos = data;
@@ -219,7 +183,6 @@ export class PulseComponent implements OnInit {
             this.alertService.error("Basic KPI Snapshot retrieval failed");
           }
         })
-        // this.loadingBasicKpi = false;
       }, error: error => {
         this.loadingBasicKpi = false;
         console.log("Error getAllBasicKpi");
@@ -229,59 +192,14 @@ export class PulseComponent implements OnInit {
     });
   }
 
-  // getLteTddBasicKpi() {
-  //   console.log('Get LteTddBasicKpi');
-  //   this.basicKpiDtos = [];
-  //   this.basicKpiSnapshots = [];
-  //   this.getLteTddBasicKpiSnapshot(this.basicKpiDtos);
-  // }
-  //
-  // private getNrBasicKpi() {
-  //   console.log('Get NrBasicKpi');
-  //   this.basicKpiDtos = [];
-  //   this.basicKpiSnapshots = [];
-  //   this.getNrBasicKpiSnapshot(this.basicKpiDtos);
-  // }
-  //
-  // getUmtsBasicKpi() {
-  //   console.log('Get UMTSBasicKpi');
-  //   this.basicKpiDtos = [];
-  //   this.basicKpiSnapshots = [];
-  //   this.getUmtsBasicKpiSnapshot(this.basicKpiDtos);
-  // }
-  //
-  // getGsmBasicKpi() {
-  //   console.log('Get GSM Basic KPI');
-  //   this.basicKpiDtos = [];
-  //   this.basicKpiSnapshots = [];
-  //   this.getGsmBasicKpiSnapshot(this.basicKpiDtos);
-  // }
-
   //------- BASIC KPI SNAPSHOTS ---------
 
   private getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
     const requests = basicKpiDto.map(kpi =>
-      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity, this.district, this.selectedRat())
+      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity(), this.district, this.selectedRat())
     );
     return forkJoin([...requests]);
   }
-
-  // private getLteTddBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
-  //   console.log('Get LteTddBasicKpiSnapshot for KPI');
-  // }
-  //
-  // private getNrBasicKpiSnapshot(basicKpiDtos: BasicKpiDto[]) {
-  //   console.log('Get NrBasicKpiSnapshot for KPI');
-  // }
-  //
-  // private getUmtsBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
-  //   console.log('Get UmtsBasicKpiSnapshot for KPI');
-  // }
-  //
-  // private getGsmBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
-  //   console.log('Get GsmBasicKpiSnapshot for KPI');
-  // }
-
 
   get sortedBasicKpiSnapshots(): BasicKpiSnapshot[] {
     return this.basicKpiSnapshots.sort((a, b) => a.kpiLabel!.localeCompare(b.kpiLabel!))
@@ -290,17 +208,15 @@ export class PulseComponent implements OnInit {
   //----------- WORST CELLS ----------------
 
   onExcludeZeroesChange(event: Event) {
-    this.getWorstCellsByKpi(this.selectedStandardKpi, this.granularity, this.selectedRat());
+    this.getWorstCellsByKpi(this.selectedStandardKpi(), this.granularity(), this.selectedRat());
   }
 
-  getWorstCellsByKpi(kpiName: string, granularity: string, ratName:string) {
+  getWorstCellsByKpi(kpiName: string, granularity: string, ratName: string) {
     this.loadingWorstCells = true;
     this.allWorstCells = [];
     this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, this.district, this.excludeZeroes, ratName).subscribe({
       next: data => {
-        console.log("all-worstcell-data", data);
         this.allWorstCells = data;
-        console.log("allWorstCells", this.allWorstCells);
         this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
         this.setPage(0);
         this.loadingWorstCells = false;
@@ -311,32 +227,7 @@ export class PulseComponent implements OnInit {
         this.loadingWorstCells = false;
       }
     });
-
   }
-
-  // getLteTddWorstCellsByKpi(kpiName: string, granularity: string) {
-  //   this.loadingWorstCells = true;
-  //   console.log('Get LteTddWorstCellsByKpi');
-  //   //TODO: Configure worst cell retrieval
-  // }
-  //
-  // getNrWorstCellsByKpi(kpiName: string, granularity: string) {
-  //   this.loadingWorstCells = true;
-  //   console.log('Get NrWorstCellsByKpi');
-  //   //TODO: Configure worst cell retrieval
-  // }
-  //
-  // getUmtsWorstCellsByKpi(kpiName: string, granularity: string) {
-  //   this.loadingWorstCells = true;
-  //   console.log('Get UmtsWorstCellsByKpi');
-  //   //TODO: Configure worst cell retrieval
-  // }
-  //
-  // getGsmWorstCellsByKpi(kpiName: string, granularity: string) {
-  //   this.loadingWorstCells = true;
-  //   console.log('Get GsmWorstCellsByKpi');
-  //   //TODO: Configure worst cell retrieval
-  // }
 
   setPage(page: number) {
     if (page < 0 || page > this.totalPages) return;
@@ -355,20 +246,25 @@ export class PulseComponent implements OnInit {
     this.setPage(this.currentPage - 1);
   }
 
-  selectKpi(kpi: string, ratName:string) {
+  selectKpi(kpi: string, ratName: string) {
     this.currentPage = 0;
-    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod, ratName);
-    this.getWorstCellsByKpi(kpi, this.granularity, ratName);
+    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod(), ratName);
+    this.getWorstCellsByKpi(kpi, this.granularity(), ratName);
   }
 
-  getAllStandardKpi(ratName:string) {
+  getAllStandardKpi(ratName: string) {
     this.standardKpis = [];
     this.ltefddstandardkpiservice.getAllStandardKpi(ratName).subscribe({
       next: data => {
         this.standardKpis = data;
         if (this.standardKpis.length > 0) {
-          this.selectedStandardKpi = this.standardKpis[0].kpiName!;
-          this.selectKpi(this.selectedStandardKpi, ratName);
+          this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
+          this.selectKpi(this.selectedStandardKpi(), ratName);    // Getting Worst-cells and Trend-data
+        } else {
+          this.alertService.error("KPI are unavailable for the RAT");
+          this.kpiTrendData = [];
+          this.allWorstCells = [];
+          this.worstCells = [];
         }
       }, error: error => {
         console.log("Error getAllStandardKpi:");
@@ -386,7 +282,6 @@ export class PulseComponent implements OnInit {
     this.getTrendDataByKpiLabelAndCell(kpiLabel, cellName, 'quarter', this.selectedRat())
       .subscribe({
         next: data => {
-          console.log("data:", data);
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
           this.analysisModal.nativeElement.showModal();
         }, error: err => {
@@ -400,10 +295,10 @@ export class PulseComponent implements OnInit {
   //------------- KPI TREND CHART ----------------
 
   onPeriodChange(event: Event) {
-    this.getTrendDataByKpi(this.selectedStandardKpi, this.selectedKpiTrendPeriod, this.selectedRat());
+    this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat());
   }
 
-  getTrendDataByKpi(kpiName: string, period: string, ratName:string) {
+  getTrendDataByKpi(kpiName: string, period: string, ratName: string) {
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
     this.ltefdddayservice.getDataByKpi(kpiName, period, this.district, ratName).subscribe({
@@ -419,37 +314,9 @@ export class PulseComponent implements OnInit {
     });
   }
 
-  // getLteTddTrendDataByKpi(kpiName: string, period: string) {
-  //   this.loadingKpiTrend = true;
-  //   this.kpiTrendData = [];
-  //   //TODO: configure data retrieval
-  //   console.log('Retrieving LteTddTrendDataByKpi');
-  // }
-  //
-  // getNrTrendDataByKpi(kpiName: string, period: string) {
-  //   this.loadingKpiTrend = true;
-  //   this.kpiTrendData = [];
-  //   //TODO: configure data retrieval
-  //   console.log('Retrieving NrTrendDataByKpi');
-  // }
-  //
-  // getUmtsTrendDataByKpi(kpiName: string, period: string) {
-  //   this.loadingKpiTrend = true;
-  //   this.kpiTrendData = [];
-  //   //TODO: configure data retrieval
-  //   console.log('Retrieving UmtsTrendDataByKpi');
-  // }
-  //
-  // getGsmTrendDataByKpi(kpiName: string, period: string) {
-  //   this.loadingKpiTrend = true;
-  //   this.kpiTrendData = [];
-  //   //TODO: configure data retrieval
-  //   console.log('Retrieving GsmTrendDataByKpi');
-  // }
-
   //============ MODAL KPI TREND CHART =================
 
-  getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string, ratName:string): Observable<KpiDataDto[]> {
+  getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string, ratName: string): Observable<KpiDataDto[]> {
     return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName);
   }
 
