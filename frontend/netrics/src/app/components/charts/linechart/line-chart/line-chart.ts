@@ -9,7 +9,7 @@ import {
   ApexStroke,
   ChartComponent
 } from 'ng-apexcharts';
-import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
+import {KpidayService} from '../../../../service/pulse/ltefdd/kpiday.service';
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 import {DaisyUiThemeService} from '../../../../service/components/theme/daisy-ui-theme.service';
@@ -44,7 +44,7 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
   public showChart = true;
   public chartOptions: Partial<ChartOptions> = {};
 
-  constructor(private ltefdddayservice: LtefdddayService,
+  constructor(private ltefdddayservice: KpidayService,
               private themeService: DaisyUiThemeService) {
   }
 

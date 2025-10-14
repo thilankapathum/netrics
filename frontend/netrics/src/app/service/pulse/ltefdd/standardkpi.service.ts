@@ -7,7 +7,7 @@ import {Observable} from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class LtefddstandardkpiService {
+export class StandardkpiService {
 
   private readonly baseUrl: string;
   // private readonly ratName:string = 'ltefdd';

@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { LtefdddayService } from './ltefddday.service';
+import { KpidayService } from './kpiday.service';
 
-describe('LtefdddayService', () => {
-  let service: LtefdddayService;
+describe('KpidayService', () => {
+  let service: KpidayService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(LtefdddayService);
+    service = TestBed.inject(KpidayService);
   });
 
   it('should be created', () => {

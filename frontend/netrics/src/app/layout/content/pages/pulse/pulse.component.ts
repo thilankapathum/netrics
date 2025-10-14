@@ -1,13 +1,13 @@
 import {ChangeDetectorRef, Component, effect, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
 import {CommonModule, DecimalPipe} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
-import {LtefddbasickpiService} from '../../../../service/pulse/ltefdd/ltefddbasickpi.service';
-import {LtefdddayService} from '../../../../service/pulse/ltefdd/ltefddday.service';
+import {BasickpiService} from '../../../../service/pulse/ltefdd/basickpi.service';
+import {KpidayService} from '../../../../service/pulse/ltefdd/kpiday.service';
 import {BasicKpiDto} from '../../../../models/pulse/BasicKpiDto';
 import {BasicKpiSnapshot} from '../../../../models/pulse/BasicKpiSnapshot';
 import {FormsModule} from '@angular/forms';
 import {StandardKpiDto} from '../../../../models/pulse/StandardKpiDto';
-import {LtefddstandardkpiService} from '../../../../service/pulse/ltefdd/ltefddstandardkpi.service';
+import {StandardkpiService} from '../../../../service/pulse/ltefdd/standardkpi.service';
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 import {Linechart} from '../../../../components/charts/linechart/linechart/linechart';
@@ -60,9 +60,9 @@ export class PulseComponent implements OnInit {
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
   constructor(private cdr: ChangeDetectorRef,
-              private ltefddbasickpiservice: LtefddbasickpiService,
-              private ltefdddayservice: LtefdddayService,
-              private ltefddstandardkpiservice: LtefddstandardkpiService,
+              private ltefddbasickpiservice: BasickpiService,
+              private ltefdddayservice: KpidayService,
+              private ltefddstandardkpiservice: StandardkpiService,
               private chartService: ChartService,
               private alertService: AlertService,
               private districtService: DistrictService,

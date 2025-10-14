@@ -10,7 +10,7 @@ import {Observable} from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class LtefdddayService {
+export class KpidayService {
   private readonly baseUrl: string;
   // private readonly ratName:string = 'ltefdd';
 

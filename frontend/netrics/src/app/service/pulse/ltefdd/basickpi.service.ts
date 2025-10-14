@@ -6,7 +6,7 @@ import {BasicKpiDto} from '../../../models/pulse/BasicKpiDto';
 @Injectable({
   providedIn: 'root'
 })
-export class LtefddbasickpiService {
+export class BasickpiService {
 
   private readonly baseUrl: string;
   // private readonly ratName: string = 'ltefdd';
