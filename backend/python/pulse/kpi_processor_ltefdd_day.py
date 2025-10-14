@@ -31,10 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-ltefdd-day.json'):
+    def __init__(self, config_file='config-dev.json'):
         """Initialize KPI Processor with configuration"""
-        # load_dotenv()
-
         self.config = self.load_config(config_file)
 
         self.db_config = {
@@ -46,25 +44,21 @@ class KPIProcessor:
         }
 
         self.clear_redis_cache_url = self.config['clear_redis_cache_url']
-
-        # self.db_config = self.config['database']
-        self.ftp_folder = self.config['ftp_folder']
-        self.processed_folder = self.config['processed_folder']
-        self.temp_folder = self.config['temp_folder']
+        self.base_folder = self.config.get('base_folder', '/app/day-average')
 
         # Database-driven configuration (loaded from DB)
-        self.standard_kpis = {}  # Will hold standard KPI info
-        self.kpi_mappings = {}  # Will hold OSS to standard KPI mappings
+        self.rats = {}  # Will hold RAT information {rat_id: {name, label, folders}}
+        self.standard_kpis = {}  # Will hold standard KPI info per RAT {rat_id: {kpi_name: {...}}}
+        self.kpi_mappings = {}  # Will hold OSS to standard KPI mappings per RAT
         self.oss_configs = {}  # Will hold OSS configuration info
-        self.standard_kpi_mappings = {}  # Will hold standard KPI to numerator/denominator mappings
+        self.standard_kpi_mappings = {}  # Will hold standard KPI to numerator/denominator mappings per RAT
         self.district_codes = {}  # Will hold district code mappings
 
         # Load configuration from database
         self.load_database_configuration()
 
-        # Create necessary directories
-        os.makedirs(self.processed_folder, exist_ok=True)
-        os.makedirs(self.temp_folder, exist_ok=True)
+        # Create necessary directories for all RATs
+        self.create_rat_directories()
 
     def load_config(self, config_file: str) -> Dict:
         """Load basic configuration from JSON file (only database connection and paths)"""
@@ -83,11 +77,10 @@ class KPIProcessor:
                 "port": 5432,
                 "database": "pulse_db",
                 "user": "pguser",
-                "password": "pgpassword"
+                "password": "password"
             },
-            "ftp_folder": "/app/day-average/ltefdd/ftp",
-            "processed_folder": "/app/day-average/ltefdd/processed",
-            "temp_folder": "/app/day-average/ltefdd/temp"
+            "base_folder": "/app/day-average",
+            "clear_redis_cache_url": "http://localhost:8012/api/v1/pulse/cache/evict-all"
         }
 
         with open(config_file, 'w') as f:
@@ -96,10 +89,17 @@ class KPIProcessor:
         logger.info(f"Created default config file: {config_file}")
         return default_config
 
+    def create_rat_directories(self):
+        """Create necessary directories for all RATs"""
+        for rat_id, rat_info in self.rats.items():
+            for folder_type in ['ftp', 'processed', 'temp']:
+                folder_path = rat_info['folders'][folder_type]
+                os.makedirs(folder_path, exist_ok=True)
+                logger.info(f"Created directory: {folder_path}")
+
     def clear_redis_cache(self):
         logger.info("Clearing redis cache...")
         try:
-            # url = "http://localhost:8012/api/v1/pulse/cache/evict-all"
             url = self.clear_redis_cache_url
             response = requests.post(url, timeout=300)
             if response.status_code == 200:
@@ -109,7 +109,6 @@ class KPIProcessor:
         except Exception as e:
             logger.error(f"Failed to clear redis cache: {e}")
 
-
     def load_database_configuration(self):
         """Load configuration from database tables"""
         connection = None
@@ -117,16 +116,44 @@ class KPIProcessor:
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor(cursor_factory=RealDictCursor)
 
-            # Load standard KPIs
+            # Load RATs from database
+            logger.info("Loading RATs from database...")
+            cursor.execute("""
+                SELECT id, name, label 
+                FROM rat
+                ORDER BY id
+            """)
+            rats_data = cursor.fetchall()
+
+            for rat in rats_data:
+                rat_id = rat['id']
+                rat_name = rat['name']
+                self.rats[rat_id] = {
+                    'name': rat_name,
+                    'label': rat['label'],
+                    'folders': {
+                        'ftp': os.path.join(self.base_folder, rat_name, 'ftp'),
+                        'processed': os.path.join(self.base_folder, rat_name, 'processed'),
+                        'temp': os.path.join(self.base_folder, rat_name, 'temp')
+                    }
+                }
+
+            logger.info(f"Loaded {len(self.rats)} RATs: {[r['name'] for r in self.rats.values()]}")
+
+            # Load standard KPIs per RAT
             logger.info("Loading standard KPIs from database...")
             cursor.execute("""
-                SELECT id, kpi_name, unit, type, worst_order, threshold 
+                SELECT id, kpi_name, unit, type, worst_order, threshold, rat_id 
                 FROM lte_fdd_standard_kpi
             """)
             standard_kpis_data = cursor.fetchall()
 
             for kpi in standard_kpis_data:
-                self.standard_kpis[kpi['kpi_name']] = {
+                rat_id = kpi['rat_id']
+                if rat_id not in self.standard_kpis:
+                    self.standard_kpis[rat_id] = {}
+
+                self.standard_kpis[rat_id][kpi['kpi_name']] = {
                     'id': kpi['id'],
                     'unit': kpi['unit'],
                     'type': kpi['type'],
@@ -134,9 +161,10 @@ class KPIProcessor:
                     'threshold': kpi['threshold']
                 }
 
-            logger.info(f"Loaded {len(self.standard_kpis)} standard KPIs")
+            total_kpis = sum(len(kpis) for kpis in self.standard_kpis.values())
+            logger.info(f"Loaded {total_kpis} standard KPIs across all RATs")
 
-            # Load standard KPI numerator/denominator mappings
+            # Load standard KPI numerator/denominator mappings per RAT
             logger.info("Loading standard KPI numerator/denominator mappings...")
             cursor.execute("""
                 SELECT 
@@ -144,6 +172,7 @@ class KPIProcessor:
                     m.standard_kpi_id,
                     m.numerator_id,
                     m.denominator_id,
+                    m.rat_id,
                     s.kpi_name as standard_kpi_name,
                     n.kpi_name as numerator_kpi_name,
                     d.kpi_name as denominator_kpi_name
@@ -155,8 +184,12 @@ class KPIProcessor:
             standard_mapping_data = cursor.fetchall()
 
             for mapping in standard_mapping_data:
+                rat_id = mapping['rat_id']
+                if rat_id not in self.standard_kpi_mappings:
+                    self.standard_kpi_mappings[rat_id] = {}
+
                 standard_kpi_name = mapping['standard_kpi_name']
-                self.standard_kpi_mappings[standard_kpi_name] = {
+                self.standard_kpi_mappings[rat_id][standard_kpi_name] = {
                     'standard_kpi_id': mapping['standard_kpi_id'],
                     'numerator_id': mapping['numerator_id'],
                     'denominator_id': mapping['denominator_id'],
@@ -164,7 +197,8 @@ class KPIProcessor:
                     'denominator_kpi_name': mapping['denominator_kpi_name']
                 }
 
-            logger.info(f"Loaded {len(self.standard_kpi_mappings)} standard KPI mappings")
+            total_mappings = sum(len(mappings) for mappings in self.standard_kpi_mappings.values())
+            logger.info(f"Loaded {total_mappings} standard KPI mappings across all RATs")
 
             # Load OSS configurations
             logger.info("Loading OSS configurations from database...")
@@ -188,7 +222,7 @@ class KPIProcessor:
 
             logger.info(f"Loaded {len(self.oss_configs)} OSS configurations")
 
-            # Load KPI mappings
+            # Load KPI mappings per RAT
             logger.info("Loading KPI mappings from database...")
             cursor.execute("""
                 SELECT 
@@ -197,6 +231,7 @@ class KPIProcessor:
                     m.oss_kpi_name,
                     m.oss_id,
                     m.multiplication_factor,
+                    m.rat_id,
                     s.kpi_name as standard_kpi_name,
                     o.identifier as oss_identifier
                 FROM lte_fdd_kpi_mapping m
@@ -206,9 +241,13 @@ class KPIProcessor:
             mapping_data = cursor.fetchall()
 
             for mapping in mapping_data:
+                rat_id = mapping['rat_id']
+                if rat_id not in self.kpi_mappings:
+                    self.kpi_mappings[rat_id] = {}
+
                 # Create a composite key: oss_identifier + oss_kpi_name
                 mapping_key = f"{mapping['oss_identifier']}:{mapping['oss_kpi_name']}"
-                self.kpi_mappings[mapping_key] = {
+                self.kpi_mappings[rat_id][mapping_key] = {
                     'standard_kpi_name': mapping['standard_kpi_name'],
                     'multiplication_factor': mapping['multiplication_factor'],
                     'oss_id': mapping['oss_id'],
@@ -216,9 +255,10 @@ class KPIProcessor:
                 }
 
                 # Also create direct mapping for backward compatibility
-                self.kpi_mappings[mapping['oss_kpi_name']] = mapping['standard_kpi_name']
+                self.kpi_mappings[rat_id][mapping['oss_kpi_name']] = mapping['standard_kpi_name']
 
-            logger.info(f"Loaded {len(mapping_data)} KPI mappings")
+            total_kpi_mappings = sum(len(mappings) for mappings in self.kpi_mappings.values())
+            logger.info(f"Loaded {total_kpi_mappings} KPI mappings across all RATs")
 
             # Load district codes
             logger.info("Loading district codes from database...")
@@ -269,7 +309,7 @@ class KPIProcessor:
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # Create unpivoted KPI table (updated schema with numerator/denominator and district_code_id columns)
+            # Create unpivoted KPI table (updated schema with rat_id column)
             create_table_query = """
             CREATE TABLE IF NOT EXISTS lte_fdd_kpi_day (
                 id BIGSERIAL PRIMARY KEY,
@@ -286,6 +326,7 @@ class KPIProcessor:
                 denominator_kpi_id BIGINT NULL,
                 denominator_kpi_value DECIMAL(15,3) NULL,
                 district_code_id BIGINT NULL,
+                rat_id BIGINT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -297,7 +338,8 @@ class KPIProcessor:
                 "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_timestamp ON lte_fdd_kpi_day(timestamp)",
                 "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_cell_name ON lte_fdd_kpi_day(cell_name)",
                 "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_oss_id ON lte_fdd_kpi_day(oss_id)",
-                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_district_code_id ON lte_fdd_kpi_day(district_code_id)"
+                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_district_code_id ON lte_fdd_kpi_day(district_code_id)",
+                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_rat_id ON lte_fdd_kpi_day(rat_id)"
             ]
 
             for index_query in indexes:
@@ -313,14 +355,18 @@ class KPIProcessor:
                 cursor.close()
                 connection.close()
 
-    def get_new_files(self) -> List[str]:
-        """Get list of new files (ZIP, XLSX, CSV) in FTP folder"""
+    def get_new_files(self, rat_id: int) -> List[str]:
+        """Get list of new files (ZIP, XLSX, CSV) in RAT's FTP folder"""
         try:
+            rat_info = self.rats[rat_id]
+            ftp_folder = rat_info['folders']['ftp']
+            processed_folder = rat_info['folders']['processed']
+
             new_files = []
-            for file in os.listdir(self.ftp_folder):
+            for file in os.listdir(ftp_folder):
                 if file.endswith(('.zip', '.xlsx', '.csv')):
-                    file_path = os.path.join(self.ftp_folder, file)
-                    processed_path = os.path.join(self.processed_folder, file)
+                    file_path = os.path.join(ftp_folder, file)
+                    processed_path = os.path.join(processed_folder, file)
 
                     # Check if file has been processed already
                     if not os.path.exists(processed_path):
@@ -328,7 +374,7 @@ class KPIProcessor:
             return new_files
 
         except Exception as e:
-            logger.error(f"Error reading files in FTP folder: {e}")
+            logger.error(f"Error reading files in FTP folder for RAT {rat_id}: {e}")
             return []
 
     def get_file_info(self, file_path: str) -> tuple:
@@ -344,9 +390,12 @@ class KPIProcessor:
         else:
             return 'unknown', False
 
-    def extract_data_file_from_zip(self, zip_path: str) -> Optional[tuple]:
+    def extract_data_file_from_zip(self, zip_path: str, rat_id: int) -> Optional[tuple]:
         """Extract XLSX or CSV file from ZIP archive"""
         try:
+            rat_info = self.rats[rat_id]
+            temp_folder = rat_info['folders']['temp']
+
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 # Find XLSX or CSV files in the archive
                 data_files = [f for f in zip_ref.namelist() if f.endswith(('.xlsx', '.csv'))]
@@ -368,7 +417,7 @@ class KPIProcessor:
                 else:
                     return None
 
-                extract_path = os.path.join(self.temp_folder, data_file)
+                extract_path = os.path.join(temp_folder, data_file)
 
                 with zip_ref.open(data_file) as source, open(extract_path, 'wb') as target:
                     shutil.copyfileobj(source, target)
@@ -392,33 +441,36 @@ class KPIProcessor:
 
     def normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
         """Normalize column names"""
-
         # Strip whitespace from column names
         df.columns = df.columns.str.strip()
         df.columns = df.columns.str.replace('\xa0', ' ')
-
         return df
 
-    def map_oss_kpi_to_standard(self, oss_kpi_name: str, oss_identifier: str) -> Optional[dict]:
-        """Map OSS KPI name to standard KPI using database mapping"""
+    def map_oss_kpi_to_standard(self, oss_kpi_name: str, oss_identifier: str, rat_id: int) -> Optional[dict]:
+        """Map OSS KPI name to standard KPI using database mapping for specific RAT"""
+        if rat_id not in self.kpi_mappings:
+            return None
+
+        rat_mappings = self.kpi_mappings[rat_id]
+
         # Try with OSS-specific mapping first
         mapping_key = f"{oss_identifier}:{oss_kpi_name}"
 
-        if mapping_key in self.kpi_mappings:
-            mapping_info = self.kpi_mappings[mapping_key]
+        if mapping_key in rat_mappings:
+            mapping_info = rat_mappings[mapping_key]
             if isinstance(mapping_info, dict):
                 return mapping_info
 
         # Fallback to direct mapping
-        if oss_kpi_name in self.kpi_mappings:
-            standard_kpi_name = self.kpi_mappings[oss_kpi_name]
+        if oss_kpi_name in rat_mappings:
+            standard_kpi_name = rat_mappings[oss_kpi_name]
             if isinstance(standard_kpi_name, str):
                 # Find the standard KPI info
-                if standard_kpi_name in self.standard_kpis:
+                if rat_id in self.standard_kpis and standard_kpi_name in self.standard_kpis[rat_id]:
                     return {
                         'standard_kpi_name': standard_kpi_name,
                         'multiplication_factor': 1.0,
-                        'lte_fdd_standard_kpi_id': self.standard_kpis[standard_kpi_name]['id']
+                        'lte_fdd_standard_kpi_id': self.standard_kpis[rat_id][standard_kpi_name]['id']
                     }
 
         return None
@@ -461,23 +513,24 @@ class KPIProcessor:
 
         return df
 
-    def determine_data_type(self, value, standard_kpi_name: str = None) -> str:
+    def determine_data_type(self, value, standard_kpi_name: str = None, rat_id: int = None) -> str:
         """Determine the data type of KPI value based on standard KPI configuration"""
         if pd.isna(value):
             return 'decimal'
 
         # Check standard KPI configuration first
-        if standard_kpi_name and standard_kpi_name in self.standard_kpis:
-            kpi_info = self.standard_kpis[standard_kpi_name]
-            unit = kpi_info.get('unit', '')
-            if unit == '%':
-                return 'percentage'
-            elif unit in ['s', 'ms', 'kByte', 'MB', 'GB']:
-                try:
-                    clean_val = float(str(value).replace('%', '').replace(',', '').strip())
-                    return 'integer' if clean_val.is_integer() else 'decimal'
-                except:
-                    return 'decimal'
+        if standard_kpi_name and rat_id and rat_id in self.standard_kpis:
+            if standard_kpi_name in self.standard_kpis[rat_id]:
+                kpi_info = self.standard_kpis[rat_id][standard_kpi_name]
+                unit = kpi_info.get('unit', '')
+                if unit == '%':
+                    return 'percentage'
+                elif unit in ['s', 'ms', 'kByte', 'MB', 'GB']:
+                    try:
+                        clean_val = float(str(value).replace('%', '').replace(',', '').strip())
+                        return 'integer' if clean_val.is_integer() else 'decimal'
+                    except:
+                        return 'decimal'
 
         # Fallback to original logic
         value_str = str(value).strip()
@@ -511,7 +564,8 @@ class KPIProcessor:
             logger.warning(f"Could not convert value to numeric: {value}")
             return None
 
-    def get_kpi_values_for_standard_kpi(self, df: pd.DataFrame, standard_kpi_name: str, oss_identifier: str) -> Dict:
+    def get_kpi_values_for_standard_kpi(self, df: pd.DataFrame, standard_kpi_name: str,
+                                        oss_identifier: str, rat_id: int) -> Dict:
         """Get the main, numerator, and denominator values for a standard KPI"""
         result = {
             'main_value': None,
@@ -521,9 +575,9 @@ class KPIProcessor:
             'denominator_kpi_id': None
         }
 
-        # Check if this standard KPI has numerator/denominator mapping
-        if standard_kpi_name in self.standard_kpi_mappings:
-            mapping = self.standard_kpi_mappings[standard_kpi_name]
+        # Check if this standard KPI has numerator/denominator mapping for this RAT
+        if rat_id in self.standard_kpi_mappings and standard_kpi_name in self.standard_kpi_mappings[rat_id]:
+            mapping = self.standard_kpi_mappings[rat_id][standard_kpi_name]
             numerator_kpi_name = mapping.get('numerator_kpi_name')
             denominator_kpi_name = mapping.get('denominator_kpi_name')
 
@@ -534,7 +588,7 @@ class KPIProcessor:
             if numerator_kpi_name:
                 for col in df.columns:
                     # Check if this column maps to the numerator KPI
-                    mapped_info = self.map_oss_kpi_to_standard(col, oss_identifier)
+                    mapped_info = self.map_oss_kpi_to_standard(col, oss_identifier, rat_id)
                     if mapped_info and mapped_info.get('standard_kpi_name') == numerator_kpi_name:
                         result['numerator_value'] = col
                         break
@@ -543,7 +597,7 @@ class KPIProcessor:
             if denominator_kpi_name:
                 for col in df.columns:
                     # Check if this column maps to the denominator KPI
-                    mapped_info = self.map_oss_kpi_to_standard(col, oss_identifier)
+                    mapped_info = self.map_oss_kpi_to_standard(col, oss_identifier, rat_id)
                     if mapped_info and mapped_info.get('standard_kpi_name') == denominator_kpi_name:
                         result['denominator_value'] = col
                         break
@@ -551,7 +605,7 @@ class KPIProcessor:
         return result
 
     def unpivot_dataframe(self, df: pd.DataFrame, oss_identifier: str, oss_config: dict,
-                          file_name: str) -> pd.DataFrame:
+                          file_name: str, rat_id: int) -> pd.DataFrame:
         """Convert wide format to unpivoted (long) format using database mappings with numerator/denominator support"""
         # Standardize column names
         df = self.standardize_timestamp_column(df)
@@ -575,11 +629,11 @@ class KPIProcessor:
         standard_kpi_groups = {}
 
         for col in kpi_columns:
-            mapping_info = self.map_oss_kpi_to_standard(col, oss_identifier)
+            mapping_info = self.map_oss_kpi_to_standard(col, oss_identifier, rat_id)
             if mapping_info:
                 standard_kpi_name = mapping_info['standard_kpi_name']
-                if standard_kpi_name in self.standard_kpis:
-                    kpi_info = self.standard_kpis[standard_kpi_name]
+                if rat_id in self.standard_kpis and standard_kpi_name in self.standard_kpis[rat_id]:
+                    kpi_info = self.standard_kpis[rat_id][standard_kpi_name]
                     # Only process standard KPIs (not numerator/denominator)
                     if kpi_info.get('type') == 'standard':
                         if standard_kpi_name not in standard_kpi_groups:
@@ -597,7 +651,7 @@ class KPIProcessor:
                 mapping_info = kpi_info['mapping_info']
 
                 # Get numerator and denominator information
-                kpi_values_info = self.get_kpi_values_for_standard_kpi(df, standard_kpi_name, oss_identifier)
+                kpi_values_info = self.get_kpi_values_for_standard_kpi(df, standard_kpi_name, oss_identifier, rat_id)
 
                 # Process each row in the dataframe
                 for _, row in df.iterrows():
@@ -619,20 +673,22 @@ class KPIProcessor:
                         numerator_col = kpi_values_info['numerator_value']
                         if numerator_col in row:
                             # Get multiplication factor for numerator
-                            num_mapping_info = self.map_oss_kpi_to_standard(numerator_col, oss_identifier)
-                            num_mult_factor = num_mapping_info.get('multiplication_factor', 1.0) if num_mapping_info else 1.0
+                            num_mapping_info = self.map_oss_kpi_to_standard(numerator_col, oss_identifier, rat_id)
+                            num_mult_factor = num_mapping_info.get('multiplication_factor',
+                                                                   1.0) if num_mapping_info else 1.0
                             numerator_value = self.clean_kpi_value(row[numerator_col], num_mult_factor)
 
                     if kpi_values_info['denominator_value']:
                         denominator_col = kpi_values_info['denominator_value']
                         if denominator_col in row:
                             # Get multiplication factor for denominator
-                            denom_mapping_info = self.map_oss_kpi_to_standard(denominator_col, oss_identifier)
-                            denom_mult_factor = denom_mapping_info.get('multiplication_factor', 1.0) if denom_mapping_info else 1.0
+                            denom_mapping_info = self.map_oss_kpi_to_standard(denominator_col, oss_identifier, rat_id)
+                            denom_mult_factor = denom_mapping_info.get('multiplication_factor',
+                                                                       1.0) if denom_mapping_info else 1.0
                             denominator_value = self.clean_kpi_value(row[denominator_col], denom_mult_factor)
 
                     # Determine data type
-                    data_type = self.determine_data_type(row[col], standard_kpi_name)
+                    data_type = self.determine_data_type(row[col], standard_kpi_name, rat_id)
 
                     processed_row = {
                         'timestamp': row.get('timestamp'),
@@ -645,11 +701,14 @@ class KPIProcessor:
                         'oss_id': oss_config['id'],
                         'oss_kpi_name': col,
                         'file_name': file_name,
-                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'] if kpi_values_info['numerator_kpi_id'] else None,
+                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'] if kpi_values_info[
+                            'numerator_kpi_id'] else None,
                         'numerator_kpi_value': numerator_value,
-                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'] if kpi_values_info['denominator_kpi_id'] else None,
+                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'] if kpi_values_info[
+                            'denominator_kpi_id'] else None,
                         'denominator_kpi_value': denominator_value,
-                        'district_code_id': district_code_id  # Add district code ID
+                        'district_code_id': district_code_id,
+                        'rat_id': rat_id
                     }
                     processed_rows.append(processed_row)
 
@@ -667,8 +726,9 @@ class KPIProcessor:
         # Log statistics
         unique_kpis = final_df['standard_kpi_name'].unique()
         unique_districts = final_df['district_code_id'].value_counts()
-        logger.info(f"Processed {len(unique_kpis)} unique standard KPIs: {list(unique_kpis)}")
-        logger.info(f"District code distribution: {dict(unique_districts)}")
+        rat_name = self.rats[rat_id]['name']
+        logger.info(f"[{rat_name}] Processed {len(unique_kpis)} unique standard KPIs: {list(unique_kpis)}")
+        logger.info(f"[{rat_name}] District code distribution: {dict(unique_districts)}")
 
         return final_df
 
@@ -678,25 +738,26 @@ class KPIProcessor:
             return None
         return value
 
-    def insert_data_to_postgresql(self, df: pd.DataFrame):
-        """Insert unpivoted data into PostgreSQL database with numerator/denominator and district code support"""
+    def insert_data_to_postgresql(self, df: pd.DataFrame, rat_id: int):
+        """Insert unpivoted data into PostgreSQL database with numerator/denominator, district code, and RAT ID support"""
         if df.empty:
             logger.warning("No data to insert")
             return
 
         try:
-            logger.info(f"Preparing data insert...")
+            rat_name = self.rats[rat_id]['name']
+            logger.info(f"[{rat_name}] Preparing data insert...")
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # Prepare insert query with numerator/denominator and district_code_id columns
+            # Prepare insert query with all required columns including rat_id
             insert_query = """
             INSERT INTO lte_fdd_kpi_day 
             (timestamp, cell_name, site_name, lte_fdd_standard_kpi_id, 
              kpi_value, data_type, oss_id, file_name, 
              numerator_kpi_id, numerator_kpi_value, 
-             denominator_kpi_id, denominator_kpi_value, district_code_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             denominator_kpi_id, denominator_kpi_value, district_code_id, rat_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
             # Convert dataframe to list of tuples with proper None handling
@@ -715,15 +776,16 @@ class KPIProcessor:
                     self.convert_nan_to_none(row.get('numerator_kpi_value')),
                     self.convert_nan_to_none(row.get('denominator_kpi_id')),
                     self.convert_nan_to_none(row.get('denominator_kpi_value')),
-                    self.convert_nan_to_none(row.get('district_code_id'))  # Add district code ID
+                    self.convert_nan_to_none(row.get('district_code_id')),
+                    rat_id
                 ))
 
             # Execute batch insert
-            logger.info(f"Inserting records into database...")
+            logger.info(f"[{rat_name}] Inserting records into database...")
             cursor.executemany(insert_query, data_tuples)
             connection.commit()
 
-            logger.info(f"Inserted {len(data_tuples)} records into database")
+            logger.info(f"[{rat_name}] Inserted {len(data_tuples)} records into database")
             self.clear_redis_cache()
 
         except Error as e:
@@ -767,115 +829,159 @@ class KPIProcessor:
             return pd.DataFrame()
 
     def process_data_file(self, file_path: str, file_type: str, oss_identifier: str, oss_config: dict,
-                          original_filename: str):
-        """Process a single data file (XLSX or CSV)"""
+                          original_filename: str, rat_id: int):
+        """Process a single data file (XLSX or CSV) for a specific RAT"""
         try:
-            logger.info(f"Reading {file_type.upper()} file: {file_path}")
-            logger.info(f"OSS identifier: {oss_identifier}")
+            rat_name = self.rats[rat_id]['name']
+            logger.info(f"[{rat_name}] Reading {file_type.upper()} file: {file_path}")
+            logger.info(f"[{rat_name}] OSS identifier: {oss_identifier}")
 
             # Read the data file
             df = self.read_data_file(file_path, file_type, oss_config)
 
             if df.empty:
-                logger.warning(f"No data read from {file_path}")
+                logger.warning(f"[{rat_name}] No data read from {file_path}")
                 return
 
-            logger.info(f"Read {len(df)} rows and {len(df.columns)} columns from {file_path}")
-            logger.info(f"Column names: {list(df.columns)}")
+            logger.info(f"[{rat_name}] Read {len(df)} rows and {len(df.columns)} columns from {file_path}")
+            logger.info(f"[{rat_name}] Column names: {list(df.columns)}")
 
             # Normalize column names
             df = self.normalize_column_names(df)
 
             # Convert to unpivoted format using database mappings with numerator/denominator support
-            unpivoted_df = self.unpivot_dataframe(df, oss_identifier, oss_config, original_filename)
+            unpivoted_df = self.unpivot_dataframe(df, oss_identifier, oss_config, original_filename, rat_id)
 
             if unpivoted_df.empty:
-                logger.warning("No data to insert after unpivoting and mapping")
+                logger.warning(f"[{rat_name}] No data to insert after unpivoting and mapping")
                 return
 
             # Insert into database
-            self.insert_data_to_postgresql(unpivoted_df)
+            self.insert_data_to_postgresql(unpivoted_df, rat_id)
 
-            logger.info(f"Successfully processed {file_path}")
+            logger.info(f"[{rat_name}] Successfully processed {file_path}")
 
         except Exception as e:
             logger.error(f"Error processing data file {file_path}: {e}")
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
 
-    def mark_file_as_processed(self, file_path: str):
+    def mark_file_as_processed(self, file_path: str, rat_id: int):
         """Move processed file to processed folder"""
         try:
+            rat_info = self.rats[rat_id]
+            processed_folder = rat_info['folders']['processed']
+            rat_name = rat_info['name']
+
             filename = os.path.basename(file_path)
-            processed_path = os.path.join(self.processed_folder, filename)
+            processed_path = os.path.join(processed_folder, filename)
             shutil.move(file_path, processed_path)
-            logger.info(f"Moved {filename} to processed folder")
-            logger.info(f"========== END FILE ==========")
+            logger.info(f"[{rat_name}] Moved {filename} to processed folder")
+            logger.info(f"[{rat_name}] ========== END FILE ==========")
         except Exception as e:
             logger.error(f"Error moving file to processed folder: {e}")
             logger.info(f"========== END FILE ==========")
 
-    def cleanup_temp_files(self):
-        """Clean up temporary files"""
+    def cleanup_temp_files(self, rat_id: int):
+        """Clean up temporary files for specific RAT"""
         try:
-            for file in os.listdir(self.temp_folder):
-                file_path = os.path.join(self.temp_folder, file)
+            rat_info = self.rats[rat_id]
+            temp_folder = rat_info['folders']['temp']
+
+            for file in os.listdir(temp_folder):
+                file_path = os.path.join(temp_folder, file)
                 os.remove(file_path)
         except Exception as e:
             logger.error(f"Error cleaning up temp files: {e}")
 
-    def process_new_files(self):
-        """Process new files using database configuration"""
-        new_files = self.get_new_files()
+    def process_new_files_for_rat(self, rat_id: int):
+        """Process new files for a specific RAT"""
+        rat_info = self.rats[rat_id]
+        rat_name = rat_info['name']
+
+        logger.info(f"{'=' * 60}")
+        logger.info(f"Processing RAT: {rat_name} (ID: {rat_id})")
+        logger.info(f"{'=' * 60}")
+
+        new_files = self.get_new_files(rat_id)
+
+        if not new_files:
+            logger.info(f"[{rat_name}] No new files to process")
+            return
+
+        logger.info(f"[{rat_name}] Found {len(new_files)} new files to process")
 
         for file_path in new_files:
             try:
                 filename = os.path.basename(file_path)
-                logger.info(f"Processing {filename}")
+                logger.info(f"[{rat_name}] Processing {filename}")
 
                 # Identify OSS source using database configuration
                 oss_identifier, oss_config = self.identify_oss_source(filename)
 
                 if not oss_identifier:
-                    logger.warning(f"Could not identify OSS for file: {filename}")
+                    logger.warning(f"[{rat_name}] Could not identify OSS for file: {filename}")
                     continue
 
                 # Determine file type and processing method
                 file_format, needs_extraction = self.get_file_info(file_path)
 
                 if needs_extraction and file_format == 'zip':
-                    logger.info("File needs extraction")
+                    logger.info(f"[{rat_name}] File needs extraction")
                     # Extract data file from ZIP
-                    extraction_result = self.extract_data_file_from_zip(file_path)
+                    extraction_result = self.extract_data_file_from_zip(file_path, rat_id)
 
                     if extraction_result:
                         data_file_path, file_type = extraction_result
                         # Process the extracted data file
-                        self.process_data_file(data_file_path, file_type, oss_identifier, oss_config, filename)
+                        self.process_data_file(data_file_path, file_type, oss_identifier, oss_config, filename, rat_id)
 
                 elif not needs_extraction and file_format in ['xlsx', 'csv']:
                     # Process file directly
-                    logger.info("File does not need extraction")
-                    self.process_data_file(file_path, file_format, oss_identifier, oss_config, filename)
+                    logger.info(f"[{rat_name}] File does not need extraction")
+                    self.process_data_file(file_path, file_format, oss_identifier, oss_config, filename, rat_id)
 
                 else:
-                    logger.warning(f"Unsupported file format: {file_format}")
+                    logger.warning(f"[{rat_name}] Unsupported file format: {file_format}")
                     continue
 
                 # Mark file as processed
-                self.mark_file_as_processed(file_path)
+                self.mark_file_as_processed(file_path, rat_id)
 
                 # Clean up temp files
-                self.cleanup_temp_files()
+                self.cleanup_temp_files(rat_id)
 
             except Exception as e:
-                logger.error(f"Error processing file {filename}: {e}")
+                logger.error(f"[{rat_name}] Error processing file {filename}: {e}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
+
+    def process_new_files(self):
+        """Process new files for all RATs using database configuration"""
+        logger.info(f"\n{'#' * 80}")
+        logger.info(f"Starting KPI processing cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"{'#' * 80}\n")
+
+        # Process files for each RAT
+        for rat_id in self.rats.keys():
+            try:
+                self.process_new_files_for_rat(rat_id)
+            except Exception as e:
+                rat_name = self.rats[rat_id]['name']
+                logger.error(f"Error processing RAT {rat_name}: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+
+        logger.info(f"\n{'#' * 80}")
+        logger.info(f"Completed KPI processing cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"{'#' * 80}\n")
 
     def run_continuously(self, interval_minutes: int = 60):
         """Run the processor continuously with specified interval"""
         logger.info(f"Starting continuous processing with {interval_minutes} minute intervals")
+        # logger.info(f"Configured RATs: {[f\"{r['name']} ({r['label']})\" for r in self.rats.values()]}")
+        rats_str = ", ".join(f"{r['name']} ({r['label']})" for r in self.rats.values())
+        logger.info("Configured RATs: %s", rats_str)
 
         # Create database tables on startup
         self.create_database_tables()
