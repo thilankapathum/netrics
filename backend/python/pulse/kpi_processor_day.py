@@ -101,7 +101,7 @@ class KPIProcessor:
         logger.info("Clearing redis cache...")
         try:
             url = self.clear_redis_cache_url
-            response = requests.post(url, timeout=300)
+            response = requests.post(url, timeout=10)
             if response.status_code == 200:
                 logger.info("Redis cache cleared")
             else:
@@ -497,9 +497,9 @@ class KPIProcessor:
     def standardize_identifier_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize cell and eNodeB identifier columns"""
         cell_columns = ['Cell Name', 'Cell_Name', 'CellName', 'cell_name', 'E-UTRAN FDD Cell Name',
-                        'E-UTRAN FDD Cell Name', 'E-UTRAN\xa0FDD\xa0Cell Name']
+                        'E-UTRAN FDD Cell Name', 'E-UTRAN\xa0FDD\xa0Cell Name', 'BTS NAME']
         enodeb_columns = ['eNodeB name', 'eNodeB_name', 'eNodeBName', 'enodeb_name', 'Managed Element',
-                          'ManagedElement Name', 'Managed Element', 'Managed\xa0Element']
+                          'ManagedElement Name', 'Managed Element', 'Managed\xa0Element', 'SITE Name']
 
         for col in cell_columns:
             if col in df.columns:

@@ -18,8 +18,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 # Copy your application
-COPY kpi_processor_ltefdd_day.py .
-COPY config-ltefdd-day.json .
+COPY kpi_processor_day.py .
+COPY config.json .
 
 # Create required directories
 RUN mkdir -p /app/day-average/ltefdd/ftp /app/day-average/ltefdd/processed /app/day-average/ltefdd/temp /app/day-average/ltefdd/logs
