@@ -12,14 +12,15 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "lte_fdd_standard_kpi")
+@Table(name = "lte_fdd_standard_kpi",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"kpi_name", "label", "rat_id"})})
 public class StandardKpi {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(unique = true,nullable = false)
+    @Column(nullable = false)
     private String kpiName;
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String label;
     @Column(nullable = false)
     private String unit;

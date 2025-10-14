@@ -12,7 +12,7 @@ import lombok.*;
 @Builder
 @Entity
 @Table(name = "lte_fdd_kpi_mapping",
-uniqueConstraints = {@UniqueConstraint(columnNames = {"lte_fdd_standard_kpi_id", "oss_id"})})
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"lte_fdd_standard_kpi_id", "oss_id", "rat_id"})})
 public class KpiMappingToOss {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

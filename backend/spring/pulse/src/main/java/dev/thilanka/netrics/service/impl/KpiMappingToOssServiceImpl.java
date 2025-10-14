@@ -37,12 +37,12 @@ public class KpiMappingToOssServiceImpl implements KpiMappingToOssService {
 
         return kpi
                 .stream()
-                .map(mapper::LteFddKpiMappingToDto)
+                .map(mapper::kpiMappingToDto)
                 .toList();
     }
 
     @Override
-    public KpiMappingToOssDto createLteFddKpiMapping(KpiMappingToOssDto dto) {
+    public KpiMappingToOssDto createKpiMappingToOss(KpiMappingToOssDto dto) {
 
         Rat rat = ratService.findRatByName(dto.ratName());
 
@@ -50,7 +50,7 @@ public class KpiMappingToOssServiceImpl implements KpiMappingToOssService {
                 .orElseThrow(() -> new RuntimeException("OSS not found by: " + dto.ossIdentifier()));
 
         StandardKpi standardKpi = standardKpiService
-                .findByKpiName(dto.standardKpi(),dto.ratName());
+                .findByKpiName(dto.standardKpi(),rat);
 
         KpiMappingToOss kpiMappingToOss = KpiMappingToOss.builder()
                 .standardKpi(standardKpi)
@@ -62,16 +62,16 @@ public class KpiMappingToOssServiceImpl implements KpiMappingToOssService {
 
         KpiMappingToOss savedMapping = kpiMappingRepository.save(kpiMappingToOss);
 
-        return mapper.LteFddKpiMappingToDto(savedMapping);
+        return mapper.kpiMappingToDto(savedMapping);
     }
 
     @Override
-    public List<KpiMappingToOssDto> createLteFddKpiMappingList(List<KpiMappingToOssDto> dtos) {
+    public List<KpiMappingToOssDto> createKpiMappingToOssList(List<KpiMappingToOssDto> dtos) {
 
         List<KpiMappingToOssDto> dtoList = new ArrayList<>();
 
         for (KpiMappingToOssDto dto : dtos){
-            dtoList.add(createLteFddKpiMapping(dto));
+            dtoList.add(createKpiMappingToOss(dto));
         }
         return dtoList;
     }

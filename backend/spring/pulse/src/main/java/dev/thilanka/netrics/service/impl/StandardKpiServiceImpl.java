@@ -30,24 +30,25 @@ public class StandardKpiServiceImpl implements StandardKpiService {
 
         return kpis
                 .stream()
-                .map(mapper::lteFddStandardKpiToDto)
+                .map(mapper::standardKpiToDto)
                 .toList();
     }
 
     @Override
     public StandardKpiDto createKpi(StandardKpiDto kpiDto) {
 
-        StandardKpi kpi = mapper.toLteFddStandardKpi(kpiDto);
+        StandardKpi kpi = mapper.toStandardKpi(kpiDto);
         Rat rat = ratService.findRatByName(kpiDto.ratName());
+//        System.out.println("RAT: " + rat.getName());
 
         if (!Objects.equals(kpiDto.basicKpi(), "")) {
-            System.out.println("Basic KPI: " + kpiDto.basicKpi());
-            BasicKpi basicKpi = basicKpiService.findByKpiName(kpiDto.basicKpi(), kpiDto.ratName());
+//            System.out.println("Basic KPI: " + kpiDto.basicKpi());
+            BasicKpi basicKpi = basicKpiService.findByKpiName(kpiDto.basicKpi(), rat);
             kpi.setBasicKpi(basicKpi);
         }
 
         StandardKpi savedKpi = standardKpiRepository.save(kpi);
-        return mapper.lteFddStandardKpiToDto(savedKpi);
+        return mapper.standardKpiToDto(savedKpi);
     }
 
     @Override
@@ -71,6 +72,13 @@ public class StandardKpiServiceImpl implements StandardKpiService {
     }
 
     @Override
+    public StandardKpi findByKpiName(String kpiName, Rat rat) {
+        return standardKpiRepository
+                .findByKpiNameAndRatId(kpiName, rat.getId())
+                .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
+    }
+
+    @Override
     public StandardKpi findByKpiNameAndRatId(String kpiName, Long ratId) {
         return standardKpiRepository
                 .findByKpiNameAndRatId(kpiName, ratId)
@@ -79,8 +87,9 @@ public class StandardKpiServiceImpl implements StandardKpiService {
 
     @Override
     public StandardKpi findByKpiLabel(String kpiLabel, String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
         return standardKpiRepository
-                .findByLabel(kpiLabel)
+                .findByLabelAndRat(kpiLabel, rat)
                 .orElseThrow(()-> new RuntimeException("Standard KPI not found by: " + kpiLabel));
     }
 
@@ -89,6 +98,6 @@ public class StandardKpiServiceImpl implements StandardKpiService {
         Rat rat = ratService.findRatByName(ratName);
 
         List<StandardKpi> standardKpis = standardKpiRepository.findAllStandardKpiByRat(rat.getId());
-        return standardKpis.stream().map(mapper::lteFddStandardKpiToDto).toList();
+        return standardKpis.stream().map(mapper::standardKpiToDto).toList();
     }
 }

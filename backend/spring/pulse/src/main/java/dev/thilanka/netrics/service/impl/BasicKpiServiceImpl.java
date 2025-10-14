@@ -26,21 +26,27 @@ public class BasicKpiServiceImpl implements BasicKpiService {
 
         return kpis
                 .stream()
-                .map(mapper::lteFddBasicKpiToDto)
+                .map(mapper::basicKpiToDto)
                 .toList();
     }
 
     @Override
     public BasicKpiDto createBasicKpi(BasicKpiDto dto) {
-        BasicKpi kpi = mapper.toLteFddBasicKpi(dto);
+        BasicKpi kpi = mapper.toBasicKpi(dto);
         BasicKpi savedKpi = basicKpiRepository.save(kpi);
-        return mapper.lteFddBasicKpiToDto(savedKpi);
+        return mapper.basicKpiToDto(savedKpi);
     }
 
     @Override
     public BasicKpi findByKpiName(String kpiName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         return basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
-                .orElseThrow(()-> new RuntimeException("Basic KPI not found by: " + kpiName));
+                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));
+    }
+
+    @Override
+    public BasicKpi findByKpiName(String kpiName, Rat rat) {
+        return basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
+                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));
     }
 }

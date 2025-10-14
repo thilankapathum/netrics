@@ -8,7 +8,7 @@ import java.util.List;
 public interface KpiMappingToOssService {
     List<KpiMappingToOssDto> getAll(String ratName);
 
-    KpiMappingToOssDto createLteFddKpiMapping(@Valid KpiMappingToOssDto dto);
+    KpiMappingToOssDto createKpiMappingToOss(@Valid KpiMappingToOssDto dto);
 
-    List<KpiMappingToOssDto> createLteFddKpiMappingList(@Valid List<KpiMappingToOssDto> dtos);
+    List<KpiMappingToOssDto> createKpiMappingToOssList(@Valid List<KpiMappingToOssDto> dtos);
 }

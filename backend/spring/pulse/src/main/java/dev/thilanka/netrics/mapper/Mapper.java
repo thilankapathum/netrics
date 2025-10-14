@@ -31,7 +31,7 @@ public class Mapper {
 
 // ----- StandardKpi -----
 
-    public StandardKpiDto lteFddStandardKpiToDto(StandardKpi standardKpi) {
+    public StandardKpiDto standardKpiToDto(StandardKpi standardKpi) {
 
         String basicKpi = "";
         if (standardKpi.getBasicKpi() != null)
@@ -46,10 +46,13 @@ public class Mapper {
                 standardKpi.getThreshold(),
                 standardKpi.getAggregation(),
                 basicKpi,
-                "ltefdd");      //TODO: Implement correct RAT Name
+                standardKpi.getRat().getName());
     }
 
-    public StandardKpi toLteFddStandardKpi(StandardKpiDto standardKpiDto) {
+    public StandardKpi toStandardKpi(StandardKpiDto standardKpiDto) {
+
+        Rat rat = ratRepository.findByName(standardKpiDto.ratName())
+                .orElseThrow(()-> new RuntimeException("RAT not found by name: " + standardKpiDto.ratName()));
 
         return StandardKpi
                 .builder()
@@ -60,6 +63,7 @@ public class Mapper {
                 .aggregation(standardKpiDto.aggregation())
                 .worstOrder(standardKpiDto.worstOrder())
                 .threshold(standardKpiDto.threshold())
+                .rat(rat)
                 .build();
 
         //-- Basic KPI should be queried and set in the Service because otherwise Mapper will throw Circular Dependency (if Service is injected to Mapper)
@@ -67,7 +71,7 @@ public class Mapper {
 
 // ----- KpiMappingToOss -----
 
-    public KpiMappingToOssDto LteFddKpiMappingToDto(KpiMappingToOss mapping) {
+    public KpiMappingToOssDto kpiMappingToDto(KpiMappingToOss mapping) {
 
         return new KpiMappingToOssDto(
                 mapping.getOssKpiName(),
@@ -79,7 +83,7 @@ public class Mapper {
 
 // ----- CellKpiData -----
 
-    public KpiDataDto LteFddKpiDayToKpiDataDto(KpiDay kpiDay) {
+    public KpiDataDto kpiDayToKpiDataDto(KpiDay kpiDay) {
 
         return new KpiDataDto(
                 kpiDay.getTimestamp(),
@@ -91,7 +95,7 @@ public class Mapper {
 
     // ----- StandardRawKpiMapping -----
 
-    public StandardRawKpiMappingDto lteFddStandardRawKpiMappingToDto(StandardRawKpiMapping mapping) {
+    public StandardRawKpiMappingDto standardRawKpiMappingToDto(StandardRawKpiMapping mapping) {
 
         return new StandardRawKpiMappingDto(
                 mapping.getStandardKpi().getKpiName(),
@@ -103,7 +107,7 @@ public class Mapper {
 
 // ----- BasicKpi -----
 
-    public BasicKpi toLteFddBasicKpi(BasicKpiDto dto) {
+    public BasicKpi toBasicKpi(BasicKpiDto dto) {
         Rat rat = ratRepository.findByName(dto.ratName())
                 .orElseThrow(()-> new RuntimeException("RAT not found by name: " + dto.ratName()));
 
@@ -118,7 +122,7 @@ public class Mapper {
                 .build();
     }
 
-    public BasicKpiDto lteFddBasicKpiToDto(BasicKpi kpi) {
+    public BasicKpiDto basicKpiToDto(BasicKpi kpi) {
         return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit(),kpi.getRat().getName());
     }
 

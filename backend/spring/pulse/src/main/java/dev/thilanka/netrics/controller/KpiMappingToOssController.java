@@ -24,13 +24,13 @@ public class KpiMappingToOssController {
 
     @PostMapping
     public ResponseEntity<KpiMappingToOssDto> createMapping(@RequestBody @Valid KpiMappingToOssDto dto){
-        KpiMappingToOssDto savedDto = kpiMappingToOssService.createLteFddKpiMapping(dto);
+        KpiMappingToOssDto savedDto = kpiMappingToOssService.createKpiMappingToOss(dto);
         return new ResponseEntity<>(savedDto,HttpStatus.CREATED);
     }
 
     @PostMapping("list")
     public ResponseEntity<List<KpiMappingToOssDto>> createMapping(@RequestBody @Valid List<KpiMappingToOssDto> dtos){
-        List<KpiMappingToOssDto> savedDtoList = kpiMappingToOssService.createLteFddKpiMappingList(dtos);
+        List<KpiMappingToOssDto> savedDtoList = kpiMappingToOssService.createKpiMappingToOssList(dtos);
         return new ResponseEntity<>(savedDtoList,HttpStatus.CREATED);
     }
 }

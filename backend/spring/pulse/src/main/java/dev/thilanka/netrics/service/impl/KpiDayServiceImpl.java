@@ -378,14 +378,14 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         return kpiDays
                 .stream()
-                .map(mapper::LteFddKpiDayToKpiDataDto)
+                .map(mapper::kpiDayToKpiDataDto)
                 .toList();
     }
 
     @Override
     public KpiDataDto createLteFddKpiDay(KpiDay kpiDay) {
         KpiDay savedKpiDay = kpiDayRepository.save(kpiDay);
-        return mapper.LteFddKpiDayToKpiDataDto(savedKpiDay);
+        return mapper.kpiDayToKpiDataDto(savedKpiDay);
     }
 
     private LocalDateTime getLatestDate(Long ratId) {

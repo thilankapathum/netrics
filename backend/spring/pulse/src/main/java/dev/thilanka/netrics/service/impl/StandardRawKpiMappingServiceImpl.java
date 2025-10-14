@@ -31,7 +31,7 @@ public class StandardRawKpiMappingServiceImpl implements StandardRawKpiMappingSe
 
         return mappings
                 .stream()
-                .map(mapper::lteFddStandardRawKpiMappingToDto)
+                .map(mapper::standardRawKpiMappingToDto)
                 .toList();
     }
 
@@ -40,9 +40,9 @@ public class StandardRawKpiMappingServiceImpl implements StandardRawKpiMappingSe
 
         Rat rat = ratService.findRatByName(dto.ratName());
 
-        StandardKpi standardKpi = standardKpiService.findByKpiName(dto.standardKpi(), dto.ratName());
-        StandardKpi numerator = standardKpiService.findByKpiName(dto.numerator(), dto.ratName());
-        StandardKpi denominator = standardKpiService.findByKpiName(dto.denominator(), dto.ratName());
+        StandardKpi standardKpi = standardKpiService.findByKpiName(dto.standardKpi(), rat);
+        StandardKpi numerator = standardKpiService.findByKpiName(dto.numerator(), rat);
+        StandardKpi denominator = standardKpiService.findByKpiName(dto.denominator(), rat);
 
         StandardRawKpiMapping mapping = StandardRawKpiMapping.builder()
                 .standardKpi(standardKpi)
@@ -52,7 +52,7 @@ public class StandardRawKpiMappingServiceImpl implements StandardRawKpiMappingSe
                 .build();
 
         StandardRawKpiMapping savedMapping = standardRawKpiMappingRepository.save(mapping);
-        return mapper.lteFddStandardRawKpiMappingToDto(savedMapping);
+        return mapper.standardRawKpiMappingToDto(savedMapping);
     }
 
     @Override
