@@ -90,9 +90,9 @@ class KPIProcessor:
         return default_config
 
     def create_rat_directories(self):
-        """Create necessary directories for all RATs"""
+        """Create necessary directories for all RATs including log folder"""
         for rat_id, rat_info in self.rats.items():
-            for folder_type in ['ftp', 'processed', 'temp']:
+            for folder_type in ['ftp', 'processed', 'temp', 'log']:
                 folder_path = rat_info['folders'][folder_type]
                 os.makedirs(folder_path, exist_ok=True)
                 logger.info(f"Created directory: {folder_path}")
@@ -134,7 +134,8 @@ class KPIProcessor:
                     'folders': {
                         'ftp': os.path.join(self.base_folder, rat_name, 'ftp'),
                         'processed': os.path.join(self.base_folder, rat_name, 'processed'),
-                        'temp': os.path.join(self.base_folder, rat_name, 'temp')
+                        'temp': os.path.join(self.base_folder, rat_name, 'temp'),
+                        'log': os.path.join(self.base_folder, rat_name, 'log')
                     }
                 }
 
@@ -738,11 +739,49 @@ class KPIProcessor:
             return None
         return value
 
-    def insert_data_to_postgresql(self, df: pd.DataFrame, rat_id: int):
-        """Insert unpivoted data into PostgreSQL database with numerator/denominator, district code, and RAT ID support"""
+    def create_error_log_file(self, rat_id: int, original_filename: str, error_records: List[Dict]) -> str:
+        """Create an error log file for failed record insertions"""
+        rat_info = self.rats[rat_id]
+        log_folder = rat_info['folders']['log']
+
+        # Create log filename based on original file
+        base_filename = os.path.splitext(os.path.basename(original_filename))[0]
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        error_log_filename = f"{base_filename}_errors_{timestamp}.log"
+        error_log_path = os.path.join(log_folder, error_log_filename)
+
+        # Write error log
+        with open(error_log_path, 'w', encoding='utf-8') as f:
+            f.write(f"Error Log for File: {original_filename}\n")
+            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Total Errors: {len(error_records)}\n")
+            f.write("=" * 80 + "\n\n")
+
+            for idx, error in enumerate(error_records, 1):
+                f.write(f"Error #{idx}\n")
+                f.write(f"Row Index: {error['row_index']}\n")
+                f.write(f"Error Type: {error['error_type']}\n")
+                f.write(f"Error Message: {error['error_message']}\n")
+                f.write(f"Row Data:\n")
+                for key, value in error['row_data'].items():
+                    f.write(f"  {key}: {value}\n")
+                f.write("-" * 80 + "\n\n")
+
+        return error_log_path
+
+    def insert_data_to_postgresql(self, df: pd.DataFrame, rat_id: int, original_filename: str) -> bool:
+        """Insert unpivoted data into PostgreSQL database with individual row error handling
+
+        Returns:
+            bool: True if all records inserted successfully, False if there were errors
+        """
         if df.empty:
             logger.warning("No data to insert")
-            return
+            return True
+
+        connection = None
+        error_records = []
+        successful_inserts = 0
 
         try:
             rat_name = self.rats[rat_id]['name']
@@ -760,39 +799,71 @@ class KPIProcessor:
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
-            # Convert dataframe to list of tuples with proper None handling
-            data_tuples = []
-            for _, row in df.iterrows():
-                data_tuples.append((
-                    row.get('timestamp'),
-                    row.get('cell_name'),
-                    row.get('site_name'),
-                    row.get('lte_fdd_standard_kpi_id'),
-                    row.get('kpi_value'),
-                    row.get('data_type'),
-                    row.get('oss_id'),
-                    row.get('file_name'),
-                    self.convert_nan_to_none(row.get('numerator_kpi_id')),
-                    self.convert_nan_to_none(row.get('numerator_kpi_value')),
-                    self.convert_nan_to_none(row.get('denominator_kpi_id')),
-                    self.convert_nan_to_none(row.get('denominator_kpi_value')),
-                    self.convert_nan_to_none(row.get('district_code_id')),
-                    rat_id
-                ))
-
-            # Execute batch insert
+            # Insert rows individually to catch errors per row
             logger.info(f"[{rat_name}] Inserting records into database...")
-            cursor.executemany(insert_query, data_tuples)
-            connection.commit()
 
-            logger.info(f"[{rat_name}] Inserted {len(data_tuples)} records into database")
-            self.clear_redis_cache()
+            for idx, row in df.iterrows():
+                try:
+                    data_tuple = (
+                        row.get('timestamp'),
+                        row.get('cell_name'),
+                        row.get('site_name'),
+                        row.get('lte_fdd_standard_kpi_id'),
+                        row.get('kpi_value'),
+                        row.get('data_type'),
+                        row.get('oss_id'),
+                        row.get('file_name'),
+                        self.convert_nan_to_none(row.get('numerator_kpi_id')),
+                        self.convert_nan_to_none(row.get('numerator_kpi_value')),
+                        self.convert_nan_to_none(row.get('denominator_kpi_id')),
+                        self.convert_nan_to_none(row.get('denominator_kpi_value')),
+                        self.convert_nan_to_none(row.get('district_code_id')),
+                        rat_id
+                    )
+
+                    cursor.execute(insert_query, data_tuple)
+                    connection.commit()
+                    successful_inserts += 1
+
+                except Error as e:
+                    # Rollback the failed transaction
+                    connection.rollback()
+
+                    # Log the error
+                    error_msg = str(e)
+                    logger.error(f"[{rat_name}] Error inserting row {idx}: {error_msg}")
+
+                    # Store error details
+                    error_records.append({
+                        'row_index': idx,
+                        'error_type': type(e).__name__,
+                        'error_message': error_msg,
+                        'row_data': row.to_dict()
+                    })
+
+            # Log summary
+            logger.info(f"[{rat_name}] Successfully inserted {successful_inserts} records")
+
+            if error_records:
+                logger.warning(f"[{rat_name}] Failed to insert {len(error_records)} records")
+
+                # Create error log file
+                error_log_path = self.create_error_log_file(rat_id, original_filename, error_records)
+                logger.info(f"[{rat_name}] Error log created: {error_log_path}")
+
+                # Clear Redis cache even with partial success
+                if successful_inserts > 0:
+                    self.clear_redis_cache()
+
+                return False
+            else:
+                logger.info(f"[{rat_name}] All records inserted successfully")
+                self.clear_redis_cache()
+                return True
 
         except Error as e:
-            logger.error(f"Error inserting data to PostgreSQL: {e}")
-            # Log the problematic data for debugging
-            if data_tuples:
-                logger.error(f"Sample data tuple: {data_tuples[0]}")
+            logger.error(f"Error during database operation: {e}")
+            return False
         finally:
             if connection:
                 cursor.close()
@@ -829,8 +900,12 @@ class KPIProcessor:
             return pd.DataFrame()
 
     def process_data_file(self, file_path: str, file_type: str, oss_identifier: str, oss_config: dict,
-                          original_filename: str, rat_id: int):
-        """Process a single data file (XLSX or CSV) for a specific RAT"""
+                          original_filename: str, rat_id: int) -> bool:
+        """Process a single data file (XLSX or CSV) for a specific RAT
+
+        Returns:
+            bool: True if processing was successful, False otherwise
+        """
         try:
             rat_name = self.rats[rat_id]['name']
             logger.info(f"[{rat_name}] Reading {file_type.upper()} file: {file_path}")
@@ -841,7 +916,7 @@ class KPIProcessor:
 
             if df.empty:
                 logger.warning(f"[{rat_name}] No data read from {file_path}")
-                return
+                return False
 
             logger.info(f"[{rat_name}] Read {len(df)} rows and {len(df.columns)} columns from {file_path}")
             logger.info(f"[{rat_name}] Column names: {list(df.columns)}")
@@ -854,17 +929,23 @@ class KPIProcessor:
 
             if unpivoted_df.empty:
                 logger.warning(f"[{rat_name}] No data to insert after unpivoting and mapping")
-                return
+                return False
 
             # Insert into database
-            self.insert_data_to_postgresql(unpivoted_df, rat_id)
+            success = self.insert_data_to_postgresql(unpivoted_df, rat_id, original_filename)
 
-            logger.info(f"[{rat_name}] Successfully processed {file_path}")
+            if success:
+                logger.info(f"[{rat_name}] Successfully processed {file_path}")
+                return True
+            else:
+                logger.warning(f"[{rat_name}] Processing completed with errors for {file_path}")
+                return True  # Still return True as partial data was inserted
 
         except Exception as e:
             logger.error(f"Error processing data file {file_path}: {e}")
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
+            return False
 
     def mark_file_as_processed(self, file_path: str, rat_id: int):
         """Move processed file to processed folder"""
@@ -912,6 +993,8 @@ class KPIProcessor:
         logger.info(f"[{rat_name}] Found {len(new_files)} new files to process")
 
         for file_path in new_files:
+            processing_success = False
+
             try:
                 filename = os.path.basename(file_path)
                 logger.info(f"[{rat_name}] Processing {filename}")
@@ -934,27 +1017,39 @@ class KPIProcessor:
                     if extraction_result:
                         data_file_path, file_type = extraction_result
                         # Process the extracted data file
-                        self.process_data_file(data_file_path, file_type, oss_identifier, oss_config, filename, rat_id)
+                        processing_success = self.process_data_file(data_file_path, file_type, oss_identifier, oss_config, filename, rat_id)
 
                 elif not needs_extraction and file_format in ['xlsx', 'csv']:
                     # Process file directly
                     logger.info(f"[{rat_name}] File does not need extraction")
-                    self.process_data_file(file_path, file_format, oss_identifier, oss_config, filename, rat_id)
+                    processing_success = self.process_data_file(file_path, file_format, oss_identifier, oss_config, filename, rat_id)
 
                 else:
                     logger.warning(f"[{rat_name}] Unsupported file format: {file_format}")
                     continue
 
-                # Mark file as processed
-                self.mark_file_as_processed(file_path, rat_id)
+                # Only mark file as processed if processing was successful
+                if processing_success:
+                    self.mark_file_as_processed(file_path, rat_id)
+                else:
+                    logger.error(f"[{rat_name}] File processing failed. File will not be moved to processed folder.")
+                    logger.info(f"[{rat_name}] ========== END FILE (FAILED) ==========")
 
-                # Clean up temp files
+                # Clean up temp files regardless of success
                 self.cleanup_temp_files(rat_id)
 
             except Exception as e:
                 logger.error(f"[{rat_name}] Error processing file {filename}: {e}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
+                logger.error(f"[{rat_name}] File will not be moved to processed folder due to error.")
+                logger.info(f"[{rat_name}] ========== END FILE (ERROR) ==========")
+
+                # Clean up temp files even on error
+                try:
+                    self.cleanup_temp_files(rat_id)
+                except:
+                    pass
 
     def process_new_files(self):
         """Process new files for all RATs using database configuration"""
@@ -979,7 +1074,6 @@ class KPIProcessor:
     def run_continuously(self, interval_minutes: int = 60):
         """Run the processor continuously with specified interval"""
         logger.info(f"Starting continuous processing with {interval_minutes} minute intervals")
-        # logger.info(f"Configured RATs: {[f\"{r['name']} ({r['label']})\" for r in self.rats.values()]}")
         rats_str = ", ".join(f"{r['name']} ({r['label']})" for r in self.rats.values())
         logger.info("Configured RATs: %s", rats_str)
 
