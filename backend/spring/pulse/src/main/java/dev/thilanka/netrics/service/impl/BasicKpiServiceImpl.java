@@ -10,6 +10,7 @@ import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -35,6 +36,16 @@ public class BasicKpiServiceImpl implements BasicKpiService {
         BasicKpi kpi = mapper.toBasicKpi(dto);
         BasicKpi savedKpi = basicKpiRepository.save(kpi);
         return mapper.basicKpiToDto(savedKpi);
+    }
+
+    @Override
+    public List<BasicKpiDto> createBasicKpiList(List<BasicKpiDto> dtos) {
+        List<BasicKpiDto> basicKpiDtos = new ArrayList<>();
+        for (BasicKpiDto dto : dtos){
+            BasicKpiDto basicKpiDto = createBasicKpi(dto);
+            basicKpiDtos.add(basicKpiDto);
+        }
+        return basicKpiDtos;
     }
 
     @Override

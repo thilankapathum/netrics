@@ -27,4 +27,10 @@ public class BasicKpiController {
         BasicKpiDto savedDto = basicKpiService.createBasicKpi(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
+
+    @PostMapping("list")
+    ResponseEntity<List<BasicKpiDto>> createBasicKpiList(@RequestBody @Valid List<BasicKpiDto> dtos){
+        List<BasicKpiDto> basicKpiDtos = basicKpiService.createBasicKpiList(dtos);
+        return new ResponseEntity<>(basicKpiDtos, HttpStatus.CREATED);
+    }
 }

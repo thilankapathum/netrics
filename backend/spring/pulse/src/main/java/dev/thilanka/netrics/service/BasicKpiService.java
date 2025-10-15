@@ -12,6 +12,8 @@ public interface BasicKpiService {
 
     BasicKpiDto createBasicKpi(@Valid BasicKpiDto dto);
 
+    List<BasicKpiDto> createBasicKpiList(List<BasicKpiDto> dtos);
+
     BasicKpi findByKpiName(String kpiName, String ratName);
     BasicKpi findByKpiName(String kpiName, Rat rat);
 }
