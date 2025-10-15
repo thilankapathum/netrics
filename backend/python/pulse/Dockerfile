@@ -26,4 +26,4 @@ RUN mkdir -p /app/day-average/ltefdd/ftp /app/day-average/ltefdd/processed /app/
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "kpi_processor_ltefdd_day.py"]
+CMD ["python", "kpi_processor_day.py"]
