@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "lte_fdd_kpi_day",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","lte_fdd_standard_kpi_id", "oss_id"})})
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","lte_fdd_standard_kpi_id", "oss_id","rat_id"})})
 public class KpiDay {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
