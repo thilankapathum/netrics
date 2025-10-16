@@ -12,12 +12,12 @@ RUN npm link @angular/cli
 RUN ng build --configuration=production
 
 #-- RUN STAGE
-FROM nginx:latest
+FROM nginx:stable
 
 # Following file is essential to run nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY --from=build app/dist/netrics/browser /usr/share/nginx/html/
+COPY --from=build app/dist/netrics /usr/share/nginx/html/
 
 # Default port in nginx (Configured in nginx.conf). Use 4200:80 when running docker container [dockre run -p 4200:80 ...]
 EXPOSE 80
