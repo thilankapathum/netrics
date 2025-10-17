@@ -121,7 +121,7 @@ public class KpiDayServiceImpl implements KpiDayService {
 
 
     @Override
-    @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #ratName")
+    @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(basicKpiName, rat)
@@ -183,7 +183,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
-    @Cacheable(value = "lteFddBasicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
+    @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(basicKpiName, rat)
@@ -252,7 +252,7 @@ public class KpiDayServiceImpl implements KpiDayService {
 
 
     @Override
-    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #ratName")
+    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period, String ratName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
@@ -263,7 +263,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
-    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + 'excludeZeroes' + '_' + #ratName")
+    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + 'excludeZeroes' + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
@@ -274,7 +274,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
-    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
+    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName, String ratName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName,ratName);
         District district = districtService.findDistrictByName(districtName);
@@ -287,7 +287,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
-    @Cacheable(value = "lteFddWorstCells", key = "#kpiName + '_' + #period + '_' + #districtName + 'excludeZeroes' + '_' + #ratName")
+    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #districtName + 'excludeZeroes' + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName, String ratName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         District district = districtService.findDistrictByName(districtName);
