@@ -22,13 +22,13 @@ services:
       PGDATA: /var/lib/postgresql/data
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "8032:5432"
-#    expose:
-#      - "${POSTGRES_PORT}"
+#    ports:
+#      - "8032:5432"
+    expose:
+      - "${POSTGRES_PORT}"
     networks:
       - private_net
-      - public_net
+#      - public_net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pguser -d pulse_db"]
@@ -59,16 +59,16 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    ports:
-      - "6379:6379"
-#    expose:
-#      - "6379"
+#    ports:
+#      - "6379:6379"
+    expose:
+      - "6379"
     command: ["redis-server", "--save", "60", "1"]
     volumes:
       - redis-data:/data
     networks:
       - private_net
-      - public_net
+#      - public_net
     healthcheck:
       test: ["CMD","redis-cli","ping"]
       interval: 10s
@@ -180,18 +180,8 @@ services:
       pulse:
         condition: service_healthy
     volumes:
-      - ./backend/python/pulse/files/day-average/ltefdd/ftp:/app/day-average/ltefdd/ftp
-      - ./backend/python/pulse/files/day-average/ltefdd/processed:/app/day-average/ltefdd/processed
-      - ./backend/python/pulse/files/day-average/ltefdd/temp:/app/day-average/ltefdd/temp
-      - ./backend/python/pulse/files/day-average/ltefdd/logs:/app/day-average/ltefdd/logs
-      - ./backend/python/pulse/files/day-average:/app/day-average
-      - ./backend/python/pulse/config.json:/app/config.json
-#      - ./backend/python/pulse/config-ltefdd-day.json:/app/config-ltefdd-day.json
-#      - /home/ftpuser/THILANKAW/netrics/backend/python/pulse/files/day-average/ltefdd/ftp:/app/day-average/ltefdd/ftp
-#      - /home/ftpuser/THILANKAW/netrics/backend/python/pulse/files/day-average/ltefdd/processed:/app/day-average/ltefdd/processed
-#      - /home/ftpuser/THILANKAW/netrics/backend/python/pulse/files/day-average/ltefdd/temp:/app/day-average/ltefdd/temp
-#      - /home/ftpuser/THILANKAW/netrics/backend/python/pulse/files/day-average/ltefdd/logs:/app/day-average/ltefdd/logs
-#      - /home/ftpuser/THILANKAW/netrics/backend/python/pulse/files/day-average/ltefdd/config-ltefdd-day.json:/app/config-ltefdd-day.json
+#      - ./backend/python/pulse/files/day-average:/app/day-average
+      - /home/ftpuser/THILANKAW/netrics/backend/python/pulse/files/day-average:/app/day-average
     networks:
       - private_net
 
