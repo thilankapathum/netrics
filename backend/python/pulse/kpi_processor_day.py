@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-dev.json'):
+    def __init__(self, config_file='config.json'):
         """Initialize KPI Processor with configuration"""
         self.config = self.load_config(config_file)
 
@@ -80,7 +80,7 @@ class KPIProcessor:
                 "password": "password"
             },
             "base_folder": "/app/day-average",
-            "clear_redis_cache_url": "http://localhost:8012/api/v1/pulse/cache/evict-all"
+            "clear_redis_cache_url": "http://localhost:8012/api/v1/pulse/cache/evict-and-warmup"
         }
 
         with open(config_file, 'w') as f:
@@ -97,17 +97,24 @@ class KPIProcessor:
                 os.makedirs(folder_path, exist_ok=True)
                 logger.info(f"Created directory: {folder_path}")
 
-    def clear_redis_cache(self):
-        logger.info("Clearing redis cache...")
+    def clear_redis_cache(self, rat_name: str):
+        """Clear redis cache for specific RAT
+
+        Args:
+            rat_name: The name of the RAT to clear cache for (e.g., 'ltefdd')
+        """
+        logger.info(f"Clearing redis cache for RAT: {rat_name}...")
         try:
-            url = self.clear_redis_cache_url
+            url = f"{self.clear_redis_cache_url}?ratName={rat_name}"
+            logger.info(f"Calling cache eviction URL: {url}")
             response = requests.post(url, timeout=10)
             if response.status_code == 200:
-                logger.info("Redis cache cleared")
+                logger.info(f"Redis cache cleared successfully for RAT: {rat_name}")
             else:
-                logger.error(f"Failed to clear redis cache: {response.status_code}, body: {response.text}")
+                logger.error(
+                    f"Failed to clear redis cache for RAT {rat_name}: {response.status_code}, body: {response.text}")
         except Exception as e:
-            logger.error(f"Failed to clear redis cache: {e}")
+            logger.error(f"Failed to clear redis cache for RAT {rat_name}: {e}")
 
     def load_database_configuration(self):
         """Load configuration from database tables"""
@@ -851,14 +858,11 @@ class KPIProcessor:
                 error_log_path = self.create_error_log_file(rat_id, original_filename, error_records)
                 logger.info(f"[{rat_name}] Error log created: {error_log_path}")
 
-                # Clear Redis cache even with partial success
-                if successful_inserts > 0:
-                    self.clear_redis_cache()
-
+                # Note: Cache clearing moved to after all files are processed
                 return False
             else:
                 logger.info(f"[{rat_name}] All records inserted successfully")
-                self.clear_redis_cache()
+                # Note: Cache clearing moved to after all files are processed
                 return True
 
         except Error as e:
@@ -982,7 +986,7 @@ class KPIProcessor:
 
         logger.info(f"{'=' * 60}")
         logger.info(f"Processing RAT: {rat_name} (ID: {rat_id})")
-        logger.info(f"{'=' * 60}")
+        logger.info(f"{'-' * 60}")
 
         new_files = self.get_new_files(rat_id)
 
@@ -991,6 +995,10 @@ class KPIProcessor:
             return
 
         logger.info(f"[{rat_name}] Found {len(new_files)} new files to process")
+
+        # Track if any files were successfully processed
+        files_processed_successfully = 0
+        files_with_errors = 0
 
         for file_path in new_files:
             processing_success = False
@@ -1031,9 +1039,11 @@ class KPIProcessor:
                 # Only mark file as processed if processing was successful
                 if processing_success:
                     self.mark_file_as_processed(file_path, rat_id)
+                    files_processed_successfully += 1
                 else:
                     logger.error(f"[{rat_name}] File processing failed. File will not be moved to processed folder.")
                     logger.info(f"[{rat_name}] ========== END FILE (FAILED) ==========")
+                    files_with_errors += 1
 
                 # Clean up temp files regardless of success
                 self.cleanup_temp_files(rat_id)
@@ -1044,6 +1054,7 @@ class KPIProcessor:
                 logger.error(f"Traceback: {traceback.format_exc()}")
                 logger.error(f"[{rat_name}] File will not be moved to processed folder due to error.")
                 logger.info(f"[{rat_name}] ========== END FILE (ERROR) ==========")
+                files_with_errors += 1
 
                 # Clean up temp files even on error
                 try:
@@ -1051,9 +1062,20 @@ class KPIProcessor:
                 except:
                     pass
 
+        # Clear Redis cache once after processing all files for this RAT
+        if files_processed_successfully > 0:
+            logger.info(f"[{rat_name}] Processed {files_processed_successfully} file(s) successfully")
+            logger.info(f"[{rat_name}] Triggering cache eviction and warmup for RAT...")
+            self.clear_redis_cache(rat_name)
+        else:
+            logger.info(f"[{rat_name}] No files were processed successfully. Skipping cache clearing.")
+
+        if files_with_errors > 0:
+            logger.warning(f"[{rat_name}] {files_with_errors} file(s) encountered errors during processing")
+
     def process_new_files(self):
         """Process new files for all RATs using database configuration"""
-        logger.info(f"\n{'#' * 80}")
+        logger.info(f"{'#' * 80}")
         logger.info(f"Starting KPI processing cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"{'#' * 80}\n")
 
@@ -1067,7 +1089,7 @@ class KPIProcessor:
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
 
-        logger.info(f"\n{'#' * 80}")
+        logger.info(f"{'#' * 80}")
         logger.info(f"Completed KPI processing cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"{'#' * 80}\n")
 
