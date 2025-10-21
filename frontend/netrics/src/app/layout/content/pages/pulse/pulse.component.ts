@@ -56,6 +56,7 @@ export class PulseComponent implements OnInit {
   loadingBasicKpi: boolean = false;
   loadingWorstCells: boolean = false;
   loadingKpiTrend: boolean = false;
+  loadingAnalysisModalChart:boolean = false;
 
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
@@ -279,12 +280,15 @@ export class PulseComponent implements OnInit {
   openAnalysisModal(kpiLabel: string, cellName: string) {
     this.analysisModalCell = cellName;
     this.analysisModalKpiLabel = kpiLabel;
+    this.loadingAnalysisModalChart = true;
+    this.analysisModal.nativeElement.showModal();
     this.getTrendDataByKpiLabelAndCell(kpiLabel, cellName, 'quarter', this.selectedRat())
       .subscribe({
         next: data => {
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
-          this.analysisModal.nativeElement.showModal();
+          this.loadingAnalysisModalChart = false;
         }, error: err => {
+          this.loadingAnalysisModalChart = false;
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(err);
           this.alertService.error("KPI Data retrieval failed");
