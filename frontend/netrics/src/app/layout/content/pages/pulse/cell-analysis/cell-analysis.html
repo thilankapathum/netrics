@@ -8,8 +8,35 @@
   <section>
 
     <p>cell-analysis works!</p>
-    <p>{{ rat() }}</p>
+    <p>{{ selectedRat() }}</p>
+    <p>{{ rat()?.label }}</p>
     <p>{{ cellName() }}</p>
+
+    <div>
+      <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
+              (change)="selectKpi(selectedStandardKpi(), selectedRat())">
+                    <option disabled selected>KPI</option>
+        @for (kpi of standardKpis; track $index) {
+          <option [value]="kpi.kpiName">{{ kpi.label }}</option>
+        }
+      </select>
+    </div>
+    <div>
+      <div class="tabs tabs-box tabs-xs ml-auto">
+        <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
+               [(ngModel)]="trendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
+        <input type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="trendPeriod"
+               [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
+        <input type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="trendPeriod"
+               [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
+      </div>
+      @if (loadingTrendData()) {
+        <div class="flex w-full flex-col gap-4 mt-2 mb-2">
+          <div class="skeleton h-84 w-full"></div>
+        </div>
+      }
+      <app-linechart [hidden]="loadingTrendData()" [chartSeries]="chartSeries()"></app-linechart>
+    </div>
   </section>
 </div>
 

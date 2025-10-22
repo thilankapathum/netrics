@@ -1,20 +1,119 @@
 import {Component, OnInit, signal} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
+import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
+import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
+import {AlertService} from '../../../../../components/alert/alert.service';
+import {KpidayService} from '../../../../../service/pulse/ltefdd/kpiday.service';
+import {KpiTrendDto} from '../../../../../models/pulse/KpiTrendDto';
+import {ChartService} from '../../../../../service/components/chart/chart.service';
+import {Linechart} from '../../../../../components/charts/linechart/linechart/linechart';
+import {RatService} from '../../../../../service/pulse/rat-service';
+import {RatDto} from '../../../../../models/pulse/RatDto';
 
 @Component({
   selector: 'app-cell-analysis',
-  imports: [],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    Linechart
+  ],
   templateUrl: './cell-analysis.html',
   styleUrl: './cell-analysis.css'
 })
-export class CellAnalysis  {
+export class CellAnalysis implements OnInit {
 
-  rat = signal('');
+  selectedRat = signal('');
+  rat = signal<RatDto | undefined>(undefined);
   cellName = signal('');
+  selectedStandardKpi = signal('');
+  kpiTrendData = signal<KpiTrendDto[]>([]);
+  standardKpis: StandardKpiDto[] = [];
+  chartSeries = signal<ApexAxisChartSeries>([]);
+  trendPeriod = signal<'week' | 'month' | 'quarter'>('month');
 
-  constructor(private activatedRoute: ActivatedRoute) {
-    this.rat.set(this.activatedRoute.snapshot.params['rat']);
+  loadingTrendData = signal<boolean>(false);
+
+  constructor(private activatedRoute: ActivatedRoute,
+              private standardKpiService: StandardkpiService,
+              private alertService: AlertService,
+              private kpidayService: KpidayService,
+              private chartService: ChartService,
+              private ratService: RatService) {
+    this.selectedRat.set(this.activatedRoute.snapshot.params['rat']);
     this.cellName.set(this.activatedRoute.snapshot.params['cell-name']);
+    this.getRat(this.selectedRat());
   }
+
+  ngOnInit(): void {
+  }
+
+  getRat(ratName: string) {
+    this.ratService.findByName(ratName).subscribe({
+      next: data => {
+        if (data.name != undefined) {   //-- Validate RAT
+          this.rat.set(data);
+          this.getAllStandardKpi(this.rat()?.name!);    // Get all standard KPI of the RAT
+        } else {
+          console.error('RAT is unavailable');
+          this.alertService.error('RAT is unavailable');
+        }
+      }, error: error => {
+        console.error('Error retrieving RAT');
+        console.error(error);
+        this.alertService.error('Error retrieving RAT');
+      }
+    })
+  }
+
+  getAllStandardKpi(ratName: string) {
+    this.standardKpis = [];
+    this.standardKpiService.getAllStandardKpi(ratName).subscribe({
+      next: data => {
+        this.standardKpis = data;
+        if (this.standardKpis.length > 0) {
+          this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
+          this.selectKpi(this.selectedStandardKpi(), ratName);    // Getting Worst-cells and Trend-data
+        } else {
+          this.alertService.error("KPI are unavailable for the RAT");
+        }
+      }, error: error => {
+        console.log("Error getAllStandardKpi:");
+        console.error(error);
+        this.alertService.error("Standard KPI retrieval failed");
+      }
+    })
+  }
+
+  selectKpi(kpi: string, ratName: string) {
+    this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName);
+  }
+
+  getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string) {
+    this.loadingTrendData.set(true);
+    this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName).subscribe({
+      next: data => {
+        this.kpiTrendData = data;
+        if (this.kpiTrendData.length > 0) {
+          this.chartSeries.set(this.chartService.buildSeriesKpiDataDto(data));
+          this.loadingTrendData.set(false);
+        } else {
+          console.error(`KPI trend data unavailable for the cell ${cellName}`);
+          this.alertService.error(`KPI trend data unavailable for ${cellName}`);
+          this.loadingTrendData.set(false);
+        }
+      }, error: error => {
+        this.loadingTrendData.set(false);
+        console.error('Error retrieving KPI Trend data');
+        console.error(error);
+        this.alertService.error('KPI Trend data retrieval failed');
+      }
+    })
+  }
+
+  onPeriodChange(event: Event) {
+    this.getTrendDataByKpiAndCell(this.selectedStandardKpi(), this.cellName(), this.trendPeriod(), this.rat()?.name!)
+  }
+
 
 }

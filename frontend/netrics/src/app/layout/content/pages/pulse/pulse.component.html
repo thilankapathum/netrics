@@ -8,7 +8,7 @@
     }
     <app-linechart [hidden]="loadingAnalysisModalChart" [chartSeries]="chartSeries"></app-linechart>
     <div class="modal-action">
-      <a class="btn btn-outline btn-primary btn-xs" disabled [routerLink]="getRouterLinkForCell()">More</a>
+      <a class="btn btn-outline btn-primary btn-xs" [routerLink]="getRouterLinkForCell()">More</a>
       <form method="dialog">
         <!-- if there is a button in form, it will close the modal -->
         <button class="btn btn-xs">Close</button>
