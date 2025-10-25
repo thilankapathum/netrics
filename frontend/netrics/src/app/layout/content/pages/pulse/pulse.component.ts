@@ -20,6 +20,7 @@ import {DistrictService} from '../../../../service/pulse/district/district.servi
 import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
 import {WorstCell} from '../../../../models/pulse/WorstCell';
 import {Router, RouterLink} from '@angular/router';
+import {SharedService} from '../../../../service/pulse/shared-service';
 
 @Component({
   selector: 'app-pulse',
@@ -56,7 +57,7 @@ export class PulseComponent implements OnInit {
   loadingBasicKpi: boolean = false;
   loadingWorstCells: boolean = false;
   loadingKpiTrend: boolean = false;
-  loadingAnalysisModalChart:boolean = false;
+  loadingAnalysisModalChart: boolean = false;
 
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
@@ -67,7 +68,8 @@ export class PulseComponent implements OnInit {
               private chartService: ChartService,
               private alertService: AlertService,
               private districtService: DistrictService,
-              private router: Router) {
+              private router: Router,
+              private sharedService: SharedService) {
   }
 
   ngOnInit() {
@@ -328,16 +330,37 @@ export class PulseComponent implements OnInit {
 
   getRouterLinkForCell(): string[] {
     switch (this.selectedRat()) {
-      case "ltefdd":
+      case "ltefdd": {
+
+        // this.sharedService.selectedRat.set('ltefdd');
+        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
         return ['/pulse/cell/ltefdd', this.analysisModalCell];
+      }
       case "ltetdd":
+        // this.sharedService.selectedRat.set('ltetdd');
+        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
         return ['/pulse/cell/ltetdd', this.analysisModalCell];
+      case "nr":
+        // this.sharedService.selectedRat.set('nr');
+        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
+        return ['/pulse/cell/nr', this.analysisModalCell];
       case "umts":
+        // this.sharedService.selectedRat.set('umts');
+        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
         return ['/pulse/cell/umts', this.analysisModalCell];
       case "gsm":
+        // this.sharedService.selectedRat.set('gsm');
+        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
         return ['/pulse/cell/gsm', this.analysisModalCell];
       default:
+        // this.sharedService.selectedRat.set('ltefdd');
+        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
         return ['/pulse/cell/ltefdd', this.analysisModalCell];
     }
+  }
+
+  onCellNavigate(){
+    this.sharedService.selectedRat.set(this.selectedRat());
+    this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi());
   }
 }

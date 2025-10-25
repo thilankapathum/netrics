@@ -10,6 +10,7 @@ import {ChartService} from '../../../../../service/components/chart/chart.servic
 import {Linechart} from '../../../../../components/charts/linechart/linechart/linechart';
 import {RatService} from '../../../../../service/pulse/rat-service';
 import {RatDto} from '../../../../../models/pulse/RatDto';
+import {SharedService} from '../../../../../service/pulse/shared-service';
 
 @Component({
   selector: 'app-cell-analysis',
@@ -27,6 +28,7 @@ export class CellAnalysis implements OnInit {
   rat = signal<RatDto | undefined>(undefined);
   cellName = signal('');
   selectedStandardKpi = signal('');
+  initialStandardKpi: string = '';
   kpiTrendData = signal<KpiTrendDto[]>([]);
   standardKpis: StandardKpiDto[] = [];
   chartSeries = signal<ApexAxisChartSeries>([]);
@@ -39,9 +41,19 @@ export class CellAnalysis implements OnInit {
               private alertService: AlertService,
               private kpidayService: KpidayService,
               private chartService: ChartService,
-              private ratService: RatService) {
-    this.selectedRat.set(this.activatedRoute.snapshot.params['rat']);
+              private ratService: RatService,
+              private sharedService: SharedService) {
+
+    if (sharedService.selectedRat() === '') {
+      this.selectedRat.set(this.activatedRoute.snapshot.params['rat']);
+    } else {
+      this.selectedRat = sharedService.selectedRat;
+    }
+
     this.cellName.set(this.activatedRoute.snapshot.params['cell-name']);
+    // this.initialStandardKpi = this.activatedRoute.snapshot.queryParams['standardKpi'];
+    this.initialStandardKpi = sharedService.selectedStandardKpi();
+    // console.log('cell-Standard KPI', this.initialStandardKpi);
     this.getRat(this.selectedRat());
   }
 
@@ -72,7 +84,12 @@ export class CellAnalysis implements OnInit {
       next: data => {
         this.standardKpis = data;
         if (this.standardKpis.length > 0) {
-          this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
+          const kpi = this.standardKpis.find(k => k.kpiName == this.initialStandardKpi)   // default loading initial-standard-kpi
+          if (this.initialStandardKpi !== '' && kpi !== undefined) {
+            this.selectedStandardKpi.set(kpi.kpiName!);
+          } else {
+            this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);    // Set 1st standard KPI from the list as default KPI
+          }
           this.selectKpi(this.selectedStandardKpi(), ratName);    // Getting Worst-cells and Trend-data
         } else {
           this.alertService.error("KPI are unavailable for the RAT");

@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.repository;
 
+import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.dto.KpiSnapshotDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
@@ -755,4 +756,17 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             WHERE district_code_id IS NULL AND rat_id = :ratId
             """, nativeQuery = true)
     List<KpiDay> findKpiWithoutDistrict(@Param("ratId") Long ratId);
+
+
+
+    //============= Cell Name  =======================
+
+    @Query(value = """
+            SELECT distinct cell_name, rat.name AS rat_name
+            FROM public.lte_fdd_kpi_day
+            LEFT JOIN rat
+            	ON rat.id = lte_fdd_kpi_day.rat_id
+            ORDER BY cell_name ASC
+            """, nativeQuery = true)
+    List<CellNameDto> getAllCellNames();
 }
