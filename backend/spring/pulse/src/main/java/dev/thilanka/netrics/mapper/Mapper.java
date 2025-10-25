@@ -8,6 +8,8 @@ import dev.thilanka.netrics.repository.RatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+
 @Service
 @RequiredArgsConstructor
 public class Mapper {
@@ -85,7 +87,7 @@ public class Mapper {
     public KpiDataDto kpiDayToKpiDataDto(KpiDay kpiDay) {
 
         return new KpiDataDto(
-                kpiDay.getTimestamp(),
+                Timestamp.valueOf(kpiDay.getTimestamp()),
                 kpiDay.getCellName(),
                 kpiDay.getStandardKpi().getKpiName(),
                 kpiDay.getKpiValue()
@@ -128,7 +130,7 @@ public class Mapper {
 //-------- KpiData KpiDataDto -----------------------------------
 
     public KpiDataDto kpiDataToDto(KpiData kpiData) {
-        return new KpiDataDto(kpiData.getTimestamp().toLocalDateTime(), kpiData.getCellName(), kpiData.getKpiLabel(), kpiData.getKpiValue());
+        return new KpiDataDto(kpiData.getTimestamp(), kpiData.getCellName(), kpiData.getKpiLabel(), kpiData.getKpiValue());
     }
 
 //-------- KpiTrend KpiTrendDto -----------------------------------

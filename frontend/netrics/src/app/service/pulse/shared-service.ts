@@ -9,5 +9,6 @@ export class SharedService {
 
   selectedRat = signal('');
   selectedStandardKpi = signal('');
+  selectedCell = signal('');
 
 }

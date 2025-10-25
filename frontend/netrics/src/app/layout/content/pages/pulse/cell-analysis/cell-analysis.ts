@@ -1,5 +1,5 @@
 import {Component, OnInit, signal} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
 import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
@@ -11,13 +11,16 @@ import {Linechart} from '../../../../../components/charts/linechart/linechart/li
 import {RatService} from '../../../../../service/pulse/rat-service';
 import {RatDto} from '../../../../../models/pulse/RatDto';
 import {SharedService} from '../../../../../service/pulse/shared-service';
+import {CellNameDto} from '../../../../../models/pulse/CellNameDto';
+import {CellService} from '../../../../../service/pulse/cell-service';
 
 @Component({
   selector: 'app-cell-analysis',
   imports: [
     ReactiveFormsModule,
     FormsModule,
-    Linechart
+    Linechart,
+    RouterLink
   ],
   templateUrl: './cell-analysis.html',
   styleUrl: './cell-analysis.css'
@@ -34,7 +37,12 @@ export class CellAnalysis implements OnInit {
   chartSeries = signal<ApexAxisChartSeries>([]);
   trendPeriod = signal<'week' | 'month' | 'quarter'>('month');
 
+  queryCell = signal('');
+  filteredCells = signal<Array<CellNameDto>>([]);
+
   loadingTrendData = signal<boolean>(false);
+  cellSelected = signal<boolean>(false);
+  isCellSearchDropDownOpen = signal<boolean>(false);
 
   constructor(private activatedRoute: ActivatedRoute,
               private standardKpiService: StandardkpiService,
@@ -42,19 +50,25 @@ export class CellAnalysis implements OnInit {
               private kpidayService: KpidayService,
               private chartService: ChartService,
               private ratService: RatService,
-              private sharedService: SharedService) {
+              private sharedService: SharedService,
+              private cellService: CellService) {
 
-    if (sharedService.selectedRat() === '') {
-      this.selectedRat.set(this.activatedRoute.snapshot.params['rat']);
+    if (sharedService.selectedRat() === '' && sharedService.selectedCell() === '' && sharedService.selectedStandardKpi() === '') {
+      this.cellSelected.set(false);
+      // this.selectedRat.set(this.activatedRoute.snapshot.params['rat']);
     } else {
+      this.cellSelected.set(true);
       this.selectedRat = sharedService.selectedRat;
+      this.cellName.set(sharedService.selectedCell());
+      this.initialStandardKpi = sharedService.selectedStandardKpi();
+      this.getRat(this.selectedRat());
     }
 
-    this.cellName.set(this.activatedRoute.snapshot.params['cell-name']);
+    // this.cellName.set(this.activatedRoute.snapshot.params['cell-name']);
+
+
     // this.initialStandardKpi = this.activatedRoute.snapshot.queryParams['standardKpi'];
-    this.initialStandardKpi = sharedService.selectedStandardKpi();
     // console.log('cell-Standard KPI', this.initialStandardKpi);
-    this.getRat(this.selectedRat());
   }
 
   ngOnInit(): void {
@@ -130,6 +144,26 @@ export class CellAnalysis implements OnInit {
 
   onPeriodChange(event: Event) {
     this.getTrendDataByKpiAndCell(this.selectedStandardKpi(), this.cellName(), this.trendPeriod(), this.rat()?.name!)
+  }
+
+  onSearchCell(value: string) {
+    this.queryCell.set(value);
+    if (this.queryCell().length > 2) {
+      this.cellService.searchCell(value).subscribe({
+        next: data => {
+          this.filteredCells.set(data)
+        }
+      });
+    } else {
+      this.filteredCells.set([])
+    }
+  }
+
+  selectCell(cellNameDto: CellNameDto) {
+    this.cellSelected.set(true);
+    this.cellName.set(cellNameDto.cellName!);
+    this.queryCell.set(cellNameDto.cellName!);
+    this.getRat(cellNameDto.ratName!);
   }
 
 

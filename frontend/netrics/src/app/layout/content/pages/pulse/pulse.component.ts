@@ -329,38 +329,28 @@ export class PulseComponent implements OnInit {
   //============ ROUTER-LINK ===========================
 
   getRouterLinkForCell(): string[] {
-    switch (this.selectedRat()) {
-      case "ltefdd": {
+    // switch (this.selectedRat()) {
+    //   case "ltefdd": {
+    //     return ['/pulse/cell/ltefdd', this.analysisModalCell];
+    //   }
+    //   case "ltetdd":
+    //     return ['/pulse/cell/ltetdd', this.analysisModalCell];
+    //   case "nr":
+    //     return ['/pulse/cell/nr', this.analysisModalCell];
+    //   case "umts":
+    //     return ['/pulse/cell/umts', this.analysisModalCell];
+    //   case "gsm":
+    //     return ['/pulse/cell/gsm', this.analysisModalCell];
+    //   default:
+    //     return ['/pulse/cell/ltefdd', this.analysisModalCell];
+    // }
 
-        // this.sharedService.selectedRat.set('ltefdd');
-        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
-        return ['/pulse/cell/ltefdd', this.analysisModalCell];
-      }
-      case "ltetdd":
-        // this.sharedService.selectedRat.set('ltetdd');
-        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
-        return ['/pulse/cell/ltetdd', this.analysisModalCell];
-      case "nr":
-        // this.sharedService.selectedRat.set('nr');
-        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
-        return ['/pulse/cell/nr', this.analysisModalCell];
-      case "umts":
-        // this.sharedService.selectedRat.set('umts');
-        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
-        return ['/pulse/cell/umts', this.analysisModalCell];
-      case "gsm":
-        // this.sharedService.selectedRat.set('gsm');
-        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
-        return ['/pulse/cell/gsm', this.analysisModalCell];
-      default:
-        // this.sharedService.selectedRat.set('ltefdd');
-        // this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi())
-        return ['/pulse/cell/ltefdd', this.analysisModalCell];
-    }
+    return ['/pulse/cell']
   }
 
   onCellNavigate(){
     this.sharedService.selectedRat.set(this.selectedRat());
     this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi());
+    this.sharedService.selectedCell.set(this.analysisModalCell);
   }
 }

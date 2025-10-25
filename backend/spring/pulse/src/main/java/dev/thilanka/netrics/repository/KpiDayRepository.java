@@ -762,7 +762,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     //============= Cell Name  =======================
 
     @Query(value = """
-            SELECT distinct cell_name, rat.name AS rat_name
+            SELECT distinct cell_name, rat.name AS rat_name, rat.label AS rat_label
             FROM public.lte_fdd_kpi_day
             LEFT JOIN rat
             	ON rat.id = lte_fdd_kpi_day.rat_id

@@ -24,6 +24,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     private final StandardKpiService standardKpiService;
     private final String[] periods = {"day"};
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CellNameService cellNameService;
 
 
     @Override
@@ -32,6 +33,7 @@ public class CacheWarmupImpl implements CacheWarmup {
         warmupBasicKpiSnapshotCache(ratName);
         warmupKpiTrendCache(ratName);
         warmupWorstCellCache(ratName);
+        cellNameService.reloadCells();
         System.out.println("Cache warmup complete for: " + ratName + "!");
     }
 

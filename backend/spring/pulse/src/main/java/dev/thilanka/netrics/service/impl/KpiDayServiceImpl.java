@@ -29,6 +29,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     //-- Basic KPI: KPIs like 'Accessibility', 'Retainability'
     //-- Latest: Last day (newest) KPI
     //-- Compact: Contains only 'kpiLabel', 'value', 'difference with previous period', 'up/down with previous period'
+    //-- Keep Cache key as "_ratName" because cacheEvict based on RAT depends on it
 
     private final KpiDayRepository kpiDayRepository;
     private final StandardKpiService standardKpiService;
@@ -306,6 +307,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     // ------------------------------ CELL KPI - START -----------------------------------------------------------------
 
     @Override
+    @Cacheable(value = "cellKpiTrend", key = "#standardKpiName +'_' + #cellName + '_' + #period + '_' + #ratName")
     public List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period, String ratName) {
 
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
@@ -316,11 +318,11 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         return kpiData.stream()
                 .map(mapper::kpiDataToDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
-//    @Cacheable(value = "kpiData", key = "#kpiLabel + '_' + #period + '_' + #cellName")
+    @Cacheable(value = "cellKpiTrend", key = "#kpiLabel +'_' + #cellName + '_' + #period + '_' + #ratName")
     public List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period, String ratName) {
 
         StandardKpi standardKpi = standardKpiService.findByKpiLabel(kpiLabel, ratName);
