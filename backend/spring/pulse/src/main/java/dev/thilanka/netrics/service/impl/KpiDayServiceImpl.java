@@ -6,10 +6,7 @@ import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
-import dev.thilanka.netrics.service.DistrictService;
-import dev.thilanka.netrics.service.KpiDayService;
-import dev.thilanka.netrics.service.StandardKpiService;
-import dev.thilanka.netrics.service.RatService;
+import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -37,6 +34,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final RatService ratService;
     private final DistrictService districtService;
     private final Mapper mapper;
+    private final DateService dateService;
 
     private static boolean checkImproved(String worstOrder, Double difference) {
         if (Objects.equals(worstOrder, "ASC")) {
@@ -50,28 +48,28 @@ public class KpiDayServiceImpl implements KpiDayService {
     //------------------------------- KPI-SNAPSHOT START ---------------------------------------------------------------
 
 
-    private KpiSnapshotCurrentPre getLatestKpiSnapshotWithPre(StandardKpi standardKpi, String period, Long ratId) {
+    private KpiSnapshotCurrentPre getLatestKpiSnapshotWithPre(StandardKpi standardKpi, String period, Rat rat) {
 
         //-- GET KPI WITH LABEL, WORST-ORDER, VALUE, PRE-VALUE, CALCULATED VALUE, CALCULATED PRE-VALUE
 
-        LocalDateTime timestamp = kpiDayRepository.getLatestDate(ratId);
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
 
-        LocalDateTime preTimestamp = getLatestPreviousDate(period, ratId);
         if (standardKpi.getAggregation().equals("SUM")) {
-            return kpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), ratId)
+            return kpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId())
                     .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
         } else {
-            return kpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), ratId)
+            return kpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId())
                     .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
         }
     }
 
-    private KpiSnapshot getLatestKpiSnapshot(String kpiName, String period, Long ratId) {
+    private KpiSnapshot getLatestKpiSnapshot(String kpiName, String period, Rat rat) {
 
         //-- GET KPI WITH LABEL, IS-BASIC, VALUE, PREVIOUS VALUE, DIFFERENCE, IMPROVED
 
-        StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName,ratId);
-        KpiSnapshotCurrentPre kpiData = getLatestKpiSnapshotWithPre(standardKpi, period, ratId);
+        StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName, rat.getId());
+        KpiSnapshotCurrentPre kpiData = getLatestKpiSnapshotWithPre(standardKpi, period, rat);
 
         KpiSnapshot snapshot = new KpiSnapshot();
 
@@ -102,21 +100,22 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
 
-    private KpiSnapshotDto getLatestKpiSnapshotWithDistrict(String kpiName, String period, String districtName, Long ratId) {
+    private KpiSnapshotDto getLatestKpiSnapshotWithDistrict(String kpiName, String period, String districtName, Rat rat) {
 
         //-- GET KPI WITH LABEL, IS-BASIC, VALUE, PREVIOUS VALUE, DIFFERENCE, IMPROVED
 
-        StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName, ratId);
-        LocalDateTime timestamp = getLatestDate(ratId);
+        StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName, rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
         District district = districtService.findDistrictByName(districtName);
 
         return kpiDayRepository.findLatestKpiSnapshotByDistrict(
                         standardKpi.getId(),
                         timestamp,
-                        getLatestPreviousDate(period, ratId),
-                        getPeriod(period),
+                        preTimestamp,
+                        dateService.getPeriod(period),
                         district.getId(),
-                        ratId)
+                        rat.getId())
                 .orElseThrow(() -> new RuntimeException("KPI Snapshot Query failed!"));
     }
 
@@ -134,7 +133,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
         for (StandardKpi standardKpi : basicKpi.getStandardKpis()) {
-            KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period, rat.getId());
+            KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period, rat);
             kpiSnapshots.add(snapshot);
         }
         basicKpiSnapshot.setStandardKpis(kpiSnapshots);
@@ -196,7 +195,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
         for (StandardKpi standardKpi : basicKpi.getStandardKpis()) {
-            KpiSnapshotDto snapshotDto = getLatestKpiSnapshotWithDistrict(standardKpi.getKpiName(), period, districtName, rat.getId());
+            KpiSnapshotDto snapshotDto = getLatestKpiSnapshotWithDistrict(standardKpi.getKpiName(), period, districtName, rat);
 
             kpiSnapshots.add(mapper.toKpiSnapshot(snapshotDto));
         }
@@ -257,10 +256,11 @@ public class KpiDayServiceImpl implements KpiDayService {
     public List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period, String ratName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime timestamp = getLatestDate(rat.getId());
-        LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
+        Long periodValue = dateService.getPeriod(period);
 
-        return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), rat.getId());
+        return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, preTimestamp, periodValue, rat.getId());
     }
 
     @Override
@@ -268,22 +268,24 @@ public class KpiDayServiceImpl implements KpiDayService {
     public List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime timestamp = getLatestDate(rat.getId());
-        LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
+        Long periodValue = dateService.getPeriod(period);
 
-        return kpiDayRepository.findWorstCellsExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), rat.getId());
+        return kpiDayRepository.findWorstCellsExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, periodValue, rat.getId());
     }
 
     @Override
     @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName, String ratName) {
-        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName,ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime timestamp = getLatestDate(rat.getId());
-        LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
+        Long periodValue = dateService.getPeriod(period);
 
-        return kpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId(), rat.getId());
+        return kpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, preTimestamp, periodValue, district.getId(), rat.getId());
 
     }
 
@@ -293,10 +295,11 @@ public class KpiDayServiceImpl implements KpiDayService {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime timestamp = getLatestDate(rat.getId());
-        LocalDateTime preTimestamp = getLatestPreviousDate(period, rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
+        Long periodValue = dateService.getPeriod(period);
 
-        return kpiDayRepository.findWorstCellsByDistrictExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, getPeriod(period), district.getId(), rat.getId());
+        return kpiDayRepository.findWorstCellsByDistrictExcludeZeroes(standardKpi.getId(), timestamp, preTimestamp, periodValue, district.getId(), rat.getId());
 
     }
 
@@ -312,9 +315,10 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime timestamp = getLatestDate(rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        Long periodValue = dateService.getPeriod(period);
 
-        List<KpiData> kpiData = kpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, getPeriod(period), cellName, rat.getId());
+        List<KpiData> kpiData = kpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, periodValue, cellName, rat.getId());
 
         return kpiData.stream()
                 .map(mapper::kpiDataToDto)
@@ -340,13 +344,14 @@ public class KpiDayServiceImpl implements KpiDayService {
     public List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period, String ratName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime timestamp = getLatestDate(rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        Long periodValue = dateService.getPeriod(period);
         List<KpiTrend> kpiTrends = new ArrayList<>();
 
         if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-            kpiTrends = kpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, getPeriod(period), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, periodValue, rat.getId());
         } else
-            kpiTrends = kpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, getPeriod(period), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, periodValue, rat.getId());
 
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
@@ -357,13 +362,14 @@ public class KpiDayServiceImpl implements KpiDayService {
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime timestamp = getLatestDate(rat.getId());
+        LocalDateTime timestamp = dateService.getLatestDate(rat);
+        Long periodValue = dateService.getPeriod(period);
         List<KpiTrend> kpiTrends = new ArrayList<>();
 
         if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-            kpiTrends = kpiDayRepository.findTrendDataSumByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId(), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataSumByKpiAndDistrict(standardKpi.getId(), timestamp, periodValue, district.getId(), rat.getId());
         } else
-            kpiTrends = kpiDayRepository.findTrendDataAvgByKpiAndDistrict(standardKpi.getId(), timestamp, getPeriod(period), district.getId(), rat.getId());
+            kpiTrends = kpiDayRepository.findTrendDataAvgByKpiAndDistrict(standardKpi.getId(), timestamp, periodValue, district.getId(), rat.getId());
 
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
@@ -386,58 +392,6 @@ public class KpiDayServiceImpl implements KpiDayService {
     public KpiDataDto createLteFddKpiDay(KpiDay kpiDay) {
         KpiDay savedKpiDay = kpiDayRepository.save(kpiDay);
         return mapper.kpiDayToKpiDataDto(savedKpiDay);
-    }
-
-    private LocalDateTime getLatestDate(Long ratId) {
-        return kpiDayRepository.getLatestDate(ratId);
-    }
-
-    private LocalDateTime getLatestPreviousDate(String period, Long ratId) {
-        switch (period) {
-            case "day" -> {
-                return getLatestDate(ratId).minusDays(1);
-            }
-            case "week" -> {
-                return getLatestDate(ratId).minusDays(7);
-            }
-            case "month" -> {
-                return getLatestDate(ratId).minusDays(30);
-            }
-            case "quarter" -> {
-                return getLatestDate(ratId).minusDays(90);
-            }
-            case "half-year" -> {
-                return getLatestDate(ratId).minusDays(180);
-            }
-            case "year" -> {
-                return getLatestDate(ratId).minusDays(365);
-            }
-        }
-        return null;
-    }
-
-    private Long getPeriod(String period) {
-        switch (period) {
-            case "day" -> {
-                return 0L;
-            }
-            case "week" -> {
-                return 6L;
-            }
-            case "month" -> {
-                return 29L;
-            }
-            case "quarter" -> {
-                return 89L;
-            }
-            case "half-year" -> {
-                return 179L;
-            }
-            case "year" -> {
-                return 364L;
-            }
-        }
-        return null;
     }
 
     @Override
