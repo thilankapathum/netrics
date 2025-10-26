@@ -67,9 +67,6 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['kpiTrendData'] && this.kpiTrendData) {
       const series = this.buildSeries(this.kpiTrendData);
-
-      console.log('ngOnChanges series:', series);
-
       this.chartOptions = {
         ...this.chartOptions,
         series: series
@@ -86,9 +83,6 @@ export class LineChart implements OnInit, OnChanges, OnDestroy {
   private initializeChart(): void {
     const currentTheme = this.themeService.getCurrentTheme();
     const isDark = currentTheme === 'netrics_dark';
-
-    console.log('initializeChart series', this.kpiTrendData, this.buildSeries(this.kpiTrendData));
-
     this.chartOptions = {
       series: this.kpiTrendData ? this.buildSeries(this.kpiTrendData) : [],
       chart: {

@@ -1,5 +1,6 @@
 export interface WorstCells{
   cellName?:string;
+  kpiName?:string;
   kpiLabel?:string;
   unit?:string;
   value?:number;

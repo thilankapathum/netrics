@@ -171,7 +171,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             SELECT * FROM
                 (
                     SELECT
-                        curr.cell_name, curr.kpi_label, curr.unit, curr.value,
+                        curr.cell_name, curr.kpi_name, curr.kpi_label, curr.unit, curr.value,
                         pre.previous_value, (curr.value - pre.previous_value) AS difference,
                         CASE
                             WHEN curr.worst_order = 'ASC' AND (curr.value - pre.previous_value) > 0 THEN 1
@@ -181,6 +181,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     FROM (
                         SELECT
                             cell_name,
+                            lte_fdd_standard_kpi.kpi_name AS kpi_name,
                             lte_fdd_standard_kpi.label AS kpi_label,
                             lte_fdd_standard_kpi.unit AS unit,
                             lte_fdd_standard_kpi.worst_order AS worst_order,
@@ -197,7 +198,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND lte_fdd_kpi_day.rat_id = :ratId
-                        GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
+                        GROUP BY cell_name, lte_fdd_standard_kpi.kpi_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
                         SELECT
@@ -277,7 +278,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             SELECT * FROM
                 (
                     SELECT
-                        curr.cell_name, curr.kpi_label, curr.unit, curr.value,
+                        curr.cell_name, curr.kpi_name, curr.kpi_label, curr.unit, curr.value,
                         pre.previous_value, (curr.value - pre.previous_value) AS difference,
                         CASE
                             WHEN curr.worst_order = 'ASC' AND (curr.value - pre.previous_value) > 0 THEN 1
@@ -287,6 +288,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     FROM (
                         SELECT
                             cell_name,
+                            lte_fdd_standard_kpi.kpi_name AS kpi_name,
                             lte_fdd_standard_kpi.label AS kpi_label,
                             lte_fdd_standard_kpi.unit AS unit,
                             lte_fdd_standard_kpi.worst_order AS worst_order,
@@ -308,7 +310,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND d.id = :districtId
                           AND lte_fdd_kpi_day.rat_id = :ratId
-                        GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
+                        GROUP BY cell_name, lte_fdd_standard_kpi.kpi_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
                         SELECT
@@ -399,7 +401,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             SELECT * FROM
                 (
                     SELECT
-                        curr.cell_name, curr.kpi_label, curr.unit, curr.value,
+                        curr.cell_name, curr.kpi_name, curr.kpi_label, curr.unit, curr.value,
                         pre.previous_value, (curr.value - pre.previous_value) AS difference,
                         CASE
                             WHEN curr.worst_order = 'ASC' AND (curr.value - pre.previous_value) > 0 THEN 1
@@ -409,6 +411,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     FROM (
                         SELECT
                             cell_name,
+                            lte_fdd_standard_kpi.kpi_name AS kpi_name,
                             lte_fdd_standard_kpi.label AS kpi_label,
                             lte_fdd_standard_kpi.unit AS unit,
                             lte_fdd_standard_kpi.worst_order AS worst_order,
@@ -425,7 +428,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                         WHERE lte_fdd_standard_kpi_id = :standardKpiId
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND lte_fdd_kpi_day.rat_id = :ratId
-                        GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
+                        GROUP BY cell_name, lte_fdd_standard_kpi.kpi_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
                         SELECT
@@ -506,7 +509,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             SELECT * FROM
                 (
                     SELECT
-                        curr.cell_name, curr.kpi_label, curr.unit, curr.value,
+                        curr.cell_name, curr.kpi_name, curr.kpi_label, curr.unit, curr.value,
                         pre.previous_value, (curr.value - pre.previous_value) AS difference,
                         CASE
                             WHEN curr.worst_order = 'ASC' AND (curr.value - pre.previous_value) > 0 THEN 1
@@ -516,6 +519,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     FROM (
                         SELECT
                             cell_name,
+                            lte_fdd_standard_kpi.kpi_name AS kpi_name,
                             lte_fdd_standard_kpi.label AS kpi_label,
                             lte_fdd_standard_kpi.unit AS unit,
                             lte_fdd_standard_kpi.worst_order AS worst_order,
@@ -537,7 +541,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                           AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
                           AND d.id = :districtId
                           AND lte_fdd_kpi_day.rat_id = :ratId
-                        GROUP BY cell_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
+                        GROUP BY cell_name, lte_fdd_standard_kpi.kpi_name, lte_fdd_standard_kpi.label, lte_fdd_standard_kpi.unit, lte_fdd_standard_kpi.worst_order
                     ) AS curr
                     LEFT JOIN (
                         SELECT

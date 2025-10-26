@@ -63,12 +63,6 @@ export class CellAnalysis implements OnInit {
       this.initialStandardKpi = sharedService.selectedStandardKpi();
       this.getRat(this.selectedRat());
     }
-
-    // this.cellName.set(this.activatedRoute.snapshot.params['cell-name']);
-
-
-    // this.initialStandardKpi = this.activatedRoute.snapshot.queryParams['standardKpi'];
-    // console.log('cell-Standard KPI', this.initialStandardKpi);
   }
 
   ngOnInit(): void {

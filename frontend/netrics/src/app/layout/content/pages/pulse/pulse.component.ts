@@ -279,12 +279,12 @@ export class PulseComponent implements OnInit {
 
   //---------- OPEN ANALYSIS MODAL (DIALOG) ----------------
 
-  openAnalysisModal(kpiLabel: string, cellName: string) {
+  openAnalysisModal(kpiName: string, cellName: string) {
     this.analysisModalCell = cellName;
-    this.analysisModalKpiLabel = kpiLabel;
+    this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
     this.analysisModal.nativeElement.showModal();
-    this.getTrendDataByKpiLabelAndCell(kpiLabel, cellName, 'quarter', this.selectedRat())
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat())
       .subscribe({
         next: data => {
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
@@ -322,8 +322,8 @@ export class PulseComponent implements OnInit {
 
   //============ MODAL KPI TREND CHART =================
 
-  getTrendDataByKpiLabelAndCell(kpiLabel: string, cellName: string, period: string, ratName: string): Observable<KpiDataDto[]> {
-    return this.ltefdddayservice.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName);
+  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string): Observable<KpiDataDto[]> {
+    return this.ltefdddayservice.getDataByKpiAndCell(kpiName, cellName, period, ratName);
   }
 
   //============ ROUTER-LINK ===========================
