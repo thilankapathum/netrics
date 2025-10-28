@@ -53,9 +53,8 @@ export class CellAnalysis implements OnInit {
               private sharedService: SharedService,
               private cellService: CellService) {
 
-    if (sharedService.selectedRat() === '' && sharedService.selectedCell() === '' && sharedService.selectedStandardKpi() === '') {
+    if (sharedService.selectedCell() === '' && sharedService.selectedStandardKpi() === '') {
       this.cellSelected.set(false);
-      // this.selectedRat.set(this.activatedRoute.snapshot.params['rat']);
     } else {
       this.cellSelected.set(true);
       this.selectedRat = sharedService.selectedRat;
@@ -159,6 +158,4 @@ export class CellAnalysis implements OnInit {
     this.queryCell.set(cellNameDto.cellName!);
     this.getRat(cellNameDto.ratName!);
   }
-
-
 }
