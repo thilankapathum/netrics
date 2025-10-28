@@ -1,12 +1,15 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.dto.DateRangeDto;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.DateService;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Service
@@ -24,6 +27,15 @@ public class DateServiceImpl implements DateService {
     public LocalDateTime getLatestDate(String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         return kpiDayRepository.getLatestDate(rat.getId());
+    }
+
+    @Override
+    @Cacheable(value = "latestDateRange", key = "#period + '_' + #ratName")
+    public DateRangeDto getLatestDateRange(String period, String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        LocalDateTime latestDate = getLatestDate(rat);
+        LocalDateTime latestPrevDate = getLatestPreviousDate(period, rat).plusDays(1);
+        return new DateRangeDto(Timestamp.valueOf(latestDate),Timestamp.valueOf(latestPrevDate));
     }
 
     @Override

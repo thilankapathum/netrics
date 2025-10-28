@@ -11,7 +11,7 @@ public interface DateService {
 
     LocalDateTime getLatestDate(String ratName);
 
-//    DateRangeDto getDateRange(String period, String ratName);
+    DateRangeDto getLatestDateRange(String period, String ratName);
 
     LocalDateTime getLatestPreviousDate(String period, Rat rat);
 

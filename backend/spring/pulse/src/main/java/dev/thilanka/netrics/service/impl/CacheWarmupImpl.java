@@ -25,6 +25,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     private final String[] periods = {"day"};
     private final RedisTemplate<String, Object> redisTemplate;
     private final CellNameService cellNameService;
+    private final DateService dateService;
 
 
     @Override
@@ -34,15 +35,16 @@ public class CacheWarmupImpl implements CacheWarmup {
         warmupKpiTrendCache(ratName);
         warmupWorstCellCache(ratName);
         cellNameService.reloadCells();
+        warmupDateRangeCache(ratName);
         System.out.println("Cache warmup complete for: " + ratName + "!");
     }
 
     @Override
     public void evictByRatName(String ratName) {
-        String pattern = "*_"+ratName;
+        String pattern = "*_" + ratName;
         Set<String> keys = redisTemplate.keys(pattern);
 
-        if (keys != null && !keys.isEmpty()){
+        if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
             System.out.println("Evicted " + keys.size() + " cache entries for RAT: " + ratName);
         } else {
@@ -58,17 +60,17 @@ public class CacheWarmupImpl implements CacheWarmup {
             for (BasicKpiDto dto : basicKpis) {
                 try {
                     kpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, ratName);
-                    System.out.println("["+ ratName + "] Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period);
+                    System.out.println("[" + ratName + "] Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period);
                 } catch (Exception e) {
-                    System.out.println("["+ ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period);
+                    System.out.println("[" + ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period);
 //                    e.printStackTrace();
                 }
                 for (DistrictDto district : districts) {
                     try {
                         kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), ratName);
-                        System.out.println("["+ ratName + "] Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period + "-" + district.name());
+                        System.out.println("[" + ratName + "] Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period + "-" + district.name());
                     } catch (Exception e) {
-                        System.out.println("["+ ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period + "-" + district.name());
+                        System.out.println("[" + ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period + "-" + district.name());
 //                        e.printStackTrace();
                     }
                 }
@@ -85,16 +87,16 @@ public class CacheWarmupImpl implements CacheWarmup {
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
             try {
                 kpiDayService.getTrendByKpi(standardKpi.kpiName(), "month", ratName);
-                System.out.println("["+ ratName + "] Cache KPI trend warmed-up (month): " + standardKpi.kpiName());
+                System.out.println("[" + ratName + "] Cache KPI trend warmed-up (month): " + standardKpi.kpiName());
             } catch (Exception e) {
-                System.out.println("["+ ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName());
+                System.out.println("[" + ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName());
             }
             for (DistrictDto district : districts) {
                 try {
                     kpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), ratName);
-                    System.out.println("["+ ratName + "] Cache KPI trend warmed-up (month): " + standardKpi.kpiName() + "-" + district.name());
+                    System.out.println("[" + ratName + "] Cache KPI trend warmed-up (month): " + standardKpi.kpiName() + "-" + district.name());
                 } catch (Exception e) {
-                    System.out.println("["+ ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName() + "-" + district.name());
+                    System.out.println("[" + ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName() + "-" + district.name());
                 }
             }
         }
@@ -109,20 +111,28 @@ public class CacheWarmupImpl implements CacheWarmup {
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
             try {
                 kpiDayService.getWorstCellsByKpi(standardKpi.kpiName(), "day", ratName);
-                System.out.println("["+ ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName());
+                System.out.println("[" + ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName());
             } catch (Exception e) {
-                System.out.println("["+ ratName + "] Error while warming Worst cell cache for: " + standardKpi.kpiName());
+                System.out.println("[" + ratName + "] Error while warming Worst cell cache for: " + standardKpi.kpiName());
             }
 
             for (DistrictDto district : districts) {
                 try {
                     kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", district.name(), ratName);
-                    System.out.println("["+ ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName() + "-" + district.name());
+                    System.out.println("[" + ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName() + "-" + district.name());
                 } catch (Exception e) {
-                    System.out.println("["+ ratName + "] Error while warming up worst cells cache : " + standardKpi.kpiName() + "-" + district.name());
+                    System.out.println("[" + ratName + "] Error while warming up worst cells cache : " + standardKpi.kpiName() + "-" + district.name());
                 }
             }
         }
         System.out.println("Warming-up Worst cell cache of: " + ratName + " is complete!");
+    }
+
+    private void warmupDateRangeCache(String ratName) {
+        String[] granularityList = {"day", "week", "month"};
+
+        for (String granularity : granularityList) {
+            dateService.getLatestDateRange(granularity, ratName);
+        }
     }
 }

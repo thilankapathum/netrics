@@ -18,9 +18,10 @@ import {AlertService} from '../../../../components/alert/alert.service';
 import {DistrictDto} from '../../../../models/pulse/DistrictDto';
 import {DistrictService} from '../../../../service/pulse/district/district.service';
 import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
-import {WorstCell} from '../../../../models/pulse/WorstCell';
 import {Router, RouterLink} from '@angular/router';
 import {SharedService} from '../../../../service/pulse/shared-service';
+import {DateRangeDto} from '../../../../models/pulse/DateRangeDto';
+import {DateService} from '../../../../service/pulse/date-service';
 
 @Component({
   selector: 'app-pulse',
@@ -32,10 +33,12 @@ import {SharedService} from '../../../../service/pulse/shared-service';
 export class PulseComponent implements OnInit {
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
+  dateRanges = signal<{[granularity:string]:DateRangeDto | undefined}>({});
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
   granularity = signal<'day' | 'week' | 'month'>('day')
+  granularityList:string[] = ['day', 'week', 'month'];
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
   selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
@@ -69,7 +72,10 @@ export class PulseComponent implements OnInit {
               private alertService: AlertService,
               private districtService: DistrictService,
               private router: Router,
-              private sharedService: SharedService) {
+              private sharedService: SharedService,
+              private dateService:DateService) {
+    this.queryDateRanges();
+
   }
 
   ngOnInit() {
@@ -77,6 +83,29 @@ export class PulseComponent implements OnInit {
     this.getAllDistricts();
     this.getBasicKpi(this.selectedRat())
     this.getAllStandardKpi(this.selectedRat());
+  }
+
+  queryDateRanges() {
+    for (let range of this.granularityList) {
+      this.getDateRanges(range,this.selectedRat());
+    }
+  }
+
+  getDateRanges(granularity:string, selectedRat:string){
+    this.dateService.getLatestDateRange(granularity,selectedRat).subscribe(
+      {
+        next: data => {
+          this.dateRanges.update(range => ({
+            ...range,
+            [granularity]: data
+          }));
+        }, error:err => {
+          console.log('Error getting date range');
+          console.error(err);
+          this.alertService.error('Error getting date range');
+        }
+      }
+    )
   }
 
   selectGranularity(granularity: 'day' | 'week' | 'month') {
@@ -110,6 +139,7 @@ export class PulseComponent implements OnInit {
 
   setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): void {
     this.selectedRat.set(rat);
+    this.queryDateRanges();
 
     switch (rat) {
       case "ltefdd":
@@ -329,22 +359,6 @@ export class PulseComponent implements OnInit {
   //============ ROUTER-LINK ===========================
 
   getRouterLinkForCell(): string[] {
-    // switch (this.selectedRat()) {
-    //   case "ltefdd": {
-    //     return ['/pulse/cell/ltefdd', this.analysisModalCell];
-    //   }
-    //   case "ltetdd":
-    //     return ['/pulse/cell/ltetdd', this.analysisModalCell];
-    //   case "nr":
-    //     return ['/pulse/cell/nr', this.analysisModalCell];
-    //   case "umts":
-    //     return ['/pulse/cell/umts', this.analysisModalCell];
-    //   case "gsm":
-    //     return ['/pulse/cell/gsm', this.analysisModalCell];
-    //   default:
-    //     return ['/pulse/cell/ltefdd', this.analysisModalCell];
-    // }
-
     return ['/pulse/cell']
   }
 
