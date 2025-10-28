@@ -1,0 +1,143 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: [netrics_light, netrics_dark]; /* use your themes only */
+}
+
+@plugin "daisyui/theme" {
+  name: netrics_light;
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: oklch(98% 0.003 247.858);
+  --color-base-200: oklch(96% 0.007 247.896);
+  --color-base-300: oklch(92% 0.013 255.508);
+  --color-base-content: oklch(27% 0.041 260.031);
+  --color-primary: oklch(62% 0.214 259.815);
+  --color-primary-content: oklch(97% 0.014 254.604);
+  --color-secondary: oklch(55% 0.046 257.417);
+  --color-secondary-content: oklch(98% 0.003 247.858);
+  --color-accent: oklch(69% 0.17 162.48);
+  --color-accent-content: oklch(97% 0.021 166.113);
+  --color-neutral: oklch(27% 0.041 260.031);
+  --color-neutral-content: oklch(96% 0.007 247.896);
+  --color-info: oklch(74% 0.16 232.661);
+  --color-info-content: oklch(97% 0.013 236.62);
+  --color-success: oklch(72% 0.219 149.579);
+  --color-success-content: oklch(98% 0.018 155.826);
+  --color-warning: oklch(76% 0.188 70.08);
+  --color-warning-content: oklch(98% 0.022 95.277);
+  --color-error: oklch(58% 0.253 17.585);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: netrics_dark;
+  default: false;
+  prefersdark: false;
+  color-scheme: dark;
+  --color-base-100: oklch(27% 0.006 286.033);
+  --color-base-200: oklch(21% 0.006 285.885);
+  --color-base-300: oklch(37% 0.013 285.805);
+  --color-base-content: oklch(92% 0.004 286.32);
+  --color-primary: oklch(54% 0.245 262.881);
+  --color-primary-content: oklch(93% 0.032 255.585);
+  --color-secondary: oklch(70% 0.015 286.067);
+  --color-secondary-content: oklch(27% 0.006 286.033);
+  --color-accent: oklch(59% 0.145 163.225);
+  --color-accent-content: oklch(95% 0.052 163.051);
+  --color-neutral: oklch(92% 0.004 286.32);
+  --color-neutral-content: oklch(27% 0.006 286.033);
+  --color-info: oklch(68% 0.169 237.323);
+  --color-info-content: oklch(95% 0.026 236.824);
+  --color-success: oklch(72% 0.219 149.579);
+  --color-success-content: oklch(98% 0.018 155.826);
+  --color-warning: oklch(66% 0.179 58.318);
+  --color-warning-content: oklch(96% 0.059 95.617);
+  --color-error: oklch(64% 0.246 16.439);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+
+
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  /*font-family: 'Axiforma', sans-serif;*/
+}
+
+.logo{
+  /*font-family: 'Montserrat', sans-serif;*/
+  font-family: 'Axiforma', sans-serif;
+}
+
+html,
+body,
+#root{
+  height: 100%;
+  width: 100%;
+  @apply text-sm;
+  @apply bg-base-100;
+  @apply text-base-content;
+}
+
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', ui-rounded;
+  font-weight: 300;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+/* Recommended icon sizes */
+span.tsize-20 {
+  font-size: 20px;
+  font-variation-settings: 'OPSZ' 20;
+}
+span.tsize-24 {
+  font-size: 24px;
+  font-variation-settings: 'OPSZ' 24;
+}
+span.tsize-40 {
+  font-size: 40px;
+  font-variation-settings: 'OPSZ' 40;
+}
+span.tsize-48 {
+  font-size: 48px;
+  font-variation-settings: 'OPSZ' 48;
+}
+
+/* Force visibility for debugging */
+/*section, table, tr, td, th, div {*/
+/*  visibility: visible !important;*/
+/*  display: revert !important;*/
+/*}*/
+

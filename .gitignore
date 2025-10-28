@@ -22,3 +22,14 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+.env
+
+backend/python/pulse/files/
+backend/python/pulse/kpi_processor.log
+frontend/netrics/.angular
+frontend/netrics/node_modules
+frontend/node_modules
+frontend/netrics/src/resources/fonts
+frontend/netrics/src/fonts.css
+frontend/netrics/src/assets/fonts

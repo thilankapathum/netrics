@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: pulse-service
+  profiles:
+    active: dev
+  config:
+    import: optional:configserver:http://${CONFIG_SERVER_HOST:localhost}:8003

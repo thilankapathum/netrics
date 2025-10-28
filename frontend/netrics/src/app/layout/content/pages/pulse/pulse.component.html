@@ -1,0 +1,263 @@
+<dialog #analysisModal id="analyse_modal" class="modal w-full ">
+  <div class="modal-box max-w-6xl border border-base-300">
+    <h3 class="text-lg font-bold">{{ analysisModalCell }}</h3>
+    @if (loadingAnalysisModalChart) {
+      <div class="flex w-full flex-col gap-4 mt-2 mb-2">
+        <div class="skeleton h-84 w-full"></div>
+      </div>
+    }
+    <app-linechart [hidden]="loadingAnalysisModalChart" [chartSeries]="chartSeries"></app-linechart>
+    <div class="modal-action">
+      <a class="btn btn-outline btn-primary btn-xs" (click)="onCellNavigate()" [routerLink]="getRouterLinkForCell()">More</a>
+      <form method="dialog">
+        <!-- if there is a button in form, it will close the modal -->
+        <button class="btn btn-xs">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+
+<div>
+  <div class="flex flex-col gap-3">
+    <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
+      <div class="flex flex-col gap-y-0 grow-1">
+        <div class="text-sm font-medium"></div>
+        <div class="text-xl font-semibold">Worst Cell Analysis</div>
+      </div>
+      <!--      <div class="grow-1"></div>-->
+      <div>
+        <div class="tabs tabs-box tabs-xs border border-base-300">
+          <!--          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD" checked="checked"/>-->
+          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD"
+                 [checked]="selectedRat() === 'ltefdd'" (change)="setSelectedRat($any($event.target).value)"/>
+          <input disabled type="radio" name="rat_tabs" class="tab" value="ltetdd" aria-label="LTE-TDD"
+                 [checked]="selectedRat() === 'ltetdd'" (change)="setSelectedRat($any($event.target).value)"/>
+          <input disabled type="radio" name="rat_tabs" class="tab" value="nr" aria-label="NR"
+                 [checked]="selectedRat() === 'nr'"
+                 (change)="setSelectedRat($any($event.target).value)"/>
+          <input type="radio" name="rat_tabs" class="tab" value="gsm" aria-label="GSM"
+                 [checked]="selectedRat() === 'gsm'" (change)="setSelectedRat($any($event.target).value)"/>
+          <input disabled type="radio" name="rat_tabs" class="tab" value="umts" aria-label="UMTS"
+                 [checked]="selectedRat() === 'umts'" (change)="setSelectedRat($any($event.target).value)"/>
+        </div>
+      </div>
+
+      <div class="flex flex-row join">
+        <select disabled class="select select-sm join-item">
+          <option selected>Region</option>
+          <option>Region 1</option>
+          <option>Region 2</option>
+          <option>Region 3</option>
+        </select>
+        <select class="select select-sm border join-item w-48" [(ngModel)]="district"
+                (change)="selectDistrict(district())">
+          @for (d of districts; track d.name) {
+            <option [value]="d.name">{{ d.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="tabs tabs-box tabs-xs border border-base-300">
+        <input type="radio" name="aggregation_tabs" class="tab" aria-label="Day Average" checked="checked"/>
+        <input disabled type="radio" name="aggregation_tabs" class="tab" aria-label="Busy Hour"/>
+      </div>
+      <div class="flex flex-row gap-2 items-center">
+        <select class="select select-sm border" [(ngModel)]="granularity"
+                (change)="selectGranularity(granularity())">
+          @if (dateRanges()?.['month'] && dateRanges()?.['week'] && dateRanges()?.['day']) {
+            <option [value]="'day'" selected>Day <span
+              class="text-xs text-secondary">{{ dateRanges()?.['day']?.currentDate | date: 'MMM-dd' }}</span></option>
+            <option [value]="'week'">Week <span
+              class="text-xs text-secondary">{{ dateRanges()?.['week']?.previousDate | date: 'MMM-dd' }}
+              - {{ dateRanges()?.['week']?.currentDate | date: 'MMM-dd' }}</span></option>
+            <option [value]="'month'">Month <span
+              class="text-xs text-secondary">{{ dateRanges()?.['month']?.previousDate | date: 'MMM-dd' }}
+              - {{ dateRanges()?.['month']?.currentDate | date: 'MMM-dd' }}</span></option>
+          }
+        </select>
+      </div>
+    </nav>
+
+    <!--    KPI SNAPSHOT SECTION-->
+    <section>
+      @if (loadingBasicKpi) {
+        <!--              <progress class="progress w-56"></progress>-->
+        <div class="flex w-full flex-col gap-4 mb-2">
+          <div class="skeleton h-48 w-full"></div>
+        </div>
+      }
+      <div class="stats w-full flex flex-wrap border border-base-300 bg-base-100 rounded-xl shadow-md/5">
+        @for (snapshot of sortedBasicKpiSnapshots; track $index) {
+          <div class="stat w-1/2 md:w-1/3 lg:w-1/6">
+            <div class="stat-title text-md font-semibold">
+              {{ snapshot.kpiLabel }}
+            </div>
+
+            <div class="flex flex-row flex-wrap gap-x-2 gap-y-0">
+              <div class="stat-value font-semibold text-base-content">
+                <span [class]="isBasicKpiValueRed(snapshot) ? 'text-error' : ''">
+                  {{ snapshot.value | number: '1.2-2' }}<span class="text-sm font-bold">{{ snapshot.unit }}</span>
+                </span>
+              </div>
+              <div class="stat-figure">
+                <span class="badge badge-soft badge-sm" [class]="snapshot.improved ? 'badge-success' : 'badge-error'">
+                  @if (snapshot.difference! > 0) {
+                    +
+                  }{{ snapshot.difference | number: '1.2-2' }}{{ snapshot.unit }}
+                </span>
+              </div>
+            </div>
+
+            <div class="stat-desc">
+              <table class="table table-xs">
+                <tbody>
+                  @for (standardKpi of snapshot.standardKpis; track $index) {
+                    <tr>
+                      <td>
+                        <div>{{ standardKpi.kpiLabel }}</div>
+                        <div class="font-semibold">
+
+                          <span [class]="isKpiValueRed(standardKpi) ? 'text-error' : ''">
+                            {{ standardKpi.value | number: '1.2-2' }}{{ standardKpi.unit }}
+                            <span class="badge badge-soft badge-xs font-normal"
+                                  [class]="standardKpi.improved ? 'badge-success' : 'badge-error'">
+                              @if (standardKpi.difference! > 0) {
+                                +
+                              }{{ standardKpi.difference | number: '1.2-2' }}{{ standardKpi.unit }}
+                            </span>
+
+                          </span>
+
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+
+    <!--    <div class="flex flex-row gap-4 flex-wrap justify-around">-->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 ">
+
+      <!--      KPI TREND SECTION-->
+
+      <section class=" flex flex-col gap-2 p-4 border border-base-300 rounded-xl bg-base-100 shadow-lg/5">
+        <div class="flex flex-row gap-2">
+          <h2 class="text-xl font-semibold">KPI Trend</h2>
+          <div class="tabs tabs-box tabs-xs ml-auto">
+            <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
+                   [(ngModel)]="selectedKpiTrendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
+            <input type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"
+                   [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
+            <input type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"
+                   [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
+          </div>
+        </div>
+        @if (loadingKpiTrend) {
+          <div class="flex w-full flex-col gap-4 mb-2">
+            <div class="skeleton h-64 w-full"></div>
+          </div>
+        }
+        <app-line-chart [hidden]="loadingKpiTrend" [kpiTrendData]="kpiTrendData"></app-line-chart>
+      </section>
+
+
+      <!--      WORST CELLS SECTION-->
+
+      <section class=" flex flex-col gap-3 grow-1 p-4 border border-base-300 rounded-xl bg-base-100 shadow-lg/5">
+        <div class="flex flex-row">
+          <h2 class="text-xl font-semibold">Worst Cells</h2>
+          <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
+                  (change)="selectKpi(selectedStandardKpi(), selectedRat())">
+            <!--            <option disabled selected>KPI</option>-->
+            @for (kpi of standardKpis; track $index) {
+              <option [value]="kpi.kpiName">{{ kpi.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="overflow-x-auto">
+          @if (loadingWorstCells) {
+            <div class="flex w-full flex-col gap-6 py-2">
+              <div class="skeleton h-6 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+            </div>
+          }
+          <table [hidden]="loadingWorstCells" class="table table-sm">
+            <!-- head -->
+            <thead>
+            <tr>
+              <th class="font-semibold">#</th>
+              <th class="font-semibold">Cell Name</th>
+              <th class="font-semibold">KPI</th>
+              <th class="font-semibold">Value</th>
+              <!--              <th class="font-semibold">Difference</th>-->
+              <th class="font-semibold"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- row -->
+              @for (cell of worstCells; track cell.cellName; let i = $index) {
+                <tr class="hover:bg-base-200">
+                  <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
+                  <td>{{ cell.cellName }}</td>
+                  <td>{{ cell.kpiLabel }}</td>
+                  <td>
+                    <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
+                      {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
+                    </span> &nbsp;
+                    <span class="badge badge-soft badge-sm"
+                          [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0) {
+                      +
+                    }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
+                    </span>
+                  </td>
+                  <td class="p-0">
+                    <button class="btn btn-ghost btn-xs p-0"
+                            (click)="openAnalysisModal(cell.kpiName!, cell.cellName!)">
+                      <span class="material-symbols-outlined text-base-content tsize-20">troubleshoot</span>
+                      <!--                      <i class="fa-solid fa-magnifying-glass-chart text-neutral"></i>-->
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <div class="join justify-center ml-auto">
+            <div class="join justify-center gap-2 mt-2">
+              <button class="join-item btn btn-xs"
+                      [disabled]="currentPage === 0"
+                      (click)="prevPage()">«
+              </button>
+
+              <button class="join-item btn btn-active btn-xs">
+                {{ currentPage + 1 }} / {{ totalPages }}
+              </button>
+
+              <button class="join-item btn btn-xs"
+                      [disabled]="currentPage >= totalPages - 1"
+                      (click)="nextPage()">»
+              </button>
+              <label class="label ms-4 text-xs">
+                <input type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)"
+                       class="checkbox checkbox-sm"/>
+                Exclude zeroes
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,16 @@
+<div>
+  @if (showChart){
+    <apx-chart
+      #chart
+      [series]="chartOptions.series!"
+      [chart]="chartOptions.chart!"
+      [xaxis]="chartOptions.xaxis!"
+      [yaxis]="chartOptions.yaxis!"
+      [stroke]="chartOptions.stroke!"
+      [dataLabels]="chartOptions.dataLabels!"
+      [legend]="chartOptions.legend!"
+      [theme]="chartOptions.theme!"
+      [grid]="chartOptions.grid!"
+    ></apx-chart>
+  }
+</div>

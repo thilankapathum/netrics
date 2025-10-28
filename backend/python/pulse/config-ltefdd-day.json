@@ -1,0 +1,13 @@
+{
+  "database": {
+    "host": "${POSTGRES_HOST}",
+    "port": "${POSTGRES_PORT}",
+    "database": "${POSTGRES_DB}",
+    "user": "${POSTGRES_USER}",
+    "password": "${POSTGRES_PASSWORD}"
+  },
+  "ftp_folder": "/app/day-average/ltefdd/ftp",
+  "processed_folder": "/app/day-average/ltefdd/processed",
+  "temp_folder": "/app/day-average/ltefdd/temp",
+  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-and-warmup"
+}

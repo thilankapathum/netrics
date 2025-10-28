@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    # DOCKER-COMPOSE MYSQL DATABASE INFORMATION
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB}   # Environment Variables defined in application-prod.yml
+    username: ${POSTGRES_USER:pguser}   # Defined in docker-compose.yml as an Environment Variable
+    password: ${POSTGRES_PASSWORD:password}   # Defined in docker-compose.yml as an Environment Variable
+    driver-class-name: org.postgresql.Driver
+
+  # DOCKER-COMPOSE.YML - ENVIRONMENT VARIABLES FOR CONTAINERIZATION WITHIN DOCKER NETWORK
+  # ${ENVIRONMENT_VARIABLE:DefaultValue}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
