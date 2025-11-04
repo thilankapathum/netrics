@@ -29,6 +29,35 @@ spring:
                   - "*"
                 allowCredentials: true
                 maxAge: 3600  # Cache preflight response for 1 hour
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+            authorization-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/auth
+            token-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/token
+            user-info-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/userinfo
+            jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
+
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${GATEWAY_CLIENT_ID:netrics-gateway}
+            client-secret: ${GATEWAY_CLIENT_SECRET:BDKXS279Zt7pYLcOFJ2ENMNqw3Gi8bRt}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - email
+
+      resourceserver:
+        jwt:
+          issuer-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+          jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+
 server:
   port: 8001
 

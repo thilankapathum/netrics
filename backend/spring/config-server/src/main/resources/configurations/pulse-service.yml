@@ -15,6 +15,26 @@ spring:
       port: ${REDIS_PORT:6379}
 #    host: redis
 #    port: 6379
+    # Security Configuration
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
+          jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
+        registration:
+          keycloak:
+            client-id: ${PULSE_CLIENT_ID:netrics-pulse}
+            client-secret: ${PULSE_CLIENT_SECRET:dep1VnzCyQ0WJgGfCMmVP0fDUw9LnSTn}
+            authorization-grant-type: client_credentials
+            scope:
+              - openid
 
 management:
   endpoints:
