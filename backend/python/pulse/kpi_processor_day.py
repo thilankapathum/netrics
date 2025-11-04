@@ -13,7 +13,6 @@ from typing import Dict, List, Optional, Tuple
 import json
 import sys
 import requests
-from pathlib import Path
 
 # Force UTF-8 encoding for stdout
 sys.stdout.reconfigure(encoding='utf-8')
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config.json'):
+    def __init__(self, config_file='config-dev.json'):
         """Initialize KPI Processor with configuration"""
         self.config = self.load_config(config_file)
 
@@ -485,7 +484,7 @@ class KPIProcessor:
 
     def standardize_timestamp_column(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize timestamp column name"""
-        timestamp_columns = ['Begin Time', 'Start time', 'Start Time', 'Timestamp', 'start_time']
+        timestamp_columns = ['Begin Time', 'Start time', 'Start Time', 'Timestamp', 'start_time', 'Date']
 
         for col in timestamp_columns:
             if col in df.columns:
@@ -507,7 +506,7 @@ class KPIProcessor:
         cell_columns = ['Cell Name', 'Cell_Name', 'CellName', 'cell_name', 'E-UTRAN FDD Cell Name',
                         'E-UTRAN FDD Cell Name', 'E-UTRAN\xa0FDD\xa0Cell Name', 'BTS NAME']
         enodeb_columns = ['eNodeB name', 'eNodeB_name', 'eNodeBName', 'enodeb_name', 'Managed Element',
-                          'ManagedElement Name', 'Managed Element', 'Managed\xa0Element', 'SITE Name']
+                          'ManagedElement Name', 'Managed Element', 'Managed\xa0Element', 'SITE Name', 'Site Name']
 
         for col in cell_columns:
             if col in df.columns:
@@ -549,8 +548,18 @@ class KPIProcessor:
         else:
             return 'integer'
 
-    def clean_kpi_value(self, value, multiplication_factor: float = 1.0) -> Optional[float]:
-        """Clean and convert KPI value to numeric with multiplication factor"""
+    def clean_kpi_value(self, value, multiplication_factor: float = 1.0,
+                        show_progress: bool = False, error_counter: dict = None) -> Optional[float]:
+        """Clean and convert KPI value to numeric with multiplication factor
+
+        Args:
+            value: The value to clean and convert
+            multiplication_factor: Factor to multiply the value by
+            show_progress: Whether to show conversion errors in progress line
+            error_counter: Dictionary to track conversion errors {'count': 0}
+        """
+
+        error_counter_1 = 0
         if pd.isna(value):
             return None
 
@@ -569,7 +578,12 @@ class KPIProcessor:
             return numeric_value
 
         except ValueError:
-            logger.warning(f"Could not convert value to numeric: {value}")
+            if show_progress and error_counter is not None:
+                error_counter['count'] += 1
+                print(f"\r⚠ Conversion errors: {error_counter['count']} (latest: '{value}' → numeric)",
+                      end='', flush=True)
+            else:
+                logger.warning(f"Could not convert value to numeric: {value}")
             return None
 
     def get_kpi_values_for_standard_kpi(self, df: pd.DataFrame, standard_kpi_name: str,
@@ -789,6 +803,7 @@ class KPIProcessor:
         connection = None
         error_records = []
         successful_inserts = 0
+        total_records = len(df)
 
         try:
             rat_name = self.rats[rat_id]['name']
@@ -806,9 +821,10 @@ class KPIProcessor:
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
-            # Insert rows individually to catch errors per row
-            logger.info(f"[{rat_name}] Inserting records into database...")
+            # Print initial progress
+            print(f"\r[{rat_name}] 0/{total_records} records inserted | errors: 0", end='', flush=True)
 
+            # Insert rows individually to catch errors per row
             for idx, row in df.iterrows():
                 try:
                     data_tuple = (
@@ -832,21 +848,31 @@ class KPIProcessor:
                     connection.commit()
                     successful_inserts += 1
 
+                    # Update progress on the same line
+                    print(
+                        f"\r[{rat_name}] {successful_inserts}/{total_records} records inserted | errors: {len(error_records)}",
+                        end='', flush=True)
+
                 except Error as e:
                     # Rollback the failed transaction
                     connection.rollback()
 
-                    # Log the error
-                    error_msg = str(e)
-                    logger.error(f"[{rat_name}] Error inserting row {idx}: {error_msg}")
-
                     # Store error details
+                    error_msg = str(e)
                     error_records.append({
                         'row_index': idx,
                         'error_type': type(e).__name__,
                         'error_message': error_msg,
                         'row_data': row.to_dict()
                     })
+
+                    # Update progress including error count
+                    print(
+                        f"\r[{rat_name}] {successful_inserts}/{total_records} records inserted | errors: {len(error_records)}",
+                        end='', flush=True)
+
+            # Move to new line after completion
+            print()  # This creates a newline after the progress line
 
             # Log summary
             logger.info(f"[{rat_name}] Successfully inserted {successful_inserts} records")
@@ -858,14 +884,13 @@ class KPIProcessor:
                 error_log_path = self.create_error_log_file(rat_id, original_filename, error_records)
                 logger.info(f"[{rat_name}] Error log created: {error_log_path}")
 
-                # Note: Cache clearing moved to after all files are processed
                 return False
             else:
                 logger.info(f"[{rat_name}] All records inserted successfully")
-                # Note: Cache clearing moved to after all files are processed
                 return True
 
         except Error as e:
+            print()  # Ensure we move to a new line if there's an exception
             logger.error(f"Error during database operation: {e}")
             return False
         finally:
