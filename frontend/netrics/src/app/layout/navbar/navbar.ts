@@ -1,11 +1,15 @@
 import {Component, OnInit, Renderer2, Inject, Injector} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import {DaisyUiThemeService} from '../../service/components/theme/daisy-ui-theme.service';
+import {RouterLink} from "@angular/router";
 
 @Component({
-  selector: 'app-navbar',
-  templateUrl: './navbar.html',
-  styleUrl: './navbar.css'
+    selector: 'app-navbar',
+    templateUrl: './navbar.html',
+    imports: [
+        RouterLink
+    ],
+    styleUrl: './navbar.css'
 })
 export class Navbar implements OnInit {
   isDarkMode = false;
