@@ -21,22 +21,22 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+#          issuer-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
 #          issuer-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
-#          issuer-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}
 #          issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
 
-          jwk-set-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+#          jwk-set-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 #          jwk-set-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
-#          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 #          jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 
       client:
         provider:
           keycloak:
-            issuer-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+#            issuer-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
 #            issuer-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
-#            issuer-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+            issuer-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}
 #            issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
         registration:
           keycloak:
@@ -45,6 +45,13 @@ spring:
             authorization-grant-type: client_credentials
             scope:
               - openid
+
+keycloak:
+  realm-name: ${REALM_NAME:netrics}
+  domain-ip: ${DOMAIN_IP:netrics.local}
+  nginx-port: ${FRONTEND_PORT:8000}
+  keycloak-host: ${KEYCLOAK_HOST:keycloak}
+  keycloak-port: ${KEYCLOAK_PORT:8080}
 
 management:
   endpoints:

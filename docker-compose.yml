@@ -22,13 +22,13 @@ services:
       PGDATA: /var/lib/postgresql/data
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "8032:5432"
-#    expose:
-#      - "${POSTGRES_PORT}"
+#    ports:
+#      - "8032:5432"
+    expose:
+      - "${POSTGRES_PORT}"
     networks:
       - private_net
-      - public_net
+#      - public_net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pguser -d pulse_db"]
@@ -59,16 +59,16 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    ports:
-      - "6379:6379"
-#    expose:
-#      - "6379"
+#    ports:
+#      - "6379:6379"
+    expose:
+      - "6379"
     command: ["redis-server", "--save", "60", "1"]
     volumes:
       - redis-data:/data
     networks:
       - private_net
-      - public_net
+#      - public_net
     healthcheck:
       test: ["CMD","redis-cli","ping"]
       interval: 10s
@@ -99,6 +99,9 @@ services:
       - --hostname-strict-https=false
       - --http-enabled=true
       - --http-relative-path=/auth
+      - --proxy-headers=xforwarded
+      - --hostname-url=http://netrics.local:8000/auth
+      - --hostname-admin-url=http://netrics.local:8000/auth
     environment:
       # Database Configuration
       KC_DB: postgres
@@ -114,6 +117,12 @@ services:
       KC_PROXY: edge
       KC_HOSTNAME_STRICT: 'false'
       KC_HTTP_ENABLED: 'true'
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_URL: http://netrics.local:8000/auth
+      KC_HOSTNAME_ADMIN_URL: http://netrics.local:8000/auth
+
+      # Frontchannel logout
+      KC_HOSTNAME_STRICT_BACKCHANNEL: 'false'
 
       # Performance Tuning
       KC_HEALTH_ENABLED: 'true'
@@ -126,8 +135,10 @@ services:
       KC_CACHE: ispn
       KC_CACHE_STACK: tcp
 
-    ports:
-      - "9090:8080"
+#    ports:
+#      - "8080:8080"
+    expose:
+      - "8080"
     volumes:
       - ./keycloak/themes:/opt/keycloak/themes
       - ./keycloak/providers:/opt/keycloak/providers
@@ -157,6 +168,8 @@ services:
       - KEYCLOAK_PORT=${KEYCLOAK_PORT}
     depends_on:
       postgres:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8003/actuator/health"]
@@ -189,9 +202,9 @@ services:
     image: thilankaw/netrics/gateway:0.0.2
     ports:
       - "8001:8001"
-      - "9001:9001"
-#    expose:
-#      - "9001"
+#      - "9001:9001"
+    expose:
+      - "9001"
 #      - "8001"
     environment:
       - GATEWAY_HOST=${GATEWAY_HOST}
@@ -212,6 +225,8 @@ services:
       discovery:
         condition: service_healthy
       pulse:
+        condition: service_healthy
+      nginx:
         condition: service_healthy
     networks:
       - private_net
@@ -234,13 +249,13 @@ services:
       - KEYCLOAK_PORT=${KEYCLOAK_PORT}
       - DOMAIN_IP=${DOMAIN_IP}
       - FRONTEND_PORT=${FRONTEND_PORT}
-    extra_hosts:
-      - "netrics.local:host-gateway"
+#    extra_hosts:
+#      - "netrics.local:host-gateway"
     expose:
-#      - "8012"
+      - "8012"
       - "9012"
-    ports:
-      - "8012:8012"
+#    ports:
+#      - "8012:8012"
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:9012/actuator/health" ]
       interval: 10s
@@ -255,7 +270,7 @@ services:
         condition: service_healthy
     networks:
       - private_net
-      - public_net
+#      - public_net
 
   kpip-day:
     image: thilankaw/netrics/kpip-day:0.0.5
@@ -300,3 +315,9 @@ services:
 #        condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

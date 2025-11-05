@@ -42,19 +42,19 @@ spring:
 #            authorization-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/auth
             authorization-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/auth
 
-            token-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/token
+#            token-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/token
 #            token-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/token
-#            token-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/token
+            token-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/token
 #            token-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/token
 
-            user-info-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/userinfo
+#            user-info-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/userinfo
 #            user-info-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/userinfo
-#            user-info-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/userinfo
+            user-info-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/userinfo
 #            user-info-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/userinfo
 
-            jwk-set-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+#            jwk-set-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 #            jwk-set-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
-#            jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+            jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 #            jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 
             user-name-attribute: preferred_username
@@ -77,9 +77,9 @@ spring:
           issuer-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
 #          issuer-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}
 
-          jwk-set-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+#          jwk-set-uri: http://${DOMAIN_IP:netrics.local}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 #          jwk-set-uri: http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
-#          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 #          jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 
 server:
