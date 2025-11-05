@@ -21,13 +21,16 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
-          jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+#          issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
+#          jwk-set-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}/protocol/openid-connect/certs
 
       client:
         provider:
           keycloak:
-            issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
+            issuer-uri: http://${KEYCLOAK_HOST:localhost}:${KEYCLOAK_PORT:8000}/auth/realms/${REALM_NAME:netrics}
+#            issuer-uri: http://keycloak:8080/auth/realms/${REALM_NAME:netrics}
         registration:
           keycloak:
             client-id: ${PULSE_CLIENT_ID:netrics-pulse}
