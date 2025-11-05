@@ -147,12 +147,14 @@ services:
 
 
   config-server:
-    image: thilankaw/netrics/config-server:0.0.2
+    image: thilankaw/netrics/config-server:0.0.3
     expose:
       - "8003"
     environment:
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - KEYCLOAK_HOST=${KEYCLOAK_HOST}
+      - KEYCLOAK_PORT=${KEYCLOAK_PORT}
     depends_on:
       postgres:
         condition: service_healthy
@@ -184,16 +186,23 @@ services:
     restart: unless-stopped
 
   gateway:
-    image: thilankaw/netrics/gateway:0.0.1
-#    ports:
-#      - "8001:8001"
-    expose:
-      - "9001"
-      - "8001"
+    image: thilankaw/netrics/gateway:0.0.2
+    ports:
+      - "8001:8001"
+      - "9001:9001"
+#    expose:
+#      - "9001"
+#      - "8001"
     environment:
       - GATEWAY_HOST=${GATEWAY_HOST}
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - KEYCLOAK_HOST=${KEYCLOAK_HOST}
+      - KEYCLOAK_PORT=${KEYCLOAK_PORT}
+      - DOMAIN_IP=${DOMAIN_IP}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+    extra_hosts:
+      - "netrics.local:host-gateway"
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:9001/actuator/health" ]
       interval: 10s
@@ -209,7 +218,7 @@ services:
       - public_net
 
   pulse:
-    image: thilankaw/netrics/pulse:0.0.4
+    image: thilankaw/netrics/pulse:0.0.5
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -221,9 +230,17 @@ services:
       - DISCOVERY_HOST=${DISCOVERY_HOST}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - KEYCLOAK_HOST=${KEYCLOAK_HOST}
+      - KEYCLOAK_PORT=${KEYCLOAK_PORT}
+      - DOMAIN_IP=${DOMAIN_IP}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+    extra_hosts:
+      - "netrics.local:host-gateway"
     expose:
-      - "8012"
+#      - "8012"
       - "9012"
+    ports:
+      - "8012:8012"
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:9012/actuator/health" ]
       interval: 10s
@@ -238,6 +255,7 @@ services:
         condition: service_healthy
     networks:
       - private_net
+      - public_net
 
   kpip-day:
     image: thilankaw/netrics/kpip-day:0.0.5
@@ -257,7 +275,7 @@ services:
 
   frontend:
     container_name: frontend
-    image: thilankaw/netrics/frontend:0.0.4
+    image: thilankaw/netrics/frontend:0.0.5
     ports:
       - "8000:8000"   # Remember to Enable CORS in BeansConfig for localhost:4200
     networks:
