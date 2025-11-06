@@ -76,19 +76,6 @@ services:
       retries: 3
       start_period: 10s
 
-#  keycloak:
-#    container_name: keycloak
-#    image: quay.io/keycloak/keycloak:24.0.2
-#    ports:
-#      - "9090:8080"
-#    environment:
-#      KEYCLOAK_ADMIN: admin
-#      KEYCLOAK_ADMIN_PASSWORD: admin
-#    networks:
-#      - public_net
-#    command:
-#      - "start-dev"
-
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.2
     container_name: keycloak
@@ -135,8 +122,6 @@ services:
       KC_CACHE: ispn
       KC_CACHE_STACK: tcp
 
-#    ports:
-#      - "8080:8080"
     expose:
       - "8080"
     volumes:
@@ -202,7 +187,6 @@ services:
     image: thilankaw/netrics/gateway:0.0.2
     ports:
       - "8001:8001"
-#      - "9001:9001"
     expose:
       - "9001"
 #      - "8001"
@@ -249,13 +233,9 @@ services:
       - KEYCLOAK_PORT=${KEYCLOAK_PORT}
       - DOMAIN_IP=${DOMAIN_IP}
       - FRONTEND_PORT=${FRONTEND_PORT}
-#    extra_hosts:
-#      - "netrics.local:host-gateway"
     expose:
       - "8012"
       - "9012"
-#    ports:
-#      - "8012:8012"
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:9012/actuator/health" ]
       interval: 10s
@@ -270,7 +250,6 @@ services:
         condition: service_healthy
     networks:
       - private_net
-#      - public_net
 
   kpip-day:
     image: thilankaw/netrics/kpip-day:0.0.5
@@ -291,16 +270,19 @@ services:
   frontend:
     container_name: frontend
     image: thilankaw/netrics/frontend:0.0.5
-    ports:
-      - "4200:80"   # Remember to Enable CORS in BeansConfig for localhost:4200
+    expose:
+      - "80"
     networks:
       - public_net
-      - private_net
     depends_on:
-#      gateway:
-#        condition: service_healthy
       keycloak:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   nginx:
     container_name: nginx
@@ -311,9 +293,9 @@ services:
       - public_net
       - private_net
     depends_on:
-#      gateway:
-#        condition: service_healthy
       keycloak:
+        condition: service_healthy
+      frontend:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1" ]

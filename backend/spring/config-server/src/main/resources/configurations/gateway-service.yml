@@ -19,6 +19,7 @@ spring:
                   - "http://172.19.95.160:8000"
                   - "http://localhost:4200"
                   - "http://localhost:8000"
+                  - "http://netrics.local:8000"
                 allowedMethods:
                   - GET
                   - POST
