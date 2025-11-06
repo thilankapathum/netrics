@@ -292,7 +292,7 @@ services:
     container_name: frontend
     image: thilankaw/netrics/frontend:0.0.5
     ports:
-      - "8000:8000"   # Remember to Enable CORS in BeansConfig for localhost:4200
+      - "4200:80"   # Remember to Enable CORS in BeansConfig for localhost:4200
     networks:
       - public_net
       - private_net
