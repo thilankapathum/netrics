@@ -43,17 +43,29 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.org}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: 'True'
+
+      PGADMIN_CONFIG_FORCE_SCRIPT_NAME: "'/pgadmin'"
+      PGADMIN_CONFIG_PROXY_X_HOST: "'${DOMAIN_IP:-netrics.local}'"
+      PGADMIN_CONFIG_PROXY_X_PORT: "'${FRONTEND_PORT:-8000}'"
     volumes:
       - pgadmin:/var/lib/pgadmin
-    ports:
-      - "8033:80"
+    expose:
+      - "80"
+#    ports:
+#      - "8033:80"
     networks:
-      - public_net
+#      - public_net
       - private_net
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/misc/ping').read()" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   redis:
@@ -296,6 +308,8 @@ services:
       keycloak:
         condition: service_healthy
       frontend:
+        condition: service_healthy
+      pgadmin:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1" ]
