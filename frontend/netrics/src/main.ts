@@ -4,9 +4,14 @@ import {provideCharts, withDefaultRegisterables} from 'ng2-charts';
 import { provideHttpClient } from '@angular/common/http';
 import {routes} from './app/app.routes';
 import {provideRouter} from '@angular/router';
+import {appConfig} from './app/app.config';
 
 
 bootstrapApplication(AppComponent, {
-  providers: [provideHttpClient(), provideRouter(routes),
+  ...appConfig,
+  providers: [
+    ...(appConfig.providers || []),
+    provideHttpClient(),
+    provideRouter(routes),
     provideCharts(withDefaultRegisterables())],
 }).catch((err) => console.error(err));

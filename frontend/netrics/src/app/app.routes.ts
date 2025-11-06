@@ -3,6 +3,8 @@ import {PulseComponent} from './layout/content/pages/pulse/pulse.component';
 import {CellAnalysis} from './layout/content/pages/pulse/cell-analysis/cell-analysis';
 import {LayoutComponent} from './layout/layout.component';
 import {ContentComponent} from './layout/content/content.component';
+import {authGuard} from './auth/guards/auth-guard';
+import {roleGuard} from './auth/guards/role-guard';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -18,14 +20,15 @@ export const routes: Routes = [
       {
         path: 'pulse',
         component: ContentComponent,
+        canActivate: [authGuard],
         children: [
           {path: 'cell/:rat/:cell-name', component: CellAnalysis},
           {path: 'cell', component: CellAnalysis},
           {path: '', component: PulseComponent},
         ]
       },
-      {path: 'surge', component: PulseComponent},
-      {path: 'beam', component: CellAnalysis},
+      {path: 'surge', component: PulseComponent, canActivate: [authGuard]},
+      {path: 'beam', component: CellAnalysis, canActivate: [roleGuard(['ADMIN'])]},
     ]
   },
   {path: '**', redirectTo: ''},
