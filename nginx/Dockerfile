@@ -1,27 +1,12 @@
-##-- BUILD STAGE
-#FROM node:20 AS build
-#WORKDIR /app
-#COPY package*.json ./
-#RUN npm install
-#RUN npm install @angular/cli
-#COPY . .
-#
-##To avoid ng not found error
-#RUN npm link @angular/cli
-#
-#RUN ng build --configuration=production
-
 #-- RUN STAGE
 FROM nginx:stable
 
-# Following file is essential to run nginx
-COPY nginx.conf /etc/nginx/nginx.conf
+# Following file is essential to run nginx. .template used to ease substituting Environment variables
+COPY nginx-template.conf /etc/nginx/nginx-template.conf
 
-#COPY --from=build app/dist/netrics /usr/share/nginx/html/
-
-# Default port in nginx (Configured in nginx.conf). Use 4200:80 when running docker container [dockre run -p 4200:80 ...]
-#EXPOSE 80
+# Port in nginx (Configured in nginx-template.conf)
 EXPOSE 8000
 
 # Run nginx in the foreground
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/bin/sh", "-c", "envsubst '$$DOMAIN_IP $$FRONTEND_PORT' < /etc/nginx/nginx-template.conf > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+#CMD ["nginx", "-g", "daemon off;"]

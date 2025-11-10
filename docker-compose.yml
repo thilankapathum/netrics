@@ -311,6 +311,8 @@ services:
         condition: service_healthy
       pgadmin:
         condition: service_healthy
+    environment:
+      - DOMAIN_IP=${DOMAIN_IP}
     healthcheck:
       test: [ "CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1" ]
       interval: 10s
