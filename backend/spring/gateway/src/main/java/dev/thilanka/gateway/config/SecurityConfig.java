@@ -31,7 +31,6 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         // Public endpoints
                         .pathMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .pathMatchers("/public/**").permitAll()
 
                         // Authenticated endpoints
                         .anyExchange().authenticated()

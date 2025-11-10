@@ -2,7 +2,7 @@
   "database": {
     "host": "${POSTGRES_HOST}",
     "port": "${POSTGRES_PORT}",
-    "database": "${POSTGRES_DB}",
+    "database": "${POSTGRES_DB_PULSE}",
     "user": "${POSTGRES_USER}",
     "password": "${POSTGRES_PASSWORD}"
   },

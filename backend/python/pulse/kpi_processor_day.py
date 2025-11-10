@@ -37,7 +37,7 @@ class KPIProcessor:
         self.db_config = {
             "host": os.getenv("POSTGRES_HOST", self.config["database"].get("host")),
             "port": int(os.getenv("POSTGRES_PORT", self.config["database"].get("port", 5432))),
-            "database": os.getenv("POSTGRES_DB", self.config["database"].get("database")),
+            "database": os.getenv("POSTGRES_DB_PULSE", self.config["database"].get("database")),
             "user": os.getenv("POSTGRES_USER", self.config["database"].get("user")),
             "password": os.getenv("POSTGRES_PASSWORD", self.config["database"].get("password")),
         }

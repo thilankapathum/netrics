@@ -52,16 +52,15 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers("/public/**").permitAll()
+                                // Public endpoints
+                                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
-                        // Role-based access (example)
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/**").hasAnyRole("USER", "ADMIN")
+                                // Role-based access (example)
+//                        .requestMatchers("/admin/**").hasRole("ADMIN")
+//                        .requestMatchers("/api/**").hasAnyRole("USER", "ADMIN")
 
-                        // All other requests need authentication
-                        .anyRequest().authenticated()
+                                // All other requests need authentication
+                                .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
@@ -131,7 +130,6 @@ public class SecurityConfig {
 
         // Create validator that accepts both public and internal issuer
         List<String> acceptedIssuers = Arrays.asList(
-//                "http://172.19.95.160:8000/auth/realms/" + realmName,  // Public
                 "http://" + domainIp + ":" + nginxPort + "/auth/realms/" + realmName,  // Public
                 "http://" + keycloakHost + ":" + keycloakPort + "/auth/realms/" + realmName        // Internal
         );
