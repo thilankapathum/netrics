@@ -54,26 +54,25 @@
       </label>
     </div>
 
-    <!--    &lt;!&ndash;    USER NAME&ndash;&gt;-->
-    <!--    <div class="ml-4 flex flex-col items-end gap-0 text-xs 2xl:text-sm">-->
-    <!--      <p>User</p>-->
-    <!--      <p class="font-semibold">Name</p>-->
-    <!--    </div>-->
+        <!--    USER NAME-->
+        <div class="ml-4 flex flex-col items-end gap-0 text-xs 2xl:text-sm">
+          <p>{{ userProfile()?.firstName }}</p>
+          <p class="font-semibold">{{ userProfile()?.lastName }}</p>
+        </div>
 
-    <!--    &lt;!&ndash;    USER AVATAR&ndash;&gt;-->
-    <!--    <div class="dropdown dropdown-end">-->
-    <!--      <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar avatar-placeholder">-->
-    <!--        <div class="w-8 2xl:w-12 rounded-full bg-secondary text-neutral-content ">-->
-    <!--          <span class="text-xs 2xl:text-sm">USR</span>-->
-    <!--        </div>-->
-    <!--      </div>-->
-    <!--      <ul-->
-    <!--        tabindex="0"-->
-    <!--        class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow-xl border border-base-300">-->
-    <!--        <li><a>Profile</a></li>-->
-    <!--        <li><a>Settings</a></li>-->
-    <!--        <li><a>Logout</a></li>-->
-    <!--      </ul>-->
-    <!--    </div>-->
+        <!--    USER AVATAR-->
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar avatar-placeholder">
+            <div class="w-8 2xl:w-12 rounded-full bg-secondary text-neutral-content ">
+              <span class="text-xs 2xl:text-sm">{{ userProfile()?.firstName!.substring(0,1) }}{{userProfile()?.lastName!.substring(0,1)}}</span>
+            </div>
+          </div>
+          <ul
+            tabindex="0"
+            class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow-xl border border-base-300">
+            <li><a href="{{authUrl}}/realms/netrics/account">Profile Settings</a></li>
+            <li><a (click)="logout()">Logout</a></li>
+          </ul>
+        </div>
   </div>
 </div>

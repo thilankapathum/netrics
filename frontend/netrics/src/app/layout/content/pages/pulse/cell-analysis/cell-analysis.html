@@ -7,10 +7,10 @@
 
     <div class="breadcrumbs text-xs text-secondary grow-1">
       <ul>
+        <li><a routerLink="/">Home</a></li>
         <li><a routerLink="/pulse">Pulse</a></li>
         @if (rat()) {
-          <li>{{ rat()?.label }}</li>
-          <li>{{ cellName() }}</li>
+          <li>{{ cellName() }} &nbsp; <span class="text-base-300">{{ rat()?.label }}</span></li>
         }
       </ul>
     </div>

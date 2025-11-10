@@ -1,7 +1,11 @@
-import {Component, OnInit, Renderer2, Inject, Injector} from '@angular/core';
+import {Component, OnInit, Renderer2, Inject, Injector, signal} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import {DaisyUiThemeService} from '../../service/components/theme/daisy-ui-theme.service';
 import {RouterLink} from "@angular/router";
+import {AuthService} from '../../auth/service/auth-service';
+import {KeycloakProfile} from 'keycloak-js';
+import {AlertService} from '../../components/alert/alert.service';
+import {UrlService} from '../../service/url/url-service';
 
 @Component({
     selector: 'app-navbar',
@@ -13,11 +17,16 @@ import {RouterLink} from "@angular/router";
 })
 export class Navbar implements OnInit {
   isDarkMode = false;
+  userProfile = signal<KeycloakProfile | undefined>(undefined);
+  authUrl:string = '';
 
   constructor(
     private renderer: Renderer2,
     @Inject(DOCUMENT) private document: Document,
-    private themeService:DaisyUiThemeService
+    private themeService:DaisyUiThemeService,
+    private authService:AuthService,
+    private alertService:AlertService,
+    private urlService:UrlService
   ) {}
 
   ngOnInit() {
@@ -26,6 +35,8 @@ export class Navbar implements OnInit {
     this.isDarkMode = savedTheme === 'netrics_dark';
     // this.applyTheme(savedTheme);
     this.themeService.setTheme(savedTheme);
+    this.getUserProfile()
+    this.authUrl = this.urlService.getAuthUrl();
   }
 
   onThemeToggle(event: Event) {
@@ -51,5 +62,15 @@ export class Navbar implements OnInit {
 
   private saveThemePreference(theme: string) {
     localStorage.setItem('theme', theme);
+  }
+
+  logout(){
+    this.authService.logout();
+  }
+
+  getUserProfile(){
+    this.authService.getUserProfile().then(userProfile => {
+      this.userProfile.set(userProfile);
+    })
   }
 }
