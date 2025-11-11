@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config-dev.json'):
+    def __init__(self, config_file='config.json'):
         """Initialize KPI Processor with configuration"""
         self.config = self.load_config(config_file)
 

@@ -53,7 +53,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                                 // Public endpoints
-                                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                                .requestMatchers("/actuator/health", "/actuator/info", "/api/v1/pulse/cache/**").permitAll()
 
                                 // Role-based access (example)
 //                        .requestMatchers("/admin/**").hasRole("ADMIN")
