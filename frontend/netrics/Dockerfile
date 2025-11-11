@@ -20,4 +20,8 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=build app/dist/netrics /usr/share/nginx/html/
 
 # Default port in nginx (Configured in nginx.conf). Use 4200:80 when running docker container [dockre run -p 4200:80 ...]
+#EXPOSE 80
 EXPOSE 80
+
+# Run nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]

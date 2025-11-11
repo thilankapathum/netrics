@@ -25,6 +25,8 @@
     "chart.js": "^4.5.0",
     "daisyui": "^5.0.50",
     "express": "^4.18.2",
+    "keycloak-angular": "^20.0.0",
+    "keycloak-js": "^24.0.2",
     "ng-apexcharts": "^2.0.1",
     "ng2-charts": "^8.0.0",
     "postcss": "^8.5.6",

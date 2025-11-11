@@ -26,6 +26,7 @@ replay_pid*
 .env
 
 backend/python/pulse/files/
+backend/python/pulse/.idea/
 backend/python/pulse/kpi_processor.log
 frontend/netrics/.angular
 frontend/netrics/node_modules

@@ -1,7 +1,7 @@
 spring:
   datasource:
     # DOCKER-COMPOSE MYSQL DATABASE INFORMATION
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB}   # Environment Variables defined in application-prod.yml
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB_PULSE}   # Environment Variables defined in application-prod.yml
     username: ${POSTGRES_USER:pguser}   # Defined in docker-compose.yml as an Environment Variable
     password: ${POSTGRES_PASSWORD:password}   # Defined in docker-compose.yml as an Environment Variable
     driver-class-name: org.postgresql.Driver
