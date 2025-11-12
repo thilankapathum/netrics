@@ -1,4 +1,7 @@
 import os
+import sys
+from collections import defaultdict
+
 import zipfile
 import pandas as pd
 import psycopg2
@@ -11,21 +14,26 @@ from datetime import datetime
 import re
 from typing import Dict, List, Optional, Tuple
 import json
-import sys
 import requests
+from datetime import timedelta
 
-# Force UTF-8 encoding for stdout
-sys.stdout.reconfigure(encoding='utf-8')
-sys.stderr.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
+sys.stderr.reconfigure(encoding='utf-8', line_buffering=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('kpi_processor.log', encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
+        # Remove StreamHandler(sys.stdout) to allow direct print() statements for progress
     ]
 )
+
+console_handler = logging.StreamHandler(sys.stderr)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logging.getLogger().addHandler(console_handler)
+
 logger = logging.getLogger(__name__)
 
 
@@ -506,7 +514,7 @@ class KPIProcessor:
         cell_columns = ['Cell Name', 'Cell_Name', 'CellName', 'cell_name', 'E-UTRAN FDD Cell Name',
                         'E-UTRAN FDD Cell Name', 'E-UTRAN\xa0FDD\xa0Cell Name', 'BTS NAME']
         enodeb_columns = ['eNodeB name', 'eNodeB_name', 'eNodeBName', 'enodeb_name', 'Managed Element',
-                          'ManagedElement Name', 'Managed Element', 'Managed\xa0Element', 'SITE Name', 'Site Name']
+                          'ManagedElement Name', 'Managed Element', 'Managed\xa0Element', 'SITE Name', 'Site Name','eNodeB Name']
 
         for col in cell_columns:
             if col in df.columns:
@@ -555,11 +563,9 @@ class KPIProcessor:
         Args:
             value: The value to clean and convert
             multiplication_factor: Factor to multiply the value by
-            show_progress: Whether to show conversion errors in progress line
-            error_counter: Dictionary to track conversion errors {'count': 0}
+            show_progress: Whether to track conversion errors
+            error_counter: Dictionary to track conversion errors by value type
         """
-
-        error_counter_1 = 0
         if pd.isna(value):
             return None
 
@@ -578,12 +584,9 @@ class KPIProcessor:
             return numeric_value
 
         except ValueError:
-            if show_progress and error_counter is not None:
-                error_counter['count'] += 1
-                print(f"\r⚠ Conversion errors: {error_counter['count']} (latest: '{value}' → numeric)",
-                      end='', flush=True)
-            else:
-                logger.warning(f"Could not convert value to numeric: {value}")
+            if error_counter is not None:
+                # Track the specific value that failed conversion
+                error_counter[str(value)] += 1
             return None
 
     def get_kpi_values_for_standard_kpi(self, df: pd.DataFrame, standard_kpi_name: str,
@@ -644,6 +647,9 @@ class KPIProcessor:
             logger.warning("No KPI columns found in dataframe")
             return pd.DataFrame()
 
+        # Track conversion errors by value type
+        conversion_errors = defaultdict(int)
+
         # Process only standard KPIs (type = 'standard')
         processed_rows = []
 
@@ -677,9 +683,14 @@ class KPIProcessor:
 
                 # Process each row in the dataframe
                 for _, row in df.iterrows():
-                    # Get main KPI value
+                    # Get main KPI value with error tracking
                     multiplication_factor = mapping_info.get('multiplication_factor', 1.0)
-                    cleaned_value = self.clean_kpi_value(row[col], multiplication_factor)
+                    cleaned_value = self.clean_kpi_value(
+                        row[col],
+                        multiplication_factor,
+                        show_progress=True,
+                        error_counter=conversion_errors
+                    )
 
                     if cleaned_value is None:
                         continue
@@ -698,16 +709,20 @@ class KPIProcessor:
                             num_mapping_info = self.map_oss_kpi_to_standard(numerator_col, oss_identifier, rat_id)
                             num_mult_factor = num_mapping_info.get('multiplication_factor',
                                                                    1.0) if num_mapping_info else 1.0
-                            numerator_value = self.clean_kpi_value(row[numerator_col], num_mult_factor)
+                            numerator_value = self.clean_kpi_value(row[numerator_col], num_mult_factor, show_progress=True, error_counter=conversion_errors)
 
                     if kpi_values_info['denominator_value']:
                         denominator_col = kpi_values_info['denominator_value']
                         if denominator_col in row:
                             # Get multiplication factor for denominator
                             denom_mapping_info = self.map_oss_kpi_to_standard(denominator_col, oss_identifier, rat_id)
-                            denom_mult_factor = denom_mapping_info.get('multiplication_factor',
-                                                                       1.0) if denom_mapping_info else 1.0
-                            denominator_value = self.clean_kpi_value(row[denominator_col], denom_mult_factor)
+                            denom_mult_factor = denom_mapping_info.get('multiplication_factor', 1.0) if denom_mapping_info else 1.0
+                            denominator_value = self.clean_kpi_value(
+                                row[denominator_col],
+                                denom_mult_factor,
+                                show_progress=True,
+                                error_counter=conversion_errors
+                            )
 
                     # Determine data type
                     data_type = self.determine_data_type(row[col], standard_kpi_name, rat_id)
@@ -723,16 +738,20 @@ class KPIProcessor:
                         'oss_id': oss_config['id'],
                         'oss_kpi_name': col,
                         'file_name': file_name,
-                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'] if kpi_values_info[
-                            'numerator_kpi_id'] else None,
+                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'] if kpi_values_info['numerator_kpi_id'] else None,
                         'numerator_kpi_value': numerator_value,
-                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'] if kpi_values_info[
-                            'denominator_kpi_id'] else None,
+                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'] if kpi_values_info['denominator_kpi_id'] else None,
                         'denominator_kpi_value': denominator_value,
                         'district_code_id': district_code_id,
                         'rat_id': rat_id
                     }
                     processed_rows.append(processed_row)
+
+        # Log conversion errors in consolidated format
+        if conversion_errors:
+            rat_name = self.rats[rat_id]['name']
+            for value, count in sorted(conversion_errors.items(), key=lambda x: x[1], reverse=True):
+                logger.warning(f"[{rat_name}] Could not convert value to numeric: '{value}' - {count} occurrences")
 
         if not processed_rows:
             logger.warning("No valid KPI mappings found after processing")
@@ -791,10 +810,11 @@ class KPIProcessor:
         return error_log_path
 
     def insert_data_to_postgresql(self, df: pd.DataFrame, rat_id: int, original_filename: str) -> bool:
-        """Insert unpivoted data into PostgreSQL database with individual row error handling
+        """Insert unpivoted data into PostgreSQL database with individual row error handling.
 
+        Shows progress, insertion rate, and estimated time remaining in real time.
         Returns:
-            bool: True if all records inserted successfully, False if there were errors
+            bool: True if all records inserted successfully, False if there were errors.
         """
         if df.empty:
             logger.warning("No data to insert")
@@ -804,6 +824,7 @@ class KPIProcessor:
         error_records = []
         successful_inserts = 0
         total_records = len(df)
+        start_time = time.time()
 
         try:
             rat_name = self.rats[rat_id]['name']
@@ -811,7 +832,7 @@ class KPIProcessor:
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # Prepare insert query with all required columns including rat_id
+            # SQL query
             insert_query = """
             INSERT INTO lte_fdd_kpi_day 
             (timestamp, cell_name, site_name, lte_fdd_standard_kpi_id, 
@@ -821,10 +842,12 @@ class KPIProcessor:
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
-            # Print initial progress
-            print(f"\r[{rat_name}] 0/{total_records} records inserted | errors: 0", end='', flush=True)
+            # Progress tracking
+            update_interval = 100
+            last_update_success = 0
+            last_update_error = 0
+            last_progress_line = ""
 
-            # Insert rows individually to catch errors per row
             for idx, row in df.iterrows():
                 try:
                     data_tuple = (
@@ -848,51 +871,67 @@ class KPIProcessor:
                     connection.commit()
                     successful_inserts += 1
 
-                    # Update progress on the same line
-                    print(
-                        f"\r[{rat_name}] {successful_inserts}/{total_records} records inserted | errors: {len(error_records)}",
-                        end='', flush=True)
-
                 except Error as e:
-                    # Rollback the failed transaction
                     connection.rollback()
-
-                    # Store error details
-                    error_msg = str(e)
                     error_records.append({
                         'row_index': idx,
                         'error_type': type(e).__name__,
-                        'error_message': error_msg,
+                        'error_message': str(e),
                         'row_data': row.to_dict()
                     })
 
-                    # Update progress including error count
-                    print(
-                        f"\r[{rat_name}] {successful_inserts}/{total_records} records inserted | errors: {len(error_records)}",
-                        end='', flush=True)
+                # Update progress
+                if (
+                        successful_inserts - last_update_success >= update_interval
+                        or len(error_records) - last_update_error >= update_interval
+                        or successful_inserts + len(error_records) == total_records
+                ):
+                    elapsed = time.time() - start_time
+                    processed = successful_inserts + len(error_records)
+                    rate = processed / elapsed if elapsed > 0 else 0
+
+                    remaining = total_records - processed
+                    eta_seconds = remaining / rate if rate > 0 else 0
+                    eta_str = str(timedelta(seconds=int(eta_seconds)))
+
+                    progress_msg = (
+                        f"[{rat_name}] {successful_inserts}/{total_records} records inserted | "
+                        f"errors: {len(error_records)} | rate: {rate:.2f} rec/s | ETA: {eta_str}"
+                    )
+
+                    # Clear previous line by overwriting with spaces, then print new progress
+                    if last_progress_line:
+                        sys.stdout.write('\r' + ' ' * len(last_progress_line) + '\r')
+                    sys.stdout.write(progress_msg)
+                    sys.stdout.flush()
+
+                    last_progress_line = progress_msg
+                    last_update_success = successful_inserts
+                    last_update_error = len(error_records)
 
             # Move to new line after completion
-            print()  # This creates a newline after the progress line
+            sys.stdout.write('\n')
+            sys.stdout.flush()
 
-            # Log summary
+            # Final logging
             logger.info(f"[{rat_name}] Successfully inserted {successful_inserts} records")
 
             if error_records:
                 logger.warning(f"[{rat_name}] Failed to insert {len(error_records)} records")
 
-                # Create error log file
                 error_log_path = self.create_error_log_file(rat_id, original_filename, error_records)
                 logger.info(f"[{rat_name}] Error log created: {error_log_path}")
-
                 return False
             else:
                 logger.info(f"[{rat_name}] All records inserted successfully")
                 return True
 
         except Error as e:
-            print()  # Ensure we move to a new line if there's an exception
+            sys.stdout.write('\n')
+            sys.stdout.flush()
             logger.error(f"Error during database operation: {e}")
             return False
+
         finally:
             if connection:
                 cursor.close()
