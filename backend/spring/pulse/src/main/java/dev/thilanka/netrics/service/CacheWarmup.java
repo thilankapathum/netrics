@@ -4,4 +4,6 @@ public interface CacheWarmup {
     void evictAndWarmupCache(String ratName);
 
     void evictByRatName(String ratName);
+
+    void warmUpCache(String ratName);
 }

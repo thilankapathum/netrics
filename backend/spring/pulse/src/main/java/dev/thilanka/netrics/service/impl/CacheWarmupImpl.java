@@ -31,11 +31,11 @@ public class CacheWarmupImpl implements CacheWarmup {
     @Override
     public void evictAndWarmupCache(String ratName) {
         evictByRatName(ratName);
+        cellNameService.reloadCells();
+        warmupDateRangeCache(ratName);
         warmupBasicKpiSnapshotCache(ratName);
         warmupKpiTrendCache(ratName);
         warmupWorstCellCache(ratName);
-        cellNameService.reloadCells();
-        warmupDateRangeCache(ratName);
         System.out.println("Cache warmup complete for: " + ratName + "!");
     }
 
@@ -50,6 +50,16 @@ public class CacheWarmupImpl implements CacheWarmup {
         } else {
             System.out.println("No cache entries found for RAT: " + ratName);
         }
+    }
+
+    @Override
+    public void warmUpCache(String ratName) {
+        cellNameService.reloadCells();
+        warmupDateRangeCache(ratName);
+        warmupBasicKpiSnapshotCache(ratName);
+        warmupKpiTrendCache(ratName);
+        warmupWorstCellCache(ratName);
+        System.out.println("Cache warmup complete for: " + ratName + "!");
     }
 
     private void warmupBasicKpiSnapshotCache(String ratName) {

@@ -272,6 +272,8 @@ services:
   kpip-day:
     image: thilankaw/netrics/kpip-day:0.0.5
     container_name: kpip-day
+    tty: true          # REQUIRED for single-line updates
+    stdin_open: true   # REQUIRED for single-line updates
     env_file:
       - .env
     networks:
@@ -307,8 +309,9 @@ services:
     container_name: nginx
     environment:
       - DOMAIN_IP=${DOMAIN_IP}
+      - FRONTEND_PORT=${FRONTEND_PORT}
     ports:
-      - "8000:8000"   # Remember to Enable CORS in BeansConfig for localhost:4200
+      - "${FRONTEND_PORT}:8000"   # Remember to Enable CORS in BeansConfig for localhost:4200
     networks:
       - public_net
       - private_net

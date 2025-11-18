@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,18 +17,21 @@ import java.util.List;
 public class BasicKpiController {
     private final BasicKpiService basicKpiService;
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
     ResponseEntity<List<BasicKpiDto>> getAllByRat(@RequestParam String ratName){
         List<BasicKpiDto> dtos = basicKpiService.getAllByRat(ratName);
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping
     ResponseEntity<BasicKpiDto> createBasicKpi(@RequestBody @Valid BasicKpiDto dto){
         BasicKpiDto savedDto = basicKpiService.createBasicKpi(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("list")
     ResponseEntity<List<BasicKpiDto>> createBasicKpiList(@RequestBody @Valid List<BasicKpiDto> dtos){
         List<BasicKpiDto> basicKpiDtos = basicKpiService.createBasicKpiList(dtos);

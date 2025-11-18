@@ -4,6 +4,7 @@ import dev.thilanka.netrics.service.CacheWarmup;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,6 +17,7 @@ public class CacheController {
     private final CacheManager cacheManager;
     private final CacheWarmup cacheWarmup;
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping("evict-all")
     public ResponseEntity<String> evictAllCaches(){
         for (String name : cacheManager.getCacheNames()){
@@ -25,16 +27,25 @@ public class CacheController {
         return ResponseEntity.ok("All caches cleared!");
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping("evict")
     public ResponseEntity<String> evictByRatName(@RequestParam("ratName") String ratName){
         cacheWarmup.evictByRatName(ratName);
         return ResponseEntity.ok("Cache of " + ratName + " is cleared!");
     }
 
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping("evict-and-warmup")
     public ResponseEntity<String> evictAndWarmupCaches(@RequestParam("ratName") String ratName){
         cacheWarmup.evictAndWarmupCache(ratName);
         return ResponseEntity.ok(ratName + " caches cleared and warmed-up!");
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PostMapping("warm-up")
+    public ResponseEntity<String> warmUpCaches(@RequestParam("ratName") String ratName){
+        cacheWarmup.warmUpCache(ratName);
+        return ResponseEntity.ok(ratName + " caches warmed-up!");
     }
 
 }

@@ -50,8 +50,8 @@ keycloak:
   realm-name: ${REALM_NAME:netrics}
   domain-ip: ${DOMAIN_IP:netrics.local}
   nginx-port: ${FRONTEND_PORT:8000}
-  keycloak-host: ${KEYCLOAK_HOST:keycloak}
-  keycloak-port: ${KEYCLOAK_PORT:8080}
+  keycloak-host: ${KEYCLOAK_HOST:netrics.local}
+  keycloak-port: ${KEYCLOAK_PORT:8000}
 
 management:
   endpoints:
