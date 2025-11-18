@@ -8,10 +8,24 @@
     }
     <app-linechart [hidden]="loadingAnalysisModalChart" [chartSeries]="chartSeries"></app-linechart>
     <div class="modal-action">
-      <a class="btn btn-outline btn-primary btn-xs" (click)="onCellNavigate()" [routerLink]="getRouterLinkForCell()">More</a>
+      <a class="btn btn-outline btn-primary btn-sm" (click)="onCellNavigate()" [routerLink]="getRouterLinkForCell()">
+        More
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round"/>
+        </svg>
+      </a>
       <form method="dialog">
         <!-- if there is a button in form, it will close the modal -->
-        <button class="btn btn-xs">Close</button>
+        <button class="btn btn-sm">
+          Close
+          <span class="text-secondary">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 21L12 12M12 12L3 3M12 12L21.0001 3M12 12L3 21.0001" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
       </form>
     </div>
   </div>
@@ -20,12 +34,19 @@
 
 <div>
   <div class="flex flex-col gap-3">
-    <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
-      <div class="flex flex-col gap-y-0 grow-1">
-        <div class="text-sm font-medium"></div>
-        <div class="text-xl font-semibold">Worst Cell Analysis</div>
+    <nav class="flex flex-row flex-wrap gap-2 space-x-2 items-center">
+      <div class="breadcrumbs text-xs text-secondary grow-1">
+        <ul>
+          <li><a routerLink="/">
+            <svg class="text-base-300" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 17.0002V11.4522C20 10.9179 19.9995 10.6506 19.9346 10.4019C19.877 10.1816 19.7825 9.97307 19.6546 9.78464C19.5102 9.57201 19.3096 9.39569 18.9074 9.04383L14.1074 4.84383C13.3608 4.19054 12.9875 3.86406 12.5674 3.73982C12.1972 3.63035 11.8026 3.63035 11.4324 3.73982C11.0126 3.86397 10.6398 4.19014 9.89436 4.84244L5.09277 9.04383C4.69064 9.39569 4.49004 9.57201 4.3457 9.78464C4.21779 9.97307 4.12255 10.1816 4.06497 10.4019C4 10.6506 4 10.9179 4 11.4522V17.0002C4 17.932 4 18.3978 4.15224 18.7654C4.35523 19.2554 4.74432 19.6452 5.23438 19.8482C5.60192 20.0005 6.06786 20.0005 6.99974 20.0005C7.93163 20.0005 8.39808 20.0005 8.76562 19.8482C9.25568 19.6452 9.64467 19.2555 9.84766 18.7654C9.9999 18.3979 10 17.932 10 17.0001V16.0001C10 14.8955 10.8954 14.0001 12 14.0001C13.1046 14.0001 14 14.8955 14 16.0001V17.0001C14 17.932 14 18.3979 14.1522 18.7654C14.3552 19.2555 14.7443 19.6452 15.2344 19.8482C15.6019 20.0005 16.0679 20.0005 16.9997 20.0005C17.9316 20.0005 18.3981 20.0005 18.7656 19.8482C19.2557 19.6452 19.6447 19.2554 19.8477 18.7654C19.9999 18.3978 20 17.932 20 17.0002Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Home
+          </a></li>
+          <li class="font-bold">Worst Cell Analysis</li>
+        </ul>
       </div>
-      <!--      <div class="grow-1"></div>-->
       <div>
         <div class="tabs tabs-box tabs-xs border border-base-300">
           <!--          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD" checked="checked"/>-->
@@ -76,17 +97,27 @@
           }
         </select>
       </div>
+      <div>
+        <button routerLink="/pulse/cell" class="btn btn-sm">
+          Cell Analysis
+          <span class="text-secondary">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
+      </div>
     </nav>
 
     <!--    KPI SNAPSHOT SECTION-->
     <section>
-      @if (loadingBasicKpi) {
-        <!--              <progress class="progress w-56"></progress>-->
-        <div class="flex w-full flex-col gap-4 mb-2">
-          <div class="skeleton h-48 w-full"></div>
-        </div>
-      }
-      <div class="stats w-full flex flex-wrap border border-base-300 bg-base-100 rounded-xl shadow-md/5">
+
+      <div [hidden]="!loadingBasicKpi" class="flex w-full flex-col gap-4 mb-2">
+        <div class="skeleton h-48 w-full"></div>
+      </div>
+
+      <div [hidden]="loadingBasicKpi" class="stats w-full flex flex-wrap border border-base-300 bg-base-100 rounded-xl">
         @for (snapshot of sortedBasicKpiSnapshots; track $index) {
           <div class="stat w-1/2 md:w-1/3 lg:w-1/6">
             <div class="stat-title text-md font-semibold">
@@ -140,13 +171,11 @@
       </div>
     </section>
 
-
-    <!--    <div class="flex flex-row gap-4 flex-wrap justify-around">-->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 ">
 
       <!--      KPI TREND SECTION-->
 
-      <section class=" flex flex-col gap-2 p-4 border border-base-300 rounded-xl bg-base-100 shadow-lg/5">
+      <section class=" flex flex-col gap-2 p-4 border border-base-300 rounded-xl bg-base-100 ">
         <div class="flex flex-row gap-2">
           <h2 class="text-xl font-semibold">KPI Trend</h2>
           <div class="tabs tabs-box tabs-xs ml-auto">
@@ -158,18 +187,16 @@
                    [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
         </div>
-        @if (loadingKpiTrend) {
-          <div class="flex w-full flex-col gap-4 mb-2">
-            <div class="skeleton h-64 w-full"></div>
-          </div>
-        }
+        <div [hidden]="!loadingKpiTrend" class="flex w-full flex-col gap-4 mb-2">
+          <div class="skeleton h-64 w-full"></div>
+        </div>
         <app-line-chart [hidden]="loadingKpiTrend" [kpiTrendData]="kpiTrendData"></app-line-chart>
       </section>
 
 
       <!--      WORST CELLS SECTION-->
 
-      <section class=" flex flex-col gap-3 grow-1 p-4 border border-base-300 rounded-xl bg-base-100 shadow-lg/5">
+      <section class=" flex flex-col gap-3 grow-1 p-4 border border-base-300 rounded-xl bg-base-100">
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
           <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
@@ -221,10 +248,14 @@
                     </span>
                   </td>
                   <td class="p-0">
-                    <button class="btn btn-ghost btn-xs p-0"
+                    <button class="btn btn-ghost btn-xs text-secondary"
                             (click)="openAnalysisModal(cell.kpiName!, cell.cellName!)">
-                      <span class="material-symbols-outlined text-base-content tsize-20">troubleshoot</span>
-                      <!--                      <i class="fa-solid fa-magnifying-glass-chart text-neutral"></i>-->
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                          d="M7 10H10M10 10H13M10 10V7M10 10V13M15 15L21 21M10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10C17 13.866 13.866 17 10 17Z"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+
                     </button>
                   </td>
                 </tr>
@@ -255,9 +286,7 @@
             </div>
           </div>
         </div>
-
       </section>
     </div>
-
   </div>
 </div>

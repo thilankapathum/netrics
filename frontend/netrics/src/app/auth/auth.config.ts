@@ -4,8 +4,8 @@ import { KeycloakService, KeycloakOptions } from 'keycloak-angular';
 // Keycloak Configuration
 export const keycloakConfig: KeycloakOptions = {
   config: {
-    url: 'http://172.19.95.160:8000/auth',
-    // url: 'http://netrics.local:8000/auth',
+    // url: 'http://172.19.95.160:8000/auth',
+    url: 'http://netrics.local:8000/auth',
     realm: 'netrics',
     clientId: 'netrics-frontend'
   },
