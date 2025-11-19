@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.BasicKpiDto;
+import dev.thilanka.netrics.dto.BasicKpiWithStandardKpiDto;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.BasicKpi;
 import dev.thilanka.netrics.mapper.Mapper;
@@ -9,6 +10,7 @@ import dev.thilanka.netrics.service.BasicKpiService;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,5 +61,15 @@ public class BasicKpiServiceImpl implements BasicKpiService {
     public BasicKpi findByKpiName(String kpiName, Rat rat) {
         return basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BasicKpiWithStandardKpiDto findByKpiNameAndRat(String kpiName, String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
+                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));
+
+        return mapper.basicKpiToBasicKpiWithStandardKpiDto(basicKpi);
     }
 }

@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +55,7 @@ public class Mapper {
     public StandardKpi toStandardKpi(StandardKpiDto standardKpiDto) {
 
         Rat rat = ratRepository.findByName(standardKpiDto.ratName())
-                .orElseThrow(()-> new RuntimeException("RAT not found by name: " + standardKpiDto.ratName()));
+                .orElseThrow(() -> new RuntimeException("RAT not found by name: " + standardKpiDto.ratName()));
 
         return StandardKpi
                 .builder()
@@ -110,7 +112,7 @@ public class Mapper {
 
     public BasicKpi toBasicKpi(BasicKpiDto dto) {
         Rat rat = ratRepository.findByName(dto.ratName())
-                .orElseThrow(()-> new RuntimeException("RAT not found by name: " + dto.ratName()));
+                .orElseThrow(() -> new RuntimeException("RAT not found by name: " + dto.ratName()));
 
         return BasicKpi.builder()
                 .kpiName(dto.kpiName())
@@ -124,7 +126,27 @@ public class Mapper {
     }
 
     public BasicKpiDto basicKpiToDto(BasicKpi kpi) {
-        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit(),kpi.getRat().getName());
+        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit(), kpi.getRat().getName());
+    }
+
+    public BasicKpiWithStandardKpiDto basicKpiToBasicKpiWithStandardKpiDto(BasicKpi basicKpi) {
+
+        List<StandardKpiDto> standardKpiDtos = new ArrayList<>();
+
+        for (StandardKpi kpi : basicKpi.getStandardKpis()) {
+            standardKpiDtos.add(standardKpiToDto(kpi));
+        }
+
+        return new BasicKpiWithStandardKpiDto(
+                basicKpi.getKpiName(),
+                basicKpi.getLabel(),
+                basicKpi.getWorstOrder(),
+                basicKpi.getThreshold(),
+                basicKpi.getAggregation(),
+                basicKpi.getUnit(),
+                basicKpi.getRat().getName(),
+                standardKpiDtos);
+
     }
 
 //-------- KpiData KpiDataDto -----------------------------------
@@ -185,11 +207,11 @@ public class Mapper {
 
     //================ RAT =====================
 
-    public RatDto toRatDto(Rat rat){
-        return new RatDto(rat.getName(),rat.getLabel());
+    public RatDto toRatDto(Rat rat) {
+        return new RatDto(rat.getName(), rat.getLabel());
     }
 
-    public Rat ratDtoToRat(RatDto dto){
+    public Rat ratDtoToRat(RatDto dto) {
         return Rat.builder()
                 .name(dto.name())
                 .label(dto.label())

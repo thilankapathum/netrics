@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.BasicKpiDto;
+import dev.thilanka.netrics.dto.BasicKpiWithStandardKpiDto;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.BasicKpi;
 import jakarta.validation.Valid;
@@ -16,4 +17,6 @@ public interface BasicKpiService {
 
     BasicKpi findByKpiName(String kpiName, String ratName);
     BasicKpi findByKpiName(String kpiName, Rat rat);
+
+    BasicKpiWithStandardKpiDto findByKpiNameAndRat(String kpiName, String ratName);
 }
