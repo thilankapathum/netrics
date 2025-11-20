@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,11 +21,7 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @RequiredArgsConstructor
 public class CacheWarmupImpl implements CacheWarmup {
-    private final KpiDayService kpiDayService;
-    private final BasicKpiService basicKpiService;
-    private final DistrictService districtService;
-    private final StandardKpiService standardKpiService;
-    private final String[] periods = {"day"};
+
     private final RedisTemplate<String, Object> redisTemplate;
     private final CellNameService cellNameService;
     private final DateService dateService;
@@ -33,6 +30,7 @@ public class CacheWarmupImpl implements CacheWarmup {
 
     @Override
     public void evictAndWarmupCache(String ratName) {
+        long start = System.currentTimeMillis();
         evictByRatName(ratName);
         warmupDateRangeCache(ratName);
 
@@ -43,7 +41,11 @@ public class CacheWarmupImpl implements CacheWarmup {
 
         CompletableFuture.allOf(reloadCellsFuture,basicKpiSnapshotFuture,kpiTrendFuture,worstCellFuture).join();
 
-        System.out.println("CACHE WARM-UP COMPLETE FOR: " + ratName.toUpperCase() + "!");
+        long end = System.currentTimeMillis();
+        long difference = end - start;
+        Duration duration = Duration.ofMillis(difference);
+        String formatted = String.format("%02dh %02dm %02ds", duration.toHours(),duration.toMinutesPart(),duration.toSecondsPart());
+        System.out.println("CACHE WARM-UP COMPLETE FOR: " + ratName.toUpperCase() + "! | Took " + formatted);
     }
 
     @Override
@@ -61,7 +63,6 @@ public class CacheWarmupImpl implements CacheWarmup {
 
     @Override
     public void warmUpCache(String ratName) {
-//        cellNameService.reloadCells();
         warmupDateRangeCache(ratName);
 
         CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells();

@@ -51,13 +51,15 @@ public class KpiDayController {
             @RequestParam String ratName) {
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
-            if (excludeZeroes){
-                return kpiDayService.getWorstCellsByKpiExcludeZeroes(kpiName, period, ratName);
-            } else return kpiDayService.getWorstCellsByKpi(kpiName, period,ratName);
+//            if (excludeZeroes){
+//                return kpiDayService.getWorstCellsByKpiExcludeZeroes(kpiName, period, ratName);
+//            } else return kpiDayService.getWorstCellsByKpi(kpiName, period,ratName);
+            return kpiDayService.getWorstCellsByKpi(kpiName, period,excludeZeroes,ratName);
         } else {
-            if (excludeZeroes) {
-                return kpiDayService.getWorstCellsByKpiAndDistrictExcludeZeroes(kpiName, period, districtName, ratName);
-            } else return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName, ratName);
+//            if (excludeZeroes) {
+//                return kpiDayService.getWorstCellsByKpiAndDistrictExcludeZeroes(kpiName, period, districtName, ratName);
+//            } else return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName, ratName);
+            return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, excludeZeroes,districtName, ratName);
         }
     }
 

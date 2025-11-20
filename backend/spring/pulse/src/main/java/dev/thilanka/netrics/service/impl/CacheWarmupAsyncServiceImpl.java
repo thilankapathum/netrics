@@ -92,7 +92,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
             try {
-                kpiDayService.getWorstCellsByKpi(standardKpi.kpiName(), "day", ratName);
+                kpiDayService.getWorstCellsByKpi(standardKpi.kpiName(), "day", false,ratName);
                 System.out.println("[" + ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName());
             } catch (Exception e) {
                 System.out.println("[" + ratName + "] Error while warming Worst cell cache for: " + standardKpi.kpiName());
@@ -100,7 +100,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
             for (DistrictDto district : districts) {
                 try {
-                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", district.name(), ratName);
+                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", false,district.name(), ratName);
                     System.out.println("[" + ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName() + "-" + district.name());
                 } catch (Exception e) {
                     System.out.println("[" + ratName + "] Error while warming up worst cells cache : " + standardKpi.kpiName() + "-" + district.name());

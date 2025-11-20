@@ -25,14 +25,14 @@ public interface KpiDayService {
 
     List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName, String ratName);
 
-    List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period, String ratName);
+    List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period,boolean excludeZeroes, String ratName);
 
-    List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName);
+//    List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName);
 
     List<KpiDay> getKpiWithoutDistrict(String ratName);
 
-    List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, String districtName, String ratName);
+    List<WorstCellsDto> getWorstCellsByKpiAndDistrict(String kpiName, String period, boolean excludeZeroes, String districtName, String ratName);
 
-    List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName, String ratName);
+//    List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName, String ratName);
 
 }
