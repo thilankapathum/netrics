@@ -15,6 +15,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "lte_fdd_kpi_day",
+        indexes = {
+                @Index(
+                        name = "idx_kpiday_std_rat_time",
+                        columnList = "lte_fdd_standard_kpi_id, rat_id, timestamp"
+                )},
         uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","lte_fdd_standard_kpi_id", "oss_id","rat_id"})})
 public class KpiDay {
     @Id

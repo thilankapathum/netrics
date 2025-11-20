@@ -27,7 +27,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
 
     @Override
-    @Async
+    @Async("cacheExecutor")
     public CompletableFuture<Void> warmupBasicKpiSnapshotCache(String ratName) {
         System.out.println("Warming-up Basic KPI cache of: " + ratName + "...");
         List<BasicKpiDto> basicKpis = basicKpiService.getAllByRat(ratName);
@@ -57,7 +57,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
     }
 
     @Override
-    @Async
+    @Async("cacheExecutor")
     public CompletableFuture<Void> warmupKpiTrendCache(String ratName) {
         System.out.println("Warming-up KPI trend cache of: " + ratName + "...");
         List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat(ratName);
@@ -84,7 +84,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
     }
 
     @Override
-    @Async
+    @Async("cacheExecutor")
     public CompletableFuture<Void> warmupWorstCellCache(String ratName) {
         System.out.println("Warming-up Worst-cell cache of: " + ratName + "...");
         List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat(ratName);
