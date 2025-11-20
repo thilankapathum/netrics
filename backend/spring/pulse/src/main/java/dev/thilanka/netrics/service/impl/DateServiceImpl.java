@@ -24,6 +24,11 @@ public class DateServiceImpl implements DateService {
     }
 
     @Override
+    public LocalDateTime getLatestDateStart(Rat rat, String period) {
+        return getLatestPreviousDate(period, rat).plusDays(1L);
+    }
+
+    @Override
     public LocalDateTime getLatestDate(String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         return kpiDayRepository.getLatestDate(rat.getId());
@@ -60,6 +65,11 @@ public class DateServiceImpl implements DateService {
                 return getLatestDate(rat).minusDays(365);
             }
         }
+        return null;
+    }
+
+    @Override
+    public LocalDateTime getLatestPreviousDateStart(Rat rat, String period) {
         return null;
     }
 
