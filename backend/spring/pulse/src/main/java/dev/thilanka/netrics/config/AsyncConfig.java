@@ -25,8 +25,8 @@ public class AsyncConfig {
     @Bean(name = "cacheExecutor")
     public Executor cacheExecutor(){
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(3);
-        executor.setMaxPoolSize(7);
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(9);
         executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("CacheWarmup-");
         executor.initialize();

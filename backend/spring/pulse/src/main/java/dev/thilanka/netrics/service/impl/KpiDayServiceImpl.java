@@ -125,8 +125,6 @@ public class KpiDayServiceImpl implements KpiDayService {
     @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-//        BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(basicKpiName, rat)
-//                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
 
         BasicKpiWithStandardKpiDto basicKpi = basicKpiService.findByKpiNameAndRat(basicKpiName, ratName);    //-- To accommodate Async execution of warm-up without having to Lazy load StandardKpis from BasicKpi
 
@@ -134,10 +132,6 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
-//        for (StandardKpi standardKpi : basicKpi.getStandardKpis()) {
-//            KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.getKpiName(), period, rat);
-//            kpiSnapshots.add(snapshot);
-//        }
         for (StandardKpiDto standardKpi : basicKpi.standardKpis()) {
             KpiSnapshot snapshot = getLatestKpiSnapshot(standardKpi.kpiName(), period, rat);
             kpiSnapshots.add(snapshot);
@@ -146,13 +140,10 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         //-- CREATE BASIC-KPI'S DATA
         basicKpiSnapshot.setKpiLabel(basicKpi.label());
-//        basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
-//        basicKpiSnapshot.setUnit(basicKpi.getUnit());
         basicKpiSnapshot.setUnit(basicKpi.unit());
 
         basicKpiSnapshot.setPreviousValue(1.0);
 
-//        if (Objects.equals(basicKpi.getAggregation(), "MULTIPLY")) {
         if (Objects.equals(basicKpi.aggregation(), "MULTIPLY")) {
 
             basicKpiSnapshot.setValue(1.0);
@@ -166,10 +157,8 @@ public class KpiDayServiceImpl implements KpiDayService {
             basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * 100.0); //-- To avoid presenting decimals as percentages
 
             basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
-//            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
             basicKpiSnapshot.setImproved(checkImproved(basicKpi.worstOrder(), basicKpiSnapshot.getDifference()));
 
-//        } else if (Objects.equals(basicKpi.getAggregation(), "SUM")) {
         } else if (Objects.equals(basicKpi.aggregation(), "SUM")) {
 
             basicKpiSnapshot.setValue(0.0);
@@ -181,7 +170,6 @@ public class KpiDayServiceImpl implements KpiDayService {
             }
 
             basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
-//            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
             basicKpiSnapshot.setImproved(checkImproved(basicKpi.worstOrder(), basicKpiSnapshot.getDifference()));
 
         } else {
@@ -198,8 +186,6 @@ public class KpiDayServiceImpl implements KpiDayService {
     @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #districtName + '_' + #ratName")
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
-//        BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(basicKpiName, rat)
-//                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + basicKpiName));
         BasicKpiWithStandardKpiDto basicKpi = basicKpiService.findByKpiNameAndRat(basicKpiName, ratName);    //-- To accommodate Async execution of warm-up without having to Lazy load StandardKpis from BasicKpi
 
 
@@ -207,7 +193,6 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
 
-//        for (StandardKpi standardKpi : basicKpi.getStandardKpis()) {
         for (StandardKpiDto standardKpi : basicKpi.standardKpis()) {
             KpiSnapshotDto snapshotDto = getLatestKpiSnapshotWithDistrict(standardKpi.kpiName(), period, districtName, rat);
 
@@ -217,14 +202,11 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         //-- CREATE BASIC-KPI'S DATA
         basicKpiSnapshot.setKpiLabel(basicKpi.label());
-//        basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
         basicKpiSnapshot.setUnit(basicKpi.unit());
-//        basicKpiSnapshot.setUnit(basicKpi.getUnit());
 
         basicKpiSnapshot.setPreviousValue(1.0);
 
         if (Objects.equals(basicKpi.aggregation(), "MULTIPLY")) {
-//        if (Objects.equals(basicKpi.getAggregation(), "MULTIPLY")) {
 
             basicKpiSnapshot.setValue(1.0);
 
@@ -238,10 +220,8 @@ public class KpiDayServiceImpl implements KpiDayService {
 
             basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
             basicKpiSnapshot.setImproved(checkImproved(basicKpi.worstOrder(), basicKpiSnapshot.getDifference()));
-//            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
 
         } else if (Objects.equals(basicKpi.aggregation(), "SUM")) {
-//        } else if (Objects.equals(basicKpi.getAggregation(), "SUM")) {
 
             basicKpiSnapshot.setValue(0.0);
 
@@ -253,7 +233,6 @@ public class KpiDayServiceImpl implements KpiDayService {
 
             basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
             basicKpiSnapshot.setImproved(checkImproved(basicKpi.worstOrder(), basicKpiSnapshot.getDifference()));
-//            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
 
         } else {
             basicKpiSnapshot.setValue(null);
@@ -292,9 +271,6 @@ public class KpiDayServiceImpl implements KpiDayService {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
 
-//        LocalDateTime timestamp = dateService.getLatestDate(rat);
-//        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
-//        Long periodValue = dateService.getPeriod(period);
         LocalDateTime timestamp = dateService.getLatestDate(rat);
         LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period));
 
@@ -311,10 +287,6 @@ public class KpiDayServiceImpl implements KpiDayService {
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
 
-//        LocalDateTime timestamp = dateService.getLatestDate(rat);
-//        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
-//        Long periodValue = dateService.getPeriod(period);
-
         LocalDateTime timestamp = dateService.getLatestDate(rat);
         LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period));
 
@@ -330,10 +302,6 @@ public class KpiDayServiceImpl implements KpiDayService {
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
-
-//        LocalDateTime timestamp = dateService.getLatestDate(rat);
-//        LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
-//        Long periodValue = dateService.getPeriod(period);
 
         LocalDateTime timestamp = dateService.getLatestDate(rat);
         LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period));

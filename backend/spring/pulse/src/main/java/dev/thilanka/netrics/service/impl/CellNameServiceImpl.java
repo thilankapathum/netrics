@@ -4,11 +4,13 @@ import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.CellNameService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -19,11 +21,12 @@ public class CellNameServiceImpl implements CellNameService {
     List<CellNameDto> cellNames = new ArrayList<>();
 
     @Override
-    public int reloadCells() {
-        System.out.println("reloading cells");
+    @Async("cacheExecutor")
+    public CompletableFuture<Integer> reloadCells() {
+        System.out.println("reloading cells...");
         this.cellNames = kpiDayRepository.getAllCellNames();
         System.out.println("Loaded " + this.cellNames.size() + " cells");
-        return this.cellNames.size();
+        return CompletableFuture.completedFuture(this.cellNames.size());
     }
 
     @Override
