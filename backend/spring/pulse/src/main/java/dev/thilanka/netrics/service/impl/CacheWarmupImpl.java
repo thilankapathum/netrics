@@ -40,12 +40,14 @@ public class CacheWarmupImpl implements CacheWarmup {
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName);
 
         CompletableFuture.allOf(reloadCellsFuture,basicKpiSnapshotFuture,kpiTrendFuture,worstCellFuture).join();
+//        CompletableFuture.allOf(basicKpiSnapshotFuture).join();
+
 
         long end = System.currentTimeMillis();
         long difference = end - start;
         Duration duration = Duration.ofMillis(difference);
         String formatted = String.format("%02dh %02dm %02ds", duration.toHours(),duration.toMinutesPart(),duration.toSecondsPart());
-        System.out.println("CACHE WARM-UP COMPLETE FOR: " + ratName.toUpperCase() + "! | Took " + formatted);
+        System.out.println("[" + ratName + "] ---- CACHE WARM-UP COMPLETE! - took " + formatted + " ----");
     }
 
     @Override
@@ -55,9 +57,9 @@ public class CacheWarmupImpl implements CacheWarmup {
 
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
-            System.out.println("Evicted " + keys.size() + " cache entries for RAT: " + ratName);
+            System.out.println("[" + ratName + "] Evicted " + keys.size() + " cache entries!");
         } else {
-            System.out.println("No cache entries found for RAT: " + ratName);
+            System.out.println("[" + ratName + "] No cache entries found!");
         }
     }
 
