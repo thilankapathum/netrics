@@ -58,4 +58,7 @@ public class StandardKpi {
     @ManyToOne
     @JoinColumn(name = "rat_id")
     private Rat rat;
+
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<WorstCell> worstCells;
 }

@@ -3,6 +3,7 @@ package dev.thilanka.netrics.service;
 import dev.thilanka.netrics.dto.DateRangeDto;
 import dev.thilanka.netrics.entity.Rat;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 
 public interface DateService {
@@ -21,4 +22,7 @@ public interface DateService {
 
     Long getPeriod(String period);
 
+    boolean isDateIsDay(LocalDateTime timestamp, DayOfWeek day);
+
+    DayOfWeek extractDayOfWeek(String day);
 }

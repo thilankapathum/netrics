@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 
 @Service
@@ -102,5 +103,19 @@ public class DateServiceImpl implements DateService {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean isDateIsDay(LocalDateTime timestamp, DayOfWeek day) {
+        return timestamp.getDayOfWeek() == day;
+    }
+
+    @Override
+    public DayOfWeek extractDayOfWeek(String day) {
+        try{
+            return DayOfWeek.valueOf(day.trim().toUpperCase());
+        } catch (Exception e){
+            throw new RuntimeException("Incorrect Refresh-Day: " + day);
+        }
     }
 }

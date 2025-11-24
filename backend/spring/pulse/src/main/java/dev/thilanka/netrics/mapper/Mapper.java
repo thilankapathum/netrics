@@ -5,6 +5,7 @@ import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
 import dev.thilanka.netrics.repository.RatRepository;
+import dev.thilanka.netrics.repository.StandardKpiRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Mapper {
     private final RatRepository ratRepository;
+    private final StandardKpiRepository standardKpiRepository;
 
 // ----- OSS -----
 
@@ -216,6 +218,50 @@ public class Mapper {
                 .name(dto.name())
                 .label(dto.label())
                 .build();
+    }
+
+//    =============== WORST-CELL DASHBOARD =====================
+
+    public WorstCell dashboardWorstCellDtoToWorstCell(DashboardWorstCellDto dto, String period, String areaAggregation) {
+
+        Rat rat = ratRepository.findById(dto.ratId()).orElseThrow(
+                () -> new RuntimeException("RAT not found by ID: " + dto.ratId())
+        );
+
+        StandardKpi standardKpi = standardKpiRepository.findById(dto.standardKpiId())
+                .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + dto.standardKpiId()));
+
+        return WorstCell.builder()
+                .timestamp(dto.timestamps().toLocalDateTime())
+                .cellName(dto.cellName())
+                .unit(dto.unit())
+                .value(dto.value())
+                .previousValue(dto.previousValue())
+                .difference(dto.difference())
+                .improved(dto.improved() > 0)
+                .period(period)
+                .areaAggregation(areaAggregation)
+                .rat(rat)
+                .standardKpi(standardKpi)
+                .build();
+    }
+
+    public DashboardWorstCellDto toDashboardWorstCellDto(WorstCell worstCell){
+
+        int isImproved = 0;
+        if (worstCell.isImproved()) isImproved = 1;
+
+        return new DashboardWorstCellDto(
+                Timestamp.valueOf(worstCell.getTimestamp()),
+                worstCell.getCellName(),
+                worstCell.getStandardKpi().getId(),
+                worstCell.getUnit(),
+                worstCell.getValue(),
+                worstCell.getPreviousValue(),
+                worstCell.getDifference(),
+                isImproved,
+                worstCell.getRat().getId()
+        );
     }
 
 }
