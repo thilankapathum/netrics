@@ -13,5 +13,6 @@ public interface WorstCellDashboardService {
 
     public List<DashboardWorstCellDto> createWorstCellsByKpiAndDistrict(String kpiName, String period, boolean excludeZeroes, String districtName, String ratName);
 
+    public List<DashboardWorstCellDto> getWorstCellsByKpiAndArea(String timestamp,String kpiName, String period, boolean excludeZeroes, String areaAggregation, String ratName);
 
 }

@@ -28,6 +28,7 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND timestamp = :timestamp
             	AND rat_id = :ratId
             	AND standard_kpi_id = :standardKpiId
+            	AND area_aggregation = :areaAggregation
             """, nativeQuery = true)
-    List<WorstCell> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId);
+    List<WorstCell> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaAggregation") String areaAggregation);
 }

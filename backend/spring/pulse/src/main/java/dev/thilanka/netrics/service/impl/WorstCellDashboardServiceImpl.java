@@ -15,7 +15,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -71,7 +74,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    public List<DashboardWorstCellDto> createWorstCellsByKpiAndDistrict(String kpiName, String period,boolean excludeZeroes, String districtName, String ratName) {
+    public List<DashboardWorstCellDto> createWorstCellsByKpiAndDistrict(String kpiName, String period, boolean excludeZeroes, String districtName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = dateService.getLatestDate(rat);
 
@@ -85,8 +88,18 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
             LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period));
 
             List<DashboardWorstCellDto> dashboardWorstCells = kpiDayRepository.findWorstCellsForDashboardByDistrict(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, district.getId(), rat.getId(), excludeZeroes);
-            return dashboardWorstCells.stream().map(wc -> createWorstCell(wc,period, districtName)).toList();
-//            return kpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, district.getId(), rat.getId(), excludeZeroes);
+            return dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, districtName)).toList();
         } else return null;
+    }
+
+    @Override
+    public List<DashboardWorstCellDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaAggregation, String ratName) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDateTime timestamps = LocalDate.parse(timestamp,formatter).atStartOfDay();
+        Rat rat = ratService.findRatByName(ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
+
+        List<WorstCell> worstCells = worstCellRepository.findWorstCellsByKpi(period, timestamps, rat.getId(), standardKpi.getId(), areaAggregation);
+        return worstCells.stream().map(ws -> mapper.toDashboardWorstCellDto(ws)).toList();
     }
 }
