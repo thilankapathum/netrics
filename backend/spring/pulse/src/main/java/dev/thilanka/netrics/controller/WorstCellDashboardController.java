@@ -1,12 +1,14 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.DashboardWorstCellDto;
+import dev.thilanka.netrics.service.DateService;
 import dev.thilanka.netrics.service.KpiDayService;
 import dev.thilanka.netrics.service.WorstCellDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,21 +18,30 @@ import java.util.Objects;
 public class WorstCellDashboardController {
     private final WorstCellDashboardService worstCellDashboardService;
     private final KpiDayService kpiDayService;
+    private final DateService dateService;
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @PostMapping
-    public List<DashboardWorstCellDto> createWorstCellsByKpiAndDistrict(
+    public List<DashboardWorstCellDto> createWorstCellsByKpiAndArea(
             @RequestParam String kpiName,
             @RequestParam String period,
-            @RequestParam String districtName,
+            @RequestParam String areaName,
             @RequestParam boolean excludeZeroes,
             @RequestParam String ratName) {
+        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, ratName);
+    }
 
-        if (Objects.equals(districtName, "All Districts") || districtName == null) {
-            return worstCellDashboardService.createWorstCellsByKpi(kpiName, period, "All Districts", excludeZeroes, ratName);
-        } else {
-            return worstCellDashboardService.createWorstCellsByKpiAndDistrict(kpiName, period, excludeZeroes, districtName, ratName);
-        }
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @PostMapping("custom")
+    public List<DashboardWorstCellDto> createWorstCellsByKpiAndAreaCustom(
+            @RequestParam String kpiName,
+            @RequestParam String period,
+            @RequestParam String areaName,
+            @RequestParam boolean excludeZeroes,
+            @RequestParam String date,
+            @RequestParam String ratName) {
+        LocalDateTime timestamp = dateService.extractDate(date);
+        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, timestamp, ratName);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
@@ -39,10 +50,11 @@ public class WorstCellDashboardController {
             @RequestParam String timestamp,
             @RequestParam String kpiName,
             @RequestParam String period,
-            @RequestParam boolean excludeZeroes,
             @RequestParam String areaAggregation,
+            @RequestParam boolean excludeZeroes,
             @RequestParam String ratName
     ) {
         return worstCellDashboardService.getWorstCellsByKpiAndArea(timestamp, kpiName, period, excludeZeroes, areaAggregation, ratName);
     }
+
 }

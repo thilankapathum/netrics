@@ -15,4 +15,6 @@ public interface DistrictCodeRepository extends JpaRepository<DistrictCode,Long>
             ORDER BY LENGTH(district_codes.code) DESC
             """, nativeQuery = true)
     Optional<DistrictCode> findDistrictCodeByPrefix(@Param("cellName") String cellName);
+
+    Optional<DistrictCode> findByCode(String code);
 }

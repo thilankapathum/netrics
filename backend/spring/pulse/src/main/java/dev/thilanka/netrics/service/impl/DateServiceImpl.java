@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -117,5 +119,36 @@ public class DateServiceImpl implements DateService {
         } catch (Exception e){
             throw new RuntimeException("Incorrect Refresh-Day: " + day);
         }
+    }
+
+    @Override
+    public LocalDateTime extractDate(String date) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        return LocalDate.parse(date,formatter).atStartOfDay();
+    }
+
+    @Override
+    public LocalDateTime getPreviousDate(LocalDateTime currentDate, String period) {
+        switch (period) {
+            case "day" -> {
+                return currentDate.minusDays(1);
+            }
+            case "week" -> {
+                return currentDate.minusDays(7);
+            }
+            case "month" -> {
+                return currentDate.minusDays(30);
+            }
+            case "quarter" -> {
+                return currentDate.minusDays(90);
+            }
+            case "half-year" -> {
+                return currentDate.minusDays(180);
+            }
+            case "year" -> {
+                return currentDate.minusDays(365);
+            }
+        }
+        return null;
     }
 }

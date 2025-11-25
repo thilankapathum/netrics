@@ -4,6 +4,7 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
+import dev.thilanka.netrics.repository.AreaRepository;
 import dev.thilanka.netrics.repository.RatRepository;
 import dev.thilanka.netrics.repository.StandardKpiRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.List;
 public class Mapper {
     private final RatRepository ratRepository;
     private final StandardKpiRepository standardKpiRepository;
+    private final AreaRepository areaRepository;
 
 // ----- OSS -----
 
@@ -231,6 +233,9 @@ public class Mapper {
         StandardKpi standardKpi = standardKpiRepository.findById(dto.standardKpiId())
                 .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + dto.standardKpiId()));
 
+        Area area = areaRepository.findByName(areaAggregation)
+                .orElseThrow(() -> new RuntimeException("Area not found by: " + areaAggregation));
+
         return WorstCell.builder()
                 .timestamp(dto.timestamps().toLocalDateTime())
                 .cellName(dto.cellName())
@@ -240,7 +245,7 @@ public class Mapper {
                 .difference(dto.difference())
                 .improved(dto.improved() > 0)
                 .period(period)
-                .areaAggregation(areaAggregation)
+                .area(area)
                 .rat(rat)
                 .standardKpi(standardKpi)
                 .build();
@@ -261,6 +266,18 @@ public class Mapper {
                 worstCell.getDifference(),
                 isImproved,
                 worstCell.getRat().getId()
+        );
+    }
+
+//    =========== USER =======================
+
+    public UserDto userToDto(User user){
+        return new UserDto(
+                user.getUserId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getEmail()
         );
     }
 

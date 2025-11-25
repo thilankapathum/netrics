@@ -18,9 +18,20 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND timestamp = :timestamp
             	AND rat_id = :ratId
             	AND standard_kpi_id = :standardKpiId
+            	AND area_id = :areaId
             """, nativeQuery = true)
-    Optional<WorstCell> findWorstCellByCellName(@Param("cellName") String cellName, @Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId);
+    Optional<WorstCell> findWorstCellByCellName(@Param("cellName") String cellName, @Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
 
+
+//    @Query(value = """
+//            SELECT * FROM public.worst_cells
+//            WHERE period = :period
+//            	AND timestamp = :timestamp
+//            	AND rat_id = :ratId
+//            	AND standard_kpi_id = :standardKpiId
+//            	AND area_aggregation = :areaAggregation
+//            """, nativeQuery = true)
+//    List<WorstCell> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaAggregation") String areaAggregation);
 
     @Query(value = """
             SELECT * FROM public.worst_cells
@@ -28,7 +39,7 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND timestamp = :timestamp
             	AND rat_id = :ratId
             	AND standard_kpi_id = :standardKpiId
-            	AND area_aggregation = :areaAggregation
+            	AND area_id = :areaId
             """, nativeQuery = true)
-    List<WorstCell> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaAggregation") String areaAggregation);
+    List<WorstCell> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
 }

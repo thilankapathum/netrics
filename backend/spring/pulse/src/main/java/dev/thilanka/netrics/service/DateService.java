@@ -25,4 +25,8 @@ public interface DateService {
     boolean isDateIsDay(LocalDateTime timestamp, DayOfWeek day);
 
     DayOfWeek extractDayOfWeek(String day);
+
+    LocalDateTime extractDate(String date);
+
+    LocalDateTime getPreviousDate(LocalDateTime currentDate, String period);
 }

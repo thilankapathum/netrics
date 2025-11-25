@@ -491,9 +491,97 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                 ORDER BY
                     CASE WHEN worst_order = 'ASC' THEN curr_value END ASC NULLS LAST,
                     CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
-                LIMIT 25
+                LIMIT 10
             """, nativeQuery = true)
     List<DashboardWorstCellDto> findWorstCellsForDashboardByDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("districtId") Long districtId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
+
+
+    @Query(value = """
+            WITH area_cells AS (
+                SELECT l.*
+                FROM lte_fdd_kpi_day l
+                JOIN district_codes dc ON l.district_code_id = dc.id
+                JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
+                JOIN areas ar ON adcm.area_id = ar.id
+                WHERE ar.id = :areaId
+                  AND l.lte_fdd_standard_kpi_id = :standardKpiId
+                  AND l.rat_id = :ratId
+                  AND l.timestamp BETWEEN :preStart AND :timestamp -- full range for both periods
+                ),
+
+                -- Step 2: Aggregate current period
+                agg_curr AS (
+                    SELECT
+                        MAX(timestamp) AS timestamps,
+                        rat_id,
+                        cell_name,
+                        SUM(numerator_kpi_value)   FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp) AS curr_num,
+                        SUM(denominator_kpi_value) FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp) AS curr_den,
+                        AVG(kpi_value)             FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp) AS curr_avg
+                    FROM area_cells
+                    GROUP BY cell_name, rat_id
+                ),
+
+                -- Step 3: Aggregate previous period
+                agg_prev AS (
+                    SELECT
+                        cell_name AS pre_cell_name,
+                        SUM(numerator_kpi_value)   FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp) AS pre_num,
+                        SUM(denominator_kpi_value) FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp) AS pre_den,
+                        AVG(kpi_value)             FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp) AS pre_avg
+                    FROM area_cells
+                    GROUP BY cell_name
+                ),
+
+                -- Step 4: Combine with KPI metadata and calculate values
+                calc AS (
+                    SELECT
+                        c.timestamps,
+                        c.rat_id,
+                        c.cell_name,
+                        sk.id AS standard_kpi_id,
+                        sk.unit,
+                        sk.worst_order,
+                        CASE
+                            WHEN sk.unit = '%' THEN COALESCE((c.curr_num / NULLIF(c.curr_den,0)) * 100, c.curr_avg)
+                            ELSE COALESCE((c.curr_num / NULLIF(c.curr_den,0)), c.curr_avg)
+                        END AS curr_value,
+                        CASE
+                            WHEN sk.unit = '%' THEN COALESCE((p.pre_num / NULLIF(p.pre_den,0)) * 100, p.pre_avg)
+                            ELSE COALESCE((p.pre_num / NULLIF(p.pre_den,0)), p.pre_avg)
+                        END AS prev_value
+                    FROM agg_curr c
+                    LEFT JOIN agg_prev p ON c.cell_name = p.pre_cell_name
+                    JOIN lte_fdd_standard_kpi sk ON sk.id = :standardKpiId
+                )
+
+                -- Step 5: Final selection with NULL-safe ordering
+                SELECT
+                    timestamps,
+                    cell_name,
+                    standard_kpi_id,
+                    unit,
+                    curr_value AS value,
+                    prev_value AS previous_value,
+                    (curr_value - prev_value) AS difference,
+                    CASE
+                        WHEN worst_order = 'ASC'  AND (curr_value - prev_value) > 0 THEN 1
+                        WHEN worst_order = 'DESC' AND (curr_value - prev_value) < 0 THEN 1
+                        ELSE 0
+                    END AS improved,
+                    rat_id
+                FROM calc
+                WHERE curr_value IS NOT NULL
+                    AND (
+                        :excludeZeroes = FALSE
+                        OR curr_value != 0
+                    )
+                ORDER BY
+                    CASE WHEN worst_order = 'ASC' THEN curr_value END ASC NULLS LAST,
+                    CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
+                LIMIT 10
+            """, nativeQuery = true)
+    List<DashboardWorstCellDto> findWorstCellsForDashboardByArea(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("areaId") Long areaId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
 
 
     // ----------------------------- KPI DATA BY CELL AND KPI ----------------------------------------------------------
