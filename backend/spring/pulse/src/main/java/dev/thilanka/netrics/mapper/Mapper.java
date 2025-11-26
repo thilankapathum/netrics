@@ -224,7 +224,7 @@ public class Mapper {
 
 //    =============== WORST-CELL DASHBOARD =====================
 
-    public WorstCell dashboardWorstCellDtoToWorstCell(DashboardWorstCellDto dto, String period, String areaAggregation) {
+    public WorstCell dashboardWorstCellDtoToWorstCell(WorstCellSaveDto dto, String period, String areaAggregation) {
 
         Rat rat = ratRepository.findById(dto.ratId()).orElseThrow(
                 () -> new RuntimeException("RAT not found by ID: " + dto.ratId())
@@ -251,12 +251,12 @@ public class Mapper {
                 .build();
     }
 
-    public DashboardWorstCellDto toDashboardWorstCellDto(WorstCell worstCell){
+    public WorstCellSaveDto toDashboardWorstCellDto(WorstCell worstCell){
 
         int isImproved = 0;
         if (worstCell.isImproved()) isImproved = 1;
 
-        return new DashboardWorstCellDto(
+        return new WorstCellSaveDto(
                 Timestamp.valueOf(worstCell.getTimestamp()),
                 worstCell.getCellName(),
                 worstCell.getStandardKpi().getId(),

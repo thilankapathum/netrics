@@ -10,7 +10,7 @@ import {DashboardService} from '../../../../../service/pulse/dashboard/dashboard
 // import {DatePipe} from '@angular/common';
 import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
 import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
-import {WorstCellDto} from '../../../../../models/pulse/WorstCellDto';
+import {WorstCellsDashboardDto} from '../../../../../models/pulse/WorstCellsDashboardDto';
 import {DatePipe} from '@angular/common';
 
 @Component({
@@ -42,7 +42,7 @@ export class DashboardComponent implements OnInit {
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
 
-  worstCells: Array<WorstCellDto> = [];
+  worstCells: Array<WorstCellsDashboardDto> = [];
 
 
   constructor(private router: Router,

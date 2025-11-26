@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.controller;
 
-import dev.thilanka.netrics.dto.DashboardWorstCellDto;
+import dev.thilanka.netrics.dto.WorstCellSaveDto;
+import dev.thilanka.netrics.dto.WorstCellsDashboardDto;
 import dev.thilanka.netrics.service.DateService;
 import dev.thilanka.netrics.service.KpiDayService;
 import dev.thilanka.netrics.service.WorstCellDashboardService;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/pulse/worst-cell-dashboard")
@@ -23,7 +23,7 @@ public class WorstCellDashboardController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @PostMapping
-    public List<DashboardWorstCellDto> createWorstCellsByKpiAndArea(
+    public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(
             @RequestParam String kpiName,
             @RequestParam String period,
             @RequestParam String areaName,
@@ -34,7 +34,7 @@ public class WorstCellDashboardController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @PostMapping("custom")
-    public List<DashboardWorstCellDto> createWorstCellsByKpiAndAreaCustom(
+    public List<WorstCellSaveDto> createWorstCellsByKpiAndAreaCustom(
             @RequestParam String kpiName,
             @RequestParam String period,
             @RequestParam String areaName,
@@ -47,7 +47,7 @@ public class WorstCellDashboardController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
-    public List<DashboardWorstCellDto> getWorstCellsByKpiAndArea(
+    public List<WorstCellsDashboardDto> getWorstCellsByKpiAndArea(
             @RequestParam String timestamp,
             @RequestParam String kpiName,
             @RequestParam String period,

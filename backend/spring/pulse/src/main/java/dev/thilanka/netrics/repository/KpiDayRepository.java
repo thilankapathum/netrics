@@ -1,7 +1,7 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.dto.CellNameDto;
-import dev.thilanka.netrics.dto.DashboardWorstCellDto;
+import dev.thilanka.netrics.dto.WorstCellSaveDto;
 import dev.thilanka.netrics.dto.KpiSnapshotDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.*;
@@ -322,7 +322,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
 
             LIMIT 25
             """, nativeQuery = true)
-    List<DashboardWorstCellDto> findWorstCellsForDashboard(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
+    List<WorstCellSaveDto> findWorstCellsForDashboard(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
 
 
     @Query(value = """
@@ -493,7 +493,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
                 LIMIT 10
             """, nativeQuery = true)
-    List<DashboardWorstCellDto> findWorstCellsForDashboardByDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("districtId") Long districtId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
+    List<WorstCellSaveDto> findWorstCellsForDashboardByDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("districtId") Long districtId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
 
 
     @Query(value = """
@@ -581,7 +581,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
                 LIMIT 10
             """, nativeQuery = true)
-    List<DashboardWorstCellDto> findWorstCellsForDashboardByArea(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("areaId") Long areaId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
+    List<WorstCellSaveDto> findWorstCellsForDashboardByArea(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("areaId") Long areaId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);
 
 
     // ----------------------------- KPI DATA BY CELL AND KPI ----------------------------------------------------------

@@ -1,7 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
-import dev.thilanka.netrics.dto.DashboardWorstCellDto;
-import dev.thilanka.netrics.dto.WorstCellsDto;
+import dev.thilanka.netrics.dto.WorstCellSaveDto;
+import dev.thilanka.netrics.dto.WorstCellsDashboardDto;
 import dev.thilanka.netrics.entity.Area;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.StandardKpi;
@@ -17,9 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -38,7 +36,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     private String refreshDay;
 
     @Override
-    public DashboardWorstCellDto createWorstCell(DashboardWorstCellDto dashboardWorstCell, String period, String areaName) {
+    public WorstCellSaveDto createWorstCell(WorstCellSaveDto dashboardWorstCell, String period, String areaName) {
         WorstCell worstCell = mapper.dashboardWorstCellDtoToWorstCell(dashboardWorstCell, period, areaName);     //TODO: Need a better saving method for Area-Aggregation
         try {
             WorstCell savedWorstCell = worstCellRepository.save(worstCell);
@@ -59,7 +57,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    public List<DashboardWorstCellDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, String ratName) {
+    public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, String ratName) {
         LocalDateTime timestamp = dateService.getLatestDate(ratName);
 
         if (dateService.isDateIsDay(timestamp, dateService.extractDayOfWeek(refreshDay))) {
@@ -68,7 +66,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    public List<DashboardWorstCellDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, LocalDateTime timestamp, String ratName) {
+    public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, LocalDateTime timestamp, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period));
 
@@ -78,7 +76,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Area area = areaService.findAreaByName(areaName);
 
-        List<DashboardWorstCellDto> dashboardWorstCells = kpiDayRepository
+        List<WorstCellSaveDto> dashboardWorstCells = kpiDayRepository
                 .findWorstCellsForDashboardByArea(
                         standardKpi.getId(),
                         timestamp,
@@ -93,14 +91,14 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    public List<DashboardWorstCellDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName) {
+    public List<WorstCellsDashboardDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName) {
         LocalDateTime timestamps = dateService.extractDate(timestamp);
         Rat rat = ratService.findRatByName(ratName);
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
         Area area = areaService.findAreaByName(areaName);
 
-        List<WorstCell> worstCells = worstCellRepository.findWorstCellsByKpi(period, timestamps, rat.getId(), standardKpi.getId(), area.getId());
-        return worstCells.stream().map(ws -> mapper.toDashboardWorstCellDto(ws)).toList();
+        return worstCellRepository.findWorstCellsByKpi(period, timestamps, rat.getId(), standardKpi.getId(), area.getId());
+//        return worstCells.stream().map(ws -> mapper.toDashboardWorstCellDto(ws)).toList();
     }
 
     @Override
@@ -113,7 +111,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    public List<DashboardWorstCellDto> createWorstCellsByKpiAndDistrict(String kpiName, String period, boolean excludeZeroes, String districtName, String ratName) {
+    public List<WorstCellSaveDto> createWorstCellsByKpiAndDistrict(String kpiName, String period, boolean excludeZeroes, String districtName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = dateService.getLatestDate(rat);
 
@@ -126,7 +124,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
             LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat);
             LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period));
 
-            List<DashboardWorstCellDto> dashboardWorstCells = kpiDayRepository.findWorstCellsForDashboardByDistrict(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, district.getId(), rat.getId(), excludeZeroes);
+            List<WorstCellSaveDto> dashboardWorstCells = kpiDayRepository.findWorstCellsForDashboardByDistrict(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, district.getId(), rat.getId(), excludeZeroes);
             return dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, districtName)).toList();
         } else return null;
     }
