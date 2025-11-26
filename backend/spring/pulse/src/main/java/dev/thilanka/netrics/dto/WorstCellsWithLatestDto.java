@@ -1,7 +1,6 @@
 package dev.thilanka.netrics.dto;
 
-//-- To display Worst-cells in Frontend Worst-cell dashboard
-public record WorstCellsDashboardDto(
+public record WorstCellsWithLatestDto(
         Long id,
         String cellName,
         String kpiName,
@@ -10,6 +9,9 @@ public record WorstCellsDashboardDto(
         Double value,
         Double previousValue,
         Double difference,
-        boolean improved
+        boolean improved,
+        Double latestValue,
+        Double latestDifference,
+        boolean latestImproved
 ) {
 }

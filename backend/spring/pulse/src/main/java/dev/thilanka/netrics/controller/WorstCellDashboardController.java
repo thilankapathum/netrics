@@ -2,6 +2,7 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.WorstCellSaveDto;
 import dev.thilanka.netrics.dto.WorstCellsDashboardDto;
+import dev.thilanka.netrics.dto.WorstCellsWithLatestDto;
 import dev.thilanka.netrics.service.DateService;
 import dev.thilanka.netrics.service.KpiDayService;
 import dev.thilanka.netrics.service.WorstCellDashboardService;
@@ -47,7 +48,7 @@ public class WorstCellDashboardController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
-    public List<WorstCellsDashboardDto> getWorstCellsByKpiAndArea(
+    public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(
             @RequestParam String timestamp,
             @RequestParam String kpiName,
             @RequestParam String period,

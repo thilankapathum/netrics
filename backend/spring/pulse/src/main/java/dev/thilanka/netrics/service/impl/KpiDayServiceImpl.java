@@ -37,7 +37,8 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final Mapper mapper;
     private final DateService dateService;
 
-    private static boolean checkImproved(String worstOrder, Double difference) {
+    @Override
+    public boolean checkImproved(String worstOrder, Double difference) {
         if (Objects.equals(worstOrder, "ASC")) {
             return difference > 0;
         } else if (Objects.equals(worstOrder, "DESC")) {

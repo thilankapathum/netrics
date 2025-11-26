@@ -2,6 +2,9 @@ package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.WorstCellSaveDto;
 import dev.thilanka.netrics.dto.WorstCellsDashboardDto;
+import dev.thilanka.netrics.dto.WorstCellsWithLatestDto;
+import dev.thilanka.netrics.entity.Rat;
+import dev.thilanka.netrics.entity.StandardKpi;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -19,10 +22,9 @@ public interface WorstCellDashboardService {
 
     public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, LocalDateTime timestamp, String ratName);
 
-    public List<WorstCellsDashboardDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName);
-//    public List<DashboardWorstCellDto> getWorstCellsByKpiAndArea(String timestamp,String kpiName, String period, boolean excludeZeroes, String areaName, String ratName);
-//    public List<DashboardWorstCellDto> getWorstCellsByKpiAndArea(LocalDateTime timestamp,String kpiName, String period, boolean excludeZeroes, String areaName, String ratName);
+    public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName);
 
+//    public WorstCellsWithLatestDto getWorstCellsWithLatest(WorstCellsDashboardDto worstCell, Rat rat, LocalDateTime latestDate, StandardKpi standardKpi);
     public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName);
 
 }

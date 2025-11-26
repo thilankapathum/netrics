@@ -1,4 +1,4 @@
-export interface WorstCellsDashboardDto {
+export interface WorstCellsWithLatestDto {
   id: number;
   cellName:string;
   kpiName: string;
@@ -8,4 +8,7 @@ export interface WorstCellsDashboardDto {
   previousValue:number;
   difference:number;
   improved:boolean;
+  latestValue:number;
+  latestDifference:number;
+  latestImproved:boolean;
 }

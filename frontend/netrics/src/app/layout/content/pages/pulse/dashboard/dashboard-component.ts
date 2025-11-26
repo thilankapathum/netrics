@@ -10,15 +10,27 @@ import {DashboardService} from '../../../../../service/pulse/dashboard/dashboard
 // import {DatePipe} from '@angular/common';
 import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
 import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
-import {WorstCellsDashboardDto} from '../../../../../models/pulse/WorstCellsDashboardDto';
-import {DatePipe} from '@angular/common';
+import {WorstCellsWithLatestDto} from '../../../../../models/pulse/WorstCellsWithLatestDto';
+import {DatePipe, DecimalPipe} from '@angular/common';
+import {LineChart} from '../../../../../components/charts/linechart/line-chart/line-chart';
+import {KpiTrendDto} from '../../../../../models/pulse/KpiTrendDto';
+import {KpiSnapshot} from '../../../../../models/pulse/KpiSnapshot';
+import {WorstCells} from '../../../../../models/pulse/WorstCells';
+import {KpidayService} from '../../../../../service/pulse/ltefdd/kpiday.service';
+import {Observable} from 'rxjs';
+import {KpiDataDto} from '../../../../../models/pulse/KpiDataDto';
+import {ChartService} from '../../../../../service/components/chart/chart.service';
+import {Linechart} from '../../../../../components/charts/linechart/linechart/linechart';
 
 @Component({
   selector: 'app-dashboard-component',
   imports: [
     RouterLink,
     FormsModule,
-    DatePipe
+    DatePipe,
+    LineChart,
+    DecimalPipe,
+    Linechart
   ],
   providers: [DatePipe],
   templateUrl: './dashboard-component.html',
@@ -39,10 +51,17 @@ export class DashboardComponent implements OnInit {
   selectedStandardKpi = signal('');
 
   selectedPeriod = signal('day');
+  selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
 
-  worstCells: Array<WorstCellsDashboardDto> = [];
+  worstCells: Array<WorstCellsWithLatestDto> = [];
+  kpiTrendData: KpiTrendDto[] = [];
+  chartSeries: any = null;
+
+  loadingKpiTrend: boolean = false;
+  loadingWorstCells: boolean = false;
+  loadingAnalysisModalChart: boolean = false;
 
 
   constructor(private router: Router,
@@ -51,7 +70,9 @@ export class DashboardComponent implements OnInit {
               private dashboardService: DashboardService,
               private standardKpiService: StandardkpiService,
               private alertService: AlertService,
-              private datePipe: DatePipe
+              private datePipe: DatePipe,
+              private kpiDayService:KpidayService,
+              private chartService: ChartService
               ) {
   }
 
@@ -181,5 +202,47 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  //----------- KPI TREND CHART ----------------------
+
+  onPeriodChange(event: Event) {
+    // this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat());
+  }
+
+  getTrendDataByKpi(kpiName: string, cellName:string, period: string, ratName: string) {
+    this.loadingKpiTrend = true;
+    this.kpiTrendData = [];
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat())
+      .subscribe({
+        next: data => {
+          this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
+          this.loadingKpiTrend = false;
+        }, error: err => {
+          this.loadingKpiTrend = false;
+          console.log("Error getDataByKpiLabelAndCell:");
+          console.error(err);
+          this.alertService.error("KPI Data retrieval failed");
+        }
+      })
+  }
+
+  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string): Observable<KpiDataDto[]> {
+    return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName);
+  }
+
+  //----------- UTILITY ------------------------------
+
+  isKpiValueRed(kpiLabel:string , value:number): boolean {
+    const standardKpi = this.standardKpis.find(kpi => kpi.label == kpiLabel);
+    if (!standardKpi || standardKpi.threshold == null || !standardKpi.worstOrder) {
+      return false;
+    }
+    if (standardKpi.worstOrder === 'ASC') {
+      return value! < standardKpi.threshold;
+    }
+    if (standardKpi.worstOrder === 'DESC') {
+      return value! > standardKpi.threshold;
+    }
+    return false;
+  }
 
 }

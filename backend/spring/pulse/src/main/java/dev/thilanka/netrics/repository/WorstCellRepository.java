@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.dto.WorstCellsDashboardDto;
+import dev.thilanka.netrics.dto.WorstCellsWithLatestDto;
 import dev.thilanka.netrics.entity.WorstCell;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -36,6 +37,41 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND area_id = :areaId
             """, nativeQuery = true)
     List<WorstCellsDashboardDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
+
+
+    @Query(value = """
+            SELECT\s
+                worst_cells.id AS id,
+                worst_cells.cell_name,
+                sk.kpi_name AS kpi_name,
+                sk.label AS kpi_label,
+                worst_cells.unit AS unit,
+                worst_cells.value,
+                worst_cells.previous_value,
+                worst_cells.difference,
+                worst_cells.improved,
+                kd.kpi_value AS latest_value,
+            	kd.kpi_value - worst_cells.value AS latest_difference,
+            	CASE
+            		WHEN sk.worst_order = 'ASC'  AND (kd.kpi_value - value) > 0 THEN true
+            		WHEN sk.worst_order = 'DESC' AND (kd.kpi_value - value) < 0 THEN true
+            		ELSE false
+            	END AS latest_improved
+            FROM public.worst_cells
+            LEFT JOIN public.lte_fdd_standard_kpi sk\s
+                ON worst_cells.standard_kpi_id = sk.id
+            LEFT JOIN public.lte_fdd_kpi_day kd
+                ON kd.cell_name = worst_cells.cell_name
+                AND kd.timestamp = :latestDate
+                AND kd.lte_fdd_standard_kpi_id = worst_cells.standard_kpi_id
+                AND kd.rat_id = worst_cells.rat_id
+            WHERE worst_cells.period = :period
+            	AND worst_cells.timestamp = :timestamp
+            	AND worst_cells.rat_id = :ratId
+            	AND worst_cells.standard_kpi_id = :standardKpiId
+            	AND worst_cells.area_id = :areaId
+            """, nativeQuery = true)
+    List<WorstCellsWithLatestDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("latestDate") LocalDateTime latestDate , @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
 
 
     @Query(value = """
