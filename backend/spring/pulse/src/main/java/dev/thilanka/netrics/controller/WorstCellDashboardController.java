@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -50,11 +51,22 @@ public class WorstCellDashboardController {
             @RequestParam String timestamp,
             @RequestParam String kpiName,
             @RequestParam String period,
-            @RequestParam String areaAggregation,
+            @RequestParam String areaName,
             @RequestParam boolean excludeZeroes,
             @RequestParam String ratName
     ) {
-        return worstCellDashboardService.getWorstCellsByKpiAndArea(timestamp, kpiName, period, excludeZeroes, areaAggregation, ratName);
+        return worstCellDashboardService.getWorstCellsByKpiAndArea(timestamp, kpiName, period, excludeZeroes, areaName, ratName);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("timestamps")
+    public List<Timestamp> getTimestamps(
+            @RequestParam String kpiName,
+            @RequestParam String period,
+            @RequestParam String areaName,
+            @RequestParam String ratName
+    ){
+        return worstCellDashboardService.getTimestamps(kpiName,period,areaName,ratName);
     }
 
 }

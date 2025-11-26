@@ -104,6 +104,15 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
+    public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName,rat);
+        Area area = areaService.findAreaByName(areaName);
+
+        return worstCellRepository.findTimestamps(period,rat.getId(),standardKpi.getId(),area.getId());
+    }
+
+    @Override
     public List<DashboardWorstCellDto> createWorstCellsByKpiAndDistrict(String kpiName, String period, boolean excludeZeroes, String districtName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime timestamp = dateService.getLatestDate(rat);

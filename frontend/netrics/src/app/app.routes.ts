@@ -8,6 +8,7 @@ import {roleGuard} from './auth/guards/role-guard';
 import {UnauthorizedComponent} from './layout/content/pages/unauthorized/unauthorized-component/unauthorized-component';
 import {BeamComponent} from './layout/content/pages/beam/beam-component/beam-component';
 import {HomeComponent} from './layout/content/pages/home/home-component/home-component';
+import {DashboardComponent} from './layout/content/pages/pulse/dashboard/dashboard-component';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -41,6 +42,11 @@ export const routes: Routes = [
             path: 'cell',
             canActivate: [authGuard, roleGuard(['PULSE_READ'])],
             component: CellAnalysis
+          },
+          {
+            path: 'dashboard',
+            canActivate: [authGuard, roleGuard(['PULSE_READ'])],
+            component: DashboardComponent
           },
           {
             path: '',

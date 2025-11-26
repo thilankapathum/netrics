@@ -25,8 +25,8 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     private final KpiDayService kpiDayService;
     private final RatService ratService;
     private final Mapper mapper;
-    private final AreaDistrictCodeMappingService areaDistrictCodeMappingService;
-    private final AreaService areaService;
+//    private final AreaDistrictCodeMappingService areaDistrictCodeMappingService;
+//    private final AreaService areaService;
 
     @Override
     public List<DistrictCodeDto> getAll() {
@@ -46,18 +46,18 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
         DistrictCode savedDistrictCode = districtCodeRepository.save(districtCode);
 
         //-- Assign any newly created District Code for 'All Districts' area.
-        try {
-            Area area = areaService.findAreaByName("All Districts");
-            AreaDistrictCodeMapping areaDistrictCodeMapping = AreaDistrictCodeMapping
-                    .builder()
-                    .area(area)
-                    .districtCode(savedDistrictCode)
-                    .build();
-            areaDistrictCodeMappingService.createAreaDistrictCodeMapping(areaDistrictCodeMapping);
-            System.out.println("'All Districts' mapped");
-        } catch (Exception e) {
-            System.out.println("Error mapping 'All Districts' to " + savedDistrictCode.getCode());
-        }
+//        try {
+//            Area area = areaService.findAreaByName("All Districts");
+//            AreaDistrictCodeMapping areaDistrictCodeMapping = AreaDistrictCodeMapping
+//                    .builder()
+//                    .area(area)
+//                    .districtCode(savedDistrictCode)
+//                    .build();
+//            areaDistrictCodeMappingService.createAreaDistrictCodeMapping(areaDistrictCodeMapping);
+//            System.out.println("'All Districts' mapped");
+//        } catch (Exception e) {
+//            System.out.println("Error mapping 'All Districts' to " + savedDistrictCode.getCode());
+//        }
 
         for (Rat rat : rats) {
             updateKpiDayWithoutDistrict(rat.getName());

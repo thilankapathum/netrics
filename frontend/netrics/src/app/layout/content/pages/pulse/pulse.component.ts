@@ -65,9 +65,9 @@ export class PulseComponent implements OnInit {
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
 
   constructor(private cdr: ChangeDetectorRef,
-              private ltefddbasickpiservice: BasickpiService,
-              private ltefdddayservice: KpidayService,
-              private ltefddstandardkpiservice: StandardkpiService,
+              private basicKpiService: BasickpiService,
+              private kpiDayService: KpidayService,
+              private standardKpiService: StandardkpiService,
               private chartService: ChartService,
               private alertService: AlertService,
               private districtService: DistrictService,
@@ -220,7 +220,7 @@ export class PulseComponent implements OnInit {
     this.loadingBasicKpi = true;
     this.basicKpiDtos = [];
     this.basicKpiSnapshots = [];
-    this.ltefddbasickpiservice.getAllBasicKpi(ratName).subscribe({
+    this.basicKpiService.getAllBasicKpi(ratName).subscribe({
       next: data => {
         this.basicKpiDtos = data;
         this.getBasicKpiSnapshot(this.basicKpiDtos).subscribe({
@@ -246,7 +246,7 @@ export class PulseComponent implements OnInit {
 
   private getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
     const requests = basicKpiDto.map(kpi =>
-      this.ltefdddayservice.getBasicKpiSnapshot(kpi.kpiName!, this.granularity(), this.district(), this.selectedRat())
+      this.kpiDayService.getBasicKpiSnapshot(kpi.kpiName!, this.granularity(), this.district(), this.selectedRat())
     );
     return forkJoin([...requests]);
   }
@@ -264,7 +264,7 @@ export class PulseComponent implements OnInit {
   getWorstCellsByKpi(kpiName: string, granularity: string, ratName: string) {
     this.loadingWorstCells = true;
     this.allWorstCells = [];
-    this.ltefdddayservice.getWorstCellsByKpi(kpiName, granularity, this.district(), this.excludeZeroes, ratName).subscribe({
+    this.kpiDayService.getWorstCellsByKpi(kpiName, granularity, this.district(), this.excludeZeroes, ratName).subscribe({
       next: data => {
         this.allWorstCells = data;
         this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
@@ -306,7 +306,7 @@ export class PulseComponent implements OnInit {
 
   getAllStandardKpi(ratName: string) {
     this.standardKpis = [];
-    this.ltefddstandardkpiservice.getAllStandardKpi(ratName).subscribe({
+    this.standardKpiService.getAllStandardKpi(ratName).subscribe({
       next: data => {
         this.standardKpis = data;
         if (this.standardKpis.length > 0) {
@@ -360,7 +360,7 @@ export class PulseComponent implements OnInit {
   getTrendDataByKpi(kpiName: string, period: string, ratName: string) {
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
-    this.ltefdddayservice.getDataByKpi(kpiName, period, this.district(), ratName).subscribe({
+    this.kpiDayService.getDataByKpi(kpiName, period, this.district(), ratName).subscribe({
       next: data => {
         this.kpiTrendData = data;
         this.loadingKpiTrend = false;
@@ -376,7 +376,7 @@ export class PulseComponent implements OnInit {
   //============ MODAL KPI TREND CHART =================
 
   getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string): Observable<KpiDataDto[]> {
-    return this.ltefdddayservice.getDataByKpiAndCell(kpiName, cellName, period, ratName);
+    return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName);
   }
 
   //============ ROUTER-LINK ===========================

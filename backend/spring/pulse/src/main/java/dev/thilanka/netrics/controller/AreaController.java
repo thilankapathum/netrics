@@ -36,4 +36,10 @@ public class AreaController {
         List<AreaDto> savedAreas = areaService.createAreas(dtos);
         return new ResponseEntity<>(savedAreas, HttpStatus.CREATED);
     }
+
+    @GetMapping("area-type")
+    ResponseEntity<List<AreaDto>> getAreasByAreaType(@RequestParam("areaTypeName") String areaTypeName){
+        List<AreaDto> areaDtos = areaService.getAreasByAreaType(areaTypeName);
+        return ResponseEntity.ok(areaDtos);
+    }
 }

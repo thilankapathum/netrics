@@ -17,4 +17,6 @@ public interface AreaService {
     Area findAreaByName(String name);
 
     AreaDto getAreaByName(String name);
+
+    List<AreaDto> getAreasByAreaType(String areaTypeName);
 }
