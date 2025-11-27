@@ -7,15 +7,12 @@ import {AlertService} from '../../../../../components/alert/alert.service';
 import {AreaDto} from '../../../../../models/pulse/AreaDto';
 import {AreaService} from '../../../../../service/pulse/area-service';
 import {DashboardService} from '../../../../../service/pulse/dashboard/dashboard-service';
-// import {DatePipe} from '@angular/common';
 import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
 import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
 import {WorstCellsWithLatestDto} from '../../../../../models/pulse/WorstCellsWithLatestDto';
 import {DatePipe, DecimalPipe} from '@angular/common';
 import {LineChart} from '../../../../../components/charts/linechart/line-chart/line-chart';
 import {KpiTrendDto} from '../../../../../models/pulse/KpiTrendDto';
-import {KpiSnapshot} from '../../../../../models/pulse/KpiSnapshot';
-import {WorstCells} from '../../../../../models/pulse/WorstCells';
 import {KpidayService} from '../../../../../service/pulse/ltefdd/kpiday.service';
 import {Observable} from 'rxjs';
 import {KpiDataDto} from '../../../../../models/pulse/KpiDataDto';
@@ -28,7 +25,6 @@ import {Linechart} from '../../../../../components/charts/linechart/linechart/li
     RouterLink,
     FormsModule,
     DatePipe,
-    LineChart,
     DecimalPipe,
     Linechart
   ],
@@ -55,13 +51,15 @@ export class DashboardComponent implements OnInit {
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
 
+  selectedCell=signal('');
+
   worstCells: Array<WorstCellsWithLatestDto> = [];
   kpiTrendData: KpiTrendDto[] = [];
   chartSeries: any = null;
 
   loadingKpiTrend: boolean = false;
   loadingWorstCells: boolean = false;
-  loadingAnalysisModalChart: boolean = false;
+  excludeZeroes: boolean = false;
 
 
   constructor(private router: Router,
@@ -134,7 +132,7 @@ export class DashboardComponent implements OnInit {
         console.log("Timestamps data: ", data);
         this.timestamps = data;
         this.timestamp.set(this.timestamps.at(0)!);
-        this.getWorstCells(this.timestamp());
+        this.getWorstCells(this.timestamp(), this.excludeZeroes);
       }, error: error => {
         console.log(error);
         this.alertService.error('Error getting timestamps');
@@ -157,20 +155,29 @@ export class DashboardComponent implements OnInit {
     console.log(areaName);
   }
 
-  getWorstCells(date: Date) {
+  //--------- WORST-CELLS ------------------------
+
+  onExcludeZeroesChange(event: Event) {
+    this.getWorstCells(this.timestamp(), this.excludeZeroes);
+  }
+
+  getWorstCells(date: Date, excludeZeroes:boolean) {
+    this.loadingWorstCells = true;
     this.dashboardService.getWorstCellsByKpiAndArea(
       this.datePipe.transform(date, 'yyyy-MM-dd')!,
       this.selectedStandardKpi(),
       this.selectedPeriod(),
       this.area()!,
-      false,
+      excludeZeroes,
       this.selectedRat())
       .subscribe({
         next: data => {
           this.worstCells = data;
           console.log("Worst cell data: ", data);
+          this.loadingWorstCells = false;
         }, error: error => {
           console.log(error);
+          this.loadingWorstCells = false;
           this.alertService.error('Error getting worstCellsByKpiAndArea');
         }
       });
@@ -209,6 +216,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getTrendDataByKpi(kpiName: string, cellName:string, period: string, ratName: string) {
+    this.selectedCell.set(cellName);
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
     this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat())

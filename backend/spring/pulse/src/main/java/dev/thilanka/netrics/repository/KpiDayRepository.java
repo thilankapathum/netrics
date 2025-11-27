@@ -569,7 +569,8 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                         WHEN worst_order = 'DESC' AND (curr_value - prev_value) < 0 THEN 1
                         ELSE 0
                     END AS improved,
-                    rat_id
+                    rat_id,
+                    :excludeZeroes AS exclude_zeroes
                 FROM calc
                 WHERE curr_value IS NOT NULL
                     AND (

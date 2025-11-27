@@ -12,11 +12,7 @@ import java.util.List;
 
 public interface WorstCellDashboardService {
 
-    public WorstCellSaveDto createWorstCell(WorstCellSaveDto dashboardWorstCell, String period, String areaName);
-
-//    public List<DashboardWorstCellDto> createWorstCellsByKpi(String kpiName, String period, String areaAggregation, boolean excludeZeroes, String ratName);
-
-    public List<WorstCellSaveDto> createWorstCellsByKpiAndDistrict(String kpiName, String period, boolean excludeZeroes, String districtName, String ratName);
+    public WorstCellSaveDto createWorstCell(WorstCellSaveDto worstCellSaveDto, String period, String areaName);
 
     public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, String ratName);
 
@@ -24,7 +20,6 @@ public interface WorstCellDashboardService {
 
     public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName);
 
-//    public WorstCellsWithLatestDto getWorstCellsWithLatest(WorstCellsDashboardDto worstCell, Rat rat, LocalDateTime latestDate, StandardKpi standardKpi);
     public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName);
 
 }

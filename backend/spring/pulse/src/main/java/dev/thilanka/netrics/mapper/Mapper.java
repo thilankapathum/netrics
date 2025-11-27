@@ -224,7 +224,7 @@ public class Mapper {
 
 //    =============== WORST-CELL DASHBOARD =====================
 
-    public WorstCell dashboardWorstCellDtoToWorstCell(WorstCellSaveDto dto, String period, String areaAggregation) {
+    public WorstCell worstCellSaveDtoToWorstCell(WorstCellSaveDto dto, String period, String areaName) {
 
         Rat rat = ratRepository.findById(dto.ratId()).orElseThrow(
                 () -> new RuntimeException("RAT not found by ID: " + dto.ratId())
@@ -233,13 +233,13 @@ public class Mapper {
         StandardKpi standardKpi = standardKpiRepository.findById(dto.standardKpiId())
                 .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + dto.standardKpiId()));
 
-        Area area = areaRepository.findByName(areaAggregation)
-                .orElseThrow(() -> new RuntimeException("Area not found by: " + areaAggregation));
+        Area area = areaRepository.findByName(areaName)
+                .orElseThrow(() -> new RuntimeException("Area not found by: " + areaName));
 
         return WorstCell.builder()
                 .timestamp(dto.timestamps().toLocalDateTime())
                 .cellName(dto.cellName())
-                .unit(dto.unit())
+//                .unit(dto.unit())
                 .value(dto.value())
                 .previousValue(dto.previousValue())
                 .difference(dto.difference())
@@ -248,10 +248,11 @@ public class Mapper {
                 .area(area)
                 .rat(rat)
                 .standardKpi(standardKpi)
+                .excludeZeroes(dto.excludeZeroes())
                 .build();
     }
 
-    public WorstCellSaveDto toDashboardWorstCellDto(WorstCell worstCell){
+    public WorstCellSaveDto toWorstCellSaveDto(WorstCell worstCell){
 
         int isImproved = 0;
         if (worstCell.isImproved()) isImproved = 1;
@@ -260,12 +261,13 @@ public class Mapper {
                 Timestamp.valueOf(worstCell.getTimestamp()),
                 worstCell.getCellName(),
                 worstCell.getStandardKpi().getId(),
-                worstCell.getUnit(),
+                worstCell.getStandardKpi().getUnit(),
                 worstCell.getValue(),
                 worstCell.getPreviousValue(),
                 worstCell.getDifference(),
                 isImproved,
-                worstCell.getRat().getId()
+                worstCell.getRat().getId(),
+                worstCell.isExcludeZeroes()
         );
     }
 

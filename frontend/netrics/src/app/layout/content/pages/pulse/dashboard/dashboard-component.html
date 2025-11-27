@@ -47,17 +47,17 @@
           }
         </select>
         <select class="select select-sm border join-item w-auto" [(ngModel)]="timestamp"
-                (change)="getWorstCells(timestamp())">
+                (change)="getWorstCells(timestamp(),excludeZeroes)">
           @for (t of timestamps; track $index) {
             <option [value]="t">{{ t | date: 'yyyy-MMM-dd' }}</option>
           }
         </select>
-<!--        <select class="select select-sm border join-item w-48" [(ngModel)]="selectedStandardKpi"-->
-<!--                (change)="selectStandardKpi(selectedStandardKpi())">-->
-<!--          @for (kpi of standardKpis; track kpi.kpiName) {-->
-<!--            <option [value]="kpi.kpiName">{{ kpi.label }}</option>-->
-<!--          }-->
-<!--        </select>-->
+        <!--        <select class="select select-sm border join-item w-48" [(ngModel)]="selectedStandardKpi"-->
+        <!--                (change)="selectStandardKpi(selectedStandardKpi())">-->
+        <!--          @for (kpi of standardKpis; track kpi.kpiName) {-->
+        <!--            <option [value]="kpi.kpiName">{{ kpi.label }}</option>-->
+        <!--          }-->
+        <!--        </select>-->
 
       </div>
       <div class="tabs tabs-box tabs-xs border border-base-300">
@@ -80,24 +80,25 @@
                    [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
         </div>
+        <h3>{{selectedCell()}}</h3>
         <div [hidden]="!loadingKpiTrend" class="flex w-full flex-col gap-4 mb-2">
           <div class="skeleton h-64 w-full"></div>
         </div>
-<!--        <app-line-chart [hidden]="loadingKpiTrend" [kpiTrendData]="kpiTrendData"></app-line-chart>-->
+        <!--        <app-line-chart [hidden]="loadingKpiTrend" [kpiTrendData]="kpiTrendData"></app-line-chart>-->
         <app-linechart [hidden]="loadingKpiTrend" [chartSeries]="chartSeries"></app-linechart>
       </section>
 
-<!--      WORST CELLS SECTION-->
+      <!--      WORST CELLS SECTION-->
       <section class=" flex flex-col gap-3 grow-1 p-4 border border-base-300 rounded-xl bg-base-100">
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
-<!--          <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"-->
-<!--                  (change)="selectKpi(selectedStandardKpi(), selectedRat())">-->
-<!--            &lt;!&ndash;            <option disabled selected>KPI</option>&ndash;&gt;-->
-<!--            @for (kpi of standardKpis; track $index) {-->
-<!--              <option [value]="kpi.kpiName">{{ kpi.label }}</option>-->
-<!--            }-->
-<!--          </select>-->
+          <!--          <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"-->
+          <!--                  (change)="selectKpi(selectedStandardKpi(), selectedRat())">-->
+          <!--            &lt;!&ndash;            <option disabled selected>KPI</option>&ndash;&gt;-->
+          <!--            @for (kpi of standardKpis; track $index) {-->
+          <!--              <option [value]="kpi.kpiName">{{ kpi.label }}</option>-->
+          <!--            }-->
+          <!--          </select>-->
           <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
                   (change)="selectStandardKpi(selectedStandardKpi())">
             @for (kpi of standardKpis; track kpi.kpiName) {
@@ -114,6 +115,11 @@
               <div class="skeleton h-4 w-full"></div>
               <div class="skeleton h-4 w-full"></div>
               <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-full"></div>
             </div>
           }
           <table [hidden]="loadingWorstCells" class="table table-sm">
@@ -122,7 +128,7 @@
             <tr>
               <th class="font-semibold text-center">#</th>
               <th class="font-semibold text-center">Cell Name</th>
-              <th class="font-semibold text-center">KPI</th>
+<!--              <th class="font-semibold text-center">KPI</th>-->
               <th class="font-semibold text-center">Value</th>
               <!--              <th class="font-semibold">Difference</th>-->
               <th class="font-semibold text-center">Latest</th>
@@ -132,14 +138,21 @@
             <tbody>
             <!-- row -->
               @for (cell of worstCells; track cell.cellName; let i = $index) {
-                <tr class="hover:bg-base-200">
-                  <td>{{i+1}}</td>
+                <tr class="hover:bg-base-200 cursor-pointer"
+                    (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
+                  <td>{{ i + 1 }}</td>
                   <td>{{ cell.cellName }}</td>
-                  <td class="truncate max-w-[100px]">{{ cell.kpiLabel }}</td>
+<!--                  <td class=" overflow-visible">-->
+<!--                    <span class="tooltip tooltip-xs truncate max-w-[90px]" [attr.data-tip]="cell.kpiLabel">-->
+<!--                      {{ cell.kpiLabel }}-->
+<!--                    </span>-->
+<!--                  </td>-->
                   <td>
                     <span class="badge badge-soft badge-xs"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;
-                      @if (cell.difference! > 0) {+}{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
+                      @if (cell.difference! > 0) {
+                        +
+                      }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
                     </span>&nbsp;
                     <span [class]="isKpiValueRed(cell.kpiLabel,cell.value) ? 'text-error font-semibold' : ''">
                       {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
@@ -151,43 +164,33 @@
                     </span> &nbsp;
                     <span class="badge badge-soft badge-xs"
                           [class]="cell.latestImproved ? 'badge-success' : 'badge-error'">&nbsp;
-                      @if (cell.latestDifference! > 0) {+}{{ cell.latestDifference | number: '1.2-2' }}{{ cell.unit }}
+                      @if (cell.latestDifference! > 0) {
+                        +
+                      }{{ cell.latestDifference | number: '1.2-2' }}{{ cell.unit }}
                     </span>
                   </td>
                   <td class="p-0">
-                    <button class="btn btn-ghost btn-xs text-secondary"
-                            (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          d="M7 10H10M10 10H13M10 10V7M10 10V13M15 15L21 21M10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10C17 13.866 13.866 17 10 17Z"
-                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-
-                    </button>
+                    <div class="dropdown dropdown-left dropdown-end">
+                      <div tabindex="0" role="button" class="btn btn-ghost btn-xs text-secondary" (click)="$event.stopPropagation()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 14V11M12 11V8M12 11H9M12 11H15M7.12357 18.7012L5.59961 19.9203C4.76744 20.5861 4.35115 20.9191 4.00098 20.9195C3.69644 20.9198 3.40845 20.7813 3.21846 20.5433C3 20.2696 3 19.7369 3 18.6712V7.2002C3 6.08009 3 5.51962 3.21799 5.0918C3.40973 4.71547 3.71547 4.40973 4.0918 4.21799C4.51962 4 5.08009 4 6.2002 4H17.8002C18.9203 4 19.4801 4 19.9079 4.21799C20.2842 4.40973 20.5905 4.71547 20.7822 5.0918C21 5.5192 21 6.07899 21 7.19691V14.8036C21 15.9215 21 16.4805 20.7822 16.9079C20.5905 17.2842 20.2843 17.5905 19.908 17.7822C19.4806 18 18.9215 18 17.8036 18H9.12256C8.70652 18 8.49829 18 8.29932 18.0408C8.12279 18.0771 7.95216 18.1368 7.79168 18.2188C7.61149 18.3108 7.44964 18.4403 7.12722 18.6982L7.12357 18.7012Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <div tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow-xl border border-base-300">
+                        This is a comment
+                      </div>
+                    </div>
                   </td>
                 </tr>
               }
             </tbody>
           </table>
 
-          <div class="join justify-center ml-auto">
+          <div class="join justify-center ml-auto me-end">
             <div class="join justify-center gap-2 mt-2">
-<!--              <button class="join-item btn btn-xs"-->
-<!--                      [disabled]="currentPage === 0"-->
-<!--                      (click)="prevPage()">«-->
-<!--              </button>-->
-
-<!--              <button class="join-item btn btn-active btn-xs">-->
-<!--                {{ currentPage + 1 }} / {{ totalPages }}-->
-<!--              </button>-->
-
-<!--              <button class="join-item btn btn-xs"-->
-<!--                      [disabled]="currentPage >= totalPages - 1"-->
-<!--                      (click)="nextPage()">»-->
-<!--              </button>-->
               <label class="label ms-4 text-xs">
-<!--                <input type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)"-->
-<!--                       class="checkbox checkbox-sm"/>-->
+                <input type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)"
+                       class="checkbox checkbox-sm"/>
                 Exclude zeroes
               </label>
             </div>

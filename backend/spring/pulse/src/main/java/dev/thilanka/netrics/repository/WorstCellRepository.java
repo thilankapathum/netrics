@@ -45,7 +45,7 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
                 worst_cells.cell_name,
                 sk.kpi_name AS kpi_name,
                 sk.label AS kpi_label,
-                worst_cells.unit AS unit,
+                sk.unit AS unit,
                 worst_cells.value,
                 worst_cells.previous_value,
                 worst_cells.difference,
@@ -70,8 +70,9 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND worst_cells.rat_id = :ratId
             	AND worst_cells.standard_kpi_id = :standardKpiId
             	AND worst_cells.area_id = :areaId
+            	AND worst_cells.exclude_zeroes = :excludeZeroes
             """, nativeQuery = true)
-    List<WorstCellsWithLatestDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("latestDate") LocalDateTime latestDate , @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
+    List<WorstCellsWithLatestDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("latestDate") LocalDateTime latestDate , @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId, @Param("excludeZeroes") boolean excludeZeroes);
 
 
     @Query(value = """

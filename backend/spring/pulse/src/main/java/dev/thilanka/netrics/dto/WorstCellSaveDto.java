@@ -13,6 +13,7 @@ public record WorstCellSaveDto(
         Double previousValue,
         Double difference,
         Integer improved,
-        Long ratId
+        Long ratId,
+        boolean excludeZeroes
 ) {
 }
