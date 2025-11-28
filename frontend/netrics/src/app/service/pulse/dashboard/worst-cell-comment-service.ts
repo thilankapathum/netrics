@@ -30,4 +30,8 @@ export class WorstCellCommentService {
       .set('commentId', commentId);
     return this.http.put<WorstCellCommentDto>(`${this.baseUrl}`, null, {params});
   }
+
+  deleteComment(commentId:number) {
+    return this.http.delete<WorstCellCommentDto>(`${this.baseUrl}/${commentId}`);
+  }
 }

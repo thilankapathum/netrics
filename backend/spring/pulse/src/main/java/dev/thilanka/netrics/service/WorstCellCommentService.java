@@ -14,4 +14,6 @@ public interface WorstCellCommentService {
     WorstCellCommentDto updateCommentByWorstCell(String comment, Long commentId);     //TODO: Add function to have separate comments for different users
 
     WorstCellCommentDto UpdateWorstCellComment(WorstCellCommentDto dto);
+
+    WorstCellCommentDto deleteCommentById(Long commentId);
 }

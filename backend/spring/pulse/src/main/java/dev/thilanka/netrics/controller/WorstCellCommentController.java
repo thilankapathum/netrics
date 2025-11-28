@@ -2,6 +2,7 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.WorstCellCommentDto;
 import dev.thilanka.netrics.service.WorstCellCommentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,24 +19,37 @@ public class WorstCellCommentController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping
-    ResponseEntity<WorstCellCommentDto> createWorstCellComment(@RequestParam("comment") String comment, @RequestParam("worstCellId") Long worstCellId){
-        WorstCellCommentDto savedComment = worstCellCommentService.createWorstCellComment(comment,worstCellId);
+    ResponseEntity<WorstCellCommentDto> createWorstCellComment(@RequestParam("comment") String comment, @RequestParam("worstCellId") Long worstCellId) {
+        WorstCellCommentDto savedComment = worstCellCommentService.createWorstCellComment(comment, worstCellId);
         return new ResponseEntity<>(savedComment, HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("cell/{id}")
-    ResponseEntity<List<WorstCellCommentDto>> getWorstCellCommentByWorstCell(@PathVariable("id") Long worstCellId){
+    ResponseEntity<List<WorstCellCommentDto>> getWorstCellCommentByWorstCell(@PathVariable("id") Long worstCellId) {
         List<WorstCellCommentDto> comments = worstCellCommentService.getCommentsByWorstCell(worstCellId);
         return ResponseEntity.ok(comments);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @PutMapping
-    ResponseEntity<WorstCellCommentDto> updateWorstCellComment(@RequestParam("comment") String comment, @RequestParam("commentId") Long commentId){
+    ResponseEntity<WorstCellCommentDto> updateWorstCellComment(@RequestParam("comment") String comment, @RequestParam("commentId") Long commentId) {
 
-        WorstCellCommentDto worstCellCommentDto = worstCellCommentService.updateCommentByWorstCell(comment,commentId);
+        WorstCellCommentDto worstCellCommentDto = worstCellCommentService.updateCommentByWorstCell(comment, commentId);
 
-        return new ResponseEntity<>(worstCellCommentDto,HttpStatus.CREATED);
+        if (worstCellCommentDto != null) {
+            return new ResponseEntity<>(worstCellCommentDto, HttpStatus.CREATED);
+        } else return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @DeleteMapping("{commentId}")
+    ResponseEntity<WorstCellCommentDto> deleteWorstCellComment(@PathVariable("commentId") Long commentId) {
+        WorstCellCommentDto deleted = worstCellCommentService.deleteCommentById(commentId);
+
+        if (deleted != null) {
+            return new ResponseEntity<>(deleted, HttpStatus.OK);
+        } else return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
     }
 }
