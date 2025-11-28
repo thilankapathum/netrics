@@ -80,7 +80,7 @@
                    [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
         </div>
-        <h3>{{selectedCell()}}</h3>
+        <h3>{{ selectedCell() }}</h3>
         <div [hidden]="!loadingKpiTrend" class="flex w-full flex-col gap-4 mb-2">
           <div class="skeleton h-64 w-full"></div>
         </div>
@@ -128,7 +128,7 @@
             <tr>
               <th class="font-semibold text-center">#</th>
               <th class="font-semibold text-center">Cell Name</th>
-<!--              <th class="font-semibold text-center">KPI</th>-->
+              <!--              <th class="font-semibold text-center">KPI</th>-->
               <th class="font-semibold text-center">Value</th>
               <!--              <th class="font-semibold">Difference</th>-->
               <th class="font-semibold text-center">Latest</th>
@@ -139,15 +139,19 @@
             <!-- row -->
               @for (cell of worstCells; track cell.cellName; let i = $index) {
                 <tr class="hover:bg-base-200 cursor-pointer"
-                    (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
-                  <td>{{ i + 1 }}</td>
-                  <td>{{ cell.cellName }}</td>
-<!--                  <td class=" overflow-visible">-->
-<!--                    <span class="tooltip tooltip-xs truncate max-w-[90px]" [attr.data-tip]="cell.kpiLabel">-->
-<!--                      {{ cell.kpiLabel }}-->
-<!--                    </span>-->
-<!--                  </td>-->
-                  <td>
+                >
+                  <!--                    (click)="getWorstCellComments(cell)">-->
+                  <td (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">{{ i + 1 }}
+                  </td>
+                  <td
+                    (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">{{ cell.cellName }}
+                  </td>
+                  <!--                  <td class=" overflow-visible">-->
+                  <!--                    <span class="tooltip tooltip-xs truncate max-w-[90px]" [attr.data-tip]="cell.kpiLabel">-->
+                  <!--                      {{ cell.kpiLabel }}-->
+                  <!--                    </span>-->
+                  <!--                  </td>-->
+                  <td (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
                     <span class="badge badge-soft badge-xs"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;
                       @if (cell.difference! > 0) {
@@ -158,7 +162,7 @@
                       {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
                     </span>
                   </td>
-                  <td>
+                  <td (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
                     <span [class]="isKpiValueRed(cell.kpiLabel,cell.latestValue) ? 'text-error font-semibold' : ''">
                       {{ cell.latestValue | number :'1.2-2' }}{{ cell.unit }}
                     </span> &nbsp;
@@ -171,13 +175,32 @@
                   </td>
                   <td class="p-0">
                     <div class="dropdown dropdown-left dropdown-end">
-                      <div tabindex="0" role="button" class="btn btn-ghost btn-xs text-secondary" (click)="$event.stopPropagation()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 14V11M12 11V8M12 11H9M12 11H15M7.12357 18.7012L5.59961 19.9203C4.76744 20.5861 4.35115 20.9191 4.00098 20.9195C3.69644 20.9198 3.40845 20.7813 3.21846 20.5433C3 20.2696 3 19.7369 3 18.6712V7.2002C3 6.08009 3 5.51962 3.21799 5.0918C3.40973 4.71547 3.71547 4.40973 4.0918 4.21799C4.51962 4 5.08009 4 6.2002 4H17.8002C18.9203 4 19.4801 4 19.9079 4.21799C20.2842 4.40973 20.5905 4.71547 20.7822 5.0918C21 5.5192 21 6.07899 21 7.19691V14.8036C21 15.9215 21 16.4805 20.7822 16.9079C20.5905 17.2842 20.2843 17.5905 19.908 17.7822C19.4806 18 18.9215 18 17.8036 18H9.12256C8.70652 18 8.49829 18 8.29932 18.0408C8.12279 18.0771 7.95216 18.1368 7.79168 18.2188C7.61149 18.3108 7.44964 18.4403 7.12722 18.6982L7.12357 18.7012Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </div>
-                      <div tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow-xl border border-base-300">
-                        This is a comment
+                      <button class="btn btn-ghost btn-xs text-secondary"
+                              (click)="getWorstCellComments(cell)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M12 14V11M12 11V8M12 11H9M12 11H15M7.12357 18.7012L5.59961 19.9203C4.76744 20.5861 4.35115 20.9191 4.00098 20.9195C3.69644 20.9198 3.40845 20.7813 3.21846 20.5433C3 20.2696 3 19.7369 3 18.6712V7.2002C3 6.08009 3 5.51962 3.21799 5.0918C3.40973 4.71547 3.71547 4.40973 4.0918 4.21799C4.51962 4 5.08009 4 6.2002 4H17.8002C18.9203 4 19.4801 4 19.9079 4.21799C20.2842 4.40973 20.5905 4.71547 20.7822 5.0918C21 5.5192 21 6.07899 21 7.19691V14.8036C21 15.9215 21 16.4805 20.7822 16.9079C20.5905 17.2842 20.2843 17.5905 19.908 17.7822C19.4806 18 18.9215 18 17.8036 18H9.12256C8.70652 18 8.49829 18 8.29932 18.0408C8.12279 18.0771 7.95216 18.1368 7.79168 18.2188C7.61149 18.3108 7.44964 18.4403 7.12722 18.6982L7.12357 18.7012Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+                      </button>
+                      <div tabindex="-1"
+                           class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 min-w-64 w-auto p-2 shadow-xl border border-base-300">
+                        @if (worstCellComments.length === 0){
+                          <div class="flex flex-row">
+                            <p>No comments</p>
+                            <button class="btn btn-xs w-auto ml-auto">Add comment</button>
+                          </div>
+                        } @else {
+                          <ul>
+                            @for (comment of worstCellComments; track $index) {
+                              <div>
+                                <div class="flex flex-row">
+                                  <p class="text-base-content">{{ comment.comment }}</p>
+                                  <button class="btn btn-xs ml-auto">Edit</button>
+                                </div>
+                                <p class="text-secondary text-xs">{{ comment.createdAt | date: 'yyyy-MM-dd' }}</p>
+                              </div>
+                            }
+                          </ul>
+                        }
+
+
                       </div>
                     </div>
                   </td>

@@ -18,6 +18,9 @@ import {Observable} from 'rxjs';
 import {KpiDataDto} from '../../../../../models/pulse/KpiDataDto';
 import {ChartService} from '../../../../../service/components/chart/chart.service';
 import {Linechart} from '../../../../../components/charts/linechart/linechart/linechart';
+import {WorstCellCommentDto} from '../../../../../models/pulse/WorstCellCommentDto';
+import {WorstCellCommentService} from '../../../../../service/pulse/dashboard/worst-cell-comment-service';
+import {WorstCell} from '../../../../../models/pulse/WorstCell';
 
 @Component({
   selector: 'app-dashboard-component',
@@ -54,6 +57,7 @@ export class DashboardComponent implements OnInit {
   selectedCell=signal('');
 
   worstCells: Array<WorstCellsWithLatestDto> = [];
+  worstCellComments: Array<WorstCellCommentDto> = [];
   kpiTrendData: KpiTrendDto[] = [];
   chartSeries: any = null;
 
@@ -70,7 +74,8 @@ export class DashboardComponent implements OnInit {
               private alertService: AlertService,
               private datePipe: DatePipe,
               private kpiDayService:KpidayService,
-              private chartService: ChartService
+              private chartService: ChartService,
+              private worstCellCommentService: WorstCellCommentService
               ) {
   }
 
@@ -181,6 +186,20 @@ export class DashboardComponent implements OnInit {
           this.alertService.error('Error getting worstCellsByKpiAndArea');
         }
       });
+  }
+
+  getWorstCellComments(worstCell: WorstCellsWithLatestDto){
+    console.log("getting comments for: ", worstCell);
+    this.worstCellComments = [];
+    this.worstCellCommentService.getCommentByWorstCell(worstCell.id).subscribe({
+      next: data => {
+        console.log("Worst cell comments: ", data);
+        this.worstCellComments = data;
+      },error: error => {
+        console.log(error);
+        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`);
+      }
+    })
   }
 
 

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -64,4 +65,7 @@ public class WorstCell {
     @ManyToOne
     @JoinColumn(name = "standard_kpi_id")
     private StandardKpi standardKpi;
+
+    @OneToMany(mappedBy = "worstCell", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<WorstCellComment> worstCellComments;
 }

@@ -7,6 +7,7 @@ import dev.thilanka.netrics.entity.district.DistrictCode;
 import dev.thilanka.netrics.repository.AreaRepository;
 import dev.thilanka.netrics.repository.RatRepository;
 import dev.thilanka.netrics.repository.StandardKpiRepository;
+import dev.thilanka.netrics.repository.WorstCellRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class Mapper {
     private final RatRepository ratRepository;
     private final StandardKpiRepository standardKpiRepository;
     private final AreaRepository areaRepository;
+    private final WorstCellRepository worstCellRepository;
 
 // ----- OSS -----
 
@@ -283,4 +285,25 @@ public class Mapper {
         );
     }
 
+//    ================ WORST CELL COMMENT ===============
+
+    public WorstCellCommentDto worstCellCommentToDto(WorstCellComment worstCellComment){
+        return new WorstCellCommentDto(worstCellComment.getId(),
+                worstCellComment.getComment(),
+                worstCellComment.getWorstCell().getId(),
+                worstCellComment.getCreatedAt(),
+                worstCellComment.getLastModifiedAt(),
+                worstCellComment.getCreatedBy(),
+                worstCellComment.getLastModifiedBy());
+    }
+
+    public WorstCellComment dtoToWorstCellComment(WorstCellCommentDto dto){
+        WorstCell worstCell = worstCellRepository.findById(dto.worstCellId())
+                .orElseThrow(()-> new RuntimeException("Worst cell not found by ID: " + dto.worstCellId()));
+
+        return WorstCellComment.builder()
+                .comment(dto.comment())
+                .worstCell(worstCell)
+                .build();
+    }
 }
