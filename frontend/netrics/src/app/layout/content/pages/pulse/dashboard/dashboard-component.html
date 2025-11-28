@@ -126,13 +126,13 @@
             <!-- head -->
             <thead>
             <tr>
-              <th class="font-semibold text-center">#</th>
-              <th class="font-semibold text-center">Cell Name</th>
+              <th class="font-semibold ">#</th>
+              <th class="font-semibold ">Cell Name</th>
               <!--              <th class="font-semibold text-center">KPI</th>-->
-              <th class="font-semibold text-center">Value</th>
+              <th class="font-semibold ">Value</th>
               <!--              <th class="font-semibold">Difference</th>-->
-              <th class="font-semibold text-center">Latest</th>
-              <th class="font-semibold text-center">Comments</th>
+              <th class="font-semibold ">Latest</th>
+              <th class="font-semibold ">Comments</th>
             </tr>
             </thead>
             <tbody>
@@ -167,10 +167,11 @@
                     </span>
                   </td>
                   <td class="p-0">
-                    <div class="dropdown dropdown-left dropdown-end">
-                      <button class="btn btn-ghost btn-xs text-secondary" (click)="getWorstCellComments(cell)">
+                    <div class="dropdown dropdown-left" [class.dropdown-open]="openDropdownCellId === cell.id" [class.dropdown-end]="i>6" [class.dropdown-center]="i>2 && i<7">
+<!--                      <button class="btn btn-ghost btn-xs text-secondary" (click)="getWorstCellComments(cell)">-->
+                      <button class="btn btn-ghost btn-xs text-secondary" (click)="openDropdownAndLoadComments(cell,$event)">
 
-                        @if (isWorstCellHaveComments(cell)){
+                        @if (doesWorstCellHaveComments(cell)){
                           <span class="text-primary">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M15 10L11 14L9 12M12.0001 21C10.365 21 8.83174 20.5639 7.51025 19.8018C7.3797 19.7265 7.31434 19.6888 7.25293 19.6719C7.19578 19.6561 7.14475 19.6507 7.08559 19.6548C7.02253 19.6591 6.9573 19.6808 6.82759 19.7241L4.51807 20.4939L4.51625 20.4947C4.02892 20.6572 3.7848 20.7386 3.62256 20.6807C3.4812 20.6303 3.36979 20.5187 3.31938 20.3774C3.26157 20.2152 3.34268 19.9719 3.50489 19.4853L3.50586 19.4823L4.27468 17.1758L4.27651 17.171C4.31936 17.0424 4.34106 16.9773 4.34535 16.9146C4.3494 16.8554 4.34401 16.804 4.32821 16.7469C4.31146 16.6863 4.27448 16.6221 4.20114 16.495L4.19819 16.4899C3.43604 15.1684 3 13.6351 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9707 21 12.0001 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -183,47 +184,46 @@
                             </svg>
                           </span>
                         }
-
                       </button>
                       <div tabindex="-1"
-                           class="menu menu-md dropdown-content bg-base-100 rounded-box z-50 mt-3 min-w-64 w-auto p-2 shadow-xl border border-base-300">
-                        @if (worstCellComments.length === 0){
+                           class="menu menu-md dropdown-content bg-base-100 rounded-box z-50 mt-3 min-w-64 w-auto p-2 shadow-xl border border-base-300"
+                           (click)="$event.stopPropagation()">
+                        @if (selectedWorstCellComments.length === 0){
                           <div class="join">
                             <div>
                               <label class="input input-sm validator join-item">
-<!--                                <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">-->
-<!--                                  <g-->
-<!--                                    stroke-linejoin="round"-->
-<!--                                    stroke-linecap="round"-->
-<!--                                    stroke-width="2.5"-->
-<!--                                    fill="none"-->
-<!--                                    stroke="currentColor"-->
-<!--                                  >-->
-<!--                                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>-->
-<!--                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>-->
-<!--                                  </g>-->
-<!--                                </svg>-->
-                                <input type="text" [(ngModel)]="comment" placeholder="Type comment..." required />
+                                <input type="text" [(ngModel)]="_comment" placeholder="Type comment..." required />
                               </label>
                               <div class="validator-hint hidden">Comment shouldn't be blank!</div>
                             </div>
-                            <button class="btn btn-sm join-item" (click)="createComment(cell,comment())">Add Comment</button>
+                            <button class="btn btn-sm join-item" (click)="createComment(cell,_comment())">Add Comment</button>
                           </div>
                         } @else {
                           <ul class="p-1">
-                            @for (comment of worstCellComments; track $index) {
-                              <div>
-                                <div class="flex flex-row">
+                            @for (comment of selectedWorstCellComments; track $index) {
+                              <div [hidden]="isEditingComment">
+                                <div  class="flex flex-row">
                                   <p class="text-base-content">{{ comment.comment }}</p>
-                                  <button class="btn btn-xs ml-auto">Edit</button>
+                                  <button class="btn btn-xs ml-auto" (click)="editingComment(comment.comment,$event)">Edit</button>
                                 </div>
-                                <p class="text-secondary text-xs">{{ comment.createdAt | date: 'yyyy-MM-dd' }}</p>
+                                @if (comment.lastModifiedAt) {
+                                  <p class="text-secondary text-xs">{{ comment.lastModifiedAt | date: 'yyyy-MM-dd' }}</p>
+                                } @else {
+                                  <p class="text-secondary text-xs">{{ comment.createdAt | date: 'yyyy-MM-dd' }}</p>
+                                }
+                              </div>
+                              <div [hidden]="!isEditingComment" class="join">
+                                <div>
+                                  <label class="input input-sm validator join-item">
+                                    <input type="text" [(ngModel)]="_comment" placeholder="Type comment..." required />
+                                  </label>
+                                  <div class="validator-hint hidden">Comment shouldn't be blank!</div>
+                                </div>
+                                <button [disabled]="_comment() === comment.comment" class="btn btn-sm join-item" (click)="updateComment(cell,comment.id,_comment())">Save</button>
                               </div>
                             }
                           </ul>
                         }
-
-
                       </div>
                     </div>
                   </td>

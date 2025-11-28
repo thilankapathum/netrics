@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, HostListener, OnInit, signal} from '@angular/core';
 import {Router, RouterLink} from '@angular/router';
 import {FormBuilder, FormsModule} from '@angular/forms';
 import {AreaTypeDto} from '../../../../../models/pulse/AreaTypeDto';
@@ -21,7 +21,7 @@ import {Linechart} from '../../../../../components/charts/linechart/linechart/li
 import {WorstCellCommentDto} from '../../../../../models/pulse/WorstCellCommentDto';
 import {WorstCellCommentService} from '../../../../../service/pulse/dashboard/worst-cell-comment-service';
 import {WorstCell} from '../../../../../models/pulse/WorstCell';
-import {WorstCellAndCommentsDto} from '../../../../../models/pulse/WorstCellAndCommentsDto';
+import {WorstCellsAndCommentsDto} from '../../../../../models/pulse/WorstCellsAndCommentsDto';
 
 @Component({
   selector: 'app-dashboard-component',
@@ -55,18 +55,25 @@ export class DashboardComponent implements OnInit {
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
 
-  selectedCell=signal('');
+  selectedCell = signal('');
 
   worstCells: Array<WorstCellsWithLatestDto> = [];
-  worstCellComments: Array<WorstCellCommentDto> = [];
-  worstCellsAndComments: Array<WorstCellAndCommentsDto> = [];
-  comment = signal('');
+
+  _comment = signal('');
+  selectedWorstCellComments: Array<WorstCellCommentDto> = [];
+  worstCellsAndComments: Array<WorstCellsAndCommentsDto> = [];
+
+  openDropdownCellId: number | null = null; //-- To track the specific worst-cell to display the popover
+
   kpiTrendData: KpiTrendDto[] = [];
   chartSeries: any = null;
 
   loadingKpiTrend: boolean = false;
   loadingWorstCells: boolean = false;
   excludeZeroes: boolean = false;
+  isEditingComment: boolean = false;
+
+  // isDropDownOpen:boolean = false;
 
 
   constructor(private router: Router,
@@ -76,14 +83,13 @@ export class DashboardComponent implements OnInit {
               private standardKpiService: StandardkpiService,
               private alertService: AlertService,
               private datePipe: DatePipe,
-              private kpiDayService:KpidayService,
+              private kpiDayService: KpidayService,
               private chartService: ChartService,
               private worstCellCommentService: WorstCellCommentService
-              ) {
+  ) {
   }
 
   ngOnInit(): void {
-    // this.getAreaTypes();
     this.getAllStandardKpi(this.selectedRat())
   }
 
@@ -137,7 +143,6 @@ export class DashboardComponent implements OnInit {
   getTimestamps(kpiName: string, period: string, areaName: string, ratName: string) {
     this.dashboardService.getTimestamps(kpiName, period, areaName, ratName).subscribe({
       next: data => {
-        console.log("Timestamps data: ", data);
         this.timestamps = data;
         this.timestamp.set(this.timestamps.at(0)!);
         this.getWorstCells(this.timestamp(), this.excludeZeroes);
@@ -147,6 +152,8 @@ export class DashboardComponent implements OnInit {
       }
     })
   }
+
+  //---------- SELECT FILTERS -------------
 
   selectStandardKpi(standardKpiName: string) {
     this.getTimestamps(standardKpiName, this.selectedPeriod(), this.area()!, this.selectedRat());
@@ -160,7 +167,6 @@ export class DashboardComponent implements OnInit {
   selectArea(areaName: string) {
     this.area.set(areaName);
     this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat());
-    console.log(areaName);
   }
 
   //--------- WORST-CELLS ------------------------
@@ -169,7 +175,7 @@ export class DashboardComponent implements OnInit {
     this.getWorstCells(this.timestamp(), this.excludeZeroes);
   }
 
-  getWorstCells(date: Date, excludeZeroes:boolean) {
+  getWorstCells(date: Date, excludeZeroes: boolean) {
     this.loadingWorstCells = true;
     this.dashboardService.getWorstCellsByKpiAndArea(
       this.datePipe.transform(date, 'yyyy-MM-dd')!,
@@ -181,7 +187,6 @@ export class DashboardComponent implements OnInit {
       .subscribe({
         next: data => {
           this.worstCells = data;
-          console.log("Worst cell data: ", data);
           this.setWorstCellComments(this.worstCells);
           this.loadingWorstCells = false;
         }, error: error => {
@@ -192,64 +197,113 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  // getWorstCellComments(worstCell: WorstCellsWithLatestDto){
-  //   console.log("getting comments for: ", worstCell);
-  //   this.worstCellComments = [];
-  //   this.worstCellCommentService.getCommentByWorstCell(worstCell.id).subscribe({
-  //     next: data => {
-  //       console.log("Worst cell comments: ", data);
-  //       this.worstCellComments = data;
-  //     },error: error => {
-  //       console.log(error);
-  //       this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`);
-  //     }
-  //   })
-  // }
+  //---------- WORST-CELL COMMENTS --------------------------
 
-  getWorstCellComments(worstCell: WorstCellsWithLatestDto){
-    this.worstCellComments = []
-    const worstCellAndComments = this.worstCellsAndComments.find(wc => wc.worstCell == worstCell);
-    this.worstCellComments = worstCellAndComments?.comments!;
+  openDropdownAndLoadComments(cell: WorstCellsWithLatestDto, event: Event) {
+    event.stopPropagation();
+    this.isEditingComment = false;
+    this._comment.set('');
+    this.openDropdownCellId = cell.id;
+    this.getWorstCellComments(cell);
   }
 
-  isWorstCellHaveComments(worstCell: WorstCellsWithLatestDto):boolean{
+  //-- Set comments for the selected cell to be displayed in the popover menu
+  getWorstCellComments(worstCell: WorstCellsWithLatestDto) {
+    this.selectedWorstCellComments = []
+    const worstCellAndComments = this.worstCellsAndComments.find(wc => wc.worstCell == worstCell);
+    this.selectedWorstCellComments = worstCellAndComments?.comments!;
+    for (let comment of this.selectedWorstCellComments) {
+      console.log('createdAt: ', comment.createdAt);
+      console.log('modifiedAt: ', comment.lastModifiedAt);
+    }
+  }
+
+  //-- To display comment available/unavailable icon
+  doesWorstCellHaveComments(worstCell: WorstCellsWithLatestDto): boolean {
     const worstCellAndComments = this.worstCellsAndComments.find(wc => wc.worstCell == worstCell);
     return worstCellAndComments?.comments.length! > 0;
   }
 
-  getAllWorstCellComments(worstCell: WorstCellsWithLatestDto){
-    console.log("getting comments for: ", worstCell);
-    this.worstCellComments = [];
-    this.worstCellCommentService.getCommentByWorstCell(worstCell.id).subscribe({
-      next: data => {
-        // console.log("Worst cell comments: ", data);
-        this.worstCellsAndComments.push({
-          worstCell: worstCell, comments: data
-        })
-      },error: error => {
-        console.log(error);
-        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`);
-      }
-    })
-  }
-
+  //-- To set comments of the all worst-cells, at worst-cell querying time
   setWorstCellComments(worstCells: WorstCellsWithLatestDto[]) {
     for (let cell of worstCells) {
       this.getAllWorstCellComments(cell);
     }
   }
 
-  createComment(worstCell: WorstCellsWithLatestDto, comment:string) {
+  //-- Get all comments of all worst-cells for the selected standard KPI
+  getAllWorstCellComments(worstCell: WorstCellsWithLatestDto) {
+    this.selectedWorstCellComments = [];
+    this.worstCellCommentService.getCommentByWorstCell(worstCell.id).subscribe({
+      next: data => {
+        this.worstCellsAndComments.push({
+          worstCell: worstCell, comments: data
+        })
+      }, error: error => {
+        console.log(error);
+        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`);
+      }
+    })
+  }
+
+
+  createComment(worstCell: WorstCellsWithLatestDto, comment: string) {
     this.worstCellCommentService.createComment(comment, worstCell.id).subscribe({
       next: data => {
-        console.log("Comment created",data.comment);
-      },error: error => {
+        const worstCellAndComments = this.worstCellsAndComments.find(wc => wc.worstCell.id === worstCell.id);
+
+        //-- Update frontend's array to instantly display added comment
+        if (worstCellAndComments) {
+          worstCellAndComments.comments.push(data);
+        } else {
+          this.worstCellsAndComments.push({
+            worstCell: worstCell, comments: [data]
+          });
+        }
+        this.alertService.success(`Comment '${this._comment()}' is added to ${worstCell.cellName} successfully!`);
+        this._comment.set('');
+        this.openDropdownCellId = null;
+      }, error: error => {
         console.log(error);
         this.alertService.error(`Error creating comment: ${comment}`);
       }
     })
   }
 
+  updateComment(worstCell: WorstCellsWithLatestDto, commentId: number, comment: string) {
+    console.log('comment', comment);
+    console.log('commentId', commentId);
+    this.worstCellCommentService.updateComment(comment, commentId).subscribe({
+      next: data => {
+        console.log('data',data);
+        const worstCellAndComments = this.worstCellsAndComments.find(wc => wc.worstCell.id === worstCell.id);
+        const comment = worstCellAndComments?.comments.find(c => c.id === data.id);
+
+        if (comment) {
+          comment.comment = data.comment;
+          comment.lastModifiedAt = data.lastModifiedAt;
+          comment.lastModifiedBy = data.lastModifiedBy;
+        } else {
+          worstCellAndComments?.comments.push(data);
+        }
+        this.isEditingComment = false;
+        this.alertService.success(`Comment '${comment?.comment}' is updated to ${worstCell.cellName} successfully!`);
+        // this.openDropdownCellId = null;
+
+      }, error: error => {
+        console.log(error);
+        this.alertService.error(`Error updating comment: ${comment} of ${worstCell.cellName}`);
+      }
+    })
+  }
+
+  editingComment(comment: string, event: Event) {
+    event.stopPropagation();
+    this.isEditingComment = true;
+    this._comment.set(comment);
+  }
+
+  //----------- RAT SELECTION --------------------
 
   setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): void {
     this.selectedRat.set(rat);
@@ -282,7 +336,7 @@ export class DashboardComponent implements OnInit {
     // this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat());
   }
 
-  getTrendDataByKpi(kpiName: string, cellName:string, period: string, ratName: string) {
+  getTrendDataByKpi(kpiName: string, cellName: string, period: string, ratName: string) {
     this.selectedCell.set(cellName);
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
@@ -306,7 +360,7 @@ export class DashboardComponent implements OnInit {
 
   //----------- UTILITY ------------------------------
 
-  isKpiValueRed(kpiLabel:string , value:number): boolean {
+  isKpiValueRed(kpiLabel: string, value: number): boolean {
     const standardKpi = this.standardKpis.find(kpi => kpi.label == kpiLabel);
     if (!standardKpi || standardKpi.threshold == null || !standardKpi.worstOrder) {
       return false;
@@ -318,6 +372,14 @@ export class DashboardComponent implements OnInit {
       return value! > standardKpi.threshold;
     }
     return false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const clickInside = (event.target as HTMLElement).closest('.dropdown');
+    if (!clickInside) {
+      this.openDropdownCellId = null;
+    }
   }
 
 }

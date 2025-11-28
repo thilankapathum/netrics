@@ -53,8 +53,16 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
     }
 
     @Override
-    public WorstCellCommentDto modifyCommentByWorstCell(WorstCellCommentDto dto) {
-        return null;
+    public WorstCellCommentDto updateCommentByWorstCell(String comment, Long commentId) {
+
+        WorstCellComment worstCellComment = worstCellCommentRepository.findById(commentId)
+                .orElseThrow(()-> new RuntimeException("Comment not found by ID: " + commentId));
+
+        worstCellComment.setComment(comment);
+
+        WorstCellComment savedComment = worstCellCommentRepository.save(worstCellComment);
+
+        return mapper.worstCellCommentToDto(savedComment);
     }
 
     @Override

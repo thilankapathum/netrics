@@ -18,12 +18,16 @@ export class WorstCellCommentService {
   }
 
   createComment(comment: string, worstCellId:number) {
-
-    console.log("Create new comment",comment, worstCellId);
     const params = new HttpParams()
       .set('comment', comment)
       .set('worstCellId', worstCellId);
-
     return this.http.post<WorstCellCommentDto>(`${this.baseUrl}`, null, {params});
+  }
+
+  updateComment(comment: string, commentId:number) {
+    const params = new HttpParams()
+      .set('comment', comment)
+      .set('commentId', commentId);
+    return this.http.put<WorstCellCommentDto>(`${this.baseUrl}`, null, {params});
   }
 }

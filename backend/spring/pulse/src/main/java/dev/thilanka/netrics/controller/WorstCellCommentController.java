@@ -2,7 +2,6 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.WorstCellCommentDto;
 import dev.thilanka.netrics.service.WorstCellCommentService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,8 +31,11 @@ public class WorstCellCommentController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @PutMapping("cell/{id}")
-    ResponseEntity<WorstCellCommentDto> updateWorstCellComment(@RequestBody @Valid WorstCellCommentDto dto){
-        return null;
+    @PutMapping
+    ResponseEntity<WorstCellCommentDto> updateWorstCellComment(@RequestParam("comment") String comment, @RequestParam("commentId") Long commentId){
+
+        WorstCellCommentDto worstCellCommentDto = worstCellCommentService.updateCommentByWorstCell(comment,commentId);
+
+        return new ResponseEntity<>(worstCellCommentDto,HttpStatus.CREATED);
     }
 }

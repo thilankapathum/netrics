@@ -1,7 +1,7 @@
 import {WorstCellsWithLatestDto} from './WorstCellsWithLatestDto';
 import {WorstCellCommentDto} from './WorstCellCommentDto';
 
-export  interface WorstCellAndCommentsDto{
+export  interface WorstCellsAndCommentsDto {
   worstCell: WorstCellsWithLatestDto;
   comments: Array<WorstCellCommentDto>;
 }
