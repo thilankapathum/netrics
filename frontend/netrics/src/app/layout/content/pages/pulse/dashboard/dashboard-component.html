@@ -132,26 +132,19 @@
               <th class="font-semibold text-center">Value</th>
               <!--              <th class="font-semibold">Difference</th>-->
               <th class="font-semibold text-center">Latest</th>
-              <th class="font-semibold text-center"></th>
+              <th class="font-semibold text-center">Comments</th>
             </tr>
             </thead>
             <tbody>
             <!-- row -->
               @for (cell of worstCells; track cell.cellName; let i = $index) {
-                <tr class="hover:bg-base-200 cursor-pointer"
-                >
-                  <!--                    (click)="getWorstCellComments(cell)">-->
-                  <td (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">{{ i + 1 }}
+                <tr class="hover:bg-base-200 ">
+                  <td class="cursor-pointer" (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">{{ i + 1 }}
                   </td>
-                  <td
+                  <td class="cursor-pointer"
                     (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">{{ cell.cellName }}
                   </td>
-                  <!--                  <td class=" overflow-visible">-->
-                  <!--                    <span class="tooltip tooltip-xs truncate max-w-[90px]" [attr.data-tip]="cell.kpiLabel">-->
-                  <!--                      {{ cell.kpiLabel }}-->
-                  <!--                    </span>-->
-                  <!--                  </td>-->
-                  <td (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
+                  <td class="cursor-pointer" (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
                     <span class="badge badge-soft badge-xs"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;
                       @if (cell.difference! > 0) {
@@ -162,7 +155,7 @@
                       {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
                     </span>
                   </td>
-                  <td (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
+                  <td class="cursor-pointer" (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">
                     <span [class]="isKpiValueRed(cell.kpiLabel,cell.latestValue) ? 'text-error font-semibold' : ''">
                       {{ cell.latestValue | number :'1.2-2' }}{{ cell.unit }}
                     </span> &nbsp;
@@ -175,19 +168,49 @@
                   </td>
                   <td class="p-0">
                     <div class="dropdown dropdown-left dropdown-end">
-                      <button class="btn btn-ghost btn-xs text-secondary"
-                              (click)="getWorstCellComments(cell)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M12 14V11M12 11V8M12 11H9M12 11H15M7.12357 18.7012L5.59961 19.9203C4.76744 20.5861 4.35115 20.9191 4.00098 20.9195C3.69644 20.9198 3.40845 20.7813 3.21846 20.5433C3 20.2696 3 19.7369 3 18.6712V7.2002C3 6.08009 3 5.51962 3.21799 5.0918C3.40973 4.71547 3.71547 4.40973 4.0918 4.21799C4.51962 4 5.08009 4 6.2002 4H17.8002C18.9203 4 19.4801 4 19.9079 4.21799C20.2842 4.40973 20.5905 4.71547 20.7822 5.0918C21 5.5192 21 6.07899 21 7.19691V14.8036C21 15.9215 21 16.4805 20.7822 16.9079C20.5905 17.2842 20.2843 17.5905 19.908 17.7822C19.4806 18 18.9215 18 17.8036 18H9.12256C8.70652 18 8.49829 18 8.29932 18.0408C8.12279 18.0771 7.95216 18.1368 7.79168 18.2188C7.61149 18.3108 7.44964 18.4403 7.12722 18.6982L7.12357 18.7012Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+                      <button class="btn btn-ghost btn-xs text-secondary" (click)="getWorstCellComments(cell)">
+
+                        @if (isWorstCellHaveComments(cell)){
+                          <span class="text-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M15 10L11 14L9 12M12.0001 21C10.365 21 8.83174 20.5639 7.51025 19.8018C7.3797 19.7265 7.31434 19.6888 7.25293 19.6719C7.19578 19.6561 7.14475 19.6507 7.08559 19.6548C7.02253 19.6591 6.9573 19.6808 6.82759 19.7241L4.51807 20.4939L4.51625 20.4947C4.02892 20.6572 3.7848 20.7386 3.62256 20.6807C3.4812 20.6303 3.36979 20.5187 3.31938 20.3774C3.26157 20.2152 3.34268 19.9719 3.50489 19.4853L3.50586 19.4823L4.27468 17.1758L4.27651 17.171C4.31936 17.0424 4.34106 16.9773 4.34535 16.9146C4.3494 16.8554 4.34401 16.804 4.32821 16.7469C4.31146 16.6863 4.27448 16.6221 4.20114 16.495L4.19819 16.4899C3.43604 15.1684 3 13.6351 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9707 21 12.0001 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </span>
+                        } @else {
+                          <span class="text-secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 15V12M12 12V9M12 12H9M12 12H15M12.0001 21C10.365 21 8.83174 20.5639 7.51025 19.8018C7.3797 19.7265 7.31434 19.6888 7.25293 19.6719C7.19578 19.6561 7.14475 19.6507 7.08559 19.6548C7.02253 19.6591 6.9573 19.6808 6.82759 19.7241L4.51807 20.4939L4.51625 20.4947C4.02892 20.6572 3.7848 20.7386 3.62256 20.6807C3.4812 20.6303 3.36979 20.5187 3.31938 20.3774C3.26157 20.2152 3.34268 19.9719 3.50489 19.4853L3.50586 19.4823L4.27468 17.1758L4.27651 17.171C4.31936 17.0424 4.34106 16.9773 4.34535 16.9146C4.3494 16.8554 4.34401 16.804 4.32821 16.7469C4.31146 16.6863 4.27448 16.6221 4.20114 16.495L4.19819 16.4899C3.43604 15.1684 3 13.6351 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9707 21 12.0001 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </span>
+                        }
+
                       </button>
                       <div tabindex="-1"
-                           class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 min-w-64 w-auto p-2 shadow-xl border border-base-300">
+                           class="menu menu-md dropdown-content bg-base-100 rounded-box z-50 mt-3 min-w-64 w-auto p-2 shadow-xl border border-base-300">
                         @if (worstCellComments.length === 0){
-                          <div class="flex flex-row">
-                            <p>No comments</p>
-                            <button class="btn btn-xs w-auto ml-auto">Add comment</button>
+                          <div class="join">
+                            <div>
+                              <label class="input input-sm validator join-item">
+<!--                                <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">-->
+<!--                                  <g-->
+<!--                                    stroke-linejoin="round"-->
+<!--                                    stroke-linecap="round"-->
+<!--                                    stroke-width="2.5"-->
+<!--                                    fill="none"-->
+<!--                                    stroke="currentColor"-->
+<!--                                  >-->
+<!--                                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>-->
+<!--                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>-->
+<!--                                  </g>-->
+<!--                                </svg>-->
+                                <input type="text" [(ngModel)]="comment" placeholder="Type comment..." required />
+                              </label>
+                              <div class="validator-hint hidden">Comment shouldn't be blank!</div>
+                            </div>
+                            <button class="btn btn-sm join-item" (click)="createComment(cell,comment())">Add Comment</button>
                           </div>
                         } @else {
-                          <ul>
+                          <ul class="p-1">
                             @for (comment of worstCellComments; track $index) {
                               <div>
                                 <div class="flex flex-row">

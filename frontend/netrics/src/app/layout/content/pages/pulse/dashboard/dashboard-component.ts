@@ -21,6 +21,7 @@ import {Linechart} from '../../../../../components/charts/linechart/linechart/li
 import {WorstCellCommentDto} from '../../../../../models/pulse/WorstCellCommentDto';
 import {WorstCellCommentService} from '../../../../../service/pulse/dashboard/worst-cell-comment-service';
 import {WorstCell} from '../../../../../models/pulse/WorstCell';
+import {WorstCellAndCommentsDto} from '../../../../../models/pulse/WorstCellAndCommentsDto';
 
 @Component({
   selector: 'app-dashboard-component',
@@ -58,6 +59,8 @@ export class DashboardComponent implements OnInit {
 
   worstCells: Array<WorstCellsWithLatestDto> = [];
   worstCellComments: Array<WorstCellCommentDto> = [];
+  worstCellsAndComments: Array<WorstCellAndCommentsDto> = [];
+  comment = signal('');
   kpiTrendData: KpiTrendDto[] = [];
   chartSeries: any = null;
 
@@ -179,6 +182,7 @@ export class DashboardComponent implements OnInit {
         next: data => {
           this.worstCells = data;
           console.log("Worst cell data: ", data);
+          this.setWorstCellComments(this.worstCells);
           this.loadingWorstCells = false;
         }, error: error => {
           console.log(error);
@@ -188,16 +192,60 @@ export class DashboardComponent implements OnInit {
       });
   }
 
+  // getWorstCellComments(worstCell: WorstCellsWithLatestDto){
+  //   console.log("getting comments for: ", worstCell);
+  //   this.worstCellComments = [];
+  //   this.worstCellCommentService.getCommentByWorstCell(worstCell.id).subscribe({
+  //     next: data => {
+  //       console.log("Worst cell comments: ", data);
+  //       this.worstCellComments = data;
+  //     },error: error => {
+  //       console.log(error);
+  //       this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`);
+  //     }
+  //   })
+  // }
+
   getWorstCellComments(worstCell: WorstCellsWithLatestDto){
+    this.worstCellComments = []
+    const worstCellAndComments = this.worstCellsAndComments.find(wc => wc.worstCell == worstCell);
+    this.worstCellComments = worstCellAndComments?.comments!;
+  }
+
+  isWorstCellHaveComments(worstCell: WorstCellsWithLatestDto):boolean{
+    const worstCellAndComments = this.worstCellsAndComments.find(wc => wc.worstCell == worstCell);
+    return worstCellAndComments?.comments.length! > 0;
+  }
+
+  getAllWorstCellComments(worstCell: WorstCellsWithLatestDto){
     console.log("getting comments for: ", worstCell);
     this.worstCellComments = [];
     this.worstCellCommentService.getCommentByWorstCell(worstCell.id).subscribe({
       next: data => {
-        console.log("Worst cell comments: ", data);
-        this.worstCellComments = data;
+        // console.log("Worst cell comments: ", data);
+        this.worstCellsAndComments.push({
+          worstCell: worstCell, comments: data
+        })
       },error: error => {
         console.log(error);
         this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`);
+      }
+    })
+  }
+
+  setWorstCellComments(worstCells: WorstCellsWithLatestDto[]) {
+    for (let cell of worstCells) {
+      this.getAllWorstCellComments(cell);
+    }
+  }
+
+  createComment(worstCell: WorstCellsWithLatestDto, comment:string) {
+    this.worstCellCommentService.createComment(comment, worstCell.id).subscribe({
+      next: data => {
+        console.log("Comment created",data.comment);
+      },error: error => {
+        console.log(error);
+        this.alertService.error(`Error creating comment: ${comment}`);
       }
     })
   }

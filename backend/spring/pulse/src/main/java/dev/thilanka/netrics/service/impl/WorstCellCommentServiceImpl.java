@@ -27,6 +27,22 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
     }
 
     @Override
+    public WorstCellCommentDto createWorstCellComment(String comment, Long worstCellId) {
+
+        WorstCell worstCell = worstCellRepository.findById(worstCellId)
+                .orElseThrow(()-> new RuntimeException("Worst cell not found by ID: " + worstCellId));
+
+        WorstCellComment worstCellComment = WorstCellComment
+                .builder()
+                .worstCell(worstCell)
+                .comment(comment)
+                .build();
+
+        WorstCellComment savedWorstCellComment = worstCellCommentRepository.save(worstCellComment);
+        return mapper.worstCellCommentToDto(savedWorstCellComment);
+    }
+
+    @Override
     public List<WorstCellCommentDto> getCommentsByWorstCell(Long worstCellId) {
         WorstCell worstCell = worstCellRepository.findById(worstCellId)
                 .orElseThrow(()-> new RuntimeException("Worst cell not found by ID: " + worstCellId));
@@ -38,6 +54,11 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
 
     @Override
     public WorstCellCommentDto modifyCommentByWorstCell(WorstCellCommentDto dto) {
+        return null;
+    }
+
+    @Override
+    public WorstCellCommentDto UpdateWorstCellComment(WorstCellCommentDto dto) {
         return null;
     }
 }

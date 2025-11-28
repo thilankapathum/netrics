@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {UrlService} from '../../url/url-service';
-import {WorstCell} from '../../../models/pulse/WorstCell';
 import {WorstCellCommentDto} from '../../../models/pulse/WorstCellCommentDto';
 
 @Injectable({
@@ -16,5 +15,15 @@ export class WorstCellCommentService {
 
   getCommentByWorstCell(worstCellId:number) {
     return this.http.get<Array<WorstCellCommentDto>>(`${this.baseUrl}/cell/${worstCellId}`);
+  }
+
+  createComment(comment: string, worstCellId:number) {
+
+    console.log("Create new comment",comment, worstCellId);
+    const params = new HttpParams()
+      .set('comment', comment)
+      .set('worstCellId', worstCellId);
+
+    return this.http.post<WorstCellCommentDto>(`${this.baseUrl}`, null, {params});
   }
 }

@@ -19,8 +19,8 @@ public class WorstCellCommentController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping
-    ResponseEntity<WorstCellCommentDto> createWorstCellComment(@RequestBody @Valid WorstCellCommentDto dto){
-        WorstCellCommentDto savedComment = worstCellCommentService.createWorstCellComment(dto);
+    ResponseEntity<WorstCellCommentDto> createWorstCellComment(@RequestParam("comment") String comment, @RequestParam("worstCellId") Long worstCellId){
+        WorstCellCommentDto savedComment = worstCellCommentService.createWorstCellComment(comment,worstCellId);
         return new ResponseEntity<>(savedComment, HttpStatus.CREATED);
     }
 
@@ -29,5 +29,11 @@ public class WorstCellCommentController {
     ResponseEntity<List<WorstCellCommentDto>> getWorstCellCommentByWorstCell(@PathVariable("id") Long worstCellId){
         List<WorstCellCommentDto> comments = worstCellCommentService.getCommentsByWorstCell(worstCellId);
         return ResponseEntity.ok(comments);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @PutMapping("cell/{id}")
+    ResponseEntity<WorstCellCommentDto> updateWorstCellComment(@RequestBody @Valid WorstCellCommentDto dto){
+        return null;
     }
 }
