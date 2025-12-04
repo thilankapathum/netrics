@@ -51,7 +51,7 @@ export class DashboardComponent implements OnInit {
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
 
-  selectedPeriod = signal('day');
+  selectedPeriod = signal('week');
   selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
@@ -278,8 +278,11 @@ export class DashboardComponent implements OnInit {
         this.isAddingComment = false;
         this.openDropdownCellId = null;
       }, error: error => {
+        this._comment.set('');
+        this.isAddingComment = false;
+        this.openDropdownCellId = null;
         console.log(error);
-        this.alertService.error(`Error creating comment: ${comment}`);
+        this.alertService.error(`Error creating comment ${error.status} | ${error.statusText}`);
       }
     })
   }
@@ -306,6 +309,9 @@ export class DashboardComponent implements OnInit {
       }, error: error => {
         console.log(error);
         this.alertService.error(`Error updating comment. ${error.status} - ${error.statusText}`);
+        this.isEditingComment = false;
+        this.editingCommentId = null;
+        this._comment.set('');
       }
     })
   }
@@ -327,6 +333,8 @@ export class DashboardComponent implements OnInit {
       }, error: error => {
         console.log(error);
         this.alertService.error(`Error deleting comment`);
+        this.getAllWorstCellComments(worstCell);
+        this.openDropdownCellId = null;
       }
     })
   }

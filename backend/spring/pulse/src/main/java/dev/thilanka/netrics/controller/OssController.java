@@ -17,7 +17,7 @@ import java.util.List;
 public class OssController {
     private final OssService ossService;
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @GetMapping
     public ResponseEntity<List<OssDto>> getAllOss(){
         List<OssDto> ossDtoList = ossService.getAllOss();

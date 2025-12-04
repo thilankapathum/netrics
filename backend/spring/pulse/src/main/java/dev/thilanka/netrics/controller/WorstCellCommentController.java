@@ -2,7 +2,6 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.WorstCellCommentDto;
 import dev.thilanka.netrics.service.WorstCellCommentService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +30,7 @@ public class WorstCellCommentController {
         return ResponseEntity.ok(comments);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PutMapping
     ResponseEntity<WorstCellCommentDto> updateWorstCellComment(@RequestParam("comment") String comment, @RequestParam("commentId") Long commentId) {
 
@@ -43,7 +42,7 @@ public class WorstCellCommentController {
 
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @DeleteMapping("{commentId}")
     ResponseEntity<WorstCellCommentDto> deleteWorstCellComment(@PathVariable("commentId") Long commentId) {
         WorstCellCommentDto deleted = worstCellCommentService.deleteCommentById(commentId);

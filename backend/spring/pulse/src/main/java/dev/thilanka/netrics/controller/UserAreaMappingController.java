@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserAreaMappingController {
     private final UserAreaMappingService userAreaMappingService;
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping
     ResponseEntity<UserAreaMappingDto> createUserAreaMapping(@RequestBody @Valid UserAreaMappingDto dto){
         UserAreaMappingDto savedUserAreaMapping = userAreaMappingService.createUserAreaMapping(dto);

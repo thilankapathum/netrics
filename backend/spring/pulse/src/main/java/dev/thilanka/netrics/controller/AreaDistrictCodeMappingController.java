@@ -18,20 +18,21 @@ public class AreaDistrictCodeMappingController {
     private final AreaDistrictCodeMappingService areaDistrictCodeMappingService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     ResponseEntity<AreaDistrictCodeMappingDto> createAreaDistrictCodeMapping(@RequestBody @Valid AreaDistrictCodeMappingDto dto){
         AreaDistrictCodeMappingDto saved = areaDistrictCodeMappingService.createAreaDistrictCodeMapping(dto);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
     @PostMapping("list")
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     ResponseEntity<List<AreaDistrictCodeMappingDto>> createAreaDistrictCodeMappings(@RequestBody @Valid List<AreaDistrictCodeMappingDto> dtos){
         List<AreaDistrictCodeMappingDto> saved = areaDistrictCodeMappingService.createAreaDistrictCodeMappings(dtos);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     ResponseEntity<List<AreaDistrictCodeMappingDto>> getAll(){
         return ResponseEntity.ok(areaDistrictCodeMappingService.getAll());
     }

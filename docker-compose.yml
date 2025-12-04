@@ -232,7 +232,7 @@ services:
       - "${DOMAIN_IP}:host-gateway"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.0.5
+    image: thilankaw/netrics/pulse:0.1.0
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -254,6 +254,7 @@ services:
       - CORE_POOL_SIZE=${CORE_POOL_SIZE}
       - MAX_POOL_SIZE=${MAX_POOL_SIZE}
       - QUEUE_CAPACITY=${QUEUE_CAPACITY}
+      - REFRESH_DAY=${REFRESH_DAY}
     expose:
       - "8012"
       - "9012"
@@ -291,7 +292,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: thilankaw/netrics/frontend:0.0.5
+    image: thilankaw/netrics/frontend:0.0.6
     container_name: frontend
     expose:
       - "80"

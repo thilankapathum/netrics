@@ -60,10 +60,14 @@ public class AreaServiceImpl implements AreaService {
     }
 
     @Override
-    public List<AreaDto> getAreasByAreaType(String areaTypeName) {
+    public List<Area> findAreasByAreaType(String areaTypeName) {
         AreaType areaType = areaTypeService.findAreaTypeByName(areaTypeName);
+        return areaRepository.findByAreaType(areaType);
+    }
 
-        List<Area> areas = areaRepository.findByAreaType(areaType);
+    @Override
+    public List<AreaDto> getAreasByAreaType(String areaTypeName) {
+        List<Area> areas = findAreasByAreaType(areaTypeName);
 
         return areas.stream().map(a -> new AreaDto(a.getName(),a.isEnabled(),a.getAreaType().getName())).toList();
     }

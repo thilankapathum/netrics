@@ -17,7 +17,7 @@ import java.util.List;
 public class KpiMappingToOssController {
     private final KpiMappingToOssService kpiMappingToOssService;
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @GetMapping
     public ResponseEntity<List<KpiMappingToOssDto>> getAll(@RequestParam("ratName") String ratName){
         List<KpiMappingToOssDto> dto = kpiMappingToOssService.getAll(ratName);

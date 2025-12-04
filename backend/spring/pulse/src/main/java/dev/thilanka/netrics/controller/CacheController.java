@@ -17,7 +17,7 @@ public class CacheController {
     private final CacheManager cacheManager;
     private final CacheWarmup cacheWarmup;
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("evict-all")
     public ResponseEntity<String> evictAllCaches(){
         for (String name : cacheManager.getCacheNames()){
@@ -27,7 +27,7 @@ public class CacheController {
         return ResponseEntity.ok("All caches cleared!");
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("evict")
     public ResponseEntity<String> evictByRatName(@RequestParam("ratName") String ratName){
         cacheWarmup.evictByRatName(ratName);
@@ -41,7 +41,7 @@ public class CacheController {
         return ResponseEntity.ok(ratName + " caches cleared and warmed-up!");
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("warm-up")
     public ResponseEntity<String> warmUpCaches(@RequestParam("ratName") String ratName){
         cacheWarmup.warmUpCache(ratName);

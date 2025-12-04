@@ -17,7 +17,7 @@ import java.util.List;
 public class AreaController {
     private final AreaService areaService;
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping
     ResponseEntity<AreaDto> createArea(@RequestBody @Valid AreaDto dto){
         AreaDto savedArea = areaService.createArea(dto);
@@ -25,12 +25,13 @@ public class AreaController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     ResponseEntity<AreaDto> getAreaByName(@RequestParam("name") String name){
         AreaDto areaDto = areaService.getAreaByName(name);
         return ResponseEntity.ok(areaDto);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("list")
     ResponseEntity<List<AreaDto>> createAreas(@RequestBody @Valid List<AreaDto> dtos){
         List<AreaDto> savedAreas = areaService.createAreas(dtos);
@@ -38,6 +39,7 @@ public class AreaController {
     }
 
     @GetMapping("area-type")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     ResponseEntity<List<AreaDto>> getAreasByAreaType(@RequestParam("areaTypeName") String areaTypeName){
         List<AreaDto> areaDtos = areaService.getAreasByAreaType(areaTypeName);
         return ResponseEntity.ok(areaDtos);
