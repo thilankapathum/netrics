@@ -91,9 +91,13 @@ export class CellAnalysis implements OnInit {
       next: data => {
         this.standardKpis = data;
         if (this.standardKpis.length > 0) {
-          const kpi = this.standardKpis.find(k => k.kpiName == this.initialStandardKpi)   // default loading initial-standard-kpi
-          if (this.initialStandardKpi !== '' && kpi !== undefined) {
-            this.selectedStandardKpi.set(kpi.kpiName!);
+          const kpiInit = this.standardKpis.find(k => k.kpiName == this.initialStandardKpi)   // default loading initial-standard-kpi
+          const kpiSelect = this.standardKpis.find(k => k.kpiName == this.selectedStandardKpi())   // default loading (previously) selected-standard-kpi
+
+          if (this.selectedStandardKpi() !== '' && kpiSelect !== undefined) {
+            this.selectedStandardKpi.set(kpiSelect.kpiName!);
+          } else if (this.initialStandardKpi !== '' && kpiInit !== undefined) {
+            this.selectedStandardKpi.set(kpiInit.kpiName!);
           } else {
             this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);    // Set 1st standard KPI from the list as default KPI
           }
