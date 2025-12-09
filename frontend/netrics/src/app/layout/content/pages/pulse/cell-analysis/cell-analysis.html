@@ -16,10 +16,23 @@
         </a></li>
         <li><a routerLink="/pulse">Worst Cell Analysis</a></li>
         <li class=" font-bold">Cell Analysis</li>
-        @if (rat()) {
-          <li>{{ cellName() }} &nbsp; <span class="text-base-300">{{ rat()?.label }}</span></li>
-        }
+<!--        @if (rat()) {-->
+<!--          <li>{{ cellName() }} &nbsp; <span class="text-base-300">{{ rat()?.label }}</span></li>-->
+<!--        }-->
       </ul>
+    </div>
+
+    <div class="tabs tabs-box tabs-xs border border-base-300">
+<!--      <input type="radio" name="cell_kpi_tabs" class="tab" aria-label="Single Cell & KPI" checked="checked"/>-->
+<!--      <input type="radio" name="cell_kpi_tabs" class="tab" aria-label="Multi-Cell"/>-->
+<!--      <input disabled type="radio" name="cell_kpi_tabs" class="tab" aria-label="Multi-KPI"/>-->
+
+      <input type="radio" name="cell_kpi_tabs" class="tab" value="s_cell_s_kpi" aria-label="Single Cell & KPI"
+             [checked]="selectedChartType() === 's_cell_s_kpi'" (change)="setSelectedChartType($any($event.target).value)"/>
+      <input type="radio" name="cell_kpi_tabs" class="tab" value="m_cell_s_kpi" aria-label="Multi-Cell"
+             [checked]="selectedChartType() === 'm_cell_s_kpi'" (change)="setSelectedChartType($any($event.target).value)"/>
+      <input disabled type="radio" name="cell_kpi_tabs" class="tab" value="s_cell_m_kpi" aria-label="Multi-KPI"
+             [checked]="selectedChartType() === 's_cell_m_kpi'" (change)="setSelectedChartType($any($event.target).value)"/>
     </div>
 
     <div class="tabs tabs-box tabs-xs border border-base-300">
@@ -50,9 +63,15 @@
           <ul tabindex="-1" class="dropdown-content menu bg-base-100 rounded-box z-1 w-auto p-2 shadow-sm text-xs">
             @for (cell of filteredCells(); track $index) {
               <li>
-                <a class="p-2 hover:bg-base-200 cursor-pointer text-base-300" (click)="selectCell(cell)">
+                <a class="p-2 hover:bg-base-200 cursor-pointer text-base-300" (click)="selectCell(cell,this.rat()?.name != cell.ratName)">
                   <span class="text-base-content"> {{ cell.cellName }} </span>
-                  <span class="text-base-300">{{ cell.ratLabel }}</span>
+                  <span class="text-base-content/30">{{ cell.ratLabel }}</span>
+
+                  @if (selectedChartType() === 'm_cell_s_kpi') {
+
+                  <span class="text-base-content/50">Add</span>
+<!--                    <button class="btn btn-ghost btn-xs text-primary">+</button>-->
+                  }
                 </a>
               </li>
             }
@@ -73,15 +92,6 @@
 <!--      class="flex flex-row gap-2 p-4 border border-base-300 rounded-xl bg-base-100 ">-->
       <div>
         <div class="flex flex-row gap-2">
-<!--          <select class="select select-sm w-auto" [(ngModel)]="selectedStandardKpi"-->
-<!--                  (change)="selectKpi(selectedStandardKpi(), rat()?.name!)">-->
-<!--            @if (standardKpis.length === 0) {-->
-<!--              <option disabled selected>KPI</option>-->
-<!--            }-->
-<!--            @for (kpi of standardKpis; track $index) {-->
-<!--              <option [value]="kpi.kpiName">{{ kpi.label }}</option>-->
-<!--            }-->
-<!--          </select>-->
           <div class="tabs tabs-box tabs-xs ml-auto">
             <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
                    [(ngModel)]="trendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
@@ -99,19 +109,21 @@
             </div>
           }
           <app-linechart [hidden]="loadingTrendData()" [chartSeries]="chartSeries()"></app-linechart>
+          <div class="flex flex-row flex-wrap gap-2">
+            @for (cell of chartCellName(); track cell) {
+              <button class="btn btn-xs" (click)="removeChartCell(cell!)" >
+                {{ cell }} ✕
+              </button>
+            }
+            @if (chartCellName().length > 1) {
+              <button class="btn btn-xs btn-ghost" (click)="chartSeries.set([])">
+                Clear All
+              </button>
+            }
+          </div>
         </div>
       </div>
 
-<!--      <div class="join flex flex-col gap-1 bg-base-200 p-3 rounded-md" [(ngModel)]="selectedStandardKpi"-->
-<!--           (change)="selectKpi(selectedStandardKpi(), rat()?.name!)">-->
-<!--        @for (kpi of standardKpis; track $index) {-->
-<!--&lt;!&ndash;          <option [value]="kpi.kpiName">{{ kpi.label }}</option>&ndash;&gt;-->
-<!--          <label class="label cursor-pointer gap-2">-->
-<!--            <input [value]="kpi.kpiName" type="radio" name="radio-1" class="radio radio-xs" checked="checked" />-->
-<!--            <span class="label-text text-xs">{{ kpi.label }}</span>-->
-<!--          </label>-->
-<!--        }-->
-<!--      </div>-->
       <div class="join flex flex-col gap-1 bg-base-200 p-3 rounded-md">
         @for (kpi of standardKpis; track $index) {
           <label class="label cursor-pointer gap-2">
@@ -121,7 +133,7 @@
               name="kpiRadio"
               [(ngModel)]="selectedStandardKpi"
               [value]="kpi.kpiName"
-              (change)="selectKpi(selectedStandardKpi(), rat()?.name!)"
+              (change)="selectKpi(selectedStandardKpi(), rat()?.name!,true)"
             />
             <span class="label-text text-xs">{{ kpi.label }}</span>
           </label>

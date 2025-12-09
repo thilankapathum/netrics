@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, computed, OnInit, signal} from '@angular/core';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
@@ -13,6 +13,8 @@ import {RatDto} from '../../../../../models/pulse/RatDto';
 import {SharedService} from '../../../../../service/pulse/shared-service';
 import {CellNameDto} from '../../../../../models/pulse/CellNameDto';
 import {CellService} from '../../../../../service/pulse/cell-service';
+import {KpiDataDto} from '../../../../../models/pulse/KpiDataDto';
+import {CellKpiSeries} from '../../../../../models/apexCharts/CellKpiSeries';
 
 @Component({
   selector: 'app-cell-analysis',
@@ -34,8 +36,13 @@ export class CellAnalysis implements OnInit {
   initialStandardKpi: string = '';
   kpiTrendData = signal<KpiTrendDto[]>([]);
   standardKpis: StandardKpiDto[] = [];
-  chartSeries = signal<ApexAxisChartSeries>([]);
+  // chartSeries = signal<ApexAxisChartSeries>([]);
+  chartSeries = signal<CellKpiSeries[]>([]);
   trendPeriod = signal<'week' | 'month' | 'quarter'>('month');
+  selectedChartType = signal<'s_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi'>('s_cell_s_kpi');
+
+  chartCellName = computed(() =>
+    this.chartSeries().map(s => s.name));
 
   queryCell = signal('');
   filteredCells = signal<Array<CellNameDto>>([]);
@@ -43,6 +50,30 @@ export class CellAnalysis implements OnInit {
   loadingTrendData = signal<boolean>(false);
   cellSelected = signal<boolean>(false);
   isCellSearchDropDownOpen = signal<boolean>(false);
+
+  cellColorMap: Record<string, string> = {};
+  colorPalette = [
+    '#008FFB', // blue
+    '#00E396', // orange
+    '#FEB019', // green
+    '#FF4560', // red
+    '#775DD0', // purple
+    '#4caf50', // brown
+    '#ffdd00', // pink
+    '#546E7A', // gray
+    '#8D5B4C', // yellow-green
+    '#C5D86D',  // cyan
+    '#2b908f', // blue
+    '#c200ff', // orange
+    '#66ca5b', // green
+    '#ff00bf', // red
+    '#ff8a47', // purple
+    '#00ff0c', // brown
+    '#e9006b', // pink
+    '#4ab5e7', // gray
+    '#9c2b08', // yellow-green
+    '#caff00'  // cyan
+  ];
 
   constructor(private activatedRoute: ActivatedRoute,
               private standardKpiService: StandardkpiService,
@@ -101,7 +132,7 @@ export class CellAnalysis implements OnInit {
           } else {
             this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);    // Set 1st standard KPI from the list as default KPI
           }
-          this.selectKpi(this.selectedStandardKpi(), ratName);    // Getting Worst-cells and Trend-data
+          this.selectKpi(this.selectedStandardKpi(), ratName, false);    // Getting Worst-cells and Trend-data
         } else {
           this.alertService.error("KPI are unavailable for the RAT");
         }
@@ -113,8 +144,21 @@ export class CellAnalysis implements OnInit {
     })
   }
 
-  selectKpi(kpi: string, ratName: string) {
-    this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName);
+  selectKpi(kpi: string, ratName: string, selectByOption: boolean) {
+    if (selectByOption) {   //-- To check whether KPI selected by client's Option group. To clear existing charts if KPI is changed
+
+      const cells:string[] = []
+      this.chartSeries().forEach(s => cells.push(s.cellName));  //-- Record current cell list to query new KPI for the same cells
+
+      this.chartSeries.set([]); //-- Reset Chart
+
+      //-- Querying newly selected KPI for the already selected cells
+      for (let cell of cells){
+        this.getTrendDataByKpiAndCell(kpi, cell, this.trendPeriod(), ratName);
+      }
+    } else {    //-- selectKpi method is called from another method (not from client)
+      this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName);
+    }
   }
 
   getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string) {
@@ -123,8 +167,42 @@ export class CellAnalysis implements OnInit {
       next: data => {
         this.kpiTrendData = data;
         if (this.kpiTrendData.length > 0) {
-          this.chartSeries.set(this.chartService.buildSeriesKpiDataDto(data));
+          if (this.selectedChartType() === 's_cell_s_kpi') {    //-- Single-cell Single-KPI scenario
+            // this.chartSeries.set(this.chartService.buildSeriesKpiDataDto(data));
+            this.chartSeries.set(this.chartService.buildSeriesForCell(data));
+          } else if (this.selectedChartType() === 'm_cell_s_kpi') {   //-- Multi-cell Single KPI scenario
+
+            const seriesForCell = this.chartService.buildSeriesForCell(data);
+
+            //-- Setting consistent color for each cell
+            seriesForCell.forEach(s => {
+              if (!this.cellColorMap[s.cellName]) {
+                const usedColors = Object.values(this.cellColorMap);
+                const availableColor = this.colorPalette.find(c => !usedColors.includes(c)) ?? '#000000';
+                this.cellColorMap[s.cellName] = availableColor;
+              }
+              s.color = this.cellColorMap[s.cellName];
+            });
+
+
+            this.chartSeries.update(existing => {
+              const cellNamesToAdd = seriesForCell.map(s => s.name);
+
+              const filtered = existing.filter(s => !cellNamesToAdd.includes(s.name));
+
+              return [...filtered, ...seriesForCell];
+
+            });
+
+            // this.chartSeries.update(existing => [
+            //   ...existing,
+            //   ...seriesForCell
+            // ]);
+          }
+          // this.addCellToChart(this.kpiTrendData());
+
           this.loadingTrendData.set(false);
+          console.log(this.chartSeries());
         } else {
           console.error(`KPI trend data unavailable for the cell ${cellName}`);
           this.alertService.error(`KPI trend data unavailable for ${cellName}`);
@@ -156,10 +234,36 @@ export class CellAnalysis implements OnInit {
     }
   }
 
-  selectCell(cellNameDto: CellNameDto) {
+  selectCell(cellNameDto: CellNameDto, selectByDropDown: boolean) {
+    if (selectByDropDown) {   //-- Check if the RAT of the selecting cell in frontend is different from current RAT
+      console.log(this.selectedRat())
+      this.chartSeries.set([]);
+    }
+
     this.cellSelected.set(true);
     this.cellName.set(cellNameDto.cellName!);
     this.queryCell.set(cellNameDto.cellName!);
     this.getRat(cellNameDto.ratName!);
   }
+
+  setSelectedChartType(type: 's_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi') {
+    this.selectedChartType.set(type);
+    // console.log(this.selectedChartType());
+
+    switch (type) {
+      case 's_cell_s_kpi':
+        this.chartSeries.set([]);
+        break;
+      case "m_cell_s_kpi":
+        this.chartSeries.set([]);
+        break;
+    }
+  }
+
+  removeChartCell(name: string) {
+    this.chartSeries.update(series =>
+      series.filter(s => s.name !== name));
+  }
+
+
 }
