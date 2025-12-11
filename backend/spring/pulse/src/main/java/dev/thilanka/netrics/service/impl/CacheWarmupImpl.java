@@ -29,15 +29,15 @@ public class CacheWarmupImpl implements CacheWarmup {
 
 
     @Override
-    public void evictAndWarmupCache(String ratName) {
+    public void evictAndWarmupCache(String ratName, String granularityName) {
         long start = System.currentTimeMillis();
         evictByRatName(ratName);
-        warmupDateRangeCache(ratName);
+        warmupDateRangeCache(ratName, granularityName);
 
         CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells();
-        CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName);
-        CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName);
-        CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName);
+        CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
+        CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
+        CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
 
         CompletableFuture.allOf(reloadCellsFuture,basicKpiSnapshotFuture,kpiTrendFuture,worstCellFuture).join();
 //        CompletableFuture.allOf(basicKpiSnapshotFuture).join();
@@ -64,23 +64,23 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     @Override
-    public void warmUpCache(String ratName) {
-        warmupDateRangeCache(ratName);
+    public void warmUpCache(String ratName, String granularityName) {
+        warmupDateRangeCache(ratName, granularityName);
 
         CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells();
-        CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName);
-        CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName);
-        CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName);
+        CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
+        CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
+        CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
 
         CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture,kpiTrendFuture,worstCellFuture).join();
         System.out.println("CACHE WARM-UP COMPLETE FOR: " + ratName.toUpperCase() + "!");
     }
 
-    private void warmupDateRangeCache(String ratName) {
-        String[] granularityList = {"day", "week", "month"};
+    private void warmupDateRangeCache(String ratName, String granularityName) {
+        String[] aggregationList = {"day", "week", "month"};
 
-        for (String granularity : granularityList) {
-            dateService.getLatestDateRange(granularity, ratName);
+        for (String aggregation : aggregationList) {
+            dateService.getLatestDateRange(aggregation, ratName,granularityName);
         }
     }
 }

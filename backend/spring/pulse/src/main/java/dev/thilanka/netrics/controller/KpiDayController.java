@@ -32,12 +32,12 @@ public class KpiDayController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("snapshot/basic-kpi")
-    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName) {
+    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName, @RequestParam String granularityName) {
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
-            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period, ratName));
+            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period, ratName, granularityName));
         } else {
-            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName, ratName));
+            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName, ratName, granularityName));
         }
     }
 
@@ -48,38 +48,40 @@ public class KpiDayController {
             @RequestParam String period,
             @RequestParam String districtName,
             @RequestParam boolean excludeZeroes,
-            @RequestParam String ratName) {
+            @RequestParam String ratName,
+            @RequestParam String granularityName) {
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
-            return kpiDayService.getWorstCellsByKpi(kpiName, period,excludeZeroes,ratName);
+            return kpiDayService.getWorstCellsByKpi(kpiName, period,excludeZeroes,ratName,granularityName);
         } else {
-            return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, excludeZeroes,districtName, ratName);
+            return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, excludeZeroes,districtName, ratName,granularityName);
         }
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("cell")
-    public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName) {
-        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName);
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName) {
+        System.out.println("cell KPI controller");
+        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
         return ResponseEntity.ok(kpiDataDtos);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("cell-label")
-    public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName) {
-        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName);
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName) {
+        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName, granularityName);
         return ResponseEntity.ok(kpiDataDtos);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("kpi")
-    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName) {
+    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName, @RequestParam String granularityName) {
         List<KpiTrendDto> kpiTrendDtos = new ArrayList<>();
 
         if (Objects.equals(districtName, "All Districts") || districtName == null){
-            kpiTrendDtos = kpiDayService.getTrendByKpi(kpiName, period, ratName);
+            kpiTrendDtos = kpiDayService.getTrendByKpi(kpiName, period, ratName,granularityName);
         } else {
-            kpiTrendDtos = kpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName, ratName);
+            kpiTrendDtos = kpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName, ratName, granularityName);
         }
 
         return ResponseEntity.ok(kpiTrendDtos);

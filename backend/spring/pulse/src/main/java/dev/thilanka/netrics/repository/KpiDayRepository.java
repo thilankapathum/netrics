@@ -16,8 +16,8 @@ import java.util.Optional;
 
 public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
 
-    @Query(value = "SELECT DISTINCT timestamp FROM lte_fdd_kpi_day WHERE lte_fdd_kpi_day.rat_id = :ratId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
-    LocalDateTime getLatestDate(@Param("ratId") Long ratId);
+    @Query(value = "SELECT DISTINCT timestamp FROM lte_fdd_kpi_day WHERE lte_fdd_kpi_day.rat_id = :ratId AND lte_fdd_kpi_day.granularity_id = :granularityId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
+    LocalDateTime getLatestDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
 
     @Query(value = """
@@ -169,75 +169,75 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     //  -------------------------- WORST CELLS WITH PREVIOUS - START -------------------------------------------------------
 
     @Query(value = """
-                    WITH agg AS (
-                        SELECT
-                            cell_name,
+            WITH agg AS (
+                SELECT
+                    cell_name,
 
-                            SUM(numerator_kpi_value)    FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_num,
-                            SUM(denominator_kpi_value)  FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_den,
-                            AVG(kpi_value)              FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_avg,
+                    SUM(numerator_kpi_value)    FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_num,
+                    SUM(denominator_kpi_value)  FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_den,
+                    AVG(kpi_value)              FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_avg,
 
-                            SUM(numerator_kpi_value)    FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_num,
-                            SUM(denominator_kpi_value)  FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_den,
-                            AVG(kpi_value)              FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_avg
-            
-                        FROM lte_fdd_kpi_day
-                        WHERE lte_fdd_standard_kpi_id = :standardKpiId
-                          AND rat_id = :ratId
-                          AND timestamp BETWEEN :preStart AND :timestamp
-                        GROUP BY cell_name
-                    ),
-            
-                    calc AS (
-                        SELECT
-                            a.cell_name,
-                            sk.kpi_name,
-                            sk.label AS kpi_label,
-                            sk.unit,
-                            sk.worst_order,
+                    SUM(numerator_kpi_value)    FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_num,
+                    SUM(denominator_kpi_value)  FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_den,
+                    AVG(kpi_value)              FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_avg
+    
+                FROM lte_fdd_kpi_day
+                WHERE lte_fdd_standard_kpi_id = :standardKpiId
+                  AND rat_id = :ratId
+                  AND timestamp BETWEEN :preStart AND :timestamp
+                GROUP BY cell_name
+            ),
+    
+            calc AS (
+                SELECT
+                    a.cell_name,
+                    sk.kpi_name,
+                    sk.label AS kpi_label,
+                    sk.unit,
+                    sk.worst_order,
 
-                            CASE
-                                WHEN sk.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den,0)) * 100, a.curr_avg)
-                                ELSE COALESCE((a.curr_num / NULLIF(a.curr_den,0)), a.curr_avg)
-                            END AS curr_value,
+                    CASE
+                        WHEN sk.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den,0)) * 100, a.curr_avg)
+                        ELSE COALESCE((a.curr_num / NULLIF(a.curr_den,0)), a.curr_avg)
+                    END AS curr_value,
 
-                            CASE
-                                WHEN sk.unit = '%' THEN COALESCE((a.pre_num / NULLIF(a.pre_den,0)) * 100, a.pre_avg)
-                                ELSE COALESCE((a.pre_num / NULLIF(a.pre_den,0)), a.pre_avg)
-                            END AS prev_value
-            
-                        FROM agg a
-                        JOIN lte_fdd_standard_kpi sk ON sk.id = :standardKpiId
-                    )
-            
-                    SELECT
-                        cell_name,
-                        kpi_name,
-                        kpi_label,
-                        unit,
-                        curr_value AS value,
-                        prev_value AS previous_value,
-                        (curr_value - prev_value) AS difference,
-            
-                        CASE
-                            WHEN worst_order = 'ASC'  AND (curr_value > prev_value) THEN 1
-                            WHEN worst_order = 'DESC' AND (curr_value < prev_value) THEN 1
-                            ELSE 0
-                        END AS improved
-            
-                    FROM calc
+                    CASE
+                        WHEN sk.unit = '%' THEN COALESCE((a.pre_num / NULLIF(a.pre_den,0)) * 100, a.pre_avg)
+                        ELSE COALESCE((a.pre_num / NULLIF(a.pre_den,0)), a.pre_avg)
+                    END AS prev_value
+    
+                FROM agg a
+                JOIN lte_fdd_standard_kpi sk ON sk.id = :standardKpiId
+            )
+    
+            SELECT
+                cell_name,
+                kpi_name,
+                kpi_label,
+                unit,
+                curr_value AS value,
+                prev_value AS previous_value,
+                (curr_value - prev_value) AS difference,
+    
+                CASE
+                    WHEN worst_order = 'ASC'  AND (curr_value > prev_value) THEN 1
+                    WHEN worst_order = 'DESC' AND (curr_value < prev_value) THEN 1
+                    ELSE 0
+                END AS improved
+    
+            FROM calc
 
-                    WHERE curr_value IS NOT NULL
-                    AND (
-                           :excludeZeroes = FALSE\s
-                           OR curr_value != 0
-                        )
-            
-                    ORDER BY
-                        CASE WHEN worst_order = 'ASC'  THEN curr_value END ASC  NULLS LAST,
-                        CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
-            
-                    LIMIT 25;
+            WHERE curr_value IS NOT NULL
+            AND (
+                   :excludeZeroes = FALSE\s
+                   OR curr_value != 0
+                )
+    
+            ORDER BY
+                CASE WHEN worst_order = 'ASC'  THEN curr_value END ASC  NULLS LAST,
+                CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
+    
+            LIMIT 25;
             """,
             nativeQuery = true)
     List<WorstCellsDto> findWorstCells(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes);

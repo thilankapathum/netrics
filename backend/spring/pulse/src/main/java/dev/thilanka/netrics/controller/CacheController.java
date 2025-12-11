@@ -36,15 +36,15 @@ public class CacheController {
 
 //    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping("evict-and-warmup")
-    public ResponseEntity<String> evictAndWarmupCaches(@RequestParam("ratName") String ratName){
-        cacheWarmup.evictAndWarmupCache(ratName);
+    public ResponseEntity<String> evictAndWarmupCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName){
+        cacheWarmup.evictAndWarmupCache(ratName, granularityName);
         return ResponseEntity.ok(ratName + " caches cleared and warmed-up!");
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("warm-up")
-    public ResponseEntity<String> warmUpCaches(@RequestParam("ratName") String ratName){
-        cacheWarmup.warmUpCache(ratName);
+    public ResponseEntity<String> warmUpCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName){
+        cacheWarmup.warmUpCache(ratName, granularityName);
         return ResponseEntity.ok(ratName + " caches warmed-up!");
     }
 

@@ -31,8 +31,9 @@ public class WorstCellDashboardController {
             @RequestParam String period,
             @RequestParam String areaName,
             @RequestParam boolean excludeZeroes,
-            @RequestParam String ratName) {
-        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, ratName);
+            @RequestParam String ratName,
+            @RequestParam String granularityName) {
+        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, ratName,granularityName);
     }
 
     //--    Create WorstCells for Dashboard at a custom date
@@ -44,9 +45,10 @@ public class WorstCellDashboardController {
             @RequestParam String areaName,
             @RequestParam boolean excludeZeroes,
             @RequestParam String date,
-            @RequestParam String ratName) {
+            @RequestParam String ratName,
+            @RequestParam String granularityName) {
         LocalDateTime timestamp = dateService.extractDate(date);
-        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, timestamp, ratName);
+        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, timestamp, ratName,granularityName);
     }
 
     //--    Create all WorstCells for Dashboard at a custom date by AreaType and RAT    String period, boolean excludeZeroes, String areaType, LocalDateTime timestamp, String ratName
@@ -70,9 +72,10 @@ public class WorstCellDashboardController {
             @RequestParam String period,
             @RequestParam String areaName,
             @RequestParam boolean excludeZeroes,
-            @RequestParam String ratName
+            @RequestParam String ratName,
+            @RequestParam String granularityName
     ) {
-        return worstCellDashboardService.getWorstCellsByKpiAndArea(timestamp, kpiName, period, excludeZeroes, areaName, ratName);
+        return worstCellDashboardService.getWorstCellsByKpiAndArea(timestamp, kpiName, period, excludeZeroes, areaName, ratName, granularityName);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")

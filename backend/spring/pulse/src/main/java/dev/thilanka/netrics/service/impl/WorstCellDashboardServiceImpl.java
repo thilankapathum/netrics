@@ -33,6 +33,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     private final Mapper mapper;
     private final AreaService areaService;
     private final AreaTypeService areaTypeService;
+    private final GranularityService granularityService;
 
     @Value("${app.worst-cell-dashboard.refresh-day}")
     private String refreshDay;
@@ -60,16 +61,16 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, String ratName) {
-        LocalDateTime timestamp = dateService.getLatestDate(ratName);
+    public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, String ratName, String granularityName) {
+        LocalDateTime timestamp = dateService.getLatestDate(ratName, granularityName);
 
         if (dateService.isDateIsDay(timestamp, dateService.extractDayOfWeek(refreshDay))) {
-            return createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, timestamp, ratName);
+            return createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, timestamp, ratName, granularityName);
         } else return null;
     }
 
     @Override
-    public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, LocalDateTime timestamp, String ratName) {
+    public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, LocalDateTime timestamp, String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
         LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period));
 
@@ -132,11 +133,12 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    @Cacheable(value = "dashboardWorstCells", key = "#timestamp + '_' + #kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #areaName + '_' + #ratName")
-    public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName) {
+    @Cacheable(value = "dashboardWorstCells", key = "#timestamp + '_' + #kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
+    public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName, String granularityName) {
         LocalDateTime timestamps = dateService.extractDate(timestamp);
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime latestDate = dateService.getLatestDate(rat);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+        LocalDateTime latestDate = dateService.getLatestDate(rat, granularity);
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
         Area area = areaService.findAreaByName(areaName);
 

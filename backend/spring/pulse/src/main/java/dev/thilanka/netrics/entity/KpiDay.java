@@ -59,4 +59,8 @@ public class KpiDay {
     @ManyToOne
     @JoinColumn(name = "rat_id")
     private Rat rat;
+
+    @ManyToOne
+    @JoinColumn(name = "granularity_id")
+    private Granularity granularity;
 }

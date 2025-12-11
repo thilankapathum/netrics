@@ -28,7 +28,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
     @Override
     @Async("cacheExecutor")
-    public CompletableFuture<Void> warmupBasicKpiSnapshotCache(String ratName) {
+    public CompletableFuture<Void> warmupBasicKpiSnapshotCache(String ratName, String granularityName) {
         System.out.println("[" + ratName + "] Started warming-up Basic KPI cache...");
         List<BasicKpiDto> basicKpis = basicKpiService.getAllByRat(ratName);
         List<DistrictDto> districts = districtService.getAll();
@@ -44,7 +44,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
         for (String period : periods) {
             for (BasicKpiDto dto : basicKpis) {
                 try {
-                    kpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, ratName);
+                    kpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, ratName,granularityName);
                 } catch (Exception e) {
                     System.out.println("[" + ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period);
                 }
@@ -53,7 +53,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 //                consoleProgress.setBasicKpiCompletedMap(ratName, consoleProgress.getBasicKpiCompletedMap().get(ratName) + 1);
                 for (DistrictDto district : districts) {
                     try {
-                        kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), ratName);
+                        kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), ratName,granularityName);
                     } catch (Exception e) {
                         System.out.println("[" + ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period + "-" + district.name());
                     }
@@ -69,7 +69,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
     @Override
     @Async("cacheExecutor")
-    public CompletableFuture<Void> warmupKpiTrendCache(String ratName) {
+    public CompletableFuture<Void> warmupKpiTrendCache(String ratName, String granularityName) {
         System.out.println("[" + ratName + "] Started warming-up KPI trend cache...");
         List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat(ratName);
         List<DistrictDto> districts = districtService.getAll();
@@ -86,7 +86,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
             try {
-                kpiDayService.getTrendByKpi(standardKpi.kpiName(), "month", ratName);
+                kpiDayService.getTrendByKpi(standardKpi.kpiName(), "month", ratName, granularityName);
             } catch (Exception e) {
                 System.out.println("[" + ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName());
             }
@@ -96,7 +96,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 //            consoleProgress.setKpiTrendCompletedMap(ratName, consoleProgress.getKpiTrendCompletedMap().get(ratName) + 1);
             for (DistrictDto district : districts) {
                 try {
-                    kpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), ratName);
+                    kpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), ratName, granularityName);
                 } catch (Exception e) {
                     System.out.println("[" + ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName() + "-" + district.name());
                 }
@@ -113,7 +113,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
     @Override
     @Async("cacheExecutor")
-    public CompletableFuture<Void> warmupWorstCellCache(String ratName) {
+    public CompletableFuture<Void> warmupWorstCellCache(String ratName, String granularityName) {
         System.out.println("[" + ratName + "] Started warming-up Worst cell cache...");
         List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat(ratName);
         List<DistrictDto> districts = districtService.getAll();
@@ -130,7 +130,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
         for (StandardKpiDto standardKpi : lteFddStandardKpis) {
             try {
-                kpiDayService.getWorstCellsByKpi(standardKpi.kpiName(), "day", false, ratName);
+                kpiDayService.getWorstCellsByKpi(standardKpi.kpiName(), "day", false, ratName, granularityName);
             } catch (Exception e) {
                 System.out.println("[" + ratName + "] Error while warming Worst cell cache for: " + standardKpi.kpiName());
             }
@@ -140,7 +140,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
             for (DistrictDto district : districts) {
                 try {
-                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", false, district.name(), ratName);
+                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", false, district.name(), ratName,granularityName);
                 } catch (Exception e) {
                     System.out.println("[" + ratName + "] Error while warming up worst cells cache : " + standardKpi.kpiName() + "-" + district.name());
                 }
