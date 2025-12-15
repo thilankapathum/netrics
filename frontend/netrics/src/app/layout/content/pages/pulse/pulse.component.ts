@@ -33,12 +33,13 @@ import {DateService} from '../../../../service/pulse/date-service';
 export class PulseComponent implements OnInit {
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
-  dateRanges = signal<{ [granularity: string]: DateRangeDto | undefined }>({});
+  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  dateRanges = signal<{ [aggregation: string]: DateRangeDto | undefined }>({});
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
-  granularity = signal<'day' | 'week' | 'month'>('day')
-  granularityList: string[] = ['day', 'week', 'month'];
+  aggregation = signal<'day' | 'week' | 'month'>('day')
+  aggregationList: string[] = ['day', 'week', 'month'];
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
   selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
@@ -81,8 +82,12 @@ export class PulseComponent implements OnInit {
   ngOnInit() {
     this.cdr.detectChanges(); // Force change detection
 
-    if (this.sharedService.granularity() != this.granularity()) {
-      this.granularity.set(this.sharedService.granularity())
+    if (this.sharedService.selectedGranularity() != this.selectedGranularity()){
+      this.selectedGranularity.set(this.sharedService.selectedGranularity());
+    }
+
+    if (this.sharedService.aggregation() != this.aggregation()) {
+      this.aggregation.set(this.sharedService.aggregation())
     }
 
     if (this.sharedService.selectedRat() != this.selectedRat()) {
@@ -103,18 +108,18 @@ export class PulseComponent implements OnInit {
   }
 
   queryDateRanges() {
-    for (let range of this.granularityList) {
-      this.getDateRanges(range, this.selectedRat());
+    for (let range of this.aggregationList) {
+      this.getDateRanges(range, this.selectedRat(), this.selectedGranularity());
     }
   }
 
-  getDateRanges(granularity: string, selectedRat: string) {
-    this.dateService.getLatestDateRange(granularity, selectedRat).subscribe(
+  getDateRanges(aggregation: string, selectedRat: string, granularityName:string) {
+    this.dateService.getLatestDateRange(aggregation, selectedRat, granularityName).subscribe(
       {
         next: data => {
           this.dateRanges.update(range => ({
             ...range,
-            [granularity]: data
+            [aggregation]: data
           }));
         }, error: err => {
           console.log('Error getting date range');
@@ -125,18 +130,18 @@ export class PulseComponent implements OnInit {
     )
   }
 
-  selectGranularity(granularity: 'day' | 'week' | 'month') {
-    this.granularity.set(granularity);
+  selectAggregation(aggregation: 'day' | 'week' | 'month') {
+    this.aggregation.set(aggregation);
     this.cdr.detectChanges(); // Force change detection
     this.getBasicKpi(this.selectedRat());
-    this.selectKpi(this.selectedStandardKpi(), this.selectedRat());
+    this.selectKpi(this.selectedStandardKpi(), this.selectedRat(), this.selectedGranularity());
   }
 
   selectDistrict(district: string) {
     this.district.set(district);
     this.cdr.detectChanges(); // Force change detection
     this.getBasicKpi(this.selectedRat());
-    this.selectKpi(this.selectedStandardKpi(), this.selectedRat());
+    this.selectKpi(this.selectedStandardKpi(), this.selectedRat(), this.selectedGranularity());
   }
 
   getAllDistricts() {
@@ -152,6 +157,11 @@ export class PulseComponent implements OnInit {
         this.alertService.error("District retrieval failed");
       }
     });
+  }
+
+  setSelectedGranularity(granularity: 'day-average' | 'busy-hour'){
+    this.selectedGranularity.set(granularity);
+    this.setSelectedRat(this.selectedRat());
   }
 
   setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): void {
@@ -246,7 +256,7 @@ export class PulseComponent implements OnInit {
 
   private getBasicKpiSnapshot(basicKpiDto: BasicKpiDto[]) {
     const requests = basicKpiDto.map(kpi =>
-      this.kpiDayService.getBasicKpiSnapshot(kpi.kpiName!, this.granularity(), this.district(), this.selectedRat())
+      this.kpiDayService.getBasicKpiSnapshot(kpi.kpiName!, this.aggregation(), this.district(), this.selectedRat(), this.selectedGranularity())
     );
     return forkJoin([...requests]);
   }
@@ -258,13 +268,13 @@ export class PulseComponent implements OnInit {
   //----------- WORST CELLS ----------------
 
   onExcludeZeroesChange(event: Event) {
-    this.getWorstCellsByKpi(this.selectedStandardKpi(), this.granularity(), this.selectedRat());
+    this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
   }
 
-  getWorstCellsByKpi(kpiName: string, granularity: string, ratName: string) {
+  getWorstCellsByKpi(kpiName: string, aggregation: string, ratName: string, granularityName: string) {
     this.loadingWorstCells = true;
     this.allWorstCells = [];
-    this.kpiDayService.getWorstCellsByKpi(kpiName, granularity, this.district(), this.excludeZeroes, ratName).subscribe({
+    this.kpiDayService.getWorstCellsByKpi(kpiName, aggregation, this.district(), this.excludeZeroes, ratName, granularityName).subscribe({
       next: data => {
         this.allWorstCells = data;
         this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
@@ -297,11 +307,11 @@ export class PulseComponent implements OnInit {
     this.setPage(this.currentPage - 1);
   }
 
-  selectKpi(kpi: string, ratName: string) {
+  selectKpi(kpi: string, ratName: string, granularityName:string) {
     this.currentPage = 0;
     // this.currentPage = this.sharedService.currentPage;
-    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod(), ratName);
-    this.getWorstCellsByKpi(kpi, this.granularity(), ratName);
+    this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod(), ratName, granularityName);
+    this.getWorstCellsByKpi(kpi, this.aggregation(), ratName, granularityName);
   }
 
   getAllStandardKpi(ratName: string) {
@@ -315,7 +325,7 @@ export class PulseComponent implements OnInit {
           } else {
             this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
           }
-          this.selectKpi(this.selectedStandardKpi(), ratName);    // Getting Worst-cells and Trend-data
+          this.selectKpi(this.selectedStandardKpi(), ratName, this.selectedGranularity());    // Getting Worst-cells and Trend-data
         } else {
           this.alertService.error("KPI are unavailable for the RAT");
           this.kpiTrendData = [];
@@ -337,7 +347,7 @@ export class PulseComponent implements OnInit {
     this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
     this.analysisModal.nativeElement.showModal();
-    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat())
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat(), this.selectedGranularity())
       .subscribe({
         next: data => {
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
@@ -354,13 +364,13 @@ export class PulseComponent implements OnInit {
   //------------- KPI TREND CHART ----------------
 
   onPeriodChange(event: Event) {
-    this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat());
+    this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
   }
 
-  getTrendDataByKpi(kpiName: string, period: string, ratName: string) {
+  getTrendDataByKpi(kpiName: string, period: string, ratName: string, granularityName:string) {
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
-    this.kpiDayService.getDataByKpi(kpiName, period, this.district(), ratName).subscribe({
+    this.kpiDayService.getDataByKpi(kpiName, period, this.district(), ratName, granularityName).subscribe({
       next: data => {
         this.kpiTrendData = data;
         this.loadingKpiTrend = false;
@@ -375,8 +385,8 @@ export class PulseComponent implements OnInit {
 
   //============ MODAL KPI TREND CHART =================
 
-  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string): Observable<KpiDataDto[]> {
-    return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName);
+  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName:string): Observable<KpiDataDto[]> {
+    return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
   }
 
   //============ ROUTER-LINK ===========================
@@ -386,12 +396,17 @@ export class PulseComponent implements OnInit {
   }
 
   onCellNavigate() {
+    this.sharedService.selectedGranularity.set(this.selectedGranularity());
     this.sharedService.selectedRat.set(this.selectedRat());
     this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi());
     this.sharedService.selectedCell.set(this.analysisModalCell);
-    this.sharedService.granularity.set(this.granularity());
+    this.sharedService.aggregation.set(this.aggregation());
     this.sharedService.district = this.district;
     this.sharedService.excludeZeroes = this.excludeZeroes;
     this.sharedService.currentPage = this.currentPage;
+  }
+
+  clearSharedServiceData(): void {
+    this.sharedService.clearAll();
   }
 }

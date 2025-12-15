@@ -33,7 +33,7 @@ public class WorstCellDashboardController {
             @RequestParam boolean excludeZeroes,
             @RequestParam String ratName,
             @RequestParam String granularityName) {
-        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, ratName,granularityName);
+        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, ratName, granularityName);
     }
 
     //--    Create WorstCells for Dashboard at a custom date
@@ -48,19 +48,20 @@ public class WorstCellDashboardController {
             @RequestParam String ratName,
             @RequestParam String granularityName) {
         LocalDateTime timestamp = dateService.extractDate(date);
-        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, timestamp, ratName,granularityName);
+        return worstCellDashboardService.createWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, areaName, timestamp, ratName, granularityName);
     }
 
     //--    Create all WorstCells for Dashboard at a custom date by AreaType and RAT    String period, boolean excludeZeroes, String areaType, LocalDateTime timestamp, String ratName
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("areatype-rat")
-    public ResponseEntity<Map<String,List<WorstCellSaveDto>>> createWorstCellsByRatAndAreaType(
+    public ResponseEntity<Map<String, List<WorstCellSaveDto>>> createWorstCellsByRatAndAreaType(
             @RequestParam String period,
             @RequestParam String areaType,
             @RequestParam String date,
-            @RequestParam String ratName) {
+            @RequestParam String ratName,
+            @RequestParam String granularityName) {
         LocalDateTime timestamp = dateService.extractDate(date);
-        Map<String,List<WorstCellSaveDto>> savedWorstCells = worstCellDashboardService.createWorstCellsByRatAndAreaType(period, areaType, timestamp, ratName);
+        Map<String, List<WorstCellSaveDto>> savedWorstCells = worstCellDashboardService.createWorstCellsByRatAndAreaType(period, areaType, timestamp, ratName, granularityName);
         return new ResponseEntity<>(savedWorstCells, HttpStatus.CREATED);
     }
 
@@ -84,9 +85,10 @@ public class WorstCellDashboardController {
             @RequestParam String kpiName,
             @RequestParam String period,
             @RequestParam String areaName,
-            @RequestParam String ratName
-    ){
-        return worstCellDashboardService.getTimestamps(kpiName,period,areaName,ratName);
+            @RequestParam String ratName,
+            @RequestParam String granularityName
+    ) {
+        return worstCellDashboardService.getTimestamps(kpiName, period, areaName, ratName, granularityName);
     }
 
 }

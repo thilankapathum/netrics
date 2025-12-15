@@ -22,8 +22,10 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND rat_id = :ratId
             	AND standard_kpi_id = :standardKpiId
             	AND area_id = :areaId
+            	AND exclude_zeroes = :excludeZeroes
+            	AND granularity_id = :granularityId
             """, nativeQuery = true)
-    Optional<WorstCell> findWorstCellByCellName(@Param("cellName") String cellName, @Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
+    Optional<WorstCell> findWorstCellByCellName(@Param("cellName") String cellName, @Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
 
 
     @Query(value = """
@@ -35,12 +37,14 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND worst_cells.rat_id = :ratId
             	AND standard_kpi_id = :standardKpiId
             	AND area_id = :areaId
+            	AND exclude_zeroes = :excludeZeroes
+            	AND granularity_id = :granularityId
             """, nativeQuery = true)
-    List<WorstCellsDashboardDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
+    List<WorstCellsDashboardDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
 
 
     @Query(value = """
-            SELECT\s
+            SELECT
                 worst_cells.id AS id,
                 worst_cells.cell_name,
                 sk.kpi_name AS kpi_name,
@@ -58,21 +62,23 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             		ELSE false
             	END AS latest_improved
             FROM public.worst_cells
-            LEFT JOIN public.lte_fdd_standard_kpi sk\s
+            LEFT JOIN public.lte_fdd_standard_kpi sk
                 ON worst_cells.standard_kpi_id = sk.id
             LEFT JOIN public.lte_fdd_kpi_day kd
                 ON kd.cell_name = worst_cells.cell_name
-                AND kd.timestamp = :latestDate
+                AND kd.timestamp BETWEEN :latestDateStart AND :latestDate
                 AND kd.lte_fdd_standard_kpi_id = worst_cells.standard_kpi_id
                 AND kd.rat_id = worst_cells.rat_id
+                AND kd.granularity_id = :granularityId
             WHERE worst_cells.period = :period
             	AND worst_cells.timestamp = :timestamp
             	AND worst_cells.rat_id = :ratId
             	AND worst_cells.standard_kpi_id = :standardKpiId
             	AND worst_cells.area_id = :areaId
             	AND worst_cells.exclude_zeroes = :excludeZeroes
+            	AND worst_cells.granularity_id = :granularityId
             """, nativeQuery = true)
-    List<WorstCellsWithLatestDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("latestDate") LocalDateTime latestDate , @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId, @Param("excludeZeroes") boolean excludeZeroes);
+    List<WorstCellsWithLatestDto> findWorstCellsByKpi(@Param("period") String period, @Param("timestamp") LocalDateTime timestamp, @Param("latestDate") LocalDateTime latestDate, @Param("latestDateStart") LocalDateTime latestDateStart , @Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
 
 
     @Query(value = """
@@ -82,8 +88,9 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             	AND area_id = :areaId
             	AND rat_id = :ratId
             	AND standard_kpi_id = :standardKpiId
+            	AND granularity_id = :granularityId
             ORDER BY timestamp DESC
-            LIMIT 10
+            LIMIT 4
             """, nativeQuery = true)
-    List<Timestamp> findTimestamps(@Param("period") String period,@Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId);
+    List<Timestamp> findTimestamps(@Param("period") String period,@Param("ratId") Long ratId, @Param("standardKpiId") Long standardKpiId, @Param("areaId") Long areaId, @Param("granularityId") Long granularityId);
 }

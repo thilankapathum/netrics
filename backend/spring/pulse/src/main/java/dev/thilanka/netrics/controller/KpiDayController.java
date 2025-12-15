@@ -34,7 +34,7 @@ public class KpiDayController {
     @GetMapping("snapshot/basic-kpi")
     public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName, @RequestParam String granularityName) {
 
-        if (Objects.equals(districtName, "All Districts") || districtName == null){
+        if (Objects.equals(districtName, "All Districts") || districtName == null) {
             return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period, ratName, granularityName));
         } else {
             return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName, ratName, granularityName));
@@ -51,10 +51,10 @@ public class KpiDayController {
             @RequestParam String ratName,
             @RequestParam String granularityName) {
 
-        if (Objects.equals(districtName, "All Districts") || districtName == null){
-            return kpiDayService.getWorstCellsByKpi(kpiName, period,excludeZeroes,ratName,granularityName);
+        if (Objects.equals(districtName, "All Districts") || districtName == null) {
+            return kpiDayService.getWorstCellsByKpi(kpiName, period, excludeZeroes, ratName, granularityName);
         } else {
-            return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, excludeZeroes,districtName, ratName,granularityName);
+            return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, excludeZeroes, districtName, ratName, granularityName);
         }
     }
 
@@ -78,8 +78,8 @@ public class KpiDayController {
     public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName, @RequestParam String granularityName) {
         List<KpiTrendDto> kpiTrendDtos = new ArrayList<>();
 
-        if (Objects.equals(districtName, "All Districts") || districtName == null){
-            kpiTrendDtos = kpiDayService.getTrendByKpi(kpiName, period, ratName,granularityName);
+        if (Objects.equals(districtName, "All Districts") || districtName == null) {
+            kpiTrendDtos = kpiDayService.getTrendByKpi(kpiName, period, ratName, granularityName);
         } else {
             kpiTrendDtos = kpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName, ratName, granularityName);
         }

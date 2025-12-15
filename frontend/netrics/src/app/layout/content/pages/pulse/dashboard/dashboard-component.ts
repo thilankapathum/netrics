@@ -20,7 +20,6 @@ import {Linechart} from '../../../../../components/charts/linechart/linechart/li
 import {WorstCellCommentDto} from '../../../../../models/pulse/WorstCellCommentDto';
 import {WorstCellCommentService} from '../../../../../service/pulse/dashboard/worst-cell-comment-service';
 import {WorstCellsAndCommentsDto} from '../../../../../models/pulse/WorstCellsAndCommentsDto';
-import {comment} from 'postcss';
 import {AuthService} from '../../../../../auth/service/auth-service';
 import {KeycloakProfile} from 'keycloak-js';
 
@@ -51,10 +50,12 @@ export class DashboardComponent implements OnInit {
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
 
-  selectedPeriod = signal('week');
+  selectedPeriod = signal('day');
   selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
+
+  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
 
   selectedCell = signal('');
 
@@ -79,8 +80,6 @@ export class DashboardComponent implements OnInit {
 
   editingCommentId: number | null = null;
 
-  // isDropDownOpen:boolean = false;
-
   userProfile:KeycloakProfile = {};
 
   constructor(private router: Router,
@@ -102,6 +101,8 @@ export class DashboardComponent implements OnInit {
     this.getUserProfile();
   }
 
+  // ----------- GETTERS ---------------------------
+
   async getUserProfile(){
     this.userProfile = await this.authService.getUserProfile();
   }
@@ -121,7 +122,7 @@ export class DashboardComponent implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi");
         console.error(error);
-        this.alertService.error("Standard KPI retrieval failed");
+        this.alertService.error(`Error getting Standard KPIs! (${error.status}:${error.statusText})`);
       }
     })
   }
@@ -134,7 +135,7 @@ export class DashboardComponent implements OnInit {
           this.getAreasByAreaType(this.areaType()!);
         }, error: error => {
           console.log(error);
-          this.alertService.error('Error getting Area Types');
+          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
         }
       }
     )
@@ -145,32 +146,43 @@ export class DashboardComponent implements OnInit {
       next: data => {
         this.areas = data;
         this.area.set(this.areas.at(0)?.name);
-        this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat());
+        this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
       }, error: error => {
         console.log(error);
-        this.alertService.error('Error getting Areas');
+        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
       }
     })
   }
 
-  getTimestamps(kpiName: string, period: string, areaName: string, ratName: string) {
-    this.dashboardService.getTimestamps(kpiName, period, areaName, ratName).subscribe({
+  getTimestamps(kpiName: string, period: string, areaName: string, ratName: string, granularityName:string) {
+    this.dashboardService.getTimestamps(kpiName, period, areaName, ratName, granularityName).subscribe({
       next: data => {
         this.timestamps = data;
-        this.timestamp.set(this.timestamps.at(0)!);
+
+        const currentTimestamp = this.timestamps.find(ts => ts === this.timestamp());
+
+        if (currentTimestamp === undefined) {
+          this.timestamp.set(this.timestamps.at(0)!);
+        }
+
         this.getWorstCells(this.timestamp(), this.excludeZeroes);
       }, error: error => {
         console.log(error);
-        this.alertService.error('Error getting Timestamps');
+        this.alertService.error(`Error getting Timestamps! (${error.status}:${error.statusText})`);
       }
     })
   }
 
   //---------- SELECT FILTERS -------------
 
+  setSelectedGranularity(granularity: 'day-average' | 'busy-hour'){
+    this.selectedGranularity.set(granularity);
+    this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
+  }
+
   selectStandardKpi(standardKpiName: string) {
     this.worstCells = [];
-    this.getTimestamps(standardKpiName, this.selectedPeriod(), this.area()!, this.selectedRat());
+    this.getTimestamps(standardKpiName, this.selectedPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
   }
 
   selectAreaType(areaType: string) {
@@ -180,7 +192,7 @@ export class DashboardComponent implements OnInit {
 
   selectArea(areaName: string) {
     this.area.set(areaName);
-    this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat());
+    this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
   }
 
   //--------- WORST-CELLS ------------------------
@@ -200,7 +212,8 @@ export class DashboardComponent implements OnInit {
       this.selectedPeriod(),
       this.area()!,
       excludeZeroes,
-      this.selectedRat())
+      this.selectedRat(),
+      this.selectedGranularity())
       .subscribe({
         next: data => {
           this.worstCells = data;
@@ -209,7 +222,9 @@ export class DashboardComponent implements OnInit {
         }, error: error => {
           console.log(error);
           this.loadingWorstCells = false;
-          this.alertService.error('Error getting Worst cells');
+          // this.alertService.error('Error getting Worst cells');
+          this.alertService.error(`Error getting Worst cells! (${error.status}:${error.statusText})`);
+
         }
       });
   }
@@ -254,7 +269,7 @@ export class DashboardComponent implements OnInit {
         })
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`);
+        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel} (${error.status}:${error.statusText})`);
       }
     })
   }
@@ -282,7 +297,7 @@ export class DashboardComponent implements OnInit {
         this.isAddingComment = false;
         this.openDropdownCellId = null;
         console.log(error);
-        this.alertService.error(`Error creating comment ${error.status} | ${error.statusText}`);
+        this.alertService.error(`Error creating comment! (${error.status}:${error.statusText})`);
       }
     })
   }
@@ -308,7 +323,7 @@ export class DashboardComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error updating comment. ${error.status} - ${error.statusText}`);
+        this.alertService.error(`Error updating comment! (${error.status}:${error.statusText})`);
         this.isEditingComment = false;
         this.editingCommentId = null;
         this._comment.set('');
@@ -332,7 +347,7 @@ export class DashboardComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error deleting comment`);
+        this.alertService.error(`Error deleting comment! (${error.status}:${error.statusText})`);
         this.getAllWorstCellComments(worstCell);
         this.openDropdownCellId = null;
       }
@@ -381,14 +396,14 @@ export class DashboardComponent implements OnInit {
   //----------- KPI TREND CHART ----------------------
 
   onPeriodChange(event: Event) {
-    this.getTrendDataByKpi(this.selectedStandardKpi(),this.selectedCell(), this.selectedKpiTrendPeriod(), this.selectedRat());
+    this.getTrendDataByKpi(this.selectedStandardKpi(),this.selectedCell(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
   }
 
-  getTrendDataByKpi(kpiName: string, cellName: string, period: string, ratName: string) {
+  getTrendDataByKpi(kpiName: string, cellName: string, period: string, ratName: string, granularityName:string) {
     this.selectedCell.set(cellName);
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
-    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat())
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', ratName, granularityName)
       .subscribe({
         next: data => {
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
@@ -397,13 +412,13 @@ export class DashboardComponent implements OnInit {
           this.loadingKpiTrend = false;
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(err);
-          this.alertService.error("KPI Data retrieval failed");
+          this.alertService.error(`Error getting data! (${err.status}:${err.statusText})`);
         }
       })
   }
 
-  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string): Observable<KpiDataDto[]> {
-    return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName);
+  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName:string): Observable<KpiDataDto[]> {
+    return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
   }
 
   //----------- UTILITY ------------------------------
@@ -422,6 +437,7 @@ export class DashboardComponent implements OnInit {
     return false;
   }
 
+  //-- Click outside a popover menu
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
     const clickInside = (event.target as HTMLElement).closest('.dropdown');

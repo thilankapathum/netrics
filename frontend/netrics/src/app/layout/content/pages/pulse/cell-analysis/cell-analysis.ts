@@ -29,7 +29,9 @@ import {CellKpiSeries} from '../../../../../models/apexCharts/CellKpiSeries';
 })
 export class CellAnalysis implements OnInit {
 
-  selectedRat = signal('');
+  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  // selectedRat = signal('');
+  selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
   rat = signal<RatDto | undefined>(undefined);
   cellName = signal('');
   selectedStandardKpi = signal('');
@@ -88,7 +90,8 @@ export class CellAnalysis implements OnInit {
       this.cellSelected.set(false);
     } else {
       this.cellSelected.set(true);
-      this.selectedRat = sharedService.selectedRat;
+      this.selectedGranularity.set(sharedService.selectedGranularity());
+      this.selectedRat.set(sharedService.selectedRat());
       this.cellName.set(sharedService.selectedCell());
       this.initialStandardKpi = sharedService.selectedStandardKpi();
       this.getRat(this.selectedRat());
@@ -96,6 +99,13 @@ export class CellAnalysis implements OnInit {
   }
 
   ngOnInit(): void {
+  }
+
+  setSelectedGranularity(granularity: 'day-average' | 'busy-hour') {
+    this.selectedGranularity.set(granularity);
+    if (this.cellSelected()) {  // Query KPI only if a cell is selected
+      this.getRat(this.rat()?.name!);
+    }
   }
 
   getRat(ratName: string) {
@@ -132,7 +142,7 @@ export class CellAnalysis implements OnInit {
           } else {
             this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);    // Set 1st standard KPI from the list as default KPI
           }
-          this.selectKpi(this.selectedStandardKpi(), ratName, false);    // Getting Worst-cells and Trend-data
+          this.selectKpi(this.selectedStandardKpi(), ratName, false, this.selectedGranularity());    // Getting Worst-cells and Trend-data
         } else {
           this.alertService.error("KPI are unavailable for the RAT");
         }
@@ -144,26 +154,26 @@ export class CellAnalysis implements OnInit {
     })
   }
 
-  selectKpi(kpi: string, ratName: string, selectByOption: boolean) {
+  selectKpi(kpi: string, ratName: string, selectByOption: boolean, granularityName: string) {
     if (selectByOption) {   //-- To check whether KPI selected by client's Option group. To clear existing charts if KPI is changed
 
-      const cells:string[] = []
+      const cells: string[] = []
       this.chartSeries().forEach(s => cells.push(s.cellName));  //-- Record current cell list to query new KPI for the same cells
 
       this.chartSeries.set([]); //-- Reset Chart
 
       //-- Querying newly selected KPI for the already selected cells
-      for (let cell of cells){
-        this.getTrendDataByKpiAndCell(kpi, cell, this.trendPeriod(), ratName);
+      for (let cell of cells) {
+        this.getTrendDataByKpiAndCell(kpi, cell, this.trendPeriod(), ratName, granularityName);
       }
     } else {    //-- selectKpi method is called from another method (not from client)
-      this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName);
+      this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName, granularityName);
     }
   }
 
-  getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string) {
+  getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
     this.loadingTrendData.set(true);
-    this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName).subscribe({
+    this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName).subscribe({
       next: data => {
         this.kpiTrendData = data;
         if (this.kpiTrendData.length > 0) {
@@ -218,7 +228,7 @@ export class CellAnalysis implements OnInit {
   }
 
   onPeriodChange(event: Event) {
-    this.getTrendDataByKpiAndCell(this.selectedStandardKpi(), this.cellName(), this.trendPeriod(), this.rat()?.name!)
+    this.getTrendDataByKpiAndCell(this.selectedStandardKpi(), this.cellName(), this.trendPeriod(), this.rat()?.name!, this.selectedGranularity())
   }
 
   onSearchCell(value: string) {
@@ -263,6 +273,18 @@ export class CellAnalysis implements OnInit {
   removeChartCell(name: string) {
     this.chartSeries.update(series =>
       series.filter(s => s.name !== name));
+  }
+
+  //---------- UTILITY METHODS -------------------
+
+  isDataInSharedService():boolean {
+    const sharedCell: string = this.sharedService.selectedCell();
+    const sharedStandardKpi: string = this.sharedService.selectedStandardKpi();
+    return sharedCell !== '' && sharedStandardKpi !== '';
+  }
+
+  clearSharedServiceData(): void {
+    this.sharedService.clearAll();
   }
 
 

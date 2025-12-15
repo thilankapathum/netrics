@@ -22,11 +22,12 @@ public class GranularityServiceImpl implements GranularityService {
         Granularity granularity = Granularity.builder()
                 .name(dto.name())
                 .label(dto.label())
+                .plusSeconds(dto.plusSeconds())
                 .build();
 
         Granularity savedGranularity = granularityRepository.save(granularity);
 
-        return new GranularityDto(savedGranularity.getName(), savedGranularity.getLabel());
+        return new GranularityDto(savedGranularity.getName(), savedGranularity.getLabel(), savedGranularity.getPlusSeconds());
     }
 
     @Override
@@ -42,7 +43,6 @@ public class GranularityServiceImpl implements GranularityService {
 
     @Override
     public Granularity findGranularityByName(String name) {
-        System.out.println("findGranularityByName: " + name);
         return granularityRepository.findByName(name)
                 .orElseThrow(()-> new RuntimeException("Granularity not found by: " + name));
     }
@@ -50,7 +50,7 @@ public class GranularityServiceImpl implements GranularityService {
     @Override
     public GranularityDto getGranularityByName(String name) {
         Granularity granularity = findGranularityByName(name);
-        return new GranularityDto(granularity.getName(),granularity.getLabel());
+        return new GranularityDto(granularity.getName(),granularity.getLabel(), granularity.getPlusSeconds());
     }
 
     @Override
@@ -62,7 +62,7 @@ public class GranularityServiceImpl implements GranularityService {
     @Override
     public GranularityDto getGranularityById(Long id) {
         Granularity granularity = findGranularityById(id);
-        return new GranularityDto(granularity.getName(), granularity.getLabel());
+        return new GranularityDto(granularity.getName(), granularity.getLabel(),granularity.getPlusSeconds());
     }
 
     @Override
@@ -74,6 +74,6 @@ public class GranularityServiceImpl implements GranularityService {
     public List<GranularityDto> getAll() {
         List<Granularity> granularities = findAll();
 
-        return granularities.stream().map(g -> new GranularityDto(g.getName(),g.getLabel())).collect(Collectors.toList());
+        return granularities.stream().map(g -> new GranularityDto(g.getName(),g.getLabel(),g.getPlusSeconds())).collect(Collectors.toList());
     }
 }

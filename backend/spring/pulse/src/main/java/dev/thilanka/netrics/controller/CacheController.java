@@ -35,8 +35,9 @@ public class CacheController {
     }
 
 //    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
-    @PostMapping("evict-and-warmup")
+    @PostMapping("evict-and-warmup")        //TODO: Implement in Python Script
     public ResponseEntity<String> evictAndWarmupCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName){
+        System.out.println("Clearing and warming-up cache for: " + ratName + " - " + granularityName);
         cacheWarmup.evictAndWarmupCache(ratName, granularityName);
         return ResponseEntity.ok(ratName + " caches cleared and warmed-up!");
     }

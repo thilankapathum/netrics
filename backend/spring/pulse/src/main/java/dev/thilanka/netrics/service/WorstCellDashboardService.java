@@ -16,10 +16,10 @@ public interface WorstCellDashboardService {
 
     public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, LocalDateTime timestamp, String ratName, String granularityName);
 
-    public Map<String,List<WorstCellSaveDto>> createWorstCellsByRatAndAreaType(String period, String areaType, LocalDateTime timestamp, String ratName);
+    public Map<String,List<WorstCellSaveDto>> createWorstCellsByRatAndAreaType(String period, String areaType, LocalDateTime timestamp, String ratName, String granularityName);
 
     public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName, String granularityName);
 
-    public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName);
+    public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName, String granularityName);
 
 }

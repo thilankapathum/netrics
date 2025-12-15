@@ -29,6 +29,12 @@ public class Granularity {
     @Column(unique = true, nullable = false)
     private String label;
 
+    @Column(nullable = true)
+    private int plusSeconds;
+
     @OneToMany(mappedBy = "granularity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<KpiDay> kpiDays;
+
+    @OneToMany(mappedBy = "granularity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    List<WorstCell> worstCells;
 }

@@ -12,8 +12,8 @@
             </svg>
             Home
           </a></li>
-          <li><a routerLink="/pulse">Worst Cell Analysis</a></li>
-          <li class="font-bold">Dashboard</li>
+<!--          <li><a routerLink="/pulse">Worst Cell Analysis</a></li>-->
+          <li class="font-bold">Worst-Cell Dashboard</li>
         </ul>
       </div>
       <div>
@@ -54,8 +54,10 @@
         </select>
       </div>
       <div class="tabs tabs-box tabs-xs border border-base-300">
-        <input type="radio" name="aggregation_tabs" class="tab" aria-label="Day Average" checked="checked"/>
-        <input disabled type="radio" name="aggregation_tabs" class="tab" aria-label="Busy Hour"/>
+        <input type="radio" name="granularity_tabs" class="tab text-primary hover:text-primary/80" value="day-average" aria-label="Day Average"
+               [checked]="selectedGranularity() === 'day-average'" (change)="setSelectedGranularity($any($event.target).value)"/>
+        <input type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70" value="busy-hour" aria-label="Busy Hour"
+               [checked]="selectedGranularity() === 'busy-hour'" (change)="setSelectedGranularity($any($event.target).value)"/>
       </div>
       <div>
       </div>
@@ -141,7 +143,7 @@
             <!-- row -->
               @for (cell of worstCells; track cell.cellName; let i = $index) {
                 <tr class="hover:bg-base-200 cursor-pointer"
-                    (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat())">   <!-- GET TREND-CHART BY CLICKING ON THE ROW -->
+                    (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat(), this.selectedGranularity())">   <!-- GET TREND-CHART BY CLICKING ON THE ROW -->
                   <td>{{ i + 1 }}</td>
                   <td>{{ cell.cellName }}</td>
                   <td>

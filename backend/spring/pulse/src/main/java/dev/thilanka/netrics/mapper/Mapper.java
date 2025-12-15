@@ -4,10 +4,7 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
-import dev.thilanka.netrics.repository.AreaRepository;
-import dev.thilanka.netrics.repository.RatRepository;
-import dev.thilanka.netrics.repository.StandardKpiRepository;
-import dev.thilanka.netrics.repository.WorstCellRepository;
+import dev.thilanka.netrics.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +20,7 @@ public class Mapper {
     private final StandardKpiRepository standardKpiRepository;
     private final AreaRepository areaRepository;
     private final WorstCellRepository worstCellRepository;
+    private final GranularityRepository granularityRepository;
 
 // ----- OSS -----
 
@@ -233,6 +231,9 @@ public class Mapper {
                 () -> new RuntimeException("RAT not found by ID: " + dto.ratId())
         );
 
+        Granularity granularity = granularityRepository.findById(dto.granularityId())
+                .orElseThrow(() -> new RuntimeException("Granularity not found by: " + dto.granularityId()));
+
         StandardKpi standardKpi = standardKpiRepository.findById(dto.standardKpiId())
                 .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + dto.standardKpiId()));
 
@@ -252,6 +253,7 @@ public class Mapper {
                 .rat(rat)
                 .standardKpi(standardKpi)
                 .excludeZeroes(dto.excludeZeroes())
+                .granularity(granularity)
                 .build();
     }
 
@@ -270,7 +272,8 @@ public class Mapper {
                 worstCell.getDifference(),
                 isImproved,
                 worstCell.getRat().getId(),
-                worstCell.isExcludeZeroes()
+                worstCell.isExcludeZeroes(),
+                worstCell.getGranularity().getId()
         );
     }
 

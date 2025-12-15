@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {UrlService} from '../url/url-service';
 import {DateRangeDto} from '../../models/pulse/DateRangeDto';
@@ -14,8 +14,14 @@ export class DateService {
     this.baseUrl = `${this.urlService.getPulseUrl()}/dates`;
   }
 
-  getLatestDateRange(period:string, ratName:string){
-      return this.http.get<DateRangeDto>(`${this.baseUrl}`,{params:{period:period,ratName:ratName}});
+  getLatestDateRange(period: string, ratName: string, granularityName: string) {
+    return this.http.get<DateRangeDto>(`${this.baseUrl}`, {
+      params: {
+        period: period,
+        ratName: ratName,
+        granularityName: granularityName
+      }
+    });
   }
 
 }

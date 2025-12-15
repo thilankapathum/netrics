@@ -14,6 +14,7 @@ public record WorstCellSaveDto(
         Double difference,
         Integer improved,
         Long ratId,
-        boolean excludeZeroes
+        boolean excludeZeroes,
+        Long granularityId
 ) {
 }

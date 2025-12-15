@@ -15,11 +15,11 @@ export class DashboardService {
     this.baseUrl = `${this.urlService.getPulseUrl()}/worst-cell-dashboard`;
   }
 
-  getTimestamps(kpiName: string, period: string, areaName: string, ratName: string,) {
-    return this.http.get<Array<Date>>(`${this.baseUrl}/timestamps`, {params: {kpiName, period, areaName, ratName}});
+  getTimestamps(kpiName: string, period: string, areaName: string, ratName: string,granularityName:string) {
+    return this.http.get<Array<Date>>(`${this.baseUrl}/timestamps`, {params: {kpiName, period, areaName, ratName, granularityName}});
   }
 
-  getWorstCellsByKpiAndArea(timestamp: string, kpiName: string, period: string, areaName: string, excludeZeroes: boolean, ratName: string) {
+  getWorstCellsByKpiAndArea(timestamp: string, kpiName: string, period: string, areaName: string, excludeZeroes: boolean, ratName: string, granularityName:string) {
     return this.http.get<Array<WorstCellsWithLatestDto>>(`${this.baseUrl}`, {
       params: {
         timestamp,
@@ -27,7 +27,8 @@ export class DashboardService {
         period,
         areaName,
         excludeZeroes,
-        ratName
+        ratName,
+        granularityName
       }
     })
   }

@@ -31,7 +31,8 @@ public class CacheWarmupImpl implements CacheWarmup {
     @Override
     public void evictAndWarmupCache(String ratName, String granularityName) {
         long start = System.currentTimeMillis();
-        evictByRatName(ratName);
+//        evictByRatName(ratName);
+        evictByRatNameAndGranularityName(ratName, granularityName);
         warmupDateRangeCache(ratName, granularityName);
 
         CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells();
@@ -39,14 +40,14 @@ public class CacheWarmupImpl implements CacheWarmup {
         CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
 
-        CompletableFuture.allOf(reloadCellsFuture,basicKpiSnapshotFuture,kpiTrendFuture,worstCellFuture).join();
+        CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture, kpiTrendFuture, worstCellFuture).join();
 //        CompletableFuture.allOf(basicKpiSnapshotFuture).join();
 
 
         long end = System.currentTimeMillis();
         long difference = end - start;
         Duration duration = Duration.ofMillis(difference);
-        String formatted = String.format("%02dh %02dm %02ds", duration.toHours(),duration.toMinutesPart(),duration.toSecondsPart());
+        String formatted = String.format("%02dh %02dm %02ds", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart());
         System.out.println("[" + ratName + "] ---- CACHE WARM-UP COMPLETE! - took " + formatted + " ----");
     }
 
@@ -64,6 +65,19 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     @Override
+    public void evictByRatNameAndGranularityName(String ratName, String granularityName) {
+        String pattern = "*_" + granularityName + "_" + ratName;
+        Set<String> keys = redisTemplate.keys(pattern);
+
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+            System.out.println("[" + ratName + " - " + granularityName + "] Evicted " + keys.size() + " cache entries!");
+        } else {
+            System.out.println("[" + ratName + " - " + granularityName + "] No cache entries found!");
+        }
+    }
+
+    @Override
     public void warmUpCache(String ratName, String granularityName) {
         warmupDateRangeCache(ratName, granularityName);
 
@@ -72,7 +86,7 @@ public class CacheWarmupImpl implements CacheWarmup {
         CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
 
-        CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture,kpiTrendFuture,worstCellFuture).join();
+        CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture, kpiTrendFuture, worstCellFuture).join();
         System.out.println("CACHE WARM-UP COMPLETE FOR: " + ratName.toUpperCase() + "!");
     }
 
@@ -80,7 +94,7 @@ public class CacheWarmupImpl implements CacheWarmup {
         String[] aggregationList = {"day", "week", "month"};
 
         for (String aggregation : aggregationList) {
-            dateService.getLatestDateRange(aggregation, ratName,granularityName);
+            dateService.getLatestDateRange(aggregation, ratName, granularityName);
         }
     }
 }

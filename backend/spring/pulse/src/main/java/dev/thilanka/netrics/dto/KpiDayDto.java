@@ -19,6 +19,7 @@ public record KpiDayDto(
         Long denominatorKpi,
 
         Long oss,
-        Long districtCode
+        Long districtCode,
+        Long granularityId
 ) {
 }

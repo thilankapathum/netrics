@@ -2,6 +2,7 @@ package dev.thilanka.netrics.dto;
 
 public record GranularityDto(
         String name,
-        String label
+        String label,
+        int plusSeconds
 ) {
 }

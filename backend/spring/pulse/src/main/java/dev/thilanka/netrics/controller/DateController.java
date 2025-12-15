@@ -19,7 +19,6 @@ public class DateController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
     ResponseEntity<DateRangeDto> getLatestDateRange(@RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName){
-        System.out.println("DateController: " + period + ratName + granularityName);
         DateRangeDto dateRange = dateService.getLatestDateRange(period, ratName,granularityName);
         return ResponseEntity.ok(dateRange);
     }

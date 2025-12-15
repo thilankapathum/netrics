@@ -118,11 +118,11 @@ class KPIProcessor:
                     os.makedirs(folder_path, exist_ok=True)
                     logger.info(f"Created directory: {folder_path}")
 
-    def clear_redis_cache(self, rat_name: str):
+    def clear_redis_cache(self, rat_name: str, granularity_name:str):
         """Clear redis cache for specific RAT"""
         logger.info(f"Clearing redis cache for RAT: {rat_name}...")
         try:
-            url = f"{self.clear_redis_cache_url}?ratName={rat_name}"
+            url = f"{self.clear_redis_cache_url}?ratName={rat_name}&granularityName={granularity_name}"
             logger.info(f"Calling cache eviction URL: {url}")
             response = requests.post(url, timeout=10)
             if response.status_code == 200:
@@ -971,7 +971,7 @@ class KPIProcessor:
 
                 # Clean up temp files even on error
                 try:
-                    self.cleanup_temp_files(rat_id)
+                    self.cleanup_temp_files(rat_id, granularity_name)
                 except:
                     pass
 
@@ -979,7 +979,7 @@ class KPIProcessor:
         if files_processed_successfully > 0:
             logger.info(f"[{rat_name}] Processed {files_processed_successfully} file(s) successfully")
             logger.info(f"[{rat_name}] Triggering cache eviction and warmup for RAT...")
-            self.clear_redis_cache(rat_name)
+            self.clear_redis_cache(rat_name, granularity_name)
         else:
             logger.info(f"[{rat_name}] No files were processed successfully. Skipping cache clearing.")
 

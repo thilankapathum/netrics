@@ -5,5 +5,7 @@ public interface CacheWarmup {
 
     void evictByRatName(String ratName);
 
+    void evictByRatNameAndGranularityName(String ratName, String granularityName);
+
     void warmUpCache(String ratName, String granularityName);
 }

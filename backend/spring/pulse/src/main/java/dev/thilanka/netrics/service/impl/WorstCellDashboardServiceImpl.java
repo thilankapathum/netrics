@@ -46,14 +46,16 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
             WorstCell savedWorstCell = worstCellRepository.save(worstCell);
             return mapper.toWorstCellSaveDto(savedWorstCell);
         } catch (DataIntegrityViolationException e) {
-            System.out.println("Duplicate Entry");
+            System.out.println("Duplicate Entry. Querying existing entry...");
             WorstCell existingWorstCell = worstCellRepository.findWorstCellByCellName(
                     worstCell.getCellName(),
                     worstCell.getPeriod(),
                     worstCell.getTimestamp(),
                     worstCell.getRat().getId(),
                     worstCell.getStandardKpi().getId(),
-                    worstCell.getArea().getId()
+                    worstCell.getArea().getId(),
+                    worstCell.isExcludeZeroes(),
+                    worstCell.getGranularity().getId()
             ).orElseThrow(() -> new RuntimeException("Worst cell query error!"));
 
             return mapper.toWorstCellSaveDto(existingWorstCell);
@@ -72,10 +74,13 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     @Override
     public List<WorstCellSaveDto> createWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, String areaName, LocalDateTime timestamp, String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+
+        LocalDateTime latestTimestamp = timestamp.plusSeconds(granularity.getPlusSeconds());    //-- To get the latest time considering busy-hour KPIs (23:59:50)
         LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period));
 
-        LocalDateTime preTimestamp = dateService.getPreviousDate(timestamp, period);
-        LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period));
+        LocalDateTime preTimestamp = dateService.getPreviousDate(latestTimestamp, period);
+        LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
 
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, ratName);
         Area area = areaService.findAreaByName(areaName);
@@ -83,50 +88,58 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
         List<WorstCellSaveDto> dashboardWorstCells = kpiDayRepository
                 .findWorstCellsForDashboardByArea(
                         standardKpi.getId(),
-                        timestamp,
+                        latestTimestamp,
                         currentStart,
                         preTimestamp,
                         previousStart,
                         area.getId(),
                         rat.getId(),
-                        excludeZeroes
+                        excludeZeroes,
+                        granularity.getId()
                 );
-        return dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, area.getName(),timestamp)).toList();
+        return dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, area.getName(), timestamp)).toList();
     }
 
     @Override
-    public Map<String,List<WorstCellSaveDto>> createWorstCellsByRatAndAreaType(String period, String areaType, LocalDateTime timestamp, String ratName) {
+    public Map<String, List<WorstCellSaveDto>> createWorstCellsByRatAndAreaType(String period, String areaType, LocalDateTime timestamp, String ratName, String granularityName) {
         boolean[] excludeZero = {false, true};
         Rat rat = ratService.findRatByName(ratName);
-        LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period));
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
 
-        LocalDateTime preTimestamp = dateService.getPreviousDate(timestamp, period);
-        LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period));
+        LocalDateTime latestTime = timestamp.toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
+        LocalDateTime currentStart = timestamp.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
+
+        LocalDateTime preTimestamp = dateService.getPreviousDate(timestamp, period)
+                .toLocalDate()
+                .atStartOfDay()
+                .plusSeconds(granularity.getPlusSeconds());
+        LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
 
         List<Area> areas = areaService.findAreasByAreaType(areaType);
 
         List<StandardKpi> standardKpis = standardKpiService.findAllStandardKpiByRat(rat);
 
-        Map<String,List<WorstCellSaveDto>> savedWorstCellsMap = new HashMap<>();
+        Map<String, List<WorstCellSaveDto>> savedWorstCellsMap = new HashMap<>();
 
-
-        for (boolean eZ: excludeZero){
+        for (boolean eZ : excludeZero) {
             for (Area area : areas) {
                 for (StandardKpi kpi : standardKpis) {
                     List<WorstCellSaveDto> dashboardWorstCells = kpiDayRepository.findWorstCellsForDashboardByArea(
                             kpi.getId(),
-                            timestamp,
+                            latestTime,     //-- Assign latestTime (including plusSeconds) to query the worstCell.
                             currentStart,
                             preTimestamp,
                             previousStart,
                             area.getId(),
                             rat.getId(),
-                            eZ
+                            eZ,
+                            granularity.getId()
                     );
-                    List<WorstCellSaveDto> savedWorstCells = dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, area.getName(),timestamp)).toList();  //-- Saving worst-cells to database (worst_cells table)
+                    List<WorstCellSaveDto> savedWorstCells = dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, area.getName(), timestamp)).toList();  //-- Saving worst-cells to database (worst_cells table) [timestamp is used as the argument to save the worstCell with the querying timestamp (not busy-hour timestamp)]
                     savedWorstCellsMap.put(area.getName() + " - " + kpi.getKpiName(), savedWorstCells);
                 }
-                    System.out.println("[" + rat.getLabel() + "] Area: " + area.getName() + " | ExZero: " + eZ);
+                System.out.println("[" + rat.getLabel() + " - " + granularity.getLabel() + "] Exclude Zeroes: " + eZ + " | Area: (" + areaType + ") " + area.getName());
+
             }
         }
         return savedWorstCellsMap;
@@ -138,20 +151,24 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
         LocalDateTime timestamps = dateService.extractDate(timestamp);
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
+
         LocalDateTime latestDate = dateService.getLatestDate(rat, granularity);
+        LocalDateTime latestDateStart = latestDate.toLocalDate().atStartOfDay();
+
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
         Area area = areaService.findAreaByName(areaName);
 
-        return worstCellRepository.findWorstCellsByKpi(period, timestamps, latestDate, rat.getId(), standardKpi.getId(), area.getId(), excludeZeroes);
+        return worstCellRepository.findWorstCellsByKpi(period, timestamps, latestDate, latestDateStart, rat.getId(), standardKpi.getId(), area.getId(), excludeZeroes, granularity.getId());
     }
 
     @Override
-    public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName) {
+    public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
         Area area = areaService.findAreaByName(areaName);
 
-        return worstCellRepository.findTimestamps(period, rat.getId(), standardKpi.getId(), area.getId());
+        return worstCellRepository.findTimestamps(period, rat.getId(), standardKpi.getId(), area.getId(), granularity.getId());
     }
 
 }

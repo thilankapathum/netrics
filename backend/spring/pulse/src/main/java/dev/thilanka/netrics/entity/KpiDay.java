@@ -19,8 +19,12 @@ import java.time.LocalDateTime;
                 @Index(
                         name = "idx_kpiday_std_rat_time",
                         columnList = "lte_fdd_standard_kpi_id, rat_id, timestamp"
+                ),
+                @Index(
+                        name = "idx_kpiday_granularity_id",
+                        columnList = "granularity_id"
                 )},
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","lte_fdd_standard_kpi_id", "oss_id","rat_id"})})
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","lte_fdd_standard_kpi_id", "oss_id","rat_id","granularity_id"})})
 public class KpiDay {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

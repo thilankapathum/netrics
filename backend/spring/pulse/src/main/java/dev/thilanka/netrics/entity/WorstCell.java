@@ -37,9 +37,13 @@ import java.util.List;
                 @Index(
                         name = "idx_exclude_zeroes",
                         columnList = "exclude_zeroes"
+                ),
+                @Index(
+                        name = "idx_granularity",
+                        columnList = "granularity_id"
                 )},
 
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp", "period", "cell_name", "standard_kpi_id", "rat_id", "area_id", "exclude_zeroes"})})
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp", "period", "cell_name", "standard_kpi_id", "rat_id", "area_id", "exclude_zeroes","granularity_id"})})
 public class WorstCell {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -68,4 +72,8 @@ public class WorstCell {
 
     @OneToMany(mappedBy = "worstCell", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<WorstCellComment> worstCellComments;
+
+    @ManyToOne
+    @JoinColumn(name = "granularity_id")
+    private Granularity granularity;
 }
