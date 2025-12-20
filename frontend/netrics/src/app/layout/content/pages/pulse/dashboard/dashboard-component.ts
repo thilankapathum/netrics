@@ -50,7 +50,7 @@ export class DashboardComponent implements OnInit {
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
 
-  selectedPeriod = signal('day');
+  selectedPeriod = signal('week');
   selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');

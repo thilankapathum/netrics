@@ -10,5 +10,5 @@
     "day-average": "/app/day-average",
     "busy-hour": "/app/busy-hour"
   },
-  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-and-warmup"
+  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-rat-granularity"
 }

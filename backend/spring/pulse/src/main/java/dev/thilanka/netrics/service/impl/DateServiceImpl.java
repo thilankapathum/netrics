@@ -44,19 +44,19 @@ public class DateServiceImpl implements DateService {
     @Override
     @Cacheable(value = "latestDateRange", key = "#period + '_' + #granularityName + '_' + #ratName")
     public DateRangeDto getLatestDateRange(String period, String ratName, String granularityName) {
-        System.out.println("DateService " + period + ratName + granularityName);
+//        System.out.println("DateService " + period + ratName + granularityName);
         Rat rat = ratService.findRatByName(ratName);
-        System.out.println("RAT" + rat.getLabel());
+//        System.out.println("RAT" + rat.getLabel());
 
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-        System.out.println("Granularity: " + granularity.getLabel());
+//        System.out.println("Granularity: " + granularity.getLabel());
 
-        LocalDateTime latestDate = getLatestDate(rat, granularity);
-        System.out.println("Latest Date date: " + latestDate.toLocalDate().atStartOfDay());
-        System.out.println("latestDate " + latestDate.toString());
+        LocalDateTime latestDate = getLatestDate(rat, granularity).toLocalDate().atStartOfDay();
+//        System.out.println("Latest Date date: " + latestDate.toLocalDate().atStartOfDay());
+//        System.out.println("latestDate " + latestDate.toString());
 
         LocalDateTime latestPrevDate = getLatestPreviousDate(period, rat,granularity).plusDays(1);
-        System.out.println("latestPrevDate " + latestPrevDate.toString() );
+//        System.out.println("latestPrevDate " + latestPrevDate.toString() );
 
         return new DateRangeDto(Timestamp.valueOf(latestDate),Timestamp.valueOf(latestPrevDate));
     }

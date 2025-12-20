@@ -19,8 +19,8 @@ public class CacheController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("evict-all")
-    public ResponseEntity<String> evictAllCaches(){
-        for (String name : cacheManager.getCacheNames()){
+    public ResponseEntity<String> evictAllCaches() {
+        for (String name : cacheManager.getCacheNames()) {
             cacheManager.getCache(name).clear();
             System.out.println("Cleared cache: " + name);
         }
@@ -29,14 +29,21 @@ public class CacheController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("evict")
-    public ResponseEntity<String> evictByRatName(@RequestParam("ratName") String ratName){
+    public ResponseEntity<String> evictByRatName(@RequestParam("ratName") String ratName) {
         cacheWarmup.evictByRatName(ratName);
         return ResponseEntity.ok("Cache of " + ratName + " is cleared!");
     }
 
-//    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
+    @PostMapping("evict-rat-granularity")
+    public ResponseEntity<String> evictByRatAndGranularity(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName) {
+        int cleared = cacheWarmup.evictByRatNameAndGranularityName(ratName, granularityName);
+        return ResponseEntity.ok("[" + ratName + " - " + granularityName + "] Evicted " + cleared + " cache entries!");
+    }
+
+    //    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping("evict-and-warmup")        //TODO: Implement in Python Script
-    public ResponseEntity<String> evictAndWarmupCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName){
+    public ResponseEntity<String> evictAndWarmupCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName) {
         System.out.println("Clearing and warming-up cache for: " + ratName + " - " + granularityName);
         cacheWarmup.evictAndWarmupCache(ratName, granularityName);
         return ResponseEntity.ok(ratName + " caches cleared and warmed-up!");
@@ -44,7 +51,7 @@ public class CacheController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("warm-up")
-    public ResponseEntity<String> warmUpCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName){
+    public ResponseEntity<String> warmUpCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName) {
         cacheWarmup.warmUpCache(ratName, granularityName);
         return ResponseEntity.ok(ratName + " caches warmed-up!");
     }

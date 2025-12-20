@@ -65,15 +65,17 @@ public class CacheWarmupImpl implements CacheWarmup {
     }
 
     @Override
-    public void evictByRatNameAndGranularityName(String ratName, String granularityName) {
+    public int evictByRatNameAndGranularityName(String ratName, String granularityName) {
         String pattern = "*_" + granularityName + "_" + ratName;
         Set<String> keys = redisTemplate.keys(pattern);
 
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
             System.out.println("[" + ratName + " - " + granularityName + "] Evicted " + keys.size() + " cache entries!");
+            return keys.size();
         } else {
             System.out.println("[" + ratName + " - " + granularityName + "] No cache entries found!");
+            return 0;
         }
     }
 
@@ -87,7 +89,7 @@ public class CacheWarmupImpl implements CacheWarmup {
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
 
         CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture, kpiTrendFuture, worstCellFuture).join();
-        System.out.println("CACHE WARM-UP COMPLETE FOR: " + ratName.toUpperCase() + "!");
+        System.out.println("[" + ratName + " - " + granularityName + "] CACHE WARM-UP COMPLETE!");
     }
 
     private void warmupDateRangeCache(String ratName, String granularityName) {

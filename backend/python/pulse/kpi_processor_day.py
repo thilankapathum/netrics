@@ -111,27 +111,29 @@ class KPIProcessor:
 
     def create_rat_directories(self):
         """Create necessary directories for all RATs and granularities"""
+        logger.info(f"Creating directories for RATs...")
         for rat_id, rat_info in self.rats.items():
             for granularity_name, folders in rat_info['folders'].items():
                 for folder_type in ['ftp', 'processed', 'temp', 'log']:
                     folder_path = folders[folder_type]
                     os.makedirs(folder_path, exist_ok=True)
-                    logger.info(f"Created directory: {folder_path}")
+                    # logger.info(f"Created directory: {folder_path}")
+        logger.info(f"Created directories for RATs")
 
     def clear_redis_cache(self, rat_name: str, granularity_name:str):
         """Clear redis cache for specific RAT"""
-        logger.info(f"Clearing redis cache for RAT: {rat_name}...")
+        # logger.info(f"Clearing redis cache for RAT: {rat_name}...")
         try:
             url = f"{self.clear_redis_cache_url}?ratName={rat_name}&granularityName={granularity_name}"
             logger.info(f"Calling cache eviction URL: {url}")
             response = requests.post(url, timeout=10)
             if response.status_code == 200:
-                logger.info(f"Redis cache cleared successfully for RAT: {rat_name}")
+                logger.info(f"Redis cache cleared successfully for RAT: {rat_name}\n")
             else:
                 logger.error(
-                    f"Failed to clear redis cache for RAT {rat_name}: {response.status_code}, body: {response.text}")
+                    f"Failed to clear redis cache for RAT {rat_name}: {response.status_code}, body: {response.text}\n")
         except Exception as e:
-            logger.error(f"Failed to clear redis cache for RAT {rat_name}: {e}")
+            logger.error(f"Failed to clear redis cache for RAT {rat_name}: {e}\n")
 
     def load_database_configuration(self):
         """Load configuration from database tables"""
@@ -324,7 +326,7 @@ class KPIProcessor:
                 cursor.execute(index_query)
 
             connection.commit()
-            logger.info("Database tables created successfully")
+            logger.info("Database tables created successfully \n")
 
         except Error as e:
             logger.error(f"Error creating database tables: {e}")
@@ -672,7 +674,7 @@ class KPIProcessor:
 
         try:
             rat_name = self.rats[rat_id]['name']
-            logger.info(f"[{rat_name}] Preparing data insert...")
+            logger.info(f"[{granularity_name} - {rat_name}] Preparing data insert...")
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
@@ -687,11 +689,12 @@ class KPIProcessor:
             """
 
             # Progress tracking
-            update_interval = 100
+            update_interval = 1000
             last_update_success = 0
             last_update_error = 0
             last_progress_line = ""
 
+            logger.info(f"[{granularity_name} - {rat_name}] Inserting data of {total_records} records...")
             for idx, row in df.iterrows():
                 try:
                     data_tuple = (
@@ -740,7 +743,7 @@ class KPIProcessor:
                     eta_str = str(timedelta(seconds=int(eta_seconds)))
 
                     progress_msg = (
-                        f"[{rat_name}] {successful_inserts}/{total_records} records inserted | "
+                        f"[{granularity_name} - {rat_name}] {successful_inserts}/{total_records} records inserted | "
                         f"errors: {len(error_records)} | rate: {rate:.2f} rec/s | ETA: {eta_str}"
                     )
 
@@ -759,16 +762,16 @@ class KPIProcessor:
             sys.stdout.flush()
 
             # Final logging
-            logger.info(f"[{rat_name}] Successfully inserted {successful_inserts} records")
+            logger.info(f"[{granularity_name} - {rat_name}] Successfully inserted {successful_inserts} records")
 
             if error_records:
-                logger.warning(f"[{rat_name}] Failed to insert {len(error_records)} records")
+                logger.warning(f"[{granularity_name} - {rat_name}] Failed to insert {len(error_records)} records")
 
                 error_log_path = self.create_error_log_file(rat_id, granularity_name,original_filename, error_records)
-                logger.info(f"[{rat_name}] Error log created: {error_log_path}")
+                logger.info(f"[{granularity_name} - {rat_name}] Error log created: {error_log_path}")
                 return False
             else:
-                logger.info(f"[{rat_name}] All records inserted successfully")
+                logger.info(f"[{granularity_name} - {rat_name}] All records inserted successfully")
                 return True
 
         except Error as e:
@@ -823,37 +826,39 @@ class KPIProcessor:
 
         try:
             rat_name = self.rats[rat_id]['name']
-            logger.info(f"[{rat_name}] Reading {file_type.upper()} file: {file_path}")
-            logger.info(f"[{rat_name}] OSS identifier: {oss_identifier}")
+            logger.info(f"[{granularity_name} - {rat_name}] Reading {file_type.upper()} file: {file_path}")
+            logger.info(f"[{granularity_name} - {rat_name}] OSS identifier: {oss_identifier}")
 
             # Read the data file
             df = self.read_data_file(file_path, file_type, oss_config)
 
             if df.empty:
-                logger.warning(f"[{rat_name}] No data read from {file_path}")
+                logger.warning(f"[{granularity_name} - {rat_name}] No data read from {file_path}")
                 return False
 
-            logger.info(f"[{rat_name}] Read {len(df)} rows and {len(df.columns)} columns from {file_path}")
-            logger.info(f"[{rat_name}] Column names: {list(df.columns)}")
+            logger.info(f"[{granularity_name} - {rat_name}] Read {len(df)} rows and {len(df.columns)} columns from {file_path}")
+            logger.info(f"[{granularity_name} - {rat_name}] Column names: {list(df.columns)}")
+            logger.info(f"[{granularity_name} - {rat_name}] Normalizing column names...")
 
             # Normalize column names
             df = self.normalize_column_names(df)
 
+            logger.info(f"[{granularity_name} - {rat_name}] Unpivoting dataframe...")
             # Convert to unpivoted format using database mappings with numerator/denominator support
             unpivoted_df = self.unpivot_dataframe(df, oss_identifier, oss_config, original_filename, rat_id, granularity_id)
 
             if unpivoted_df.empty:
-                logger.warning(f"[{rat_name}] No data to insert after unpivoting and mapping")
+                logger.warning(f"[{granularity_name} - {rat_name}] No data to insert after unpivoting and mapping")
                 return False
 
             # Insert into database
             success = self.insert_data_to_postgresql(unpivoted_df, rat_id, original_filename, granularity_name)
 
             if success:
-                logger.info(f"[{rat_name}] Successfully processed {file_path}")
+                logger.info(f"[{granularity_name} - {rat_name}] Successfully processed {file_path}")
                 return True
             else:
-                logger.warning(f"[{rat_name}] Processing completed with errors for {file_path}")
+                logger.warning(f"[{granularity_name} - {rat_name}] Processing completed with errors for {file_path}")
                 return True  # Still return True as partial data was inserted
 
         except Exception as e:
@@ -873,8 +878,8 @@ class KPIProcessor:
             filename = os.path.basename(file_path)
             processed_path = os.path.join(processed_folder, filename)
             shutil.move(file_path, processed_path)
-            logger.info(f"[{rat_name}] Moved {filename} to processed folder")
-            logger.info(f"[{rat_name}] ========== END FILE ==========")
+            logger.info(f"[{granularity_name} - {rat_name}] Moved {filename} to processed folder")
+            logger.info(f"[{granularity_name} - {rat_name}] ========== END FILE ========== \n")
         except Exception as e:
             logger.error(f"Error moving file to processed folder: {e}")
             logger.info(f"========== END FILE ==========")
@@ -897,17 +902,17 @@ class KPIProcessor:
         rat_info = self.rats[rat_id]
         rat_name = rat_info['name']
 
-        logger.info(f"{'=' * 60}")
-        logger.info(f"Processing RAT: {rat_name} (ID: {rat_id})")
-        logger.info(f"{'-' * 60}")
+        # logger.info(f"{'=' * 60}")
+        # logger.info(f"{'-' * 10} Processing RAT: {rat_name} (ID: {rat_id}) {'-' * 10}")
+        # logger.info(f"{'-' * 60}")
 
         new_files = self.get_new_files(rat_id, granularity_name)
 
         if not new_files:
-            logger.info(f"[{rat_name}] No new files to process")
+            logger.info(f"[{granularity_name} - {rat_name}] No new files to process")
             return
 
-        logger.info(f"[{rat_name}] Found {len(new_files)} new files to process")
+        logger.info(f"[{granularity_name} - {rat_name}] Found {len(new_files)} new files to process")
 
         # Track if any files were successfully processed
         files_processed_successfully = 0
@@ -918,20 +923,20 @@ class KPIProcessor:
 
             try:
                 filename = os.path.basename(file_path)
-                logger.info(f"[{rat_name}] Processing {filename}")
+                logger.info(f"[{granularity_name} - {rat_name}] Processing {filename}")
 
                 # Identify OSS source using database configuration
                 oss_identifier, oss_config = self.identify_oss_source(filename)
 
                 if not oss_identifier:
-                    logger.warning(f"[{rat_name}] Could not identify OSS for file: {filename}")
+                    logger.warning(f"[{granularity_name} - {rat_name}] Could not identify OSS for file: {filename}")
                     continue
 
                 # Determine file type and processing method
                 file_format, needs_extraction = self.get_file_info(file_path)
 
                 if needs_extraction and file_format == 'zip':
-                    logger.info(f"[{rat_name}] File needs extraction")
+                    # logger.info(f"[{granularity_name} - {rat_name}] File needs extraction")
                     # Extract data file from ZIP
                     extraction_result = self.extract_data_file_from_zip(file_path, rat_id, granularity_name)
 
@@ -942,11 +947,11 @@ class KPIProcessor:
 
                 elif not needs_extraction and file_format in ['xlsx', 'csv']:
                     # Process file directly
-                    logger.info(f"[{rat_name}] File does not need extraction")
+                    # logger.info(f"[{granularity_name} - {rat_name}] File does not need extraction")
                     processing_success = self.process_data_file(file_path, file_format, oss_identifier, oss_config, filename, rat_id, granularity_name)
 
                 else:
-                    logger.warning(f"[{rat_name}] Unsupported file format: {file_format}")
+                    logger.warning(f"[{granularity_name} - {rat_name}] Unsupported file format: {file_format}")
                     continue
 
                 # Only mark file as processed if processing was successful
@@ -954,19 +959,19 @@ class KPIProcessor:
                     self.mark_file_as_processed(file_path, rat_id, granularity_name)
                     files_processed_successfully += 1
                 else:
-                    logger.error(f"[{rat_name}] File processing failed. File will not be moved to processed folder.")
-                    logger.info(f"[{rat_name}] ========== END FILE (FAILED) ==========")
+                    logger.error(f"[{granularity_name} - {rat_name}] File processing failed. File will not be moved to processed folder.")
+                    logger.error(f"[{granularity_name} - {rat_name}] {'-' * 10} END FILE (FAILED!) {'-' * 10}")
                     files_with_errors += 1
 
                 # Clean up temp files regardless of success
                 self.cleanup_temp_files(rat_id, granularity_name)
 
             except Exception as e:
-                logger.error(f"[{rat_name}] Error processing file {filename}: {e}")
+                logger.error(f"[{granularity_name} - {rat_name}] Error processing file {filename}: {e}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
-                logger.error(f"[{rat_name}] File will not be moved to processed folder due to error.")
-                logger.info(f"[{rat_name}] ========== END FILE (ERROR) ==========")
+                logger.error(f"[{granularity_name} - {rat_name}] File will not be moved to processed folder due to error.")
+                logger.error(f"[{granularity_name} - {rat_name}] {'-' * 10} END FILE (ERROR!) {'-' * 10}")
                 files_with_errors += 1
 
                 # Clean up temp files even on error
@@ -977,26 +982,27 @@ class KPIProcessor:
 
         # Clear Redis cache once after processing all files for this RAT
         if files_processed_successfully > 0:
-            logger.info(f"[{rat_name}] Processed {files_processed_successfully} file(s) successfully")
-            logger.info(f"[{rat_name}] Triggering cache eviction and warmup for RAT...")
+            logger.info(f"[{granularity_name} - {rat_name}] Processed {files_processed_successfully} file(s) successfully")
+            # logger.info(f"[{granularity_name} - {rat_name}] Triggering cache eviction and warmup for RAT...")
+            # logger.info(f"skipping clearing cache...")
             self.clear_redis_cache(rat_name, granularity_name)
         else:
-            logger.info(f"[{rat_name}] No files were processed successfully. Skipping cache clearing.")
+            logger.info(f"[{granularity_name} - {rat_name}] No files were processed successfully. Skipping cache clearing.")
 
         if files_with_errors > 0:
-            logger.warning(f"[{rat_name}] {files_with_errors} file(s) encountered errors during processing")
+            logger.warning(f"[{granularity_name} - {rat_name}] {files_with_errors} file(s) encountered errors during processing")
 
     def process_new_files(self):
         """Process new files for all RATs using database configuration"""
-        logger.info(f"{'#' * 80}")
-        logger.info(f"Starting KPI processing cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info(f"{'#' * 80}\n")
+        # logger.info(f"{'#' * 80}")
+        logger.info(f"{'=' * 3} STARTING KPI PROCESSING CYCLE AT {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {'=' * 3}")
+        # logger.info(f"{'#' * 80}\n")
 
-        logger.info(f"Available granularities: {self.granularities}")
+        # logger.info(f"Available granularities: {self.granularities}")
 
         for granularity_id, gran in self.granularities.items():
             granularity_name = gran['name']
-            logger.info(f"Processing granularity: {granularity_name}")
+            # logger.info(f"Processing granularity: {granularity_name}")
 
             # Process files for each RAT
             for rat_id in self.rats.keys():
@@ -1008,15 +1014,15 @@ class KPIProcessor:
                     import traceback
                     logger.error(f"Traceback: {traceback.format_exc()}")
 
-        logger.info(f"{'#' * 80}")
-        logger.info(f"Completed KPI processing cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info(f"{'#' * 80}\n")
+        # logger.info(f"{'#' * 80}")
+        logger.info(f"{'=' * 3} COMPLETED KPI PROCESSING CYCLE AT {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {'=' * 3}\n")
+        # logger.info(f"{'#' * 80}\n")
 
     def run_continuously(self, interval_minutes: int = 60):
         """Run the processor continuously with specified interval"""
         logger.info(f"Starting continuous processing with {interval_minutes} minute intervals")
         rats_str = ", ".join(f"{r['name']} ({r['label']})" for r in self.rats.values())
-        logger.info("Configured RATs: %s", rats_str)
+        # logger.info("Configured RATs: %s", rats_str)
 
         # Create database tables on startup
         self.create_database_tables()

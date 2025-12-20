@@ -311,15 +311,15 @@ public class KpiDayServiceImpl implements KpiDayService {
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-        System.out.println("granularity: "+granularity.getLabel());
+//        System.out.println("granularity: "+granularity.getLabel());
         LocalDateTime timestamp = dateService.getLatestDate(rat, granularity);
-        System.out.println("timestamp: "+timestamp.toString());
+//        System.out.println("timestamp: "+timestamp.toString());
         Long periodValue = dateService.getPeriod(period);
-        System.out.println("periodValue: "+periodValue.toString());
+//        System.out.println("periodValue: "+periodValue.toString());
 
         List<KpiData> kpiData = kpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, periodValue, cellName, rat.getId(), granularity.getId());
 
-        System.out.println("KPI Label: " + kpiData.get(0).getKpiLabel());
+//        System.out.println("KPI Label: " + kpiData.get(0).getKpiLabel());
 
         for (KpiData data: kpiData){
             System.out.println(data.getTimestamp().toLocalDateTime());
