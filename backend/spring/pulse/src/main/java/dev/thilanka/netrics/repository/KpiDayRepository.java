@@ -442,12 +442,12 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                 ON lte_fdd_standard_kpi.id = lte_fdd_kpi_day.lte_fdd_standard_kpi_id
             WHERE lte_fdd_standard_kpi_id = :standardKpiId
               AND cell_name = :cellName
-              AND "timestamp" BETWEEN (:timestamp ::DATE - (:period * INTERVAL '1 day')) AND :timestamp
+              AND "timestamp" BETWEEN :startTimestamp AND :timestamp
               AND lte_fdd_kpi_day.rat_id = :ratId
               AND lte_fdd_kpi_day.granularity_id = :granularityId
             ORDER BY timestamp ASC
             """, nativeQuery = true)
-    List<KpiData> findDataByKpiAndCell(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("cellName") String cellName, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
+    List<KpiData> findDataByKpiAndCell(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("cellName") String cellName, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
 
 
@@ -455,169 +455,82 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
 
 
     @Query(value = """
-           WITH params AS (
-               SELECT
-                   :standardKpiId ::bigint AS kpi_id,
-                   :ratId ::bigint AS rat_id,
-                   :timestamp ::timestamp AS ts,
-                   (:timestamp ::date - (:period * INTERVAL '1 day')) AS start_ts,
-                   :granularityId ::bigint AS granularity_id
-           ),
-           agg AS (
-               SELECT
-                   date_trunc('day', d."timestamp") AS "timestamp",
-                   SUM(d.numerator_kpi_value) AS num,
-                   SUM(d.denominator_kpi_value) AS den,
-                   AVG(d.kpi_value) AS avg_value
-               FROM lte_fdd_kpi_day d
-               CROSS JOIN params p
-               WHERE d.lte_fdd_standard_kpi_id = p.kpi_id
-                 AND d.rat_id = p.rat_id
-                 AND d.granularity_id = p.granularity_id
-                 AND d."timestamp" BETWEEN p.start_ts AND p.ts
-               GROUP BY date_trunc('day', d."timestamp")
-           )
-           SELECT
-               a."timestamp",
-               s.label AS kpi_label,
-               CASE
-                   WHEN s.unit = '%' THEN COALESCE((a.num / NULLIF(a.den, 0)) * 100, a.avg_value)
-                   ELSE COALESCE((a.num / NULLIF(a.den, 0)), a.avg_value)
-               END AS kpi_value
-           FROM agg a
-           JOIN lte_fdd_standard_kpi s
-               ON s.id = (SELECT kpi_id FROM params)
-           ORDER BY a."timestamp" ASC;
-           """, nativeQuery = true)
-    List<KpiTrend> findTrendDataAvgByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
-
-    @Query(value = """
-            WITH params AS (
-               SELECT
-                   :standardKpiId ::bigint AS kpi_id,
-                   :ratId ::bigint AS rat_id,
-                   :timestamp ::timestamp AS ts,
-                   (:timestamp ::date - (:period * INTERVAL '1 day')) AS start_ts,
-                   :granularityId ::bigint AS granularity_id
-           ),
-           agg AS (
-               SELECT
-                   date_trunc('day', d."timestamp") AS "timestamp",
-                   SUM(d.numerator_kpi_value) AS num,
-                   SUM(d.denominator_kpi_value) AS den,
-                   SUM(d.kpi_value) AS avg_value
-               FROM lte_fdd_kpi_day d
-               CROSS JOIN params p
-               WHERE d.lte_fdd_standard_kpi_id = p.kpi_id
-                 AND d.rat_id = p.rat_id
-                 AND d.granularity_id = p.granularity_id
-                 AND d."timestamp" BETWEEN p.start_ts AND p.ts
-               GROUP BY date_trunc('day', d."timestamp")
-           )
-           SELECT
-               a."timestamp",
-               s.label AS kpi_label,
-               CASE
-                   WHEN s.unit = '%' THEN COALESCE((a.num / NULLIF(a.den, 0)) * 100, a.avg_value)
-                   ELSE COALESCE((a.num / NULLIF(a.den, 0)), a.avg_value)
-               END AS kpi_value
-           FROM agg a
-           JOIN lte_fdd_standard_kpi s
-               ON s.id = (SELECT kpi_id FROM params)
-           ORDER BY a."timestamp" ASC;
-           """, nativeQuery = true)
-    List<KpiTrend> findTrendDataSumByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
-
-
-    @Query(value = """
-            WITH params AS (
-            	SELECT
-            		:standardKpiId ::bigint AS kpi_id,
-            		:ratId ::bigint AS rat_id,
-            		:districtId ::bigint AS district_id,
-            		:timestamp ::timestamp AS ts,
-            		(:timestamp ::date - (:period * INTERVAL '1 day')) AS start_ts,
-            		:granularityId ::bigint AS gran_id
-            ),
-            agg AS (
-            	SELECT
-            		date_trunc('day', dday."timestamp") AS "timestamp",
-            		SUM(dday.numerator_kpi_value) AS num,
-            		SUM(dday.denominator_kpi_value) AS den,
-            		AVG(dday.kpi_value) AS avg_value
-            	FROM lte_fdd_kpi_day dday
-            	JOIN district_codes dc
-            		ON dc.id = dday.district_code_id
-            	JOIN districts dist
-            		ON dist.id = dc.district_id
-            	CROSS JOIN params p
-            	WHERE dday.lte_fdd_standard_kpi_id = p.kpi_id
-            	  AND dday.rat_id = p.rat_id
-            	  AND dist.id = p.district_id
-            	  AND dday."timestamp" BETWEEN p.start_ts AND p.ts
-            	  AND dday.granularity_id = gran_id
-            	GROUP BY date_trunc('day', dday."timestamp")
-            )
             SELECT
-            	a."timestamp",
-            	sk.label AS kpi_label,
-            	CASE
-            		WHEN sk.unit = '%' THEN COALESCE((a.num / NULLIF(a.den, 0)) * 100, a.avg_value)
-            		ELSE COALESCE((a.num / NULLIF(a.den, 0)), a.avg_value)
-            	END AS kpi_value
-            FROM agg a
-            JOIN lte_fdd_standard_kpi sk
-            	 ON sk.id = (SELECT kpi_id FROM params)
-            ORDER BY a."timestamp" ASC;
-            """, nativeQuery = true)
-    List<KpiTrend> findTrendDataAvgByKpiAndDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("districtId") Long districtId, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
+                date_trunc('day', d."timestamp") AS "timestamp",
+                skpi.label AS kpi_label,
+                CASE
+                    WHEN skpi.unit = '%' THEN
+                        COALESCE(
+                            (SUM(d.numerator_kpi_value) / NULLIF(SUM(d.denominator_kpi_value), 0)) * 100,
+                            CASE
+                                WHEN skpi.aggregation = 'SUM' THEN SUM(d.kpi_value)
+                                ELSE AVG(d.kpi_value)
+                            END
+                        )
+                    ELSE
+                        COALESCE(
+                            (SUM(d.numerator_kpi_value) / NULLIF(SUM(d.denominator_kpi_value), 0)),
+                            CASE
+                                WHEN skpi.aggregation = 'SUM' THEN SUM(d.kpi_value)
+                                ELSE AVG(d.kpi_value)
+                            END
+                        )
+                END AS kpi_value
+            FROM lte_fdd_kpi_day d
+            JOIN lte_fdd_standard_kpi skpi
+                 ON skpi.id = d.lte_fdd_standard_kpi_id
+            WHERE d.lte_fdd_standard_kpi_id = :standardKpiId
+              AND d.rat_id = :ratId
+              AND d.granularity_id = :granularityId
+              AND d."timestamp" >= :startTimestamp
+              AND d."timestamp" <=  :timestamp
+            GROUP BY
+                date_trunc('day', d."timestamp"),
+                skpi.label,
+                skpi.unit,
+                skpi.aggregation
+            ORDER BY "timestamp"
+           """, nativeQuery = true)
+    List<KpiTrend> findTrendDataByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
+
 
     @Query(value = """
-            WITH params AS (
-            	SELECT
-            		:standardKpiId ::bigint AS kpi_id,
-            		:ratId ::bigint AS rat_id,
-            		:districtId ::bigint AS district_id,
-            		:timestamp ::timestamp AS ts,
-            		(:timestamp ::date - (:period * INTERVAL '1 day')) AS start_ts,
-            		:granularityId ::bigint AS gran_id
-            ),
-            agg AS (
-            	SELECT
-            		date_trunc('day', dday."timestamp") AS "timestamp",
-            		SUM(dday.numerator_kpi_value) AS num,
-            		SUM(dday.denominator_kpi_value) AS den,
-            		SUM(dday.kpi_value) AS avg_value
-            	FROM lte_fdd_kpi_day dday
-            	JOIN district_codes dc
-            		ON dc.id = dday.district_code_id
-            	JOIN districts dist
-            		ON dist.id = dc.district_id
-            	CROSS JOIN params p
-            	WHERE dday.lte_fdd_standard_kpi_id = p.kpi_id
-            	  AND dday.rat_id = p.rat_id
-            	  AND dist.id = p.district_id
-            	  AND dday."timestamp" BETWEEN p.start_ts AND p.ts
-            	  AND dday.granularity_id = gran_id
-            	GROUP BY date_trunc('day', dday."timestamp")
-            )
             SELECT
-            	a."timestamp",
-            	sk.label AS kpi_label,
-            	CASE
-            		WHEN sk.unit = '%' THEN COALESCE((a.num / NULLIF(a.den, 0)) * 100, a.avg_value)
-            		ELSE COALESCE((a.num / NULLIF(a.den, 0)), a.avg_value)
-            	END AS kpi_value
-            FROM agg a
-            JOIN lte_fdd_standard_kpi sk
-            	 ON sk.id = (SELECT kpi_id FROM params)
-            ORDER BY a."timestamp" ASC;
+                date_trunc('day', k."timestamp") AS "timestamp",
+                skpi.label AS kpi_label,
+                CASE
+                    WHEN skpi.unit = '%' THEN
+                        COALESCE((SUM(k.numerator_kpi_value) / NULLIF(SUM(k.denominator_kpi_value), 0)) * 100,
+                                 CASE WHEN skpi.aggregation = 'SUM'
+                                      THEN SUM(k.kpi_value)
+                                      ELSE AVG(k.kpi_value)
+                                 END)
+                    ELSE
+                        COALESCE((SUM(k.numerator_kpi_value) / NULLIF(SUM(k.denominator_kpi_value), 0)),
+                                 CASE WHEN skpi.aggregation = 'SUM'
+                                      THEN SUM(k.kpi_value)
+                                      ELSE AVG(k.kpi_value)
+                                 END)
+                END AS kpi_value
+            FROM lte_fdd_kpi_day k
+            JOIN lte_fdd_standard_kpi skpi
+                 ON skpi.id = k.lte_fdd_standard_kpi_id
+            WHERE k.lte_fdd_standard_kpi_id = :standardKpiId
+              AND k.rat_id = :ratId
+              AND k.granularity_id = :granularityId
+              AND k.district_code_id IN (
+                    SELECT id FROM district_codes WHERE district_id = :districtId
+              )
+              AND k."timestamp" >= :startTimestamp
+              AND k."timestamp" <=  :timestamp
+            GROUP BY
+                date_trunc('day', k."timestamp"),
+                skpi.label,
+                skpi.unit,
+                skpi.aggregation
+            ORDER BY "timestamp"
             """, nativeQuery = true)
-    List<KpiTrend> findTrendDataSumByKpiAndDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("period") Long period, @Param("districtId") Long districtId, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
-
-
-
-
+    List<KpiTrend> findTrendDataByKpiAndDistrict(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("districtId") Long districtId, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
 
     @Query(value = """
