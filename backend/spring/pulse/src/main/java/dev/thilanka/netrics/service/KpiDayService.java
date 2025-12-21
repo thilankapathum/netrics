@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service;
 
+import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
@@ -38,4 +39,5 @@ public interface KpiDayService {
 
 //    List<WorstCellsDto> getWorstCellsByKpiAndDistrictExcludeZeroes(String kpiName, String period, String districtName, String ratName);
 
+    List<CellNameDto> getCellNamesByTimestamps(LocalDateTime timestamp, LocalDateTime preTimestamp, String ratName, String granularityName);
 }

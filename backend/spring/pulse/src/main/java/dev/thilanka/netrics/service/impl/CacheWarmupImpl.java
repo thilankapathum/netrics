@@ -35,7 +35,7 @@ public class CacheWarmupImpl implements CacheWarmup {
         evictByRatNameAndGranularityName(ratName, granularityName);
         warmupDateRangeCache(ratName, granularityName);
 
-        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells();
+        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells(ratName,granularityName);
         CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
         CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
@@ -72,9 +72,11 @@ public class CacheWarmupImpl implements CacheWarmup {
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
             System.out.println("[" + ratName + " - " + granularityName + "] Evicted " + keys.size() + " cache entries!");
+            cellNameService.reloadCells(ratName, granularityName);
             return keys.size();
         } else {
             System.out.println("[" + ratName + " - " + granularityName + "] No cache entries found!");
+            cellNameService.reloadCells(ratName, granularityName);
             return 0;
         }
     }
@@ -83,7 +85,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     public void warmUpCache(String ratName, String granularityName) {
         warmupDateRangeCache(ratName, granularityName);
 
-        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells();
+        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells(ratName, granularityName);
         CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
         CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);

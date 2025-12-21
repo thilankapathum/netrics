@@ -61,7 +61,6 @@ public class KpiDayController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("cell")
     public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName) {
-        System.out.println("cell KPI controller");
         List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
         return ResponseEntity.ok(kpiDataDtos);
     }

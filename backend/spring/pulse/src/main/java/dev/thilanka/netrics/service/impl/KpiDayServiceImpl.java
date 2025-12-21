@@ -59,10 +59,10 @@ public class KpiDayServiceImpl implements KpiDayService {
         LocalDateTime preTimestamp = dateService.getLatestPreviousDate(period, rat, granularity);
 
         if (standardKpi.getAggregation().equals("SUM")) {
-            return kpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(),granularity.getId())
+            return kpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(), granularity.getId())
                     .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
         } else {
-            return kpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(),granularity.getId())
+            return kpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(), granularity.getId())
                     .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
         }
     }
@@ -298,6 +298,13 @@ public class KpiDayServiceImpl implements KpiDayService {
         return kpiDayRepository.findWorstCellsByDistrict(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, district.getId(), rat.getId(), excludeZeroes, granularity.getId());
     }
 
+    @Override
+    public List<CellNameDto> getCellNamesByTimestamps(LocalDateTime timestamp, LocalDateTime preTimestamp, String ratName, String granularityName) {
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+        return kpiDayRepository.getCellNamesByTimestamps(timestamp, preTimestamp, rat.getId(), granularity.getId());
+    }
+
 
     // ------------------------------ WORST-CELLS END ------------------------------------------------------------------
 
@@ -311,19 +318,10 @@ public class KpiDayServiceImpl implements KpiDayService {
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-//        System.out.println("granularity: "+granularity.getLabel());
         LocalDateTime timestamp = dateService.getLatestDate(rat, granularity);
-//        System.out.println("timestamp: "+timestamp.toString());
         Long periodValue = dateService.getPeriod(period);
-//        System.out.println("periodValue: "+periodValue.toString());
 
         List<KpiData> kpiData = kpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, periodValue, cellName, rat.getId(), granularity.getId());
-
-//        System.out.println("KPI Label: " + kpiData.get(0).getKpiLabel());
-
-        for (KpiData data: kpiData){
-            System.out.println(data.getTimestamp().toLocalDateTime());
-        }
 
         return kpiData.stream()
                 .map(mapper::kpiDataToDto)
@@ -350,12 +348,12 @@ public class KpiDayServiceImpl implements KpiDayService {
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-        LocalDateTime timestamp = dateService.getLatestDate(rat,granularity);
+        LocalDateTime timestamp = dateService.getLatestDate(rat, granularity);
         Long periodValue = dateService.getPeriod(period);
         List<KpiTrend> kpiTrends = new ArrayList<>();
 
         if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-            kpiTrends = kpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, periodValue, rat.getId(),granularity.getId());
+            kpiTrends = kpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, periodValue, rat.getId(), granularity.getId());
         } else
             kpiTrends = kpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, periodValue, rat.getId(), granularity.getId());
 
@@ -369,7 +367,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         District district = districtService.findDistrictByName(districtName);
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-        LocalDateTime timestamp = dateService.getLatestDate(rat,granularity);
+        LocalDateTime timestamp = dateService.getLatestDate(rat, granularity);
         Long periodValue = dateService.getPeriod(period);
         List<KpiTrend> kpiTrends = new ArrayList<>();
 
