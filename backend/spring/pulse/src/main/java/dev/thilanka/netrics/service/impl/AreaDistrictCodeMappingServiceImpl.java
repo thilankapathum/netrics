@@ -50,7 +50,11 @@ public class AreaDistrictCodeMappingServiceImpl implements AreaDistrictCodeMappi
         List<AreaDistrictCodeMappingDto> list = new ArrayList<>();
 
         for (AreaDistrictCodeMappingDto dto : dtos) {
-            list.add(createAreaDistrictCodeMapping(dto));
+            try {
+                list.add(createAreaDistrictCodeMapping(dto));
+            } catch (Exception e) {
+                System.out.println("Exception: " + e.getMessage());
+            }
         }
         return list;
     }

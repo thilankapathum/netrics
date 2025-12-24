@@ -13,6 +13,7 @@ import java.util.List;
 public interface KpiDayService {
 
     boolean checkImproved(String worstOrder, Double difference);
+
     List<KpiDataDto> findAll();
 
     KpiDataDto createLteFddKpiDay(KpiDay kpiDay);
@@ -20,6 +21,8 @@ public interface KpiDayService {
     BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshots(String basicKpiName, String period, String ratName, String granularityName);
 
     BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName, String granularityName);
+
+    BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsByArea(String basicKpiName, String period, String areaName, String ratName, String granularityName);
 
     List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period, String ratName, String granularityName);
 
@@ -29,7 +32,11 @@ public interface KpiDayService {
 
     List<KpiTrendDto> getTrendByKpiAndDistrict(String standardKpiName, String period, String districtName, String ratName, String granularityName);
 
+    List<KpiTrendDto> getTrendByKpiAndArea(String standardKpiName, String period, String areaName, String ratName, String granularityName);
+
     List<WorstCellsDto> getWorstCellsByKpi(String kpiName, String period, boolean excludeZeroes, String ratName, String granularityName);
+
+    List<WorstCellsDto> getWorstCellsByKpiAndArea(String kpiName,  String period, boolean excludeZeroes, int limit,String ratName,  String areaName, String granularityName);
 
 //    List<WorstCellsDto> getWorstCellsByKpiExcludeZeroes(String kpiName, String period, String ratName);
 

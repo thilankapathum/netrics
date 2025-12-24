@@ -167,4 +167,9 @@ public class DateServiceImpl implements DateService {
         }
         return null;
     }
+
+    @Override
+    public LocalDateTime getStartDate(LocalDateTime currentDate, String period) {
+        return currentDate.minusDays(getPeriod(period));
+    }
 }

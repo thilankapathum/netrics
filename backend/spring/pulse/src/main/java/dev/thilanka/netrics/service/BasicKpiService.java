@@ -18,5 +18,5 @@ public interface BasicKpiService {
     BasicKpi findByKpiName(String kpiName, String ratName);
     BasicKpi findByKpiName(String kpiName, Rat rat);
 
-    BasicKpiWithStandardKpiDto findByKpiNameAndRat(String kpiName, String ratName);
+    BasicKpiWithStandardKpiDto getByKpiNameAndRat(String kpiName, String ratName);
 }

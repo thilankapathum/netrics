@@ -65,7 +65,7 @@ public class BasicKpiServiceImpl implements BasicKpiService {
 
     @Override
     @Transactional(readOnly = true)
-    public BasicKpiWithStandardKpiDto findByKpiNameAndRat(String kpiName, String ratName) {
+    public BasicKpiWithStandardKpiDto getByKpiNameAndRat(String kpiName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
                 .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));

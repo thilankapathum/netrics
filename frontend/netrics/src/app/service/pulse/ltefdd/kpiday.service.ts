@@ -24,9 +24,18 @@ export class KpidayService {
       { params : {kpiName, period, districtName, ratName, granularityName} });
   }
 
+  getBasicKpiSnapshotByArea(kpiName: string, period: string, areaName:string, ratName:string, granularityName:string) {
+    return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi-area`,
+      { params : {kpiName, period, areaName, ratName, granularityName} });
+  }
+
   getWorstCellsByKpi(kpiName: string, period: string, districtName:string, excludeZeroes:boolean, ratName:string, granularityName:string): Observable<any> {
     // const ratName: string = this.ratName;
     return this.http.get(`${this.baseUrl}/worst-cells`,{ params: { kpiName, period, districtName, excludeZeroes, ratName, granularityName } });
+  }
+
+  getWorstCellsByKpiAndArea(kpiName: string, period: string, excludeZeroes:boolean, limit:number, areaName:string,  ratName:string, granularityName:string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/worst-cells-area`,{ params: { kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName } });
   }
 
   getDataByKpiAndCell(kpiName:string, cellName:string, period: string, ratName:string, granularityName:string): Observable<any> {
@@ -45,5 +54,10 @@ export class KpidayService {
     // const ratName: string = this.ratName;
     return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi`,
       {params : {kpiName, period, districtName, ratName, granularityName} });
+  }
+
+  getDataByKpiAndArea(kpiName:string, period: string, areaName:string, ratName:string, granularityName:string) {
+    return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi-area`,
+      {params : {kpiName, period, areaName, ratName, granularityName} });
   }
 }

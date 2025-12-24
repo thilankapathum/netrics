@@ -23,13 +23,11 @@
                  [checked]="selectedRat() === 'ltefdd'" (change)="setSelectedRat($any($event.target).value)"/>
           <input disabled type="radio" name="rat_tabs" class="tab" value="ltetdd" aria-label="LTE-TDD"
                  [checked]="selectedRat() === 'ltetdd'" (change)="setSelectedRat($any($event.target).value)"/>
-          <input disabled type="radio" name="rat_tabs" class="tab" value="nr" aria-label="NR"
+          <input type="radio" name="rat_tabs" class="tab" value="nr" aria-label="NR"
                  [checked]="selectedRat() === 'nr'"
                  (change)="setSelectedRat($any($event.target).value)"/>
           <input type="radio" name="rat_tabs" class="tab" value="gsm" aria-label="GSM"
                  [checked]="selectedRat() === 'gsm'" (change)="setSelectedRat($any($event.target).value)"/>
-          <input disabled type="radio" name="rat_tabs" class="tab" value="umts" aria-label="UMTS"
-                 [checked]="selectedRat() === 'umts'" (change)="setSelectedRat($any($event.target).value)"/>
         </div>
       </div>
 

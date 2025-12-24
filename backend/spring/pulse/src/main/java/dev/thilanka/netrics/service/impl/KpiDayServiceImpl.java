@@ -37,6 +37,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final Mapper mapper;
     private final DateService dateService;
     private final GranularityService granularityService;
+    private final AreaService areaService;
 
     @Override
     public boolean checkImproved(String worstOrder, Double difference) {
@@ -126,6 +127,13 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .orElseThrow(() -> new RuntimeException("KPI Snapshot Query failed!"));
     }
 
+    private KpiSnapshotDto getLatestKpiSnapshotByArea(String kpiName, LocalDateTime currStart, LocalDateTime currEnd, LocalDateTime preStart, LocalDateTime preEnd, Area area, Rat rat, Granularity granularity) {
+        StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName, rat.getId());
+
+        return kpiDayRepository.findKpiSnapshotByArea(standardKpi.getId(), currStart, currEnd, preStart, preEnd, area.getId(), rat.getId(), granularity.getId())
+                .orElseThrow(() -> new RuntimeException("KPI Snapshot Query failed!"));
+    }
+
 
     @Override
     @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #granularityName + '_' + #ratName")
@@ -133,7 +141,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
 
-        BasicKpiWithStandardKpiDto basicKpi = basicKpiService.findByKpiNameAndRat(basicKpiName, ratName);    //-- To accommodate Async execution of warm-up without having to Lazy load StandardKpis from BasicKpi
+        BasicKpiWithStandardKpiDto basicKpi = basicKpiService.getByKpiNameAndRat(basicKpiName, ratName);    //-- To accommodate Async execution of warm-up without having to Lazy load StandardKpis from BasicKpi
 
         BasicKpiSnapshot basicKpiSnapshot = new BasicKpiSnapshot();
 
@@ -194,7 +202,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsWithDistrict(String basicKpiName, String period, String districtName, String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-        BasicKpiWithStandardKpiDto basicKpi = basicKpiService.findByKpiNameAndRat(basicKpiName, ratName);    //-- To accommodate Async execution of warm-up without having to Lazy load StandardKpis from BasicKpi
+        BasicKpiWithStandardKpiDto basicKpi = basicKpiService.getByKpiNameAndRat(basicKpiName, ratName);    //-- To accommodate Async execution of warm-up without having to Lazy load StandardKpis from BasicKpi
 
 
         BasicKpiSnapshot basicKpiSnapshot = new BasicKpiSnapshot();
@@ -252,6 +260,80 @@ public class KpiDayServiceImpl implements KpiDayService {
         return basicKpiSnapshot;
     }
 
+    @Override
+    @Cacheable(value = "basicKpiSnapshot", key = "#basicKpiName + '_' + #period + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
+    public BasicKpiSnapshot getLatestBasicAndStandardKpiSnapshotsByArea(String basicKpiName, String period, String areaName, String ratName, String granularityName) {
+
+        // DO NOT USE THIS METHOD FOR ASYNC WARM-UP CACHES. LAZY LOADING WILL THROW EXCEPTION
+
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+        Area area = areaService.findAreaByName(areaName);
+
+        LocalDateTime currEnd = dateService.getLatestDate(rat, granularity).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
+        LocalDateTime currStart = dateService.getStartDate(currEnd, period).toLocalDate().atStartOfDay();
+
+        LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
+        LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
+
+        BasicKpi basicKpi = basicKpiService.findByKpiName(basicKpiName, rat);
+
+        BasicKpiSnapshot basicKpiSnapshot = new BasicKpiSnapshot();
+
+        List<KpiSnapshot> kpiSnapshots = new ArrayList<>();
+
+        for (StandardKpi standardKpi : basicKpi.getStandardKpis()) {
+            KpiSnapshotDto snapshotDto = getLatestKpiSnapshotByArea(standardKpi.getKpiName(), currStart, currEnd, prevStart, prevEnd, area, rat, granularity);
+
+            kpiSnapshots.add(mapper.toKpiSnapshot(snapshotDto));    //TODO: USE KpiSnapshot class (It has Boolean for improved)
+        }
+
+        basicKpiSnapshot.setStandardKpis(kpiSnapshots);
+
+        //-- CREATE BASIC-KPI'S DATA
+        basicKpiSnapshot.setKpiLabel(basicKpi.getLabel());
+        basicKpiSnapshot.setUnit(basicKpi.getUnit());
+
+        basicKpiSnapshot.setPreviousValue(1.0);
+
+        if (Objects.equals(basicKpi.getAggregation(), "MULTIPLY")) {
+
+            basicKpiSnapshot.setValue(1.0);
+
+            //-- Calculate Value & Pre-Value by multiplying component Standard-KPI values. [IMPORTANT: Assume component Standard-KPI are percentages]
+            for (KpiSnapshot snapshot : kpiSnapshots) {
+                basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * snapshot.getValue() / 100.0);
+                basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * snapshot.getPreviousValue() / 100.0);
+            }
+            basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() * 100.0); //-- To avoid presenting decimals as percentages
+            basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() * 100.0); //-- To avoid presenting decimals as percentages
+
+            basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
+            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
+
+        } else if (Objects.equals(basicKpi.getAggregation(), "SUM")) {
+
+            basicKpiSnapshot.setValue(0.0);
+
+            //-- Calculate Value & Pre-Value by adding component Standard-KPI values.
+            for (KpiSnapshot snapshot : kpiSnapshots) {
+                basicKpiSnapshot.setValue(basicKpiSnapshot.getValue() + snapshot.getValue());
+                basicKpiSnapshot.setPreviousValue(basicKpiSnapshot.getPreviousValue() + snapshot.getPreviousValue());
+            }
+
+            basicKpiSnapshot.setDifference(basicKpiSnapshot.getValue() - basicKpiSnapshot.getPreviousValue());
+            basicKpiSnapshot.setImproved(checkImproved(basicKpi.getWorstOrder(), basicKpiSnapshot.getDifference()));
+
+        } else {
+            basicKpiSnapshot.setValue(null);
+            basicKpiSnapshot.setPreviousValue(null);
+            basicKpiSnapshot.setDifference(null);
+            basicKpiSnapshot.setImproved(false);
+        }
+
+        return basicKpiSnapshot;
+    }
+
 
     //------------------------------- KPI-SNAPSHOT END -----------------------------------------------------------------
 
@@ -275,6 +357,24 @@ public class KpiDayServiceImpl implements KpiDayService {
         LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
 
         return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, rat.getId(), excludeZeroes, granularity.getId());
+    }
+
+    @Override
+    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
+    public List<WorstCellsDto> getWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, int limit, String areaName, String ratName, String granularityName) {
+
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
+        Area area = areaService.findAreaByName(areaName);
+
+        LocalDateTime currEnd = dateService.getLatestDate(rat, granularity).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
+        LocalDateTime currStart = dateService.getStartDate(currEnd, period).toLocalDate().atStartOfDay();
+
+        LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
+        LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
+
+        return kpiDayRepository.findWorstCellsByArea(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit,area.getId(), rat.getId(), excludeZeroes, granularity.getId());
     }
 
     @Override
@@ -324,7 +424,7 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .atStartOfDay()
                 .plusSeconds(granularity.getPlusSeconds());
 
-        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp,period).toLocalDate().atStartOfDay();
+        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period).toLocalDate().atStartOfDay();
 
 //        Long periodValue = dateService.getPeriod(period);
 
@@ -360,17 +460,10 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .toLocalDate()
                 .atStartOfDay()
                 .plusSeconds(granularity.getPlusSeconds());
-        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp,period)
+        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period)
                 .toLocalDate().atStartOfDay();
 
-//        Long periodValue = dateService.getPeriod(period);
-//        List<KpiTrend> kpiTrends = new ArrayList<>();
-        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpi(standardKpi.getId(), timestamp,startTimestamp, rat.getId(), granularity.getId());
-
-//        if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//            kpiTrends = kpiDayRepository.findTrendDataSumByKpi(standardKpi.getId(), timestamp, periodValue, rat.getId(), granularity.getId());
-//        } else
-//            kpiTrends = kpiDayRepository.findTrendDataAvgByKpi(standardKpi.getId(), timestamp, periodValue, rat.getId(), granularity.getId());
+        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpi(standardKpi.getId(), timestamp, startTimestamp, rat.getId(), granularity.getId());
 
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
@@ -388,16 +481,29 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .atStartOfDay()
                 .plusSeconds(granularity.getPlusSeconds());
 
-        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp,period)
+        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period)
                 .toLocalDate().atStartOfDay();
-//        Long periodValue = dateService.getPeriod(period);
-        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpiAndDistrict(standardKpi.getId(),timestamp,startTimestamp, district.getId(), rat.getId(), granularity.getId());
+        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpiAndDistrict(standardKpi.getId(), timestamp, startTimestamp, district.getId(), rat.getId(), granularity.getId());
 
-//        if (Objects.equals(standardKpi.getAggregation(), "SUM")) {
-//            kpiTrends = kpiDayRepository.findTrendDataSumByKpiAndDistrict(standardKpi.getId(), timestamp, periodValue, district.getId(), rat.getId(), granularity.getId());
-//        } else
-//            kpiTrends = kpiDayRepository.findTrendDataAvgByKpiAndDistrict(standardKpi.getId(), timestamp, periodValue, district.getId(), rat.getId(), granularity.getId());
+        return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
+    }
 
+    @Override
+    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
+    public List<KpiTrendDto> getTrendByKpiAndArea(String standardKpiName, String period, String areaName, String ratName, String granularityName) {
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, rat);
+        Area area = areaService.findAreaByName(areaName);
+
+        LocalDateTime timestamp = dateService.getLatestDate(rat, granularity)
+                .toLocalDate()
+                .atStartOfDay()
+                .plusSeconds(granularity.getPlusSeconds());
+
+        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period)
+                .toLocalDate().atStartOfDay();
+        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpiAndArea(standardKpi.getId(), timestamp,startTimestamp, area.getId(), rat.getId(), granularity.getId());
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
 
