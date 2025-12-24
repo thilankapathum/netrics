@@ -25,7 +25,4 @@ public class User {
     @Column(unique = true)
     private String username;
     private String email;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<UserAreaMapping> userAreaMappings;
 }

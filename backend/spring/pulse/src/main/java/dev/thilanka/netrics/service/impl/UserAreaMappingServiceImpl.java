@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.dto.AreaDto;
 import dev.thilanka.netrics.dto.UserAreaMappingDto;
 import dev.thilanka.netrics.entity.Area;
 import dev.thilanka.netrics.entity.User;
@@ -15,24 +16,41 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserAreaMappingServiceImpl implements UserAreaMappingService {
     private final UserAreaMappingRepository userAreaMappingRepository;
-    private final UserService userService;
     private final AreaService areaService;
 
     @Override
     public UserAreaMappingDto createUserAreaMapping(UserAreaMappingDto userAreaMappingDto) {
 
-        User user = userService.findUserByUsername(userAreaMappingDto.username());
         Area area = areaService.findAreaByName(userAreaMappingDto.areaName());
         UserAreaMapping userAreaMapping = UserAreaMapping
                 .builder()
                 .area(area)
-                .user(user)
+                .userId(userAreaMappingDto.userId())
                 .build();
 
         UserAreaMapping savedUserAreaMapping = userAreaMappingRepository.save(userAreaMapping);
 
         return new UserAreaMappingDto(
-                savedUserAreaMapping.getUser().getUsername(),
+                savedUserAreaMapping.getUserId(),
                 savedUserAreaMapping.getArea().getName());
+    }
+
+    @Override
+    public Area findAreaByUserId(String userId) {
+        UserAreaMapping userAreaMapping = userAreaMappingRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Area not found by User ID " + userId));
+        return userAreaMapping.getArea();
+    }
+
+    @Override
+    public AreaDto getAreaByUserId(String userId) {
+
+        try {
+            Area area = findAreaByUserId(userId);
+            return new AreaDto(area.getName(),area.isEnabled(),area.getAreaType().getName());
+        } catch (Exception e) {
+            System.out.println("Error retrieving Area for User " + userId);
+        }
+        return null;
     }
 }

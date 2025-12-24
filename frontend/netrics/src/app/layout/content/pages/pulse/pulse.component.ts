@@ -26,6 +26,9 @@ import {AreaTypeDto} from '../../../../models/pulse/AreaTypeDto';
 import {AreaDto} from '../../../../models/pulse/AreaDto';
 import {AreaService} from '../../../../service/pulse/area-service';
 import {AreaTypeService} from '../../../../service/pulse/area-type-service';
+import {UserAreaService} from '../../../../service/pulse/user-area-service';
+import {KeycloakProfile} from 'keycloak-js';
+import {AuthService} from '../../../../auth/service/auth-service';
 
 @Component({
   selector: 'app-pulse',
@@ -45,6 +48,9 @@ export class PulseComponent implements OnInit {
 
   areas: AreaDto[] = [];
   area = signal<string | undefined>('')
+
+  userArea = signal<AreaDto | undefined>(undefined);
+  userProfile: KeycloakProfile = {};
 
   basicKpiDtos: BasicKpiDto[] = [];
   basicKpiSnapshots: BasicKpiSnapshot[] = [];
@@ -82,14 +88,55 @@ export class PulseComponent implements OnInit {
               private sharedService: SharedService,
               private dateService: DateService,
               private areaService: AreaService,
-              private areaTypeService: AreaTypeService) {
+              private areaTypeService: AreaTypeService,
+              private userAreaService: UserAreaService,
+              private authService: AuthService) {
     this.queryDateRanges();
 
   }
 
   ngOnInit() {
-    this.cdr.detectChanges(); // Force change detection
+    this.getUserProfile();
+    // this.cdr.detectChanges(); // Force change detection
+    //
+    //
+    // if (this.sharedService.selectedGranularity() != this.selectedGranularity()) {
+    //   this.selectedGranularity.set(this.sharedService.selectedGranularity());
+    // }
+    //
+    // if (this.sharedService.aggregation() != this.aggregation()) {
+    //   this.aggregation.set(this.sharedService.aggregation())
+    // }
+    //
+    // if (this.sharedService.selectedRat() != this.selectedRat()) {
+    //   this.selectedRat.set(this.sharedService.selectedRat())
+    // }
+    //
+    // this.getAreaTypes();
+    // this.excludeZeroes = this.sharedService.excludeZeroes;
 
+  }
+
+  async getUserProfile() {
+    this.userProfile = await this.authService.getUserProfile();
+    this.getAreaByUserId(this.userProfile.id!);
+  }
+
+  getAreaByUserId(userId: string) {
+    this.userAreaService.findByUserId(userId).subscribe({
+      next: data => {
+        this.userArea.set(data);
+        this.ngOnInitRemaining();
+
+      }, error: error => {
+        console.log(error);
+        this.alertService.error(`Error getting AreaByUserId)`);
+      }
+    })
+  }
+
+  ngOnInitRemaining(): void {
+    this.cdr.detectChanges(); // Force change detection
 
     if (this.sharedService.selectedGranularity() != this.selectedGranularity()) {
       this.selectedGranularity.set(this.sharedService.selectedGranularity());
@@ -105,7 +152,6 @@ export class PulseComponent implements OnInit {
 
     this.getAreaTypes();
     this.excludeZeroes = this.sharedService.excludeZeroes;
-
   }
 
   queryDateRanges() {
@@ -158,6 +204,8 @@ export class PulseComponent implements OnInit {
           // this.areaType.set(this.areaTypes.at(0)?.name);
           if (this.sharedService.areaType() != '') {
             this.areaType.set(this.sharedService.areaType());
+          } else if (this.userArea() != null) {
+            this.areaType.set(this.userArea()?.areaTypeName);
           } else {
             this.areaType.set(districtsAreaType?.name);
           }
@@ -170,14 +218,18 @@ export class PulseComponent implements OnInit {
     )
   }
 
+
   getAreasByAreaType(areaTypeName: string) {
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
-        if (this.sharedService.area() != ''){
+        if (this.sharedService.area() != '') {
           this.area.set(this.sharedService.area());
           this.sharedService.area.set('');
           this.sharedService.areaType.set('');
+        } else if (this.userArea() != null) {
+          this.area.set(this.userArea()?.name);
+          this.userArea.set(undefined);   // Clear userArea details after initial loading
         } else {
           this.area.set(this.areas.at(0)?.name);
         }
