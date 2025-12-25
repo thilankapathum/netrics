@@ -12,7 +12,7 @@ import {RatService} from '../../../../../service/pulse/rat-service';
 import {RatDto} from '../../../../../models/pulse/RatDto';
 import {SharedService} from '../../../../../service/pulse/shared-service';
 import {CellNameDto} from '../../../../../models/pulse/CellNameDto';
-import {CellService} from '../../../../../service/pulse/cell-service';
+import {CellNameService} from '../../../../../service/pulse/cell-name.service';
 import {KpiDataDto} from '../../../../../models/pulse/KpiDataDto';
 import {CellKpiSeries} from '../../../../../models/apexCharts/CellKpiSeries';
 
@@ -84,7 +84,7 @@ export class CellAnalysis implements OnInit {
               private chartService: ChartService,
               private ratService: RatService,
               private sharedService: SharedService,
-              private cellService: CellService) {
+              private cellService: CellNameService) {
 
     if (sharedService.selectedCell() === '' && sharedService.selectedStandardKpi() === '') {
       this.cellSelected.set(false);

@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @RestController
-@RequestMapping("/api/v1/pulse/cell")
+@RequestMapping("/api/v1/pulse/cell-name")
 @RequiredArgsConstructor
 public class CellNameController {
     private final CellNameService cellNameService;

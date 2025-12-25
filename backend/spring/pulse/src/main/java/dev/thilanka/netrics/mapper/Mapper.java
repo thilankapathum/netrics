@@ -310,4 +310,16 @@ public class Mapper {
                 .worstCell(worstCell)
                 .build();
     }
+
+    // ================ CELL ==========================
+
+    public CellDto cellToDto(Cell cell){
+        return new CellDto(
+                cell.getCellName(),
+                cell.getNodeName(),
+                cell.getRat().getName(),
+                cell.getSite().getSiteCode(),
+                cell.getBand().getName()
+        );
+    }
 }
