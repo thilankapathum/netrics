@@ -405,6 +405,11 @@ public class KpiDayServiceImpl implements KpiDayService {
         return kpiDayRepository.getCellNamesByTimestamps(timestamp, preTimestamp, rat.getId(), granularity.getId());
     }
 
+    @Override
+    public List<CellDto> getCellsByTimestamp(LocalDateTime timestamp, LocalDateTime preTimestamp, Rat rat, Granularity granularity) {
+        return kpiDayRepository.getCellsByTimestamp(timestamp,preTimestamp, rat.getId(), granularity.getId());
+    }
+
 
     // ------------------------------ WORST-CELLS END ------------------------------------------------------------------
 

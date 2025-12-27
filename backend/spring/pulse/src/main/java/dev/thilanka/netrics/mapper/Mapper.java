@@ -257,7 +257,7 @@ public class Mapper {
                 .build();
     }
 
-    public WorstCellSaveDto toWorstCellSaveDto(WorstCell worstCell){
+    public WorstCellSaveDto toWorstCellSaveDto(WorstCell worstCell) {
 
         int isImproved = 0;
         if (worstCell.isImproved()) isImproved = 1;
@@ -279,7 +279,7 @@ public class Mapper {
 
 //    =========== USER =======================
 
-    public UserDto userToDto(User user){
+    public UserDto userToDto(User user) {
         return new UserDto(
                 user.getUserId(),
                 user.getFirstName(),
@@ -291,7 +291,7 @@ public class Mapper {
 
 //    ================ WORST CELL COMMENT ===============
 
-    public WorstCellCommentDto worstCellCommentToDto(WorstCellComment worstCellComment){
+    public WorstCellCommentDto worstCellCommentToDto(WorstCellComment worstCellComment) {
         return new WorstCellCommentDto(worstCellComment.getId(),
                 worstCellComment.getComment(),
                 worstCellComment.getWorstCell().getId(),
@@ -301,9 +301,9 @@ public class Mapper {
                 worstCellComment.getLastModifiedBy());
     }
 
-    public WorstCellComment dtoToWorstCellComment(WorstCellCommentDto dto){
+    public WorstCellComment dtoToWorstCellComment(WorstCellCommentDto dto) {
         WorstCell worstCell = worstCellRepository.findById(dto.worstCellId())
-                .orElseThrow(()-> new RuntimeException("Worst cell not found by ID: " + dto.worstCellId()));
+                .orElseThrow(() -> new RuntimeException("Worst cell not found by ID: " + dto.worstCellId()));
 
         return WorstCellComment.builder()
                 .comment(dto.comment())
@@ -313,13 +313,13 @@ public class Mapper {
 
     // ================ CELL ==========================
 
-    public CellDto cellToDto(Cell cell){
+    public CellDto cellToDto(Cell cell) {
         return new CellDto(
                 cell.getCellName(),
                 cell.getNodeName(),
-                cell.getRat().getName(),
-                cell.getSite().getSiteCode(),
-                cell.getBand().getName()
+                cell.getRat() != null ? cell.getRat().getName() : null,
+                cell.getSite() != null ? cell.getSite().getSiteCode() : null,
+                cell.getBand() != null ? cell.getBand().getName() : null
         );
     }
 }

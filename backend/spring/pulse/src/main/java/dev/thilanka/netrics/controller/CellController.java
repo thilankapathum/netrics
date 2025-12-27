@@ -33,4 +33,16 @@ public class CellController {
         CellDto dto = cellService.getByCellName(cellName);
         return ResponseEntity.ok(dto);
     }
+
+    @PutMapping
+    public ResponseEntity<CellDto> updateCell(@RequestBody @Valid CellDto dto){
+        CellDto updatedDto = cellService.updateCell(dto);
+        return new ResponseEntity<>(updatedDto,HttpStatus.CREATED);
+    }
+
+    @PutMapping("list")
+    public ResponseEntity<List<CellDto>> updateCells(@RequestBody @Valid List<CellDto> dtos){
+        List<CellDto> updatedDtos = cellService.updateCells(dtos);
+        return new ResponseEntity<>(updatedDtos,HttpStatus.CREATED);
+    }
 }

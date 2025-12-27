@@ -1,9 +1,6 @@
 package dev.thilanka.netrics.repository;
 
-import dev.thilanka.netrics.dto.CellNameDto;
-import dev.thilanka.netrics.dto.WorstCellSaveDto;
-import dev.thilanka.netrics.dto.KpiSnapshotDto;
-import dev.thilanka.netrics.dto.WorstCellsDto;
+import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.KpiDay;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -808,4 +805,28 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             GROUP BY l.cell_name, r.name, r.label
             """, nativeQuery = true)
     List<CellNameDto> getCellNamesByTimestamps(@Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("ratId")Long ratId, @Param("granularityId")Long granularityId);
+
+
+    @Query(value = """
+            SELECT l.cell_name,
+            		null AS node_name,
+            	   r.name  AS rat_name,
+            	   s.site_code As site_code,
+            	   b.name AS band_name
+            FROM lte_fdd_kpi_day l
+            JOIN rat r ON r.id = l.rat_id
+            LEFT JOIN cells c ON l.cell_name = c.cell_name
+            LEFT JOIN bands b ON c.band_id = b.id
+            LEFT JOIN sites s ON c.site_id = s.id
+            WHERE l.timestamp BETWEEN :preTimestamp AND :timestamp
+                AND l.rat_id = :ratId
+            	AND l.granularity_id = :granularityId
+            GROUP BY l.cell_name, r.name, r.label,s.site_code, b.name
+            """, nativeQuery = true)
+    List<CellDto> getCellsByTimestamp(
+            @Param("timestamp") LocalDateTime timestamp,
+            @Param("preTimestamp") LocalDateTime preTimestamp,
+            @Param("ratId")Long ratId,
+            @Param("granularityId")Long granularityId
+    );
 }

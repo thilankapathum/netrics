@@ -18,17 +18,18 @@ public class Cell {
 
     @Column(unique = true, nullable = false)
     private String cellName;
+    @Column(nullable = true)
     private String nodeName;
 
     @ManyToOne
-    @JoinColumn(name = "rat_id")
+    @JoinColumn(name = "rat_id", nullable = true)
     private Rat rat;
 
     @ManyToOne
-    @JoinColumn(name = "site_id")
+    @JoinColumn(name = "site_id", nullable = true)
     private Site site;
 
     @ManyToOne
-    @JoinColumn(name = "band_id")
+    @JoinColumn(name = "band_id", nullable = true)
     private Band band;
 }

@@ -1,10 +1,13 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.CellNameDto;
+import dev.thilanka.netrics.entity.Cell;
 import dev.thilanka.netrics.entity.CellName;
 import dev.thilanka.netrics.repository.CellNameRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.CellNameService;
+import dev.thilanka.netrics.service.CellService;
 import dev.thilanka.netrics.service.DateService;
 import dev.thilanka.netrics.service.KpiDayService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ public class CellNameServiceImpl implements CellNameService {
     private final KpiDayService kpiDayService;
     private final CellNameRepository cellNameRepository;
     private final DateService dateService;
+    private final CellService cellService;
 
     List<CellNameDto> cellNames = new ArrayList<>();
 
@@ -57,6 +61,12 @@ public class CellNameServiceImpl implements CellNameService {
                 .map(cn -> new CellNameDto(cn.getCellName(), cn.getRatName(), cn.getRatLabel()))
                 .collect(Collectors.toList());
         System.out.println("LOADED " + this.cellNames.size() + " CELLS TO MEMORY!");
+
+        System.out.println("[" + ratName + " - " + granularityName + "] Creating Cells...");
+        List<CellDto> cellDtos = cellService.createLatestCells(ratName, granularityName);
+        System.out.println("[" + granularityName + " - " + ratName + "] created " + cellDtos.size() + " Cells");
+
+
         return CompletableFuture.completedFuture(this.cellNames.size());
     }
 
