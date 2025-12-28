@@ -1,7 +1,9 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.entity.*;
+import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.CellRepository;
 import dev.thilanka.netrics.service.*;
@@ -34,30 +36,8 @@ public class CellServiceImpl implements CellService {
 
     @Override
     public CellDto createCell(CellDto dto) {
-//        Cell.CellBuilder cell = Cell.builder().cellName(dto.cellName());
-//
-//        if (dto.nodeName() != null) {
-//            cell.nodeName(dto.nodeName());
-//        }
-//
-//        if (dto.ratName() != null) {
-//            Rat rat = ratService.findRatByName(dto.ratName());
-//            cell.rat(rat);
-//        }
-//
-//        if (dto.siteCode() != null) {
-//            Site site = siteService.findBySiteCode(dto.siteCode());
-//            cell.site(site);
-//        }
-//
-//        if (dto.bandName() != null) {
-//            Band band = bandService.findByName(dto.bandName());
-//            cell.band(band);
-//        }
-
         Cell savedCell = createCell(dtoToCell(dto));
         return mapper.cellToDto(savedCell);
-
     }
 
     private Cell dtoToCell(CellDto dto) {
@@ -90,19 +70,27 @@ public class CellServiceImpl implements CellService {
 
         List<CellDto> savedDtos = new ArrayList<>();
         int duplicateCells = 0;
+        int failedCells = 0;
 
         for (CellDto dto : dtos) {
             Optional<Cell> cell = cellRepository.findByCellName(dto.cellName());
             if (cell.isPresent()) {
                 duplicateCells++;
             } else {
-                CellDto savedDto = createCell(dto);
-                savedDtos.add(savedDto);
+
+                try {
+                    CellDto savedDto = createCell(dto);
+                    savedDtos.add(savedDto);
+                } catch (Exception e) {
+                    failedCells++;
+                    System.out.println("failed saving cell. " + e.getMessage());
+                }
             }
         }
 
         System.out.print("Saved " + savedDtos.size() + "/" + dtos.size() + " cells. ");
         if (duplicateCells > 0) System.out.println("Duplicate cells " + duplicateCells + "/" + dtos.size() + " found.");
+        if (failedCells > 0) System.out.println("Failed saving " + failedCells + "/" + dtos.size() + " cells.");
         System.out.println(" ");
         return savedDtos;
     }
@@ -127,11 +115,32 @@ public class CellServiceImpl implements CellService {
         List<CellDto> updatedCells = new ArrayList<>();
 
         for (CellDto dto : dtos) {
-            CellDto updatedCell = updateCell(dto);
-            updatedCells.add(updatedCell);
+            try {
+                CellDto updatedCell = updateCell(dto);
+                updatedCells.add(updatedCell);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error updating cell due to: " + e.getMessage());
+            }
         }
 
         return updatedCells;
+    }
+
+    @Override
+    public List<CellCsvImportResultDto> updateCellsWithResult(List<CellDto> dtos) {
+        List<CellCsvImportResultDto> importResultDtos = new ArrayList<>();
+
+        for (CellDto dto : dtos) {
+            try {
+                CellDto updatedCell = updateCell(dto);
+                importResultDtos.add(new CellCsvImportResultDto(updatedCell, CsvImportStatus.SUCCESS, ""));
+            } catch (Exception e) {
+                System.out.println(dto.cellName() + " Error: " + e.getMessage());
+                importResultDtos.add(new CellCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
+            }
+        }
+        return importResultDtos;
     }
 
     @Override

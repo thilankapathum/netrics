@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service;
 
+import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.entity.Cell;
 
@@ -19,6 +20,8 @@ public interface CellService {
     CellDto updateCell(CellDto dto);
 
     List<CellDto> updateCells(List<CellDto> dtos);
+
+    List<CellCsvImportResultDto> updateCellsWithResult(List<CellDto> dtos);
 
     Cell findByCellName(String cellName);
 

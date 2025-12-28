@@ -1,4 +1,4 @@
-package dev.thilanka.netrics.entity;
+package dev.thilanka.netrics.entity.enums;
 
 public enum Aggregation {
     AVG,
