@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { CellService } from './cell-service';
+import { BandService } from './band-service';
 
-describe('CellService', () => {
-  let service: CellService;
+describe('BandService', () => {
+  let service: BandService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(CellService);
+    service = TestBed.inject(BandService);
   });
 
   it('should be created', () => {

@@ -188,8 +188,7 @@ export class CellAnalysis implements OnInit {
             seriesForCell.forEach(s => {
               if (!this.cellColorMap[s.cellName]) {
                 const usedColors = Object.values(this.cellColorMap);
-                const availableColor = this.colorPalette.find(c => !usedColors.includes(c)) ?? '#000000';
-                this.cellColorMap[s.cellName] = availableColor;
+                this.cellColorMap[s.cellName] = this.colorPalette.find(c => !usedColors.includes(c)) ?? '#000000';
               }
               s.color = this.cellColorMap[s.cellName];
             });
@@ -212,7 +211,7 @@ export class CellAnalysis implements OnInit {
           // this.addCellToChart(this.kpiTrendData());
 
           this.loadingTrendData.set(false);
-          console.log(this.chartSeries());
+          // console.log(this.chartSeries());
         } else {
           console.error(`KPI trend data unavailable for the cell ${cellName}`);
           this.alertService.error(`KPI trend data unavailable for ${cellName}`);

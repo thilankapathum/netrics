@@ -26,6 +26,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     private final CellNameService cellNameService;
     private final DateService dateService;
     private final CacheWarmupAsyncService cacheWarmupAsyncService;
+    private final CellService cellService;
 
 
     @Override
@@ -73,10 +74,12 @@ public class CacheWarmupImpl implements CacheWarmup {
             redisTemplate.delete(keys);
             System.out.println("[" + ratName + " - " + granularityName + "] Evicted " + keys.size() + " cache entries!");
             cellNameService.reloadCells(ratName, granularityName);
+            cellService.findCellCountWithMissingInfo();
             return keys.size();
         } else {
             System.out.println("[" + ratName + " - " + granularityName + "] No cache entries found!");
             cellNameService.reloadCells(ratName, granularityName);
+            cellService.findCellCountWithMissingInfo();
             return 0;
         }
     }

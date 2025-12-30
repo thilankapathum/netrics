@@ -34,4 +34,8 @@ public interface CellService {
     List<Cell> findCellsWithMissingInfo();
 
     List<CellDto> getCellsWithMissingInfo();
+
+    Integer findCellCountWithMissingInfo();
+
+    Integer getCellCountWithMissingInfo();
 }

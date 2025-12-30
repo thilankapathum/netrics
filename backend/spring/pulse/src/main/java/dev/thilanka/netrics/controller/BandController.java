@@ -38,4 +38,9 @@ public class BandController {
     public ResponseEntity<BandDto> getByName(@PathVariable("name") String name){
         return ResponseEntity.ok(bandService.getByName(name));
     }
+
+    @GetMapping("rat")
+    public ResponseEntity<List<BandDto>> getByRatName(@RequestParam("ratName")String ratName){
+        return ResponseEntity.ok(bandService.getBandsByRat(ratName));
+    }
 }

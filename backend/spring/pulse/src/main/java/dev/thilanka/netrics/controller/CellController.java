@@ -74,4 +74,10 @@ public class CellController {
         csvService.writeCellImportResultToCsv(results, response.getWriter());
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
+
+    @GetMapping("missing/count")
+    public ResponseEntity<Integer> getCellCountWithMissingInfo(){
+        Integer count = cellService.getCellCountWithMissingInfo();
+        return ResponseEntity.ok(count);
+    }
 }

@@ -21,4 +21,6 @@ public interface BandService {
     Band findByName(String name);
 
     BandDto getByName(String name);
+
+    List<BandDto> getBandsByRat(String ratName);
 }

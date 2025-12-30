@@ -2,8 +2,10 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.BandDto;
 import dev.thilanka.netrics.entity.Band;
+import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.repository.BandRepository;
 import dev.thilanka.netrics.service.BandService;
+import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BandServiceImpl implements BandService {
     private final BandRepository bandRepository;
+    private final RatService ratService;
 
     @Override
     public Band createBand(Band band) {
@@ -84,5 +87,15 @@ public class BandServiceImpl implements BandService {
                 band.getNumber(),
                 band.getUnit()
         );
+    }
+
+    @Override
+    public List<BandDto> getBandsByRat(String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+
+        List<Band> bands = bandRepository.findBandsByRat(rat.getId());
+
+        return bands.stream().map(b -> new BandDto(b.getName(),b.getNumber(),b.getUnit()))
+                .collect(Collectors.toList());
     }
 }

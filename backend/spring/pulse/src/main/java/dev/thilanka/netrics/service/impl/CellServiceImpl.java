@@ -29,6 +29,8 @@ public class CellServiceImpl implements CellService {
     private final KpiDayService kpiDayService;
     private final DateService dateService;
 
+    Integer cellCountWithMissingInfo = 0;
+
     @Override
     public Cell createCell(Cell cell) {
         return cellRepository.save(cell);
@@ -183,5 +185,16 @@ public class CellServiceImpl implements CellService {
     public List<CellDto> getCellsWithMissingInfo() {
         List<Cell> cells = findCellsWithMissingInfo();
         return cells.stream().map(mapper::cellToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public Integer findCellCountWithMissingInfo() {
+        this.cellCountWithMissingInfo = cellRepository.findCellCountWithMissingInfo();
+        return this.cellCountWithMissingInfo;
+    }
+
+    @Override
+    public Integer getCellCountWithMissingInfo() {
+        return this.cellCountWithMissingInfo;
     }
 }

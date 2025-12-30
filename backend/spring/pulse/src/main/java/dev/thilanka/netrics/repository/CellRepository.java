@@ -21,4 +21,15 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
             	OR rat_id IS NULL
             """, nativeQuery = true)
     List<Cell> findCellsWithMissingInfo();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM cells
+            WHERE
+            	site_id IS NULL
+            	OR node_name IS NULL
+            	OR band_id IS NULL
+            	OR rat_id IS NULL
+            """, nativeQuery = true)
+    Integer findCellCountWithMissingInfo();
 }

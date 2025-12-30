@@ -53,7 +53,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 //                consoleProgress.setBasicKpiCompletedMap(ratName, consoleProgress.getBasicKpiCompletedMap().get(ratName) + 1);
                 for (DistrictDto district : districts) {
                     try {
-                        kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), ratName, granularityName);
+//                        kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), ratName, granularityName);
                     } catch (Exception e) {
                         System.out.println("[" + ratName + " - " + granularityName + "] Error warming cache for: " + dto.kpiName() + "-" + period + "-" + district.name());
                     }
@@ -96,7 +96,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 //            consoleProgress.setKpiTrendCompletedMap(ratName, consoleProgress.getKpiTrendCompletedMap().get(ratName) + 1);
             for (DistrictDto district : districts) {
                 try {
-                    kpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), ratName, granularityName);
+//                    kpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), ratName, granularityName);
                 } catch (Exception e) {
                     System.out.println("[" + ratName + " - " + granularityName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName() + "-" + district.name());
                 }
@@ -140,7 +140,7 @@ public class CacheWarmupAsyncServiceImpl implements CacheWarmupAsyncService {
 
             for (DistrictDto district : districts) {
                 try {
-                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", false, district.name(), ratName, granularityName);
+//                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", false, district.name(), ratName, granularityName);
                 } catch (Exception e) {
                     System.out.println("[" + ratName + " - " + granularityName + "] Error while warming up worst cells cache : " + standardKpi.kpiName() + "-" + district.name());
                 }
