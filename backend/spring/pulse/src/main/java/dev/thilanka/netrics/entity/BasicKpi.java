@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "lte_fdd_basic_kpi",
+@Table(name = "basic_kpi",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"kpi_name", "label", "rat_id"})})
 public class BasicKpi {
 

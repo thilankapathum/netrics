@@ -31,7 +31,7 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
     @Query(value = """
             SELECT worst_cells.id id, cell_name, sk.kpi_name kpi_name, sk.label kpi_label, worst_cells.unit unit, value, previous_value, difference, improved
             FROM public.worst_cells
-            LEFT JOIN public.lte_fdd_standard_kpi sk ON standard_kpi_id = sk.id
+            LEFT JOIN public.standard_kpi sk ON standard_kpi_id = sk.id
             WHERE period = :period
             	AND timestamp = :timestamp
             	AND worst_cells.rat_id = :ratId
@@ -62,12 +62,12 @@ public interface WorstCellRepository extends JpaRepository<WorstCell, Long> {
             		ELSE false
             	END AS latest_improved
             FROM public.worst_cells
-            LEFT JOIN public.lte_fdd_standard_kpi sk
+            LEFT JOIN public.standard_kpi sk
                 ON worst_cells.standard_kpi_id = sk.id
-            LEFT JOIN public.lte_fdd_kpi_day kd
+            LEFT JOIN public.kpi_values kd
                 ON kd.cell_name = worst_cells.cell_name
                 AND kd.timestamp BETWEEN :latestDateStart AND :latestDate
-                AND kd.lte_fdd_standard_kpi_id = worst_cells.standard_kpi_id
+                AND kd.standard_kpi_id = worst_cells.standard_kpi_id
                 AND kd.rat_id = worst_cells.rat_id
                 AND kd.granularity_id = :granularityId
             WHERE worst_cells.period = :period

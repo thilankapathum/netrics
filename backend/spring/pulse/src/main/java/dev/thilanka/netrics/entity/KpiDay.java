@@ -14,17 +14,17 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "lte_fdd_kpi_day",
+@Table(name = "kpi_values",
         indexes = {
                 @Index(
                         name = "idx_kpiday_std_rat_time",
-                        columnList = "lte_fdd_standard_kpi_id, rat_id, timestamp"
+                        columnList = "standard_kpi_id, rat_id, timestamp"
                 ),
                 @Index(
                         name = "idx_kpiday_granularity_id",
                         columnList = "granularity_id"
                 )},
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","lte_fdd_standard_kpi_id", "oss_id","rat_id","granularity_id"})})
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","standard_kpi_id", "oss_id","rat_id","granularity_id"})})
 public class KpiDay {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +41,7 @@ public class KpiDay {
     private String fileName;
 
     @ManyToOne
-    @JoinColumn(name = "lte_fdd_standard_kpi_id")
+    @JoinColumn(name = "standard_kpi_id")
     private StandardKpi standardKpi;
 
     @ManyToOne
