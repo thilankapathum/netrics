@@ -37,5 +37,7 @@ public interface CellService {
 
     Integer findCellCountWithMissingInfo();
 
+    Integer reloadCellCountWithMissingInfo();
+
     Integer getCellCountWithMissingInfo();
 }

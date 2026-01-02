@@ -194,6 +194,11 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    public Integer reloadCellCountWithMissingInfo() {
+        return findCellCountWithMissingInfo();
+    }
+
+    @Override
     public Integer getCellCountWithMissingInfo() {
         return this.cellCountWithMissingInfo;
     }

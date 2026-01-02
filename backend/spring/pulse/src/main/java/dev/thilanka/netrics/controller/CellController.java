@@ -68,6 +68,7 @@ public class CellController {
     public ResponseEntity importCellsWithCorrectedInfo(@RequestParam("file") MultipartFile file, HttpServletResponse response) throws IOException {
         List<CellDto> importedCellDtos = csvService.readCellsFromCsv(file.getInputStream());
         List<CellCsvImportResultDto> results = cellService.updateCellsWithResult(importedCellDtos);
+        cellService.reloadCellCountWithMissingInfo();
 
         response.setContentType("text/csv");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = cell_import_result.csv");
@@ -78,6 +79,12 @@ public class CellController {
     @GetMapping("missing/count")
     public ResponseEntity<Integer> getCellCountWithMissingInfo(){
         Integer count = cellService.getCellCountWithMissingInfo();
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("missing/reload-count")
+    public ResponseEntity<Integer> reloadCellCountWithMissingInfo(){
+        Integer count = cellService.reloadCellCountWithMissingInfo();
         return ResponseEntity.ok(count);
     }
 }

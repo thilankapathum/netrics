@@ -239,7 +239,7 @@
           <div class="skeleton h-64 w-full"></div>
         </div>
         <app-line-chart [hidden]="loadingKpiTrend || bandWise" [kpiTrendData]="kpiTrendData"></app-line-chart>
-        <app-linechart [hidden]="loadingKpiTrend || !bandWise" [chartSeries]="bandChartSeries()"></app-linechart>
+        <app-linechart [hidden]="loadingKpiTrend || !bandWise" [chartSeries]="bandChartSeries()" [chartHeight]="215"></app-linechart>
       </section>
 
 
@@ -324,13 +324,12 @@
                        class="checkbox checkbox-sm"/>
                 Band-wise
               </label>
-              <div>
-                <form [hidden]="!bandWise">
-                  @for (band of bands; track $index){
-                    <input class="btn btn-xs" type="checkbox" name="bands" [attr.aria-label]="band.name"/>
-                  }
-                  <input class="btn btn-xs" type="reset" value="×"/>
-                </form>
+
+              <div class="filter" [hidden]="!bandWise">
+                <input class="btn btn-xs filter-reset" (change)="selectBand('')" type="radio" name="bands" aria-label="All"/>
+                @for (band of bands; track $index){
+                  <input class="btn btn-xs" [(ngModel)]="selectedBand" [value]="band.name" (change)="selectBand(band.name!)" type="radio" name="bands" [attr.aria-label]="band.name"/>
+                }
               </div>
 
             </div>

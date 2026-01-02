@@ -39,8 +39,12 @@ public class SiteServiceImpl implements SiteService {
         List<SiteDto> savedDtos = new ArrayList<>();
 
         for (SiteDto dto: dtos){
-            SiteDto savedDto = createSite(dto);
-            savedDtos.add(savedDto);
+            try {
+                SiteDto savedDto = createSite(dto);
+                savedDtos.add(savedDto);
+            } catch (Exception e){
+                System.out.println("Error creating site: " + e.getMessage());
+            }
         }
 
         return savedDtos;

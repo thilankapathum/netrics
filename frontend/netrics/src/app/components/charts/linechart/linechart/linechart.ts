@@ -34,6 +34,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
 
   @ViewChild("chart") chart!: ChartComponent;
   @Input() chartSeries: any;
+  @Input() chartHeight: number = 300;
   public chartOptions: Partial<ChartOptions> = {};
 
   public showChart:boolean = true;
@@ -98,7 +99,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
       chart: {
         fontFamily: 'Inter',
         type: 'line',
-        height: 300,
+        height: this.chartHeight,
         width: '100%',
         animations: {
           enabled: true,
@@ -225,7 +226,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
         ...this.chartOptions,
         background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)',
         type: 'line',
-        height: 300,
+        height: this.chartHeight,
         width: '100%',
         animations: {
           enabled: true,
