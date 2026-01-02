@@ -187,7 +187,7 @@ class KPIProcessor:
             logger.info(f"Loaded {len(self.rats)} RATs: {[r['name'] for r in self.rats.values()]}")
 
             # Load standard KPIs
-            cursor.execute("SELECT id, kpi_name, unit, type, worst_order, threshold, rat_id FROM lte_fdd_standard_kpi")
+            cursor.execute("SELECT id, kpi_name, unit, type, worst_order, threshold, rat_id FROM standard_kpi")
             for kpi in cursor.fetchall():
                 rat_id = kpi['rat_id']
                 if rat_id not in self.standard_kpis:
@@ -202,10 +202,10 @@ class KPIProcessor:
                 SELECT m.id, m.standard_kpi_id, m.numerator_id, m.denominator_id, m.rat_id,
                        s.kpi_name as standard_kpi_name, n.kpi_name as numerator_kpi_name,
                        d.kpi_name as denominator_kpi_name
-                FROM lte_fdd_standard_raw_kpi_mapping m
-                JOIN lte_fdd_standard_kpi s ON m.standard_kpi_id = s.id
-                LEFT JOIN lte_fdd_standard_kpi n ON m.numerator_id = n.id
-                LEFT JOIN lte_fdd_standard_kpi d ON m.denominator_id = d.id
+                FROM standard_raw_kpi_mapping m
+                JOIN standard_kpi s ON m.standard_kpi_id = s.id
+                LEFT JOIN standard_kpi n ON m.numerator_id = n.id
+                LEFT JOIN standard_kpi d ON m.denominator_id = d.id
             """)
             for mapping in cursor.fetchall():
                 rat_id = mapping['rat_id']
@@ -230,11 +230,11 @@ class KPIProcessor:
 
             # Load KPI mappings
             cursor.execute("""
-                SELECT m.id, m.lte_fdd_standard_kpi_id, m.oss_kpi_name, m.oss_id,
+                SELECT m.id, m.standard_kpi_id, m.oss_kpi_name, m.oss_id,
                        m.multiplication_factor, m.rat_id, s.kpi_name as standard_kpi_name,
                        o.identifier as oss_identifier
-                FROM lte_fdd_kpi_mapping m
-                JOIN lte_fdd_standard_kpi s ON m.lte_fdd_standard_kpi_id = s.id
+                FROM kpi_mapping m
+                JOIN standard_kpi s ON m.standard_kpi_id = s.id
                 JOIN oss o ON m.oss_id = o.id
             """)
             for mapping in cursor.fetchall():
@@ -246,7 +246,7 @@ class KPIProcessor:
                     'standard_kpi_name': mapping['standard_kpi_name'],
                     'multiplication_factor': mapping['multiplication_factor'],
                     'oss_id': mapping['oss_id'],
-                    'lte_fdd_standard_kpi_id': mapping['lte_fdd_standard_kpi_id']
+                    'standard_kpi_id': mapping['standard_kpi_id']
                 }
                 self.kpi_mappings[rat_id][mapping['oss_kpi_name']] = mapping['standard_kpi_name']
 
@@ -291,12 +291,12 @@ class KPIProcessor:
             cursor = connection.cursor()
 
             create_table_query = """
-            CREATE TABLE IF NOT EXISTS lte_fdd_kpi_day (
+            CREATE TABLE IF NOT EXISTS kpi_values (
                 id BIGSERIAL PRIMARY KEY,
                 timestamp TIMESTAMP NOT NULL,
                 cell_name VARCHAR(31),
                 site_name VARCHAR(63),
-                lte_fdd_standard_kpi_id BIGINT,
+                standard_kpi_id BIGINT,
                 kpi_value DECIMAL(15,3),
                 data_type VARCHAR(20) CHECK (data_type IN ('percentage', 'integer', 'decimal')) DEFAULT 'decimal',
                 oss_id BIGINT,
@@ -314,12 +314,12 @@ class KPIProcessor:
             cursor.execute(create_table_query)
 
             indexes = [
-                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_timestamp ON lte_fdd_kpi_day(timestamp)",
-                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_cell_name ON lte_fdd_kpi_day(cell_name)",
-                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_oss_id ON lte_fdd_kpi_day(oss_id)",
-                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_district_code_id ON lte_fdd_kpi_day(district_code_id)",
-                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_rat_id ON lte_fdd_kpi_day(rat_id)",
-                "CREATE INDEX IF NOT EXISTS idx_lte_fdd_kpi_day_granularity_id ON lte_fdd_kpi_day(granularity_id)"
+                "CREATE INDEX IF NOT EXISTS idx_kpi_values_timestamp ON kpi_values(timestamp)",
+                "CREATE INDEX IF NOT EXISTS idx_kpi_values_cell_name ON kpi_values(cell_name)",
+                "CREATE INDEX IF NOT EXISTS idx_kpi_values_oss_id ON kpi_values(oss_id)",
+                "CREATE INDEX IF NOT EXISTS idx_kpi_values_district_code_id ON kpi_values(district_code_id)",
+                "CREATE INDEX IF NOT EXISTS idx_kpi_values_rat_id ON kpi_values(rat_id)",
+                "CREATE INDEX IF NOT EXISTS idx_kpi_values_granularity_id ON kpi_values(granularity_id)"
             ]
 
             for index_query in indexes:
@@ -432,7 +432,7 @@ class KPIProcessor:
                     return {
                         'standard_kpi_name': standard_kpi_name,
                         'multiplication_factor': 1.0,
-                        'lte_fdd_standard_kpi_id': self.standard_kpis[rat_id][standard_kpi_name]['id']
+                        'standard_kpi_id': self.standard_kpis[rat_id][standard_kpi_name]['id']
                     }
         return None
 
@@ -451,7 +451,7 @@ class KPIProcessor:
     def standardize_identifier_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize cell and site identifier columns"""
         cell_columns = ['Cell Name', 'Cell_Name', 'CellName', 'cell_name', 'E-UTRAN FDD Cell Name',
-                        'E-UTRAN\xa0FDD\xa0Cell Name', 'BTS NAME']
+                        'E-UTRAN\xa0FDD\xa0Cell Name', 'BTS NAME', 'CU cell configuration Name']
         enodeb_columns = ['eNodeB name', 'eNodeB_name', 'eNodeBName', 'enodeb_name', 'Managed Element',
                           'ManagedElement Name', 'Managed\xa0Element', 'SITE Name', 'Site Name', 'eNodeB Name']
 
@@ -587,7 +587,7 @@ class KPIProcessor:
                         'timestamp': row.get('timestamp'),
                         'cell_name': row.get('cell_name'),
                         'site_name': row.get('site_name'),
-                        'lte_fdd_standard_kpi_id': mapping_info.get('lte_fdd_standard_kpi_id'),
+                        'standard_kpi_id': mapping_info.get('standard_kpi_id'),
                         'standard_kpi_name': standard_kpi_name,
                         'kpi_value': cleaned_value,
                         'data_type': self.determine_data_type(row[col], standard_kpi_name, rat_id),
@@ -680,8 +680,8 @@ class KPIProcessor:
 
             # SQL query
             insert_query = """
-            INSERT INTO lte_fdd_kpi_day 
-            (timestamp, cell_name, site_name, lte_fdd_standard_kpi_id, 
+            INSERT INTO kpi_values
+            (timestamp, cell_name, site_name, standard_kpi_id,
              kpi_value, data_type, oss_id, file_name, 
              numerator_kpi_id, numerator_kpi_value, 
              denominator_kpi_id, denominator_kpi_value, district_code_id, rat_id, granularity_id)
@@ -701,7 +701,7 @@ class KPIProcessor:
                         row.get('timestamp'),
                         row.get('cell_name'),
                         row.get('site_name'),
-                        row.get('lte_fdd_standard_kpi_id'),
+                        row.get('standard_kpi_id'),
                         row.get('kpi_value'),
                         row.get('data_type'),
                         row.get('oss_id'),
