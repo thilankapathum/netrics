@@ -23,7 +23,7 @@ public class KpiMappingToOss {
     private Oss oss;
 
     @ManyToOne
-    @JoinColumn(name = "lteFddStandardKpi_id")
+    @JoinColumn(name = "standard_kpi_id")
     private StandardKpi standardKpi;
 
     @ManyToOne
