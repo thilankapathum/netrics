@@ -21,7 +21,7 @@ public interface BandRepository extends JpaRepository<Band, Long> {
                 SELECT 1
                 FROM cells c
                 WHERE c.band_id = b.id
-                  AND c.rat_id = 1
+                  AND c.rat_id = :ratId
             );
             """, nativeQuery = true)
     List<Band> findBandsByRat(@Param("ratId") Long ratId);

@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,36 +25,42 @@ public class CellController {
     private final CellService cellService;
     private final CsvService csvService;
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping
     public ResponseEntity<CellDto> createCell(@RequestBody @Valid CellDto dto) {
         CellDto savedDto = cellService.createCell(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("list")
     public ResponseEntity<List<CellDto>> createCells(@RequestBody @Valid List<CellDto> dtos) {
         List<CellDto> savedDtos = cellService.createCells(dtos);
         return new ResponseEntity<>(savedDtos, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
     public ResponseEntity<CellDto> getCellByName(@RequestParam("cellName") String cellName) {
         CellDto dto = cellService.getByCellName(cellName);
         return ResponseEntity.ok(dto);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PutMapping
     public ResponseEntity<CellDto> updateCell(@RequestBody @Valid CellDto dto) {
         CellDto updatedDto = cellService.updateCell(dto);
         return new ResponseEntity<>(updatedDto, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PutMapping("list")
     public ResponseEntity<List<CellDto>> updateCells(@RequestBody @Valid List<CellDto> dtos) {
         List<CellDto> updatedDtos = cellService.updateCells(dtos);
         return new ResponseEntity<>(updatedDtos, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @GetMapping("missing/export")
     public void exportCellsWithMissingInfo(HttpServletResponse response) throws IOException {
         response.setContentType("text/csv");
@@ -64,6 +71,7 @@ public class CellController {
         csvService.writeCellsToCsv(cellDtos, response.getWriter());
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping(value = "missing/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity importCellsWithCorrectedInfo(@RequestParam("file") MultipartFile file, HttpServletResponse response) throws IOException {
         List<CellDto> importedCellDtos = csvService.readCellsFromCsv(file.getInputStream());
@@ -76,12 +84,14 @@ public class CellController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("missing/count")
     public ResponseEntity<Integer> getCellCountWithMissingInfo(){
         Integer count = cellService.getCellCountWithMissingInfo();
         return ResponseEntity.ok(count);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("missing/reload-count")
     public ResponseEntity<Integer> reloadCellCountWithMissingInfo(){
         Integer count = cellService.reloadCellCountWithMissingInfo();

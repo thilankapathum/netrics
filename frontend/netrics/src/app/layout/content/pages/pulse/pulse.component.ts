@@ -290,20 +290,41 @@ export class PulseComponent implements OnInit {
 
   }
 
-  setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): void {
+  async setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): Promise<void> {
     this.selectedRat.set(rat);
     this.queryDateRanges();
 
     switch (rat) {
       case "ltefdd":
+        this.bands = [];
+        try {
+          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
+        } catch (e) {
+          console.error('error retrieving bands', e);
+          this.alertService.error('Error retrieving Bands')
+        }
         this.getBasicKpi("ltefdd");
         this.getAllStandardKpi("ltefdd");
         break;
       case "ltetdd":
+        this.bands = [];
+        try {
+          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
+        } catch (e) {
+          console.error('error retrieving bands', e);
+          this.alertService.error('Error retrieving Bands')
+        }
         this.getBasicKpi("ltetdd");
         this.getAllStandardKpi("ltetdd");
         break;
       case "nr":
+        this.bands = [];
+        try {
+          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
+        } catch (e) {
+          console.error('error retrieving bands', e);
+          this.alertService.error('Error retrieving Bands')
+        }
         this.getBasicKpi("nr");
         this.getAllStandardKpi("nr");
         break;
@@ -312,10 +333,24 @@ export class PulseComponent implements OnInit {
         this.getAllStandardKpi("umts");
         break;
       case "gsm":
+        this.bands = [];
+        try {
+          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
+        } catch (e) {
+          console.error('error retrieving bands', e);
+          this.alertService.error('Error retrieving Bands')
+        }
         this.getBasicKpi("gsm");
         this.getAllStandardKpi("gsm");
         break;
       default:
+        this.bands = [];
+        try {
+          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
+        } catch (e) {
+          console.error('error retrieving bands', e);
+          this.alertService.error('Error retrieving Bands')
+        }
         this.getBasicKpi("ltefdd");
         this.getAllStandardKpi("ltefdd");
     }

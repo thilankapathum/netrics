@@ -63,7 +63,7 @@ server:
   port: 8001
 
 app:
-  domain-ip: ${DOMAIN_IP:localhost}
+  domain-ip: ${DOMAIN_IP:netrics.local}
   frontend-port: ${FRONTEND_PORT:8000}
   realm-name: ${REALM_NAME:netrics}
   keycloak-host: ${KEYCLOAK_HOST:keycloak}

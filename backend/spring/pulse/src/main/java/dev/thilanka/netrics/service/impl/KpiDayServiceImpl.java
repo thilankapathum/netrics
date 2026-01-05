@@ -317,7 +317,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
-//    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")
+    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiAreaAndBand(String kpiName, String period, boolean excludeZeroes, int limit, String ratName, String areaName, String granularityName, String bandName) {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
@@ -429,7 +429,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
-//    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")
+    @Cacheable(value = "kpiTrend", key = "#standardKpiName + '_' + #period + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")
     public List<KpiTrendDto> getTrendByKpiAreaAndBand(String standardKpiName, String period, String areaName, String ratName, String granularityName, String bandName) {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
