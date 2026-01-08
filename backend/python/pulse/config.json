@@ -6,6 +6,9 @@
     "user": "${POSTGRES_USER}",
     "password": "${POSTGRES_PASSWORD}"
   },
-  "base_folder": "/app/day-average",
-  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-and-warmup"
+  "base_folders": {
+    "day-average": "/app/day-average",
+    "busy-hour": "/app/busy-hour"
+  },
+  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-rat-granularity"
 }

@@ -102,7 +102,7 @@ class KPIProcessor:
             logger.info("Loading standard KPIs from database...")
             cursor.execute("""
                 SELECT id, kpi_name, unit, type, worst_order, threshold 
-                FROM lte_fdd_standard_kpi
+                FROM standard_kpi
             """)
             standard_kpis_data = cursor.fetchall()
 
@@ -128,10 +128,10 @@ class KPIProcessor:
                     s.kpi_name as standard_kpi_name,
                     n.kpi_name as numerator_kpi_name,
                     d.kpi_name as denominator_kpi_name
-                FROM lte_fdd_standard_raw_kpi_mapping m
-                JOIN lte_fdd_standard_kpi s ON m.standard_kpi_id = s.id
-                LEFT JOIN lte_fdd_standard_kpi n ON m.numerator_id = n.id
-                LEFT JOIN lte_fdd_standard_kpi d ON m.denominator_id = d.id
+                FROM standard_raw_kpi_mapping m
+                JOIN standard_kpi s ON m.standard_kpi_id = s.id
+                LEFT JOIN standard_kpi n ON m.numerator_id = n.id
+                LEFT JOIN standard_kpi d ON m.denominator_id = d.id
             """)
             standard_mapping_data = cursor.fetchall()
 
@@ -174,14 +174,14 @@ class KPIProcessor:
             cursor.execute("""
                 SELECT 
                     m.id,
-                    m.lte_fdd_standard_kpi_id,
+                    m.standard_kpi_id,
                     m.oss_kpi_name,
                     m.oss_id,
                     m.multiplication_factor,
                     s.kpi_name as standard_kpi_name,
                     o.identifier as oss_identifier
-                FROM lte_fdd_kpi_mapping m
-                JOIN lte_fdd_standard_kpi s ON m.lte_fdd_standard_kpi_id = s.id
+                FROM kpi_mapping m
+                JOIN standard_kpi s ON m.standard_kpi_id = s.id
                 JOIN oss o ON m.oss_id = o.id
             """)
             mapping_data = cursor.fetchall()
@@ -193,7 +193,7 @@ class KPIProcessor:
                     'standard_kpi_name': mapping['standard_kpi_name'],
                     'multiplication_factor': mapping['multiplication_factor'],
                     'oss_id': mapping['oss_id'],
-                    'lte_fdd_standard_kpi_id': mapping['lte_fdd_standard_kpi_id']
+                    'standard_kpi_id': mapping['standard_kpi_id']
                 }
 
                 # Also create direct mapping for backward compatibility
@@ -218,12 +218,12 @@ class KPIProcessor:
 
             # Create unpivoted KPI table (updated schema with numerator/denominator columns)
             create_table_query = """
-            CREATE TABLE IF NOT EXISTS lte_fdd_kpi_day (
+            CREATE TABLE IF NOT EXISTS kpi_values (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
                 timestamp DATETIME NOT NULL,
                 cell_name VARCHAR(31),
                 site_name VARCHAR(63),
-                lte_fdd_standard_kpi_id BIGINT,
+                standard_kpi_id BIGINT,
                 kpi_value DECIMAL(15,3),
                 data_type ENUM('percentage', 'integer', 'decimal') DEFAULT 'decimal',
                 oss_id BIGINT,
@@ -236,9 +236,9 @@ class KPIProcessor:
                 INDEX idx_timestamp (timestamp),
                 INDEX idx_cell_name (cell_name),
                 INDEX idx_oss_id (oss_id),
-                FOREIGN KEY (lte_fdd_standard_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
-                FOREIGN KEY (numerator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
-                FOREIGN KEY (denominator_kpi_id) REFERENCES lte_fdd_standard_kpi(id),
+                FOREIGN KEY (standard_kpi_id) REFERENCES standard_kpi(id),
+                FOREIGN KEY (numerator_kpi_id) REFERENCES standard_kpi(id),
+                FOREIGN KEY (denominator_kpi_id) REFERENCES standard_kpi(id),
                 FOREIGN KEY (oss_id) REFERENCES oss(id)
             )
             """
@@ -359,7 +359,7 @@ class KPIProcessor:
                     return {
                         'standard_kpi_name': standard_kpi_name,
                         'multiplication_factor': 1.0,
-                        'lte_fdd_standard_kpi_id': self.standard_kpis[standard_kpi_name]['id']
+                        'standard_kpi_id': self.standard_kpis[standard_kpi_name]['id']
                     }
 
         return None
@@ -576,7 +576,7 @@ class KPIProcessor:
                         'timestamp': row.get('timestamp'),
                         'cell_name': row.get('cell_name'),
                         'site_name': row.get('site_name'),
-                        'lte_fdd_standard_kpi_id': mapping_info.get('lte_fdd_standard_kpi_id'),
+                        'standard_kpi_id': mapping_info.get('standard_kpi_id'),
                         'standard_kpi_name': standard_kpi_name,
                         'kpi_value': cleaned_value,
                         'data_type': data_type,
@@ -625,8 +625,8 @@ class KPIProcessor:
 
             # Prepare insert query with numerator/denominator columns
             insert_query = """
-            INSERT INTO lte_fdd_kpi_day 
-            (timestamp, cell_name, site_name, lte_fdd_standard_kpi_id, 
+            INSERT INTO kpi_values
+            (timestamp, cell_name, site_name, standard_kpi_id,
              kpi_value, data_type, oss_id, file_name, 
              numerator_kpi_id, numerator_kpi_value, 
              denominator_kpi_id, denominator_kpi_value)
@@ -640,7 +640,7 @@ class KPIProcessor:
                     row.get('timestamp'),
                     row.get('cell_name'),
                     row.get('site_name'),
-                    row.get('lte_fdd_standard_kpi_id'),
+                    row.get('standard_kpi_id'),
                     row.get('kpi_value'),
                     row.get('data_type'),
                     row.get('oss_id'),

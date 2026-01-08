@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.thilanka</groupId>
 	<artifactId>pulse</artifactId>
-	<version>0.0.4</version>
+	<version>0.1.1</version>
 	<name>pulse</name>
 	<description>Netrics Pulse</description>
 	<url/>
@@ -92,6 +92,12 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-csv -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.14.1</version>
+        </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

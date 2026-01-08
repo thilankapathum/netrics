@@ -25,5 +25,7 @@ COPY config.json .
 RUN mkdir -p /app/day-average/ltefdd/ftp /app/day-average/ltefdd/processed /app/day-average/ltefdd/temp /app/day-average/ltefdd/logs
 
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=utf-8
 
-CMD ["python", "kpi_processor_day.py"]
+#CMD ["python", "kpi_processor_day.py"]
+CMD ["python", "-u", "kpi_processor_day.py"]

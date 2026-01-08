@@ -7,6 +7,7 @@ import dev.thilanka.netrics.entity.BasicKpiSnapshot;
 import dev.thilanka.netrics.service.KpiDayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,63 +23,84 @@ import java.util.Objects;
 public class KpiDayController {
     private final KpiDayService kpiDayService;
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @GetMapping
     public ResponseEntity<List<KpiDataDto>> getAll() {
         List<KpiDataDto> kpiDataDtos = kpiDayService.findAll();
         return ResponseEntity.ok(kpiDataDtos);
     }
 
-    @GetMapping("snapshot/basic-kpi")
-    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName) {
-
-        if (Objects.equals(districtName, "All Districts") || districtName == null){
-            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period, ratName));
-        } else {
-            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName, ratName));
-        }
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("snapshot/basic-kpi-area")
+    public ResponseEntity<BasicKpiSnapshot> getBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String areaName, @RequestParam String ratName, @RequestParam String granularityName) {
+        return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshotsByArea(kpiName, period, areaName, ratName, granularityName));
     }
 
-    @GetMapping("worst-cells")
-    public List<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("worst-cells-area")
+    public List<WorstCellsDto> getWorstCellsByKpiAndArea(
             @RequestParam String kpiName,
             @RequestParam String period,
-            @RequestParam String districtName,
             @RequestParam boolean excludeZeroes,
-            @RequestParam String ratName) {
+            @RequestParam int limit,
+            @RequestParam String areaName,
+            @RequestParam String ratName,
+            @RequestParam String granularityName) {
 
-        if (Objects.equals(districtName, "All Districts") || districtName == null){
-            if (excludeZeroes){
-                return kpiDayService.getWorstCellsByKpiExcludeZeroes(kpiName, period, ratName);
-            } else return kpiDayService.getWorstCellsByKpi(kpiName, period,ratName);
-        } else {
-            if (excludeZeroes) {
-                return kpiDayService.getWorstCellsByKpiAndDistrictExcludeZeroes(kpiName, period, districtName, ratName);
-            } else return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, districtName, ratName);
-        }
+        return kpiDayService.getWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("worst-cells-area-band")
+    public List<WorstCellsDto> getWorstCellsByKpiAreaAndBand(
+            @RequestParam String kpiName,
+            @RequestParam String period,
+            @RequestParam boolean excludeZeroes,
+            @RequestParam int limit,
+            @RequestParam String areaName,
+            @RequestParam String ratName,
+            @RequestParam String granularityName,
+            @RequestParam String bandName) {
+
+        return kpiDayService.getWorstCellsByKpiAreaAndBand(kpiName,period,excludeZeroes,limit,ratName,areaName,granularityName,bandName);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("cell")
-    public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName) {
-        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName);
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName) {
+        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
         return ResponseEntity.ok(kpiDataDtos);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("cell-label")
-    public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName) {
-        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName);
+    public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName) {
+        List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName, granularityName);
         return ResponseEntity.ok(kpiDataDtos);
     }
 
-    @GetMapping("kpi")
-    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName) {
-        List<KpiTrendDto> kpiTrendDtos = new ArrayList<>();
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("kpi-area")
+    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpiAndArea(
+            @RequestParam String kpiName,
+            @RequestParam String period,
+            @RequestParam String areaName,
+            @RequestParam String ratName,
+            @RequestParam String granularityName) {
+        List<KpiTrendDto> kpiTrendDtos = kpiDayService.getTrendByKpiAndArea(kpiName,period,areaName,ratName,granularityName);
+        return ResponseEntity.ok(kpiTrendDtos);
+    }
 
-        if (Objects.equals(districtName, "All Districts") || districtName == null){
-            kpiTrendDtos = kpiDayService.getTrendByKpi(kpiName, period, ratName);
-        } else {
-            kpiTrendDtos = kpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName, ratName);
-        }
-
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("kpi-area-band")
+    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpiAreaAndBand(
+            @RequestParam String kpiName,
+            @RequestParam String period,
+            @RequestParam String areaName,
+            @RequestParam String ratName,
+            @RequestParam String granularityName,
+            @RequestParam String bandName) {
+        List<KpiTrendDto> kpiTrendDtos = kpiDayService.getTrendByKpiAreaAndBand(kpiName,period,areaName,ratName,granularityName,bandName);
         return ResponseEntity.ok(kpiTrendDtos);
     }
 }

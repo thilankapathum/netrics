@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "lte_fdd_standard_kpi",
+@Table(name = "standard_kpi",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"kpi_name", "label", "rat_id"})})
 public class StandardKpi {
     @Id
@@ -52,10 +52,13 @@ public class StandardKpi {
     private StandardRawKpiMapping denominator;
 
     @ManyToOne
-    @JoinColumn(name = "lte_fdd_basic_kpi_id")
+    @JoinColumn(name = "basic_kpi_id")
     private BasicKpi basicKpi;
 
     @ManyToOne
     @JoinColumn(name = "rat_id")
     private Rat rat;
+
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<WorstCell> worstCells;
 }

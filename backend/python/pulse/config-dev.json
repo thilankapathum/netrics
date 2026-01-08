@@ -6,9 +6,9 @@
     "user": "pguser",
     "password": "password"
   },
-  "ftp_folder": ".\\files\\day-average\\ltefdd\\ftp",
-  "processed_folder": ".\\files\\day-average\\ltefdd\\processed",
-  "temp_folder": ".\\files\\day-average\\ltefdd\\temp",
-  "base_folder": ".\\files\\day-average",
+  "base_folders": {
+    "day-average": ".\\files\\day-average",
+    "busy-hour": ".\\files\\busy-hour"
+  },
   "clear_redis_cache_url": "http://localhost:8012/api/v1/pulse/cache/evict-and-warmup"
 }

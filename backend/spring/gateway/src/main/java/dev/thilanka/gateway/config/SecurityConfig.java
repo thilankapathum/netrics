@@ -1,5 +1,6 @@
 package dev.thilanka.gateway.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -20,10 +21,17 @@ import java.util.List;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    @Value("${app.domain-ip}"    )
+    private String domainIp;
+
+    @Value(("${app.frontend-port}"))
+    private String frontendPort;
+
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(
             ServerHttpSecurity http,
             ReactiveClientRegistrationRepository clientRegistrationRepository) {
+
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -57,8 +65,9 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        String allowedOrigin = "http://" + domainIp + ":" + frontendPort;
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://${DOMAIN_IP:localhost}:${FRONTEND_PORT:8000}","http://localhost:4200","http://netrics.local:8000"));
+        configuration.setAllowedOrigins(List.of(allowedOrigin,"http://localhost:4200","http://netrics.local:8000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

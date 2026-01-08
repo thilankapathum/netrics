@@ -18,32 +18,55 @@ export class KpidayService {
     this.baseUrl = `${this.urlService.getPulseUrl()}/kpiday`;
   }
 
-  getBasicKpiSnapshot(kpiName: string, period: string, districtName:string, ratName:string) {
+  getBasicKpiSnapshot(kpiName: string, period: string, districtName:string, ratName:string, granularityName:string) {
     // const ratName = this.ratName;
     return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi`,
-      { params : {kpiName, period, districtName, ratName} });
+      { params : {kpiName, period, districtName, ratName, granularityName} });
   }
 
-  getWorstCellsByKpi(kpiName: string, period: string, districtName:string, excludeZeroes:boolean, ratName:string): Observable<any> {
+  getBasicKpiSnapshotByArea(kpiName: string, period: string, areaName:string, ratName:string, granularityName:string) {
+    return this.http.get<BasicKpiSnapshot>(`${this.baseUrl}/snapshot/basic-kpi-area`,
+      { params : {kpiName, period, areaName, ratName, granularityName} });
+  }
+
+  getWorstCellsByKpi(kpiName: string, period: string, districtName:string, excludeZeroes:boolean, ratName:string, granularityName:string): Observable<any> {
     // const ratName: string = this.ratName;
-    return this.http.get(`${this.baseUrl}/worst-cells`,{ params: { kpiName, period, districtName, excludeZeroes, ratName } });
+    return this.http.get(`${this.baseUrl}/worst-cells`,{ params: { kpiName, period, districtName, excludeZeroes, ratName, granularityName } });
   }
 
-  getDataByKpiAndCell(kpiName:string, cellName:string, period: string, ratName:string): Observable<any> {
+  getWorstCellsByKpiAndArea(kpiName: string, period: string, excludeZeroes:boolean, limit:number, areaName:string,  ratName:string, granularityName:string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/worst-cells-area`,{ params: { kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName } });
+  }
+
+  getWorstCellsByKpiAreaAndBand(kpiName: string, period: string, excludeZeroes:boolean, limit:number, areaName:string,  ratName:string, granularityName:string, bandName:string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/worst-cells-area-band`,{ params: { kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName, bandName } });
+  }
+
+  getDataByKpiAndCell(kpiName:string, cellName:string, period: string, ratName:string, granularityName:string): Observable<any> {
     // const ratName: string = this.ratName;
     return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell`,
-      { params : {kpiName, cellName, period, ratName} });
+      { params : {kpiName, cellName, period, ratName, granularityName} });
   }
 
-  getDataByKpiLabelAndCell(kpiLabel:string, cellName:string, period: string, ratName:string) {
+  getDataByKpiLabelAndCell(kpiLabel:string, cellName:string, period: string, ratName:string, granularityName:string) {
     // const ratName: string = this.ratName;
     return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell-label`,
-      { params: {kpiLabel, cellName, period, ratName } });
+      { params: {kpiLabel, cellName, period, ratName, granularityName } });
   }
 
-  getDataByKpi(kpiName:string, period: string, districtName:string, ratName:string) {
+  getDataByKpi(kpiName:string, period: string, districtName:string, ratName:string, granularityName:string) {
     // const ratName: string = this.ratName;
     return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi`,
-      {params : {kpiName, period, districtName, ratName} });
+      {params : {kpiName, period, districtName, ratName, granularityName} });
+  }
+
+  getDataByKpiAndArea(kpiName:string, period: string, areaName:string, ratName:string, granularityName:string) {
+    return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi-area`,
+      {params : {kpiName, period, areaName, ratName, granularityName} });
+  }
+
+  getDataByKpiAreaAndBand(kpiName:string, period: string, areaName:string, ratName:string, granularityName:string, bandName:string) {
+    return this.http.get<Array<KpiTrendDto>>(`${this.baseUrl}/kpi-area-band`,
+      {params : {kpiName, period, areaName, ratName, granularityName, bandName} });
   }
 }

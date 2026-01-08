@@ -50,8 +50,17 @@ keycloak:
   realm-name: ${REALM_NAME:netrics}
   domain-ip: ${DOMAIN_IP:netrics.local}
   nginx-port: ${FRONTEND_PORT:8000}
-  keycloak-host: ${KEYCLOAK_HOST:keycloak}
-  keycloak-port: ${KEYCLOAK_PORT:8080}
+  keycloak-host: ${KEYCLOAK_HOST:netrics.local}
+  keycloak-port: ${KEYCLOAK_PORT:8000}
+
+caching:
+  async:
+    core-pool-size: ${CORE_POOL_SIZE:3}
+    max-pool-size: ${MAX_POOL_SIZE:6}
+    queue-capacity: ${QUEUE_CAPACITY:50}
+app:
+  worst-cell-dashboard:
+    refresh-day: ${REFRESH_DAY:TUESDAY}
 
 management:
   endpoints:

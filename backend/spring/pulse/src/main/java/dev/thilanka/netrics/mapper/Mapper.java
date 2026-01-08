@@ -4,16 +4,23 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
-import dev.thilanka.netrics.repository.RatRepository;
+import dev.thilanka.netrics.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class Mapper {
     private final RatRepository ratRepository;
+    private final StandardKpiRepository standardKpiRepository;
+    private final AreaRepository areaRepository;
+    private final WorstCellRepository worstCellRepository;
+    private final GranularityRepository granularityRepository;
 
 // ----- OSS -----
 
@@ -53,7 +60,7 @@ public class Mapper {
     public StandardKpi toStandardKpi(StandardKpiDto standardKpiDto) {
 
         Rat rat = ratRepository.findByName(standardKpiDto.ratName())
-                .orElseThrow(()-> new RuntimeException("RAT not found by name: " + standardKpiDto.ratName()));
+                .orElseThrow(() -> new RuntimeException("RAT not found by name: " + standardKpiDto.ratName()));
 
         return StandardKpi
                 .builder()
@@ -110,7 +117,7 @@ public class Mapper {
 
     public BasicKpi toBasicKpi(BasicKpiDto dto) {
         Rat rat = ratRepository.findByName(dto.ratName())
-                .orElseThrow(()-> new RuntimeException("RAT not found by name: " + dto.ratName()));
+                .orElseThrow(() -> new RuntimeException("RAT not found by name: " + dto.ratName()));
 
         return BasicKpi.builder()
                 .kpiName(dto.kpiName())
@@ -124,7 +131,27 @@ public class Mapper {
     }
 
     public BasicKpiDto basicKpiToDto(BasicKpi kpi) {
-        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit(),kpi.getRat().getName());
+        return new BasicKpiDto(kpi.getKpiName(), kpi.getLabel(), kpi.getWorstOrder(), kpi.getThreshold(), kpi.getAggregation(), kpi.getUnit(), kpi.getRat().getName());
+    }
+
+    public BasicKpiWithStandardKpiDto basicKpiToBasicKpiWithStandardKpiDto(BasicKpi basicKpi) {
+
+        List<StandardKpiDto> standardKpiDtos = new ArrayList<>();
+
+        for (StandardKpi kpi : basicKpi.getStandardKpis()) {
+            standardKpiDtos.add(standardKpiToDto(kpi));
+        }
+
+        return new BasicKpiWithStandardKpiDto(
+                basicKpi.getKpiName(),
+                basicKpi.getLabel(),
+                basicKpi.getWorstOrder(),
+                basicKpi.getThreshold(),
+                basicKpi.getAggregation(),
+                basicKpi.getUnit(),
+                basicKpi.getRat().getName(),
+                standardKpiDtos);
+
     }
 
 //-------- KpiData KpiDataDto -----------------------------------
@@ -185,15 +212,114 @@ public class Mapper {
 
     //================ RAT =====================
 
-    public RatDto toRatDto(Rat rat){
-        return new RatDto(rat.getName(),rat.getLabel());
+    public RatDto toRatDto(Rat rat) {
+        return new RatDto(rat.getName(), rat.getLabel());
     }
 
-    public Rat ratDtoToRat(RatDto dto){
+    public Rat ratDtoToRat(RatDto dto) {
         return Rat.builder()
                 .name(dto.name())
                 .label(dto.label())
                 .build();
     }
 
+//    =============== WORST-CELL DASHBOARD =====================
+
+    public WorstCell worstCellSaveDtoToWorstCell(WorstCellSaveDto dto, String period, String areaName, LocalDateTime timestamp) {
+
+        Rat rat = ratRepository.findById(dto.ratId()).orElseThrow(
+                () -> new RuntimeException("RAT not found by ID: " + dto.ratId())
+        );
+
+        Granularity granularity = granularityRepository.findById(dto.granularityId())
+                .orElseThrow(() -> new RuntimeException("Granularity not found by: " + dto.granularityId()));
+
+        StandardKpi standardKpi = standardKpiRepository.findById(dto.standardKpiId())
+                .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + dto.standardKpiId()));
+
+        Area area = areaRepository.findByName(areaName)
+                .orElseThrow(() -> new RuntimeException("Area not found by: " + areaName));
+
+        return WorstCell.builder()
+                .timestamp(timestamp)
+                .cellName(dto.cellName())
+//                .unit(dto.unit())
+                .value(dto.value())
+                .previousValue(dto.previousValue())
+                .difference(dto.difference())
+                .improved(dto.improved() > 0)
+                .period(period)
+                .area(area)
+                .rat(rat)
+                .standardKpi(standardKpi)
+                .excludeZeroes(dto.excludeZeroes())
+                .granularity(granularity)
+                .build();
+    }
+
+    public WorstCellSaveDto toWorstCellSaveDto(WorstCell worstCell) {
+
+        int isImproved = 0;
+        if (worstCell.isImproved()) isImproved = 1;
+
+        return new WorstCellSaveDto(
+                Timestamp.valueOf(worstCell.getTimestamp()),
+                worstCell.getCellName(),
+                worstCell.getStandardKpi().getId(),
+                worstCell.getStandardKpi().getUnit(),
+                worstCell.getValue(),
+                worstCell.getPreviousValue(),
+                worstCell.getDifference(),
+                isImproved,
+                worstCell.getRat().getId(),
+                worstCell.isExcludeZeroes(),
+                worstCell.getGranularity().getId()
+        );
+    }
+
+//    =========== USER =======================
+
+    public UserDto userToDto(User user) {
+        return new UserDto(
+                user.getUserId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getEmail()
+        );
+    }
+
+//    ================ WORST CELL COMMENT ===============
+
+    public WorstCellCommentDto worstCellCommentToDto(WorstCellComment worstCellComment) {
+        return new WorstCellCommentDto(worstCellComment.getId(),
+                worstCellComment.getComment(),
+                worstCellComment.getWorstCell().getId(),
+                worstCellComment.getCreatedAt(),
+                worstCellComment.getLastModifiedAt(),
+                worstCellComment.getCreatedBy(),
+                worstCellComment.getLastModifiedBy());
+    }
+
+    public WorstCellComment dtoToWorstCellComment(WorstCellCommentDto dto) {
+        WorstCell worstCell = worstCellRepository.findById(dto.worstCellId())
+                .orElseThrow(() -> new RuntimeException("Worst cell not found by ID: " + dto.worstCellId()));
+
+        return WorstCellComment.builder()
+                .comment(dto.comment())
+                .worstCell(worstCell)
+                .build();
+    }
+
+    // ================ CELL ==========================
+
+    public CellDto cellToDto(Cell cell) {
+        return new CellDto(
+                cell.getCellName(),
+                cell.getNodeName(),
+                cell.getRat() != null ? cell.getRat().getName() : null,
+                cell.getSite() != null ? cell.getSite().getSiteCode() : null,
+                cell.getBand() != null ? cell.getBand().getName() : null
+        );
+    }
 }

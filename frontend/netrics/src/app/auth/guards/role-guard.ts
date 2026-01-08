@@ -20,13 +20,18 @@ export const roleGuard = (roles: string[]): CanActivateFn => {
     const hasRole = roles.some(role => userRoles.includes(role));
 
     if (!hasRole) {
-      router.navigate(['/unauthorized']);
-      return false;
-    }
+      // await router.navigate(['/unauthorized']);
+      // return false;
+      let currentUrl = state.url;
 
+      if (currentUrl.endsWith('/')) {
+        currentUrl = currentUrl.slice(0, -1);
+      }
+
+      const unauthorizedUrl = `${currentUrl}/unauthorized`;
+
+      return router.parseUrl(unauthorizedUrl);
+    }
     return true;
   };
-  // }
-
-  // return true;
 };

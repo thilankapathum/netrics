@@ -22,5 +22,7 @@ public interface StandardKpiService {
 
     StandardKpi findByKpiLabel(String kpiLabel, String ratName);
 
+    List<StandardKpi> findAllStandardKpiByRat(Rat rat);
+
     List<StandardKpiDto> getAllStandardKpiByRat(String ratName);
 }

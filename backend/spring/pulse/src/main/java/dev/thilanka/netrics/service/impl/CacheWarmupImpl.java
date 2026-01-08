@@ -8,35 +8,48 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
 public class CacheWarmupImpl implements CacheWarmup {
-    private final KpiDayService kpiDayService;
-    private final BasicKpiService basicKpiService;
-    private final DistrictService districtService;
-    private final StandardKpiService standardKpiService;
-    private final String[] periods = {"day"};
+
     private final RedisTemplate<String, Object> redisTemplate;
     private final CellNameService cellNameService;
     private final DateService dateService;
+    private final CacheWarmupAsyncService cacheWarmupAsyncService;
+    private final CellService cellService;
 
 
     @Override
-    public void evictAndWarmupCache(String ratName) {
-        evictByRatName(ratName);
-        warmupBasicKpiSnapshotCache(ratName);
-        warmupKpiTrendCache(ratName);
-        warmupWorstCellCache(ratName);
-        cellNameService.reloadCells();
-        warmupDateRangeCache(ratName);
-        System.out.println("Cache warmup complete for: " + ratName + "!");
+    public void evictAndWarmupCache(String ratName, String granularityName) {
+        long start = System.currentTimeMillis();
+//        evictByRatName(ratName);
+        evictByRatNameAndGranularityName(ratName, granularityName);
+        warmupDateRangeCache(ratName, granularityName);
+
+        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells(ratName,granularityName);
+        CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
+        CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
+        CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
+
+        CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture, kpiTrendFuture, worstCellFuture).join();
+//        CompletableFuture.allOf(basicKpiSnapshotFuture).join();
+
+
+        long end = System.currentTimeMillis();
+        long difference = end - start;
+        Duration duration = Duration.ofMillis(difference);
+        String formatted = String.format("%02dh %02dm %02ds", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart());
+        System.out.println("[" + ratName + "] ---- CACHE WARM-UP COMPLETE! - took " + formatted + " ----");
     }
 
     @Override
@@ -46,93 +59,49 @@ public class CacheWarmupImpl implements CacheWarmup {
 
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
-            System.out.println("Evicted " + keys.size() + " cache entries for RAT: " + ratName);
+            System.out.println("[" + ratName + "] Evicted " + keys.size() + " cache entries!");
         } else {
-            System.out.println("No cache entries found for RAT: " + ratName);
+            System.out.println("[" + ratName + "] No cache entries found!");
         }
     }
 
-    private void warmupBasicKpiSnapshotCache(String ratName) {
-        System.out.println("Warming-up Basic KPI cache of: " + ratName + "...");
-        List<BasicKpiDto> basicKpis = basicKpiService.getAllByRat(ratName);
-        List<DistrictDto> districts = districtService.getAll();
-        for (String period : periods) {
-            for (BasicKpiDto dto : basicKpis) {
-                try {
-                    kpiDayService.getLatestBasicAndStandardKpiSnapshots(dto.kpiName(), period, ratName);
-                    System.out.println("[" + ratName + "] Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period);
-                } catch (Exception e) {
-                    System.out.println("[" + ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period);
-//                    e.printStackTrace();
-                }
-                for (DistrictDto district : districts) {
-                    try {
-                        kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(dto.kpiName(), period, district.name(), ratName);
-                        System.out.println("[" + ratName + "] Cache BasicKpi warmed-up: " + dto.kpiName() + "-" + period + "-" + district.name());
-                    } catch (Exception e) {
-                        System.out.println("[" + ratName + "] Error warming cache for: " + dto.kpiName() + "-" + period + "-" + district.name());
-//                        e.printStackTrace();
-                    }
-                }
-            }
+    @Override
+    public int evictByRatNameAndGranularityName(String ratName, String granularityName) {
+        String pattern = "*_" + granularityName + "_" + ratName;
+        Set<String> keys = redisTemplate.keys(pattern);
+
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+            System.out.println("[" + ratName + " - " + granularityName + "] Evicted " + keys.size() + " cache entries!");
+            cellNameService.reloadCells(ratName, granularityName);
+            cellService.findCellCountWithMissingInfo();
+            return keys.size();
+        } else {
+            System.out.println("[" + ratName + " - " + granularityName + "] No cache entries found!");
+            cellNameService.reloadCells(ratName, granularityName);
+            cellService.findCellCountWithMissingInfo();
+            return 0;
         }
-        System.out.println("Warming-up Basic KPI cache of: " + ratName + " is complete!");
     }
 
-    private void warmupKpiTrendCache(String ratName) {
-        System.out.println("Warming-up KPI trend cache of: " + ratName + "...");
-        List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat(ratName);
-        List<DistrictDto> districts = districtService.getAll();
+    @Override
+    public void warmUpCache(String ratName, String granularityName) {
+        warmupDateRangeCache(ratName, granularityName);
 
-        for (StandardKpiDto standardKpi : lteFddStandardKpis) {
-            try {
-                kpiDayService.getTrendByKpi(standardKpi.kpiName(), "month", ratName);
-                System.out.println("[" + ratName + "] Cache KPI trend warmed-up (month): " + standardKpi.kpiName());
-            } catch (Exception e) {
-                System.out.println("[" + ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName());
-            }
-            for (DistrictDto district : districts) {
-                try {
-                    kpiDayService.getTrendByKpiAndDistrict(standardKpi.kpiName(), "month", district.name(), ratName);
-                    System.out.println("[" + ratName + "] Cache KPI trend warmed-up (month): " + standardKpi.kpiName() + "-" + district.name());
-                } catch (Exception e) {
-                    System.out.println("[" + ratName + "] Error while warming KPI trend cache for (month): " + standardKpi.kpiName() + "-" + district.name());
-                }
-            }
-        }
-        System.out.println("Warming-up KPI trend cache of: " + ratName + " is complete!");
+        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells(ratName, granularityName);
+        CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
+        CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
+        CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
+
+        CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture, kpiTrendFuture, worstCellFuture).join();
+        System.out.println("[" + ratName + " - " + granularityName + "] CACHE WARM-UP COMPLETE!");
     }
 
-    private void warmupWorstCellCache(String ratName) {
-        System.out.println("Warming-up Worst-cell cache of: " + ratName + "...");
-        List<StandardKpiDto> lteFddStandardKpis = standardKpiService.getAllStandardKpiByRat(ratName);
-        List<DistrictDto> districts = districtService.getAll();
+    private void warmupDateRangeCache(String ratName, String granularityName) {
+        String[] aggregationList = {"day", "week", "month"};
 
-        for (StandardKpiDto standardKpi : lteFddStandardKpis) {
-            try {
-                kpiDayService.getWorstCellsByKpi(standardKpi.kpiName(), "day", ratName);
-                System.out.println("[" + ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName());
-            } catch (Exception e) {
-                System.out.println("[" + ratName + "] Error while warming Worst cell cache for: " + standardKpi.kpiName());
-            }
-
-            for (DistrictDto district : districts) {
-                try {
-                    kpiDayService.getWorstCellsByKpiAndDistrict(standardKpi.kpiName(), "day", district.name(), ratName);
-                    System.out.println("[" + ratName + "] Cache Worst cells warmed-up: " + standardKpi.kpiName() + "-" + district.name());
-                } catch (Exception e) {
-                    System.out.println("[" + ratName + "] Error while warming up worst cells cache : " + standardKpi.kpiName() + "-" + district.name());
-                }
-            }
-        }
-        System.out.println("Warming-up Worst cell cache of: " + ratName + " is complete!");
-    }
-
-    private void warmupDateRangeCache(String ratName) {
-        String[] granularityList = {"day", "week", "month"};
-
-        for (String granularity : granularityList) {
-            dateService.getLatestDateRange(granularity, ratName);
+        for (String aggregation : aggregationList) {
+            dateService.getLatestDateRange(aggregation, ratName, granularityName);
         }
     }
 }

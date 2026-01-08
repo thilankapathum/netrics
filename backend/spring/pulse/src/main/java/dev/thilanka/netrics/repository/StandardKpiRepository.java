@@ -15,7 +15,7 @@ public interface StandardKpiRepository extends JpaRepository<StandardKpi, Long> 
     Optional<StandardKpi> findByLabelAndRat(String label, Rat rat);
 
     @Query(value = """
-            SELECT * FROM lte_fdd_standard_kpi
+            SELECT * FROM standard_kpi
             WHERE type = 'standard' AND rat_id = :ratId
             """, nativeQuery = true)
     List<StandardKpi> findAllStandardKpiByRat(@Param("ratId") Long ratId);

@@ -135,6 +135,16 @@ span.tsize-48 {
   font-variation-settings: 'OPSZ' 48;
 }
 
+.tooltip-sm {
+  --tooltip-padding: 0.25rem 0.5rem;
+  --tooltip-text-size: 0.75rem;
+}
+.tooltip-xs {
+  --tooltip-padding: 0.15rem 0.35rem;
+  --tooltip-text-size: 0.65rem;
+}
+
+
 /* Force visibility for debugging */
 /*section, table, tr, td, th, div {*/
 /*  visibility: visible !important;*/

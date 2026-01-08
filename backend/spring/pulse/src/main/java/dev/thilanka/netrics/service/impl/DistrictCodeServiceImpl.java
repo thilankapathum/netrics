@@ -2,16 +2,15 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.DistrictCodeDto;
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.entity.Area;
+import dev.thilanka.netrics.entity.AreaDistrictCodeMapping;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.entity.district.DistrictCode;
 import dev.thilanka.netrics.entity.KpiDay;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.DistrictCodeRepository;
-import dev.thilanka.netrics.service.DistrictCodeService;
-import dev.thilanka.netrics.service.DistrictService;
-import dev.thilanka.netrics.service.KpiDayService;
-import dev.thilanka.netrics.service.RatService;
+import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +25,8 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     private final KpiDayService kpiDayService;
     private final RatService ratService;
     private final Mapper mapper;
+//    private final AreaDistrictCodeMappingService areaDistrictCodeMappingService;
+//    private final AreaService areaService;
 
     @Override
     public List<DistrictCodeDto> getAll() {
@@ -43,6 +44,20 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
         districtCode.setDistrict(district);
 
         DistrictCode savedDistrictCode = districtCodeRepository.save(districtCode);
+
+        //-- Assign any newly created District Code for 'All Districts' area.
+//        try {
+//            Area area = areaService.findAreaByName("All Districts");
+//            AreaDistrictCodeMapping areaDistrictCodeMapping = AreaDistrictCodeMapping
+//                    .builder()
+//                    .area(area)
+//                    .districtCode(savedDistrictCode)
+//                    .build();
+//            areaDistrictCodeMappingService.createAreaDistrictCodeMapping(areaDistrictCodeMapping);
+//            System.out.println("'All Districts' mapped");
+//        } catch (Exception e) {
+//            System.out.println("Error mapping 'All Districts' to " + savedDistrictCode.getCode());
+//        }
 
         for (Rat rat : rats) {
             updateKpiDayWithoutDistrict(rat.getName());
@@ -62,6 +77,12 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
         }
 
         return districtCodeDtos;
+    }
+
+    @Override
+    public DistrictCode findByDistrictCode(String districtCode) {
+        return districtCodeRepository.findByCode(districtCode)
+                .orElseThrow(() -> new RuntimeException("District code not found by: " + districtCode));
     }
 
     private void updateKpiDayWithoutDistrict(String ratName) {

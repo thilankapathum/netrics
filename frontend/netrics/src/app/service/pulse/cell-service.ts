@@ -1,24 +1,31 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {UrlService} from '../url/url-service';
-import {RatDto} from '../../models/pulse/RatDto';
 import {CellNameDto} from '../../models/pulse/CellNameDto';
 import {Observable} from 'rxjs';
-import {KpiDataDto} from '../../models/pulse/KpiDataDto';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CellService {
-
   private readonly baseUrl: string;
 
   constructor(private http: HttpClient, private urlService: UrlService) {
-    this.baseUrl = `${this.urlService.getPulseUrl()}/cell`;
+    this.baseUrl = `${this.urlService.getPulseUrl()}/cells`;
   }
 
-  searchCell(name: string) {
-    return this.http.get<Array<CellNameDto>>(`${this.baseUrl}`, {params: {name}});
+  exportCellsWithMissingInfo() {
+    return this.http.get(`${this.baseUrl}/missing/export`, {responseType: 'blob'});
   }
 
+  importCellsWithCorrectedInfo(file: File): Observable<Blob> {
+    const url = `${this.baseUrl}/missing/import`;
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(url, formData, {responseType: 'blob'});
+  }
+
+  getCellCountWithMissingInfo(){
+    return this.http.get<number>(`${this.baseUrl}/missing/count`);
+  }
 }

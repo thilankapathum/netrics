@@ -9,8 +9,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "lte_fdd_kpi_mapping",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"lte_fdd_standard_kpi_id", "oss_id", "rat_id"})})
+@Table(name = "kpi_mapping",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"standard_kpi_id", "oss_id", "rat_id"})})
 public class KpiMappingToOss {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,7 +23,7 @@ public class KpiMappingToOss {
     private Oss oss;
 
     @ManyToOne
-    @JoinColumn(name = "lteFddStandardKpi_id")
+    @JoinColumn(name = "standard_kpi_id")
     private StandardKpi standardKpi;
 
     @ManyToOne
