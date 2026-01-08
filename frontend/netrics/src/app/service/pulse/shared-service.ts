@@ -12,6 +12,8 @@ export class SharedService {
   areaType = signal<string | undefined>('');
   area = signal<string | undefined>('')
   aggregation = signal<'day' | 'week' | 'month'>('day')
+  bandWise: boolean = false;
+  selectedBand = signal('');
   excludeZeroes: boolean = false;
   currentPage: number = 0;
 
@@ -22,6 +24,8 @@ export class SharedService {
     this.areaType.set('');
     this.excludeZeroes = false;
     this.currentPage = 0;
+    this.bandWise = false;
+    this.selectedBand.set('');
   }
 
 }

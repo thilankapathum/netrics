@@ -113,7 +113,29 @@ export class PulseComponent implements OnInit {
               private cellService: CellService,
               private bandService: BandService) {
     this.queryDateRanges();
+  }
 
+  queryDateRanges() {
+    for (let range of this.aggregationList) {
+      this.getDateRanges(range, this.selectedRat(), this.selectedGranularity());
+    }
+  }
+
+  getDateRanges(aggregation: string, selectedRat: string, granularityName: string) {
+    this.dateService.getLatestDateRange(aggregation, selectedRat, granularityName).subscribe(
+      {
+        next: data => {
+          this.dateRanges.update(range => ({
+            ...range,
+            [aggregation]: data
+          }));
+        }, error: err => {
+          console.log('Error getting date range');
+          console.error(err);
+          this.alertService.error('Error getting date range');
+        }
+      }
+    )
   }
 
   ngOnInit() {
@@ -156,32 +178,20 @@ export class PulseComponent implements OnInit {
       this.selectedRat.set(this.sharedService.selectedRat())
     }
 
+    if (this.sharedService.bandWise != this.bandWise){
+      this.bandWise = this.sharedService.bandWise
+    }
+
+    if (this.sharedService.selectedBand() != this.selectedBand()) {
+      this.selectedBand.set(this.sharedService.selectedBand());
+    }
+
     this.getAreaTypes();
     this.excludeZeroes = this.sharedService.excludeZeroes;
   }
 
-  queryDateRanges() {
-    for (let range of this.aggregationList) {
-      this.getDateRanges(range, this.selectedRat(), this.selectedGranularity());
-    }
-  }
 
-  getDateRanges(aggregation: string, selectedRat: string, granularityName: string) {
-    this.dateService.getLatestDateRange(aggregation, selectedRat, granularityName).subscribe(
-      {
-        next: data => {
-          this.dateRanges.update(range => ({
-            ...range,
-            [aggregation]: data
-          }));
-        }, error: err => {
-          console.log('Error getting date range');
-          console.error(err);
-          this.alertService.error('Error getting date range');
-        }
-      }
-    )
-  }
+  //------------ FILTERS ---------------------------
 
   selectAreaType(areaType: string) {
     this.areaType.set(areaType);
@@ -206,22 +216,56 @@ export class PulseComponent implements OnInit {
     this.selectedBand.set(bandName);
     this.allWorstCells = [];
     if (bandName === '') {
-      const trend = this.bandWorstCellsKpiTrends?.[0]?.worstCells?.[0];
-      if (this.allBandWorstCells?.[0]?.kpiName && trend?.kpiName && this.allBandWorstCells[0].kpiName === trend.kpiName) {
-        this.allWorstCells = this.allBandWorstCells;
-      } else {
-        this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
-      }
-
+      this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
     } else {
-      const selectedBandWorstCellKpiTrend = this.bandWorstCellsKpiTrends.find(b => b.band?.name === bandName);
-      this.allWorstCells = selectedBandWorstCellKpiTrend?.worstCells!;
+      const index = this.bandWorstCellsKpiTrends.findIndex(b => b.band?.name === bandName);
+      if (index >= 0) {
+        this.loadingWorstCells = true;
+        this.kpiDayService.getWorstCellsByKpiAreaAndBand(this.selectedStandardKpi(), this.aggregation(), this.excludeZeroes, 25, this.area()!, this.selectedRat(), this.selectedGranularity(), bandName).subscribe({
+          next: data => {
+            this.bandWorstCellsKpiTrends[index] = {
+              ...this.bandWorstCellsKpiTrends[index],
+              worstCells: data
+            }
+            console.log(this.bandWorstCellsKpiTrends[index]);
+            this.allWorstCells = this.bandWorstCellsKpiTrends[index].worstCells!;
+            this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
+            this.setPage(this.sharedService.currentPage);  //-- To visit prev. worst-cell page by back-navigation from /cell page
+            this.sharedService.currentPage = 0;
+            this.loadingWorstCells = false;
+          }, error: err => {
+            console.error(err);
+            this.alertService.error('Error getting WorstCellsByKpiAreaAndBand');
+            this.loadingWorstCells = false;
+          }
+        });
+      }
     }
-
-    this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
-    this.setPage(this.sharedService.currentPage);  //-- To visit prev. worst-cell page by back-navigation from /cell page
-    this.sharedService.currentPage = 0;
   }
+
+  setSelectedGranularity(granularity: 'day-average' | 'busy-hour') {
+    this.selectedGranularity.set(granularity);
+    this.getBasicKpi(this.selectedRat());
+    this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());
+  }
+
+  async setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): Promise<void> {
+    this.selectedRat.set(rat);
+    this.queryDateRanges();
+
+    this.bands = [];
+    this.selectedBand.set('');
+    try {
+      this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
+    } catch (e) {
+      console.error('error retrieving bands', e);
+      this.alertService.error('Error retrieving Bands')
+    }
+    this.getBasicKpi(rat);
+    this.getAllStandardKpi(rat);
+  }
+
+  //----------- GETTERS ----------------------------------
 
   getAreaTypes() {
     this.areaTypeService.getAllAreaTypes().subscribe({
@@ -268,96 +312,6 @@ export class PulseComponent implements OnInit {
     })
   }
 
-  setSelectedGranularity(granularity: 'day-average' | 'busy-hour') {
-    this.selectedGranularity.set(granularity);
-
-    this.getBasicKpi(this.selectedRat());
-
-    this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());
-
-    // if (this.bandWise) {
-    //   this.getWorstCellsAndKpiTrendsForBandByRat(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());
-    //   if (this.selectedBand != null && this.selectedBand() != '') {   // Checking whether any band is selected/filtered
-    //     this.selectBand(this.selectedBand());
-    //   } else {
-    //     this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
-    //   }
-    // } else {
-    //   this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
-    //   this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
-    // }
-
-
-  }
-
-  async setSelectedRat(rat: 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'): Promise<void> {
-    this.selectedRat.set(rat);
-    this.queryDateRanges();
-
-    switch (rat) {
-      case "ltefdd":
-        this.bands = [];
-        try {
-          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
-        } catch (e) {
-          console.error('error retrieving bands', e);
-          this.alertService.error('Error retrieving Bands')
-        }
-        this.getBasicKpi("ltefdd");
-        this.getAllStandardKpi("ltefdd");
-        break;
-      case "ltetdd":
-        this.bands = [];
-        try {
-          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
-        } catch (e) {
-          console.error('error retrieving bands', e);
-          this.alertService.error('Error retrieving Bands')
-        }
-        this.getBasicKpi("ltetdd");
-        this.getAllStandardKpi("ltetdd");
-        break;
-      case "nr":
-        this.bands = [];
-        try {
-          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
-        } catch (e) {
-          console.error('error retrieving bands', e);
-          this.alertService.error('Error retrieving Bands')
-        }
-        this.getBasicKpi("nr");
-        this.getAllStandardKpi("nr");
-        break;
-      case "umts":
-        this.getBasicKpi("umts");
-        this.getAllStandardKpi("umts");
-        break;
-      case "gsm":
-        this.bands = [];
-        try {
-          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
-        } catch (e) {
-          console.error('error retrieving bands', e);
-          this.alertService.error('Error retrieving Bands')
-        }
-        this.getBasicKpi("gsm");
-        this.getAllStandardKpi("gsm");
-        break;
-      default:
-        this.bands = [];
-        try {
-          this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
-        } catch (e) {
-          console.error('error retrieving bands', e);
-          this.alertService.error('Error retrieving Bands')
-        }
-        this.getBasicKpi("ltefdd");
-        this.getAllStandardKpi("ltefdd");
-    }
-  }
-
-
-
 
   //------- BASIC KPI  ---------
 
@@ -400,214 +354,7 @@ export class PulseComponent implements OnInit {
     return this.basicKpiSnapshots.sort((a, b) => a.kpiLabel!.localeCompare(b.kpiLabel!))
   }
 
-  //----------- WORST CELLS ----------------
-
-  onExcludeZeroesChange(event: Event) {
-
-    this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());
-    //TODO: Only required to query Worst cells
-
-    // if (this.bandWise) {
-    //   this.getWorstCellsAndKpiTrendsForBandByRat(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());
-    //   if (this.selectedBand != null && this.selectedBand() != '') {   // Checking whether any band is selected/filtered
-    //     this.selectBand(this.selectedBand());
-    //   } else {
-    //     this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
-    //   }
-    // } else {
-    //   this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
-    // }
-  }
-
-  onBandWiseChange(event: Event) {
-    this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation())
-    // if (this.bandWise) {
-    //   this.getWorstCellsAndKpiTrendsForBandByRat(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());
-    // } else {
-    //   this.selectedBand.set('');
-    //   this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
-    //   this.getWorstCellsByKpi(this.selectedStandardKpi(), this.aggregation(), this.selectedRat(), this.selectedGranularity());
-    // }
-  }
-
-  async getWorstCellsAndKpiTrendsForBandByRat(kpiName: string, kpiTrendPeriod: string, ratName: string, excludeZeroes: boolean, granularityName: string, areaName: string, aggregation: string) {
-    this.loadingWorstCells = true;
-    this.loadingKpiTrend = true;
-    this.bandWorstCellsKpiTrends = [];
-    this.bandChartSeries.set([]);
-    this.bands = [];
-    try {
-      this.bands = await firstValueFrom(this.bandService.getByRatName(ratName));
-    } catch (e) {
-      console.error('error retrieving bands', e);
-      this.alertService.error('Error retrieving Bands')
-      this.loadingWorstCells = false;
-      this.loadingKpiTrend = false;
-    }
-
-    try {
-      this.bandWorstCellsKpiTrends = await firstValueFrom(this.getWorstCellsAndKpiTrendsForBand(kpiName, kpiTrendPeriod, ratName, excludeZeroes, granularityName, areaName, aggregation, this.bands));
-      this.loadingWorstCells = false;
-    } catch (e) {
-      console.error('error retrieving bandWorstCellsKpiTrends', e);
-      this.alertService.error('Error retrieving Worst-Cell & KPI Trends by Band');
-      this.loadingWorstCells = false;
-      this.loadingKpiTrend = false;
-    }
-
-    for (let bandWorstCellKpiTrend of this.bandWorstCellsKpiTrends) {
-      const seriesForBand = this.chartService.buildSeriesForBand(bandWorstCellKpiTrend.kpiTrend!, bandWorstCellKpiTrend.band!);
-
-      this.bandChartSeries.update(existing => {
-        return [...existing, ...seriesForBand];
-      });
-      this.loadingKpiTrend = false;
-
-    }
-
-    // this.bandService.getByRatName(ratName).subscribe({
-    //   next: data => {
-    //     this.bands = data;
-    //     this.getWorstCellsAndKpiTrendsForBand(kpiName, kpiTrendPeriod, ratName, excludeZeroes, granularityName, areaName, aggregation, this.bands).subscribe({
-    //       next: data => {
-    //         this.bandWorstCellsKpiTrends = data;
-    //
-    //         for (let bandWorstCellKpiTrend of this.bandWorstCellsKpiTrends) {
-    //           const seriesForBand = this.chartService.buildSeriesForBand(bandWorstCellKpiTrend.kpiTrend!, bandWorstCellKpiTrend.band!);
-    //
-    //           this.bandChartSeries.update(existing => {
-    //             return [...existing, ...seriesForBand];
-    //           })
-    //
-    //         }
-    //       },
-    //       error: error => {
-    //         console.error(error);
-    //         this.alertService.error("Error retrieving band-wise Worst Cells & KPI trends");
-    //       }
-    //     });
-    //   }
-    // })
-  }
-
-  getWorstCellsAndKpiTrendsForBand(kpiName: string, kpiTrendPeriod: string, ratName: string, excludeZeroes: boolean, granularityName: string, areaName: string, aggregation: string, bands: BandDto[]): Observable<BandWorstCellsKpiTrend[]> {
-
-    // if (!this.bands || this.bands.length === 0) {
-    if (!bands || bands.length === 0) {
-      return of([]);
-    }
-
-    return forkJoin(
-      // this.bands.map(band =>
-      bands.map(band =>
-        forkJoin({
-          worstCells: this.kpiDayService.getWorstCellsByKpiAreaAndBand(
-            kpiName,
-            aggregation,
-            excludeZeroes,
-            25,
-            areaName,
-            ratName,
-            granularityName,
-            band.name!
-          ),
-          kpiTrend: this.kpiDayService.getDataByKpiAreaAndBand(
-            kpiName,
-            kpiTrendPeriod,
-            areaName,
-            ratName,
-            granularityName,
-            band.name!
-          )
-        }).pipe(
-          map(result => ({
-            band,
-            worstCells: result.worstCells,
-            kpiTrend: result.kpiTrend,
-          }))
-        )
-      )
-    );
-  }
-
-  getWorstCellsByKpi(kpiName: string, aggregation: string, ratName: string, granularityName: string) {
-    this.loadingWorstCells = true;
-    this.allBandWorstCells = [];
-    this.allWorstCells = [];
-
-    this.kpiDayService.getWorstCellsByKpiAndArea(kpiName, aggregation, this.excludeZeroes, 25, this.area()!, ratName, granularityName).subscribe({
-      next: data => {
-        this.allBandWorstCells = data;
-        this.allWorstCells = this.allBandWorstCells;
-        this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
-        this.setPage(this.sharedService.currentPage);  //-- To visit prev. worst-cell page by back-navigation from /cell page
-        this.sharedService.currentPage = 0;   //-- Do not convert sharedService.currentPage into a signal
-        this.loadingWorstCells = false;
-      },
-      error: error => {
-        console.error("Error getWorstCellsByKpi:", error);
-        this.alertService.error("Worst cells retrieval failed");
-        this.loadingWorstCells = false;
-      }
-    });
-  }
-
-  // getWorstCellsByKpiAndBand(kpiName: string, period: string, excludeZeroes:boolean, limit:number, areaName:string,  ratName:string, granularityName:string, bandName:string){
-  //   this.kpiDayService.getWorstCellsByKpiAreaAndBand(kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName, bandName).subscribe({
-  //     next: data => {
-  //       return data;
-  //     }
-  //   });
-  // }
-
-  setPage(page: number) {
-    if (page < 0 || page > this.totalPages) return;
-
-    this.currentPage = page;
-    const start = page * this.pageSize;
-    const end = start + this.pageSize;
-    this.worstCells = this.allWorstCells.slice(start, end)
-  }
-
-  nextPage() {
-    this.setPage(this.currentPage + 1);
-  }
-
-  prevPage() {
-    this.setPage(this.currentPage - 1);
-  }
-
-  async selectKpi(kpi: string, ratName: string, granularityName: string) {
-    this.currentPage = 0;
-    await this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), kpi, this.selectedKpiTrendPeriod(), ratName, this.excludeZeroes, granularityName, this.area()!, this.aggregation());
-    // if (this.bandWise) {
-    //   await this.getWorstCellsAndKpiTrendsForBandByRat(kpi, this.selectedKpiTrendPeriod(), ratName, this.excludeZeroes, granularityName, this.area()!, this.aggregation());
-    //   if (this.selectedBand != null && this.selectedBand() != '' && this.selectedBand() != undefined) {   // Checking whether any band is selected/filtered
-    //     this.selectBand(this.selectedBand());
-    //   } else {
-    //     this.getWorstCellsByKpi(kpi, this.aggregation(), ratName, granularityName);
-    //   }
-    // } else {
-    //   this.getTrendDataByKpi(kpi, this.selectedKpiTrendPeriod(), ratName, granularityName);
-    //   this.getWorstCellsByKpi(kpi, this.aggregation(), ratName, granularityName);
-    // }
-  }
-
-  async getWorstCellsAndKpiTrends(bandWise: boolean, band: string, kpi: string, kpiTrendPeriod: string, ratName: string, excludeZeroes: boolean, granularityName: string, areaName: string, aggregation: string) {
-    if (bandWise) {
-      await this.getWorstCellsAndKpiTrendsForBandByRat(kpi, kpiTrendPeriod, ratName, excludeZeroes, granularityName, areaName, aggregation);
-      if (band != null && band != '' && band != undefined) {   // Checking whether any band is selected/filtered
-        this.selectBand(band);
-      } else {
-        this.selectedBand.set(band);
-        this.getWorstCellsByKpi(kpi, aggregation, ratName, granularityName);
-      }
-    } else {
-      this.selectedBand.set(band);
-      this.getTrendDataByKpi(kpi, kpiTrendPeriod, ratName, granularityName);
-      this.getWorstCellsByKpi(kpi, aggregation, ratName, granularityName);
-    }
-  }
+  //----------- STANDARD KPI ---------------
 
   getAllStandardKpi(ratName: string) {
     this.standardKpis = [];
@@ -636,6 +383,154 @@ export class PulseComponent implements OnInit {
     })
   }
 
+  async selectKpi(kpi: string, ratName: string, granularityName: string) {
+    this.currentPage = 0;
+    await this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), kpi, this.selectedKpiTrendPeriod(), ratName, this.excludeZeroes, granularityName, this.area()!, this.aggregation());
+  }
+
+  //----------- WORST CELLS + KPI TRENDS -----------
+
+  async getWorstCellsAndKpiTrends(bandWise: boolean, band: string, kpi: string, kpiTrendPeriod: string, ratName: string, excludeZeroes: boolean, granularityName: string, areaName: string, aggregation: string) {
+    if (bandWise) {
+      try {
+        this.bands = await firstValueFrom(this.bandService.getByRatName(ratName));
+      } catch (e) {
+        console.error('error retrieving bands', e);
+        this.alertService.error('Error retrieving Bands')
+      }
+
+      if (band != null && band != '' && band != undefined) {   // Checking whether any band is selected/filtered
+        this.getTrendDataByKpiForAllBands(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
+        this.selectBand(band);  // Querying band's worst-cells
+      } else {
+        this.selectedBand.set(band);
+        this.getWorstCellsByKpi(kpi, aggregation, ratName, granularityName);
+        this.getTrendDataByKpiForAllBands(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
+      }
+    } else {
+      this.selectedBand.set('');
+      this.getTrendDataByKpi(kpi, kpiTrendPeriod, ratName, granularityName);
+      this.getWorstCellsByKpi(kpi, aggregation, ratName, granularityName);
+    }
+  }
+
+  //----------- KPI TRENDS -----------------
+
+  getTrendDataByKpiForAllBands(kpiName: string, kpiTrendPeriod: string, areaName: string, ratName: string, granularityName: string) {
+    this.loadingKpiTrend = true;
+    this.bandChartSeries.set([]);
+    for (let band of this.bands) {
+      this.loadingKpiTrend = true;
+      let index = this.bandWorstCellsKpiTrends.findIndex(b => b.band?.name === band.name);
+      if (index === -1) {
+        this.bandWorstCellsKpiTrends.push({
+          band: band
+        });
+        index = this.bandWorstCellsKpiTrends.findIndex(b => b.band?.name === band.name);
+      }
+
+      this.kpiDayService.getDataByKpiAreaAndBand(kpiName, kpiTrendPeriod, areaName, ratName, granularityName, band.name!).subscribe({
+        next: data => {
+          this.bandWorstCellsKpiTrends[index] = {
+            ...this.bandWorstCellsKpiTrends[index],
+            kpiTrend: data
+          }
+          const seriesForBand = this.chartService.buildSeriesForBand(this.bandWorstCellsKpiTrends[index].kpiTrend!, this.bandWorstCellsKpiTrends[index].band!);
+          this.bandChartSeries.update(existing => {
+            return [...existing, ...seriesForBand];
+          });
+          this.loadingKpiTrend = false;
+        }, error: err => {
+          console.log("Error getDataByKpiAndBand:");
+          console.error(err);
+          this.alertService.error("KPI Trend Data retrieval failed");
+          this.loadingKpiTrend = false;
+        }
+      });
+    }
+  }
+
+  getTrendDataByKpi(kpiName: string, period: string, ratName: string, granularityName: string) {
+    this.loadingKpiTrend = true;
+    this.kpiTrendData = [];
+
+    this.kpiDayService.getDataByKpiAndArea(kpiName, period, this.area()!, ratName, granularityName).subscribe({
+      next: data => {
+        this.kpiTrendData = data;
+        this.loadingKpiTrend = false;
+      },
+      error: error => {
+        console.log("Error getDataByKpi:");
+        console.error(error);
+        this.alertService.error("Trend data retrieval failed");
+        this.loadingKpiTrend = false;
+      }
+    })
+  }
+
+  //----------- WORST CELLS ----------------
+
+  getWorstCellsByKpi(kpiName: string, aggregation: string, ratName: string, granularityName: string) {
+    this.loadingWorstCells = true;
+    this.allBandWorstCells = [];
+    this.allWorstCells = [];
+
+    this.kpiDayService.getWorstCellsByKpiAndArea(kpiName, aggregation, this.excludeZeroes, 25, this.area()!, ratName, granularityName).subscribe({
+      next: data => {
+        this.allBandWorstCells = data;
+        this.allWorstCells = this.allBandWorstCells;
+        this.totalPages = Math.ceil(this.allWorstCells.length / this.pageSize);
+        this.setPage(this.sharedService.currentPage);  //-- To visit prev. worst-cell page by back-navigation from /cell page
+        this.sharedService.currentPage = 0;   //-- Do not convert sharedService.currentPage into a signal
+        this.loadingWorstCells = false;
+      },
+      error: error => {
+        console.error("Error getWorstCellsByKpi:", error);
+        this.alertService.error("Worst cells retrieval failed");
+        this.loadingWorstCells = false;
+      }
+    });
+  }
+
+  //------------------ CHANGE SWITCHES ----------------------------------
+
+  onExcludeZeroesChange(event: Event) {
+    this.selectBand(this.selectedBand());
+  }
+
+  onBandWiseChange(event: Event) {
+    this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation())
+  }
+
+  onPeriodChange(event: Event) {
+    if (this.bandWise) {
+      this.getTrendDataByKpiForAllBands(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
+    } else {
+      this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
+    }
+  }
+
+
+  //------------------- WORST-CELL PAGINATION -----------------------------
+
+  setPage(page: number) {
+    if (page < 0 || page > this.totalPages) return;
+
+    this.currentPage = page;
+    const start = page * this.pageSize;
+    const end = start + this.pageSize;
+    this.worstCells = this.allWorstCells.slice(start, end)
+  }
+
+  nextPage() {
+    this.setPage(this.currentPage + 1);
+  }
+
+  prevPage() {
+    this.setPage(this.currentPage - 1);
+  }
+
+
   //---------- OPEN ANALYSIS MODAL (DIALOG) ----------------
 
   openAnalysisModal(kpiName: string, cellName: string) {
@@ -661,34 +556,6 @@ export class PulseComponent implements OnInit {
     this.cellMissingInfoModal.nativeElement.showModal()
   }
 
-  //------------- KPI TREND CHART ----------------
-
-  onPeriodChange(event: Event) {
-    if (this.bandWise) {
-      this.getWorstCellsAndKpiTrendsForBandByRat(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());   //TODO: Only query Trend data
-      //TODO: Query only KPI trend
-    } else {
-      this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
-    }
-  }
-
-  getTrendDataByKpi(kpiName: string, period: string, ratName: string, granularityName: string) {
-    this.loadingKpiTrend = true;
-    this.kpiTrendData = [];
-
-    this.kpiDayService.getDataByKpiAndArea(kpiName, period, this.area()!, ratName, granularityName).subscribe({
-      next: data => {
-        this.kpiTrendData = data;
-        this.loadingKpiTrend = false;
-      },
-      error: error => {
-        console.log("Error getDataByKpi:");
-        console.error(error);
-        this.alertService.error("Trend data retrieval failed");
-        this.loadingKpiTrend = false;
-      }
-    })
-  }
 
   //============ MODAL KPI TREND CHART =================
 
@@ -800,6 +667,8 @@ export class PulseComponent implements OnInit {
     this.sharedService.areaType.set(this.areaType());
     this.sharedService.excludeZeroes = this.excludeZeroes;
     this.sharedService.currentPage = this.currentPage;
+    this.sharedService.bandWise = this.bandWise;
+    this.sharedService.selectedBand.set(this.selectedBand());
   }
 
   clearSharedServiceData(): void {

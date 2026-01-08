@@ -30,39 +30,11 @@ public class KpiDayController {
         return ResponseEntity.ok(kpiDataDtos);
     }
 
-//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-//    @GetMapping("snapshot/basic-kpi")
-//    public ResponseEntity<BasicKpiSnapshot> getCalculatedBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName, @RequestParam String granularityName) {
-//
-//        if (Objects.equals(districtName, "All Districts") || districtName == null) {
-//            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshots(kpiName, period, ratName, granularityName));
-//        } else {
-//            return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshotsWithDistrict(kpiName, period, districtName, ratName, granularityName));
-//        }
-//    }
-
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("snapshot/basic-kpi-area")
     public ResponseEntity<BasicKpiSnapshot> getBasicKpiSnapshot(@RequestParam String kpiName, @RequestParam String period, @RequestParam String areaName, @RequestParam String ratName, @RequestParam String granularityName) {
         return ResponseEntity.ok(kpiDayService.getLatestBasicAndStandardKpiSnapshotsByArea(kpiName, period, areaName, ratName, granularityName));
     }
-
-//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-//    @GetMapping("worst-cells")
-//    public List<WorstCellsDto> getWorstCellsByKpiAndDistrictPage(
-//            @RequestParam String kpiName,
-//            @RequestParam String period,
-//            @RequestParam String districtName,
-//            @RequestParam boolean excludeZeroes,
-//            @RequestParam String ratName,
-//            @RequestParam String granularityName) {
-//
-//        if (Objects.equals(districtName, "All Districts") || districtName == null) {
-//            return kpiDayService.getWorstCellsByKpi(kpiName, period, excludeZeroes, ratName, granularityName);
-//        } else {
-//            return kpiDayService.getWorstCellsByKpiAndDistrict(kpiName, period, excludeZeroes, districtName, ratName, granularityName);
-//        }
-//    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("worst-cells-area")
@@ -106,20 +78,6 @@ public class KpiDayController {
         List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName, granularityName);
         return ResponseEntity.ok(kpiDataDtos);
     }
-
-//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-//    @GetMapping("kpi")
-//    public ResponseEntity<List<KpiTrendDto>> getTrendDataByKpi(@RequestParam String kpiName, @RequestParam String period, @RequestParam String districtName, @RequestParam String ratName, @RequestParam String granularityName) {
-//        List<KpiTrendDto> kpiTrendDtos = new ArrayList<>();
-//
-//        if (Objects.equals(districtName, "All Districts") || districtName == null) {
-//            kpiTrendDtos = kpiDayService.getTrendByKpi(kpiName, period, ratName, granularityName);
-//        } else {
-//            kpiTrendDtos = kpiDayService.getTrendByKpiAndDistrict(kpiName, period, districtName, ratName, granularityName);
-//        }
-//
-//        return ResponseEntity.ok(kpiTrendDtos);
-//    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("kpi-area")

@@ -1,0 +1,338 @@
+networks:
+  public_net:
+    driver: bridge
+  private_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  mysql_data:
+  postgres_data:
+  redis-data:
+  pgadmin:
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB_PULSE}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "8032:5432"
+    #    expose:
+    #      - "${POSTGRES_PORT}"
+    networks:
+      - private_net
+      - public_net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pguser -d pulse_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'True'
+
+    #      PGADMIN_CONFIG_FORCE_SCRIPT_NAME: "'/pgadmin'"
+    #      PGADMIN_CONFIG_PROXY_X_HOST: "'${DOMAIN_IP}'"
+    #      PGADMIN_CONFIG_PROXY_X_PORT: "'${FRONTEND_PORT}'"
+    ports:
+      - "8033:80"
+    #    expose:
+    #      - "80"
+    networks:
+      - public_net
+      - private_net
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/misc/ping').read()" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    #    expose:
+    #      - "6379"
+    networks:
+      - private_net
+      - public_net
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    command: ["redis-server", "--save", "60", "1"]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.2
+    container_name: keycloak
+    restart: unless-stopped
+    environment:
+      # Database Configuration
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB_KEYCLOAK}   # Configure database in PGADMIN before initiating keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Admin Console Configuration
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
+      # Proxy Configuration (for nginx reverse proxy)
+      KC_PROXY: edge
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HTTP_ENABLED: 'true'
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_URL: http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
+      KC_HOSTNAME_ADMIN_URL: http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
+
+      # Frontchannel logout
+      KC_HOSTNAME_STRICT_BACKCHANNEL: 'false'
+
+      # Performance Tuning
+      KC_HEALTH_ENABLED: 'true'
+      KC_METRICS_ENABLED: 'true'
+
+      # Logging
+      KC_LOG_LEVEL: INFO
+
+      # Cache Configuration (for production clustering)
+      KC_CACHE: ispn
+      KC_CACHE_STACK: tcp
+
+    expose:
+      - "8080"
+    networks:
+      - public_net
+      - private_net
+    volumes:
+      - ./keycloak/themes:/opt/keycloak/themes
+      - ./keycloak/providers:/opt/keycloak/providers
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /auth/health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - start
+      - --proxy=edge
+      - --hostname-strict=false
+      - --hostname-strict-https=false
+      - --http-enabled=true
+      - --http-relative-path=/auth
+      - --proxy-headers=xforwarded
+      - --hostname-url=http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
+      - --hostname-admin-url=http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
+
+
+  config-server:
+    image: thilankaw/netrics/config-server:0.0.4
+    environment:
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - KEYCLOAK_HOST=${KEYCLOAK_HOST}
+      - KEYCLOAK_PORT=${KEYCLOAK_PORT}
+      - REALM_NAME=${REALM_NAME}
+    expose:
+      - "8003"
+    networks:
+      - private_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8003/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  discovery:
+    image: thilankaw/netrics/discovery:0.0.1
+    restart: unless-stopped
+    environment:
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+    expose:
+      - "8761"
+    networks:
+      - private_net
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  gateway:
+    image: thilankaw/netrics/gateway:0.0.3
+    environment:
+      - GATEWAY_HOST=${GATEWAY_HOST}
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - KEYCLOAK_HOST=${KEYCLOAK_HOST}
+      - KEYCLOAK_PORT=${KEYCLOAK_PORT}
+      - DOMAIN_IP=${DOMAIN_IP}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+      - GATEWAY_CLIENT_ID=${GATEWAY_CLIENT_ID}
+      - GATEWAY_CLIENT_SECRET=${GATEWAY_CLIENT_SECRET}
+      - REALM_NAME=${REALM_NAME}
+    #    ports:
+    #      - "8001:8001"
+    expose:
+      - "9001"
+      - "8001"
+    networks:
+      - private_net
+    #      - public_net
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:9001/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      discovery:
+        condition: service_healthy
+      pulse:
+        condition: service_healthy
+      nginx:
+        condition: service_healthy
+    extra_hosts:
+      - "${DOMAIN_IP}:host-gateway"
+
+  pulse:
+    image: thilankaw/netrics/pulse:0.1.1
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB_PULSE=${POSTGRES_DB_PULSE}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PULSE_HOST=${PULSE_HOST}
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - KEYCLOAK_HOST=${KEYCLOAK_HOST}
+      - KEYCLOAK_PORT=${KEYCLOAK_PORT}
+      - DOMAIN_IP=${DOMAIN_IP}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+      - PULSE_CLIENT_ID=${PULSE_CLIENT_ID}
+      - PULSE_CLIENT_SECRET=${PULSE_CLIENT_SECRET}
+      - REALM_NAME=${REALM_NAME}
+      - CORE_POOL_SIZE=${CORE_POOL_SIZE}
+      - MAX_POOL_SIZE=${MAX_POOL_SIZE}
+      - QUEUE_CAPACITY=${QUEUE_CAPACITY}
+      - REFRESH_DAY=${REFRESH_DAY}
+    expose:
+      - "8012"
+      - "9012"
+    networks:
+      - private_net
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:9012/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+
+  kpip-day:
+    image: thilankaw/netrics/kpip-day:0.0.6
+    container_name: kpip-day
+    tty: true          # REQUIRED for single-line updates
+    stdin_open: true   # REQUIRED for single-line updates
+    env_file:
+      - .env
+    networks:
+      - private_net
+    volumes:
+      #      - ./backend/python/pulse/files/day-average:/app/day-average
+      #      - ./backend/python/pulse/files/day-average:/app/day-average
+      #      - ./backend/python/pulse/files/busy-hour:/app/busy-hour
+      - /home/ftpuser/apps/netrics/files/day-average:/app/day-average
+      - /home/ftpuser/apps/netrics/files/busy-hour:/app/busy-hour
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pulse:
+        condition: service_healthy
+
+  frontend:
+    image: thilankaw/netrics/frontend:0.0.7-test
+    container_name: frontend
+    expose:
+      - "80"
+    networks:
+      - public_net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  nginx:
+    image: thilankaw/netrics/nginx:0.0.1-test
+    container_name: nginx
+    environment:
+      - DOMAIN_IP=${DOMAIN_IP}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+    ports:
+      - "${FRONTEND_PORT}:8000"   # Remember to Enable CORS in BeansConfig for localhost:4200
+    networks:
+      - public_net
+      - private_net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      pgadmin:
+        condition: service_healthy
