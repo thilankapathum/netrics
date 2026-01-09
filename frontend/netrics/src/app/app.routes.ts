@@ -9,6 +9,7 @@ import {UnauthorizedComponent} from './layout/content/pages/unauthorized/unautho
 import {BeamComponent} from './layout/content/pages/beam/beam-component/beam-component';
 import {HomeComponent} from './layout/content/pages/home/home-component/home-component';
 import {DashboardComponent} from './layout/content/pages/pulse/dashboard/dashboard-component';
+import {KpiReports} from './layout/content/pages/pulse/kpi-reports/kpi-reports';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -47,6 +48,11 @@ export const routes: Routes = [
             path: 'dashboard',
             canActivate: [authGuard, roleGuard(['PULSE_READ'])],
             component: DashboardComponent
+          },
+          {
+            path: 'kpi-reports',
+            canActivate: [authGuard, roleGuard(['PULSE_UPDATE'])],
+            component: KpiReports
           },
           {
             path: '',
