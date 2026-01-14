@@ -10,6 +10,7 @@ import {BeamComponent} from './layout/content/pages/beam/beam-component/beam-com
 import {HomeComponent} from './layout/content/pages/home/home-component/home-component';
 import {DashboardComponent} from './layout/content/pages/pulse/dashboard/dashboard-component';
 import {KpiReports} from './layout/content/pages/pulse/kpi-reports/kpi-reports';
+import {PulseSettings} from './layout/content/pages/pulse/pulse-settings/pulse-settings';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -53,6 +54,11 @@ export const routes: Routes = [
             path: 'kpi-reports',
             canActivate: [authGuard, roleGuard(['PULSE_UPDATE'])],
             component: KpiReports
+          },
+          {
+            path: 'settings',
+            canActivate: [authGuard, roleGuard(['PULSE_DELETE'])],
+            component: PulseSettings
           },
           {
             path: '',
