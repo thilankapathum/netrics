@@ -23,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 public class CacheWarmupImpl implements CacheWarmup {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final CellNameService cellNameService;
     private final DateService dateService;
     private final CacheWarmupAsyncService cacheWarmupAsyncService;
     private final CellService cellService;
@@ -32,18 +31,15 @@ public class CacheWarmupImpl implements CacheWarmup {
     @Override
     public void evictAndWarmupCache(String ratName, String granularityName) {
         long start = System.currentTimeMillis();
-//        evictByRatName(ratName);
         evictByRatNameAndGranularityName(ratName, granularityName);
         warmupDateRangeCache(ratName, granularityName);
 
-        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells(ratName,granularityName);
+        CompletableFuture<Integer> reloadCellsFuture = cellService.reloadCells(ratName, granularityName);
         CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
         CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);
 
         CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture, kpiTrendFuture, worstCellFuture).join();
-//        CompletableFuture.allOf(basicKpiSnapshotFuture).join();
-
 
         long end = System.currentTimeMillis();
         long difference = end - start;
@@ -73,12 +69,12 @@ public class CacheWarmupImpl implements CacheWarmup {
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
             System.out.println("[" + ratName + " - " + granularityName + "] Evicted " + keys.size() + " cache entries!");
-            cellNameService.reloadCells(ratName, granularityName);
+            cellService.reloadCells(ratName, granularityName);
             cellService.findCellCountWithMissingInfo();
             return keys.size();
         } else {
             System.out.println("[" + ratName + " - " + granularityName + "] No cache entries found!");
-            cellNameService.reloadCells(ratName, granularityName);
+            cellService.reloadCells(ratName, granularityName);
             cellService.findCellCountWithMissingInfo();
             return 0;
         }
@@ -88,7 +84,7 @@ public class CacheWarmupImpl implements CacheWarmup {
     public void warmUpCache(String ratName, String granularityName) {
         warmupDateRangeCache(ratName, granularityName);
 
-        CompletableFuture<Integer> reloadCellsFuture = cellNameService.reloadCells(ratName, granularityName);
+        CompletableFuture<Integer> reloadCellsFuture = cellService.reloadCells(ratName, granularityName);
         CompletableFuture<Void> basicKpiSnapshotFuture = cacheWarmupAsyncService.warmupBasicKpiSnapshotCache(ratName, granularityName);
         CompletableFuture<Void> kpiTrendFuture = cacheWarmupAsyncService.warmupKpiTrendCache(ratName, granularityName);
         CompletableFuture<Void> worstCellFuture = cacheWarmupAsyncService.warmupWorstCellCache(ratName, granularityName);

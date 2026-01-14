@@ -2,6 +2,7 @@ package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
+import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.entity.Cell;
 
 import java.util.List;
@@ -27,8 +28,15 @@ public interface CellService {
 
     CellDto getByCellName(String cellName);
 
+    List<Cell> findAllCells();
+
+    List<CellDto> getAllCells();
+
+    List<CellNameDto> searchCell(String cellName);
+
     List<CellDto> createLatestCells(String ratName, String granularityName);
 
+    CompletableFuture<Integer> reloadCells();
     CompletableFuture<Integer> reloadCells(String ratName, String granularityName);
 
     List<Cell> findCellsWithMissingInfo();
