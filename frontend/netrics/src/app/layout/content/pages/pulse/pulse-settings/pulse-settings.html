@@ -18,7 +18,9 @@
 </nav>
 <div class="flex flex-row flex-wrap gap-3 py-4">
   <button class="btn btn-sm" (click)="openUserAreaMappingModal()">User-Area Mapping</button>
+  <button class="btn btn-sm" (click)="openStandardKpiModal()">Create Standard KPI</button>
 <!--  <button class="btn btn-sm" (click)="openUserAreaMappingModal()">User-Area Mapping</button>-->
 </div>
 <app-pulse-setting-user-area-mapping [open]="showUserAreaMappingModal"
                                      (closed)="closeUserAreaMappingModal()"></app-pulse-setting-user-area-mapping>
+<app-ps-standard-kpi [open]="showStandardKpiModal" (closed)="closeStandardKpiModal()" ></app-ps-standard-kpi>

@@ -26,14 +26,14 @@ public class StandardKpiController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping
-    public ResponseEntity<StandardKpiDto> createLteFddStandardKpi(@RequestBody @Valid StandardKpiDto dto) {
+    public ResponseEntity<StandardKpiDto> createStandardKpi(@RequestBody @Valid StandardKpiDto dto) {
         StandardKpiDto savedDto = standardKpiService.createKpi(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("/list")
-    public ResponseEntity<List<StandardKpiDto>> createLteFddStandardKpis(@RequestBody @Valid List<StandardKpiDto> dtos) {
+    public ResponseEntity<List<StandardKpiDto>> createStandardKpis(@RequestBody @Valid List<StandardKpiDto> dtos) {
         List<StandardKpiDto> savedDtos = standardKpiService.createKpis(dtos);
         return new ResponseEntity<>(savedDtos, HttpStatus.CREATED);
     }

@@ -26,14 +26,14 @@ public class StandardRawKpiMappingController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping
-    ResponseEntity<StandardRawKpiMappingDto> createLteFddStandardKpiMapping(@RequestBody @Valid StandardRawKpiMappingDto dto){
+    ResponseEntity<StandardRawKpiMappingDto> createStandardKpiMapping(@RequestBody @Valid StandardRawKpiMappingDto dto){
         StandardRawKpiMappingDto savedDto = standardRawKpiMappingService.createMapping(dto);
         return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("list")
-    ResponseEntity<List<StandardRawKpiMappingDto>> createLteFddStandardKpiMappingList(@RequestBody @Valid List<StandardRawKpiMappingDto> dtos){
+    ResponseEntity<List<StandardRawKpiMappingDto>> createStandardKpiMappingList(@RequestBody @Valid List<StandardRawKpiMappingDto> dtos){
         List<StandardRawKpiMappingDto> savedDtos = standardRawKpiMappingService.createMappingList(dtos);
         return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
     }
