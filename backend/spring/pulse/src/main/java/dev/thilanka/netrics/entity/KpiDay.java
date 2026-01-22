@@ -14,17 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "kpi_values",
-        indexes = {
-                @Index(
-                        name = "idx_kpiday_std_rat_time",
-                        columnList = "standard_kpi_id, rat_id, timestamp"
-                ),
-                @Index(
-                        name = "idx_kpiday_granularity_id",
-                        columnList = "granularity_id"
-                )},
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp","cellName","standard_kpi_id", "oss_id","rat_id","granularity_id"})})
+@Table(name = "kpi_values")
 public class KpiDay {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -9,8 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "kpi_mapping",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"standard_kpi_id", "oss_id", "rat_id"})})
+@Table(name = "kpi_mapping")
 public class KpiMappingToOss {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

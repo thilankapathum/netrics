@@ -12,38 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "worst_cells",
-        indexes = {
-                @Index(
-                        name = "idx_worst_cell_timestamp",
-                        columnList = "timestamp"
-                ),
-                @Index(
-                        name = "idx_worst_cell_cell_name",
-                        columnList = "cell_name"
-                ),
-                @Index(
-                        name = "idx_worst_cell_area",
-                        columnList = "area_id"
-                ),
-                @Index(
-                        name = "idx_worst_cell_rat",
-                        columnList = "rat_id"
-                ),
-                @Index(
-                        name = "idx_worst_cell_kpi",
-                        columnList = "standard_kpi_id"
-                ),
-                @Index(
-                        name = "idx_exclude_zeroes",
-                        columnList = "exclude_zeroes"
-                ),
-                @Index(
-                        name = "idx_granularity",
-                        columnList = "granularity_id"
-                )},
-
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"timestamp", "period", "cell_name", "standard_kpi_id", "rat_id", "area_id", "exclude_zeroes","granularity_id"})})
+@Table(name = "worst_cells")
 public class WorstCell {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

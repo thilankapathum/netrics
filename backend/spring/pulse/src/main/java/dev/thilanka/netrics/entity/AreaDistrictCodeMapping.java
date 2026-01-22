@@ -10,8 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "area_district_code_mapping",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"area_id","district_code_id"})})
+@Table(name = "area_district_code_mapping")
 public class AreaDistrictCodeMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
