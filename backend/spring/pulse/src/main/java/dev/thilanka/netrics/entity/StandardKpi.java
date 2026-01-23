@@ -11,8 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "standard_kpi",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"kpi_name", "label", "rat_id"})})
+@Table(name = "standard_kpi")
 public class StandardKpi {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

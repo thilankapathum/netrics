@@ -11,12 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "granularity",
-        indexes = {
-                @Index(
-                        name = "idx_name_label",
-                        columnList = "name, label"
-                )})
+@Table(name = "granularity")
 public class Granularity {
 
     @Id

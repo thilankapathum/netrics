@@ -2,6 +2,7 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
+import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +32,7 @@ public class CellServiceImpl implements CellService {
     private final DateService dateService;
 
     Integer cellCountWithMissingInfo = 0;
+    List<CellDto> allCells = new ArrayList<>();
 
     @Override
     public Cell createCell(Cell cell) {
@@ -158,6 +161,44 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    public List<Cell> findAllCells() {
+        return cellRepository.findAll();
+    }
+
+    @Override
+    public List<CellDto> getAllCells() {
+
+        List<Cell> cells = findAllCells();
+
+        return cells.stream().map(mapper::cellToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CellNameDto> searchCell(String cellName) {
+        if (this.allCells.isEmpty()) {
+            System.out.println("allCells List is empty");
+            reloadCells();
+        }
+
+        if (cellName == null || cellName.isBlank()) {
+            return Collections.emptyList();
+        } else {
+
+            List<Rat> rats = ratService.findAll();
+
+            String lower = cellName.toLowerCase();
+            List<CellDto> filteredCells = this.allCells.stream()
+                    .filter(c -> c.cellName().toLowerCase().contains(lower))
+                    .limit(20)
+                    .toList();
+
+            return filteredCells.stream()
+                    .map(c -> cellDtoToCellNameDto(c, rats))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    @Override
     public List<CellDto> createLatestCells(String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
@@ -172,8 +213,22 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    public CompletableFuture<Integer> reloadCells() {
+        System.out.println("reloading cells...");
+        this.allCells = getAllCells();
+        System.out.println("Loaded " + this.allCells.size() + " cells");
+        return CompletableFuture.completedFuture(this.allCells.size());
+    }
+
+    @Override
     public CompletableFuture<Integer> reloadCells(String ratName, String granularityName) {
-        return null;    //TODO
+
+        System.out.println("[" + ratName + " - " + granularityName + "] Creating Cells...");
+        List<CellDto> cellDtos = createLatestCells(ratName, granularityName);
+        System.out.println("[" + granularityName + " - " + ratName + "] created " + cellDtos.size() + " Cells");
+        this.allCells = getAllCells();
+
+        return CompletableFuture.completedFuture(this.allCells.size());
     }
 
     @Override
@@ -201,5 +256,17 @@ public class CellServiceImpl implements CellService {
     @Override
     public Integer getCellCountWithMissingInfo() {
         return this.cellCountWithMissingInfo;
+    }
+
+
+    private CellNameDto cellDtoToCellNameDto(CellDto dto, List<Rat> rats) {
+
+        Rat rat = rats.stream()
+                .filter(r -> dto.ratName().equals(r.getName()))
+                .findFirst()
+                .orElse(null);
+
+        assert rat != null;
+        return new CellNameDto(dto.cellName(), dto.ratName(), rat.getLabel());
     }
 }
