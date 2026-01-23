@@ -274,7 +274,7 @@ services:
         condition: service_healthy
 
   kpip-day:
-    image: thilankaw/netrics/kpip-day:0.0.5
+    image: thilankaw/netrics/kpip-day:0.0.8
     container_name: kpip-day
     tty: true          # REQUIRED for single-line updates
     stdin_open: true   # REQUIRED for single-line updates

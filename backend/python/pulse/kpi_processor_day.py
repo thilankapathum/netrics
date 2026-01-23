@@ -7,6 +7,7 @@ import pandas as pd
 import psycopg2
 from psycopg2 import Error
 from psycopg2.extras import RealDictCursor
+from psycopg2.extras import execute_values
 import logging
 import time
 import shutil
@@ -654,135 +655,191 @@ class KPIProcessor:
 
         return error_log_path
 
-    def insert_data_to_postgresql(self, df: pd.DataFrame, rat_id: int, original_filename: str, granularity_name: str) -> bool:
-        """Insert unpivoted data into PostgreSQL database with individual row error handling.
 
-        Shows progress, insertion rate, and estimated time remaining in real time.
-        Returns:
-            bool: True if all records inserted successfully, False if there were errors.
+    def insert_data_to_postgresql(
+            self,
+            df: pd.DataFrame,
+            rat_id: int,
+            original_filename: str,
+            granularity_name: str
+    ) -> bool:
         """
+        High-performance batch insert into TimescaleDB using execute_values.
+        Tracks skipped rows (duplicates) using ON CONFLICT DO NOTHING.
+
+        - Batch inserts (fast)
+        - Skipped rows counted
+        - Per-row error isolation on actual errors
+        - Progress + ETA logging
+        """
+
         if df.empty:
             logger.warning("No data to insert")
             return True
 
         connection = None
+        cursor = None
         error_records = []
         successful_inserts = 0
+        skipped_records = 0
         total_records = len(df)
+
         start_time = time.time()
         granularity_id = self.get_granularity_id_by_name(granularity_name)
+        rat_name = self.rats[rat_id]["name"]
+
+        # 🔧 Tuning parameters
+        BATCH_SIZE = 5000
+        PROGRESS_INTERVAL = 5000
+
+        insert_query = """
+            INSERT INTO kpi_values (
+                timestamp,
+                cell_name,
+                site_name,
+                standard_kpi_id,
+                kpi_value,
+                data_type,
+                oss_id,
+                file_name,
+                numerator_kpi_id,
+                numerator_kpi_value,
+                denominator_kpi_id,
+                denominator_kpi_value,
+                district_code_id,
+                rat_id,
+                granularity_id
+            )
+            VALUES %s
+            ON CONFLICT (
+                timestamp,
+                cell_name,
+                standard_kpi_id,
+                oss_id,
+                rat_id,
+                granularity_id
+            )
+            DO NOTHING;
+        """
 
         try:
-            rat_name = self.rats[rat_id]['name']
             logger.info(f"[{granularity_name} - {rat_name}] Preparing data insert...")
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # SQL query
-            insert_query = """
-            INSERT INTO kpi_values
-            (timestamp, cell_name, site_name, standard_kpi_id,
-             kpi_value, data_type, oss_id, file_name, 
-             numerator_kpi_id, numerator_kpi_value, 
-             denominator_kpi_id, denominator_kpi_value, district_code_id, rat_id, granularity_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
+            # ⚡ Faster WAL behavior
+            cursor.execute("SET synchronous_commit = OFF")
+            cursor.execute("SET jit = OFF")
 
-            # Progress tracking
-            update_interval = 1000
-            last_update_success = 0
-            last_update_error = 0
-            last_progress_line = ""
+            logger.info(f"[{granularity_name} - {rat_name}] Inserting {total_records} records...")
 
-            logger.info(f"[{granularity_name} - {rat_name}] Inserting data of {total_records} records...")
-            for idx, row in df.iterrows():
-                try:
-                    data_tuple = (
-                        row.get('timestamp'),
-                        row.get('cell_name'),
-                        row.get('site_name'),
-                        row.get('standard_kpi_id'),
-                        row.get('kpi_value'),
-                        row.get('data_type'),
-                        row.get('oss_id'),
-                        row.get('file_name'),
-                        self.convert_nan_to_none(row.get('numerator_kpi_id')),
-                        self.convert_nan_to_none(row.get('numerator_kpi_value')),
-                        self.convert_nan_to_none(row.get('denominator_kpi_id')),
-                        self.convert_nan_to_none(row.get('denominator_kpi_value')),
-                        self.convert_nan_to_none(row.get('district_code_id')),
+            batch = []
+            batch_start_index = 0
+
+            for idx, row in enumerate(df.itertuples(index=False), start=1):
+                batch.append(
+                    (
+                        row.timestamp,
+                        row.cell_name,
+                        row.site_name,
+                        row.standard_kpi_id,
+                        row.kpi_value,
+                        row.data_type,
+                        row.oss_id,
+                        row.file_name,
+                        self.convert_nan_to_none(row.numerator_kpi_id),
+                        self.convert_nan_to_none(row.numerator_kpi_value),
+                        self.convert_nan_to_none(row.denominator_kpi_id),
+                        self.convert_nan_to_none(row.denominator_kpi_value),
+                        self.convert_nan_to_none(row.district_code_id),
                         rat_id,
-                        granularity_id
+                        granularity_id,
                     )
+                )
 
-                    cursor.execute(insert_query, data_tuple)
-                    connection.commit()
-                    successful_inserts += 1
+                if len(batch) >= BATCH_SIZE or idx == total_records:
+                    try:
+                        # ⚡ Bulk insert
+                        execute_values(cursor, insert_query, batch, page_size=BATCH_SIZE)
+                        connection.commit()
 
-                except Error as e:
-                    connection.rollback()
-                    error_records.append({
-                        'row_index': idx,
-                        'error_type': type(e).__name__,
-                        'error_message': str(e),
-                        'row_data': row.to_dict()
-                    })
+                        # Track inserted vs skipped rows
+                        inserted = cursor.rowcount
+                        skipped = len(batch) - inserted
+                        successful_inserts += inserted
+                        skipped_records += skipped
 
-                # Update progress
-                if (
-                        successful_inserts - last_update_success >= update_interval
-                        or len(error_records) - last_update_error >= update_interval
-                        or successful_inserts + len(error_records) == total_records
-                ):
-                    elapsed = time.time() - start_time
-                    processed = successful_inserts + len(error_records)
-                    rate = processed / elapsed if elapsed > 0 else 0
+                    except Error as batch_error:
+                        # Batch failed → fallback to per-row inserts
+                        connection.rollback()
+                        for offset, record in enumerate(batch):
+                            try:
+                                cursor.execute(
+                                    insert_query.replace(
+                                        "VALUES %s",
+                                        "VALUES (" + ",".join(["%s"] * 15) + ")"
+                                    ),
+                                    record
+                                )
+                                connection.commit()
+                                successful_inserts += 1
+                            except Error as row_error:
+                                connection.rollback()
+                                error_records.append(
+                                    {
+                                        "row_index": batch_start_index + offset,
+                                        "error_type": type(row_error).__name__,
+                                        "error_message": str(row_error),
+                                        "row_data": df.iloc[batch_start_index + offset].to_dict(),
+                                    }
+                                )
 
-                    remaining = total_records - processed
-                    eta_seconds = remaining / rate if rate > 0 else 0
-                    eta_str = str(timedelta(seconds=int(eta_seconds)))
+                    # 📊 Progress reporting
+                    if (successful_inserts + skipped_records) % PROGRESS_INTERVAL == 0 or idx == total_records:
+                        elapsed = time.time() - start_time
+                        rate = (successful_inserts + skipped_records) / elapsed if elapsed > 0 else 0
+                        remaining = total_records - (successful_inserts + skipped_records)
+                        eta = timedelta(seconds=int(remaining / rate)) if rate > 0 else "N/A"
 
-                    progress_msg = (
-                        f"[{granularity_name} - {rat_name}] {successful_inserts}/{total_records} records inserted | "
-                        f"errors: {len(error_records)} | rate: {rate:.2f} rec/s | ETA: {eta_str}"
-                    )
+                        msg = (
+                            f"[{granularity_name} - {rat_name}] "
+                            f"{successful_inserts}/{total_records} inserted | "
+                            f"{skipped_records} skipped | "
+                            f"errors: {len(error_records)} | "
+                            f"rate: {rate:.0f} rec/s | ETA: {eta}"
+                        )
 
-                    # Clear previous line by overwriting with spaces, then print new progress
-                    if last_progress_line:
-                        sys.stdout.write('\r' + ' ' * len(last_progress_line) + '\r')
-                    sys.stdout.write(progress_msg)
-                    sys.stdout.flush()
+                        sys.stdout.write("\r" + msg)
+                        sys.stdout.flush()
 
-                    last_progress_line = progress_msg
-                    last_update_success = successful_inserts
-                    last_update_error = len(error_records)
+                    batch.clear()
+                    batch_start_index = idx
 
-            # Move to new line after completion
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
             sys.stdout.flush()
 
-            # Final logging
             logger.info(f"[{granularity_name} - {rat_name}] Successfully inserted {successful_inserts} records")
+            logger.info(f"[{granularity_name} - {rat_name}] Skipped (duplicates) {skipped_records} records")
 
             if error_records:
                 logger.warning(f"[{granularity_name} - {rat_name}] Failed to insert {len(error_records)} records")
-
-                error_log_path = self.create_error_log_file(rat_id, granularity_name,original_filename, error_records)
+                error_log_path = self.create_error_log_file(rat_id, granularity_name, original_filename, error_records)
                 logger.info(f"[{granularity_name} - {rat_name}] Error log created: {error_log_path}")
                 return False
-            else:
-                logger.info(f"[{granularity_name} - {rat_name}] All records inserted successfully")
-                return True
+
+            logger.info(f"[{granularity_name} - {rat_name}] All remaining records inserted successfully")
+            return True
 
         except Error as e:
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
             sys.stdout.flush()
-            logger.error(f"Error during database operation: {e}")
+            logger.exception("Database error during insert")
             return False
 
         finally:
-            if connection:
+            if cursor:
                 cursor.close()
+            if connection:
                 connection.close()
 
     def read_data_file(self, file_path: str, file_type: str, oss_config: dict) -> pd.DataFrame:
@@ -837,7 +894,7 @@ class KPIProcessor:
                 return False
 
             logger.info(f"[{granularity_name} - {rat_name}] Read {len(df)} rows and {len(df.columns)} columns from {file_path}")
-            logger.info(f"[{granularity_name} - {rat_name}] Column names: {list(df.columns)}")
+            # logger.info(f"[{granularity_name} - {rat_name}] Column names: {list(df.columns)}")
             logger.info(f"[{granularity_name} - {rat_name}] Normalizing column names...")
 
             # Normalize column names

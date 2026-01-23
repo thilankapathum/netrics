@@ -278,7 +278,7 @@ services:
         condition: service_healthy
 
   kpip-day:
-    image: thilankaw/netrics/kpip-day:0.0.6
+    image: thilankaw/netrics/kpip-day:0.0.8
     container_name: kpip-day
     tty: true          # REQUIRED for single-line updates
     stdin_open: true   # REQUIRED for single-line updates
@@ -288,10 +288,10 @@ services:
       - private_net
     volumes:
       #      - ./backend/python/pulse/files/day-average:/app/day-average
-      #      - ./backend/python/pulse/files/day-average:/app/day-average
-      #      - ./backend/python/pulse/files/busy-hour:/app/busy-hour
-      - /home/ftpuser/apps/netrics/files/day-average:/app/day-average
-      - /home/ftpuser/apps/netrics/files/busy-hour:/app/busy-hour
+      - ./backend/python/pulse/files/day-average:/app/day-average
+      - ./backend/python/pulse/files/busy-hour:/app/busy-hour
+#      - /home/ftpuser/apps/netrics/files/day-average:/app/day-average
+#      - /home/ftpuser/apps/netrics/files/busy-hour:/app/busy-hour
     depends_on:
       postgres:
         condition: service_healthy
