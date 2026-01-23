@@ -872,4 +872,55 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             @Param("ratId")Long ratId,
             @Param("granularityId")Long granularityId
     );
+
+
+    //===================== KPI REPORTS ================================================================================
+
+    @Query(value = """
+            WITH band_concat AS (
+                SELECT
+                    s.site_code,
+                    STRING_AGG(d.band_name, '+' ORDER BY d.band_name ::int) AS concat_bands
+                FROM (
+                    SELECT DISTINCT
+                        c.site_id,
+                        b.name AS band_name
+                    FROM cells c
+                    JOIN bands b ON c.band_id = b.id
+                    WHERE c.rat_id = :ratId
+                ) d
+                JOIN sites s ON s.id = d.site_id
+                GROUP BY s.site_code
+            )
+            SELECT
+                date_trunc('day', kv."timestamp") AS "timestamp",
+                s.site_code,
+            	skpi.kpi_name,
+            	skpi.label,
+                CASE skpi.aggregation
+                    WHEN 'SUM' THEN SUM(kv.kpi_value)
+                    ELSE AVG(kv.kpi_value)
+                END AS kpi_value,
+                bc.concat_bands
+            FROM kpi_values kv
+            JOIN standard_kpi skpi ON kv.standard_kpi_id = skpi.id
+            JOIN cells c ON c.cell_name = kv.cell_name
+            JOIN sites s ON s.id = c.site_id
+            JOIN band_concat bc ON bc.site_code = s.site_code
+            JOIN district_codes dc ON kv.district_code_id = dc.id
+            JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
+            WHERE kv.rat_id = :ratId
+              AND kv.granularity_id = :granularityId
+              AND kv.standard_kpi_id = :standardKpiId
+              AND kv.timestamp BETWEEN :startTimestamp AND :endTimestamp
+              AND adcm.area_id = :areaId
+            GROUP BY
+                date_trunc('day', kv."timestamp"),
+                s.site_code,
+                bc.concat_bands,
+                skpi.aggregation,
+            	skpi.label,
+            	skpi.kpi_name;
+            """, nativeQuery = true)
+    List<SiteKpiReportDto> getSiteWiseReportByKpiAndDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId, @Param("standardKpiId") Long standardKpiId, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp, @Param("areaId") Long areaId);
 }

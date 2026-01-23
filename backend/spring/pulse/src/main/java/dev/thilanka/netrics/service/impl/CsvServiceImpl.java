@@ -2,8 +2,10 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
+import dev.thilanka.netrics.dto.SiteKpiReportDto;
 import dev.thilanka.netrics.entity.enums.CellCsvHeader;
 import dev.thilanka.netrics.entity.enums.CellCsvImportResultHeader;
+import dev.thilanka.netrics.entity.enums.SiteKpiReportHeader;
 import dev.thilanka.netrics.service.CsvService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
@@ -29,6 +31,11 @@ public class CsvServiceImpl implements CsvService {
     private static final String[] CELL_IMPORT_RESULT_HEADERS = Arrays
             .stream(CellCsvImportResultHeader.values())
             .map(CellCsvImportResultHeader::getHeader)
+            .toArray(String[]::new);
+
+    private static final String[] SITE_KPI_REPORT_HEADERS = Arrays
+            .stream(SiteKpiReportHeader.values())
+            .map(SiteKpiReportHeader::getHeader)
             .toArray(String[]::new);
 
     @Override
@@ -105,5 +112,29 @@ public class CsvServiceImpl implements CsvService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to write Cell Import Result CSV " + e);
         }
+    }
+
+    @Override
+    public void writeSiteWiseReportByKpiAndDateToCsv(List<SiteKpiReportDto> dtos, Writer writer) {
+
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(SITE_KPI_REPORT_HEADERS)
+                .get();
+
+        try (CSVPrinter printer = new CSVPrinter(writer,csvFormat)){
+            for (SiteKpiReportDto dto: dtos){
+                printer.printRecord(
+                        dto.timestamp(),
+                        dto.siteCode(),
+                        dto.label(),
+                        dto.kpiValue(),
+                        dto.concatBands()
+                );
+            }
+
+        } catch (IOException e){
+            throw new RuntimeException("Failed to write Cell Import Result CSV " + e);
+        }
+
     }
 }

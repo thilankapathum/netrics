@@ -232,7 +232,7 @@ services:
       - "${DOMAIN_IP}:host-gateway"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.1.0
+    image: thilankaw/netrics/pulse:0.1.2
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -292,7 +292,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: thilankaw/netrics/frontend:0.0.6
+    image: thilankaw/netrics/frontend:0.0.8
     container_name: frontend
     expose:
       - "80"

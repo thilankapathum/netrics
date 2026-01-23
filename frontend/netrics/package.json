@@ -22,6 +22,7 @@
     "@angular/ssr": "^20.0.0",
     "@tailwindcss/postcss": "^4.1.12",
     "apexcharts": "^5.3.4",
+    "cally": "^0.9.0",
     "chart.js": "^4.5.0",
     "daisyui": "^5.0.50",
     "express": "^4.18.2",
