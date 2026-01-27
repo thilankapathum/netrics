@@ -16,11 +16,29 @@
   </div>
 
 </nav>
-<div class="flex flex-row flex-wrap gap-3 py-4">
-  <button class="btn btn-sm" (click)="openUserAreaMappingModal()">User-Area Mapping</button>
-  <button class="btn btn-sm" (click)="openStandardKpiModal()">Create Standard KPI</button>
-<!--  <button class="btn btn-sm" (click)="openUserAreaMappingModal()">User-Area Mapping</button>-->
+<div class="flex w-full flex-col py-2 gap-2">
+  <div class="p-3 border border-base-300 rounded-xl bg-base-100">
+    <h2 class="text-md font-semibold mb-3">User Management</h2>
+    <div class="flex flex-row flex-wrap gap-3">
+      <button class="btn btn-sm" (click)="openUserAreaMappingModal()">User-Area Mapping</button>
+    </div>
+  </div>
+  <div class="p-3 border border-base-300 rounded-xl bg-base-100">
+    <h2 class="text-md font-semibold mb-3">KPI Management</h2>
+    <div class="flex flex-row flex-wrap gap-3">
+      <button class="btn btn-sm" (click)="openStandardKpiModal()">Create Standard KPI</button>
+    </div>
+  </div>
+  <div class="p-3 border border-base-300 rounded-xl bg-base-100">
+    <h2 class="text-md font-semibold mb-3">Engineering Data Management</h2>
+    <div class="flex flex-row flex-wrap gap-3">
+      <button class="btn btn-sm" (click)="openMissingCellInfoModal()">Missing Cell Information</button>
+    </div>
+  </div>
+
+
 </div>
 <app-pulse-setting-user-area-mapping [open]="showUserAreaMappingModal"
                                      (closed)="closeUserAreaMappingModal()"></app-pulse-setting-user-area-mapping>
-<app-ps-standard-kpi [open]="showStandardKpiModal" (closed)="closeStandardKpiModal()" ></app-ps-standard-kpi>
+<app-ps-standard-kpi [open]="showStandardKpiModal" (closed)="closeStandardKpiModal()"></app-ps-standard-kpi>
+<app-ps-cells [open]="showMissingCellInfoModal" (closed)="closeMissingCellInfoModal()"></app-ps-cells>

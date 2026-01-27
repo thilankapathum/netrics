@@ -30,7 +30,6 @@ import {CellKpiSeries} from '../../../../../models/apexCharts/CellKpiSeries';
 export class CellAnalysis implements OnInit {
 
   selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
-  // selectedRat = signal('');
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
   rat = signal<RatDto | undefined>(undefined);
   cellName = signal('');
@@ -38,7 +37,6 @@ export class CellAnalysis implements OnInit {
   initialStandardKpi: string = '';
   kpiTrendData = signal<KpiTrendDto[]>([]);
   standardKpis: StandardKpiDto[] = [];
-  // chartSeries = signal<ApexAxisChartSeries>([]);
   chartSeries = signal<CellKpiSeries[]>([]);
   trendPeriod = signal<'week' | 'month' | 'quarter'>('month');
   selectedChartType = signal<'s_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi'>('s_cell_s_kpi');
@@ -200,18 +198,9 @@ export class CellAnalysis implements OnInit {
               const filtered = existing.filter(s => !cellNamesToAdd.includes(s.name));
 
               return [...filtered, ...seriesForCell];
-
             });
-
-            // this.chartSeries.update(existing => [
-            //   ...existing,
-            //   ...seriesForCell
-            // ]);
           }
-          // this.addCellToChart(this.kpiTrendData());
-
           this.loadingTrendData.set(false);
-          // console.log(this.chartSeries());
         } else {
           console.error(`KPI trend data unavailable for the cell ${cellName}`);
           this.alertService.error(`KPI trend data unavailable for ${cellName}`);
@@ -232,14 +221,28 @@ export class CellAnalysis implements OnInit {
 
   onSearchCell(value: string) {
     this.queryCell.set(value);
+
     if (this.queryCell().length > 2) {
       this.cellService.searchCell(value).subscribe({
         next: data => {
-          this.filteredCells.set(data)
+          const sortedData = [...data].sort((a, b) => {
+            const ratA = a.ratName?.toLowerCase() ?? '';
+            const ratB = b.ratName?.toLowerCase() ?? '';
+            const ratCompare = ratA.localeCompare(ratB);
+            if (ratCompare !== 0) {
+              return ratCompare; // sort by ratName first
+            }
+
+            const nameA = a.cellName?.toLowerCase() ?? '';
+            const nameB = b.cellName?.toLowerCase() ?? '';
+            return nameA.localeCompare(nameB); // then sort by cellName
+          });
+
+          this.filteredCells.set(sortedData);
         }
       });
     } else {
-      this.filteredCells.set([])
+      this.filteredCells.set([]);
     }
   }
 
@@ -257,7 +260,6 @@ export class CellAnalysis implements OnInit {
 
   setSelectedChartType(type: 's_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi') {
     this.selectedChartType.set(type);
-    // console.log(this.selectedChartType());
 
     switch (type) {
       case 's_cell_s_kpi':
@@ -285,6 +287,5 @@ export class CellAnalysis implements OnInit {
   clearSharedServiceData(): void {
     this.sharedService.clearAll();
   }
-
 
 }
