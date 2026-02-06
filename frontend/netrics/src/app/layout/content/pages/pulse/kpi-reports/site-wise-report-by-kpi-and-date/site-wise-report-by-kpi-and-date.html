@@ -4,14 +4,14 @@
     <div>
       <div class="tabs tabs-box tabs-xs border border-base-300">
         @for (_rat of rats; track $index) {
-          <input type="radio" name="rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
+          <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
                  [checked]="rat() === _rat.name" (change)="selectRat($any($event.target).value)"/>
         }
       </div>
     </div>
 
     <div>
-      <select class="select select-sm ml-auto" [(ngModel)]="standardKpi"
+      <select [disabled]="loadingAll()" class="select select-sm ml-auto" [(ngModel)]="standardKpi"
               (change)="selectStandardKpi(standardKpi())">
         <!--            <option disabled selected>KPI</option>-->
         @for (kpi of standardKpis; track $index) {
@@ -21,13 +21,13 @@
     </div>
 
     <div class="flex flex-row join">
-      <select class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
+      <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
               (change)="selectAreaType(areaType()!)">
         @for (at of areaTypes; track at.name) {
           <option [value]="at.name">{{ at.name }}</option>
         }
       </select>
-      <select class="select select-sm border join-item w-auto" [(ngModel)]="area"
+      <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="area"
               (change)="selectArea(area()!)">
         @for (ar of areas; track ar.name) {
           <option [value]="ar.name">{{ ar.name }}</option>
@@ -36,7 +36,7 @@
     </div>
     <div class="tabs tabs-box tabs-xs border border-base-300">
       @for (gran of granularities; track gran.name) {
-        <input type="radio" name="granularity_tabs" class="tab" [value]="gran.name"
+        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab" [value]="gran.name"
                aria-label="{{gran.label}}"
                [checked]="granularity() === gran.name"
                (change)="selectGranularity($any($event.target).value)"/>

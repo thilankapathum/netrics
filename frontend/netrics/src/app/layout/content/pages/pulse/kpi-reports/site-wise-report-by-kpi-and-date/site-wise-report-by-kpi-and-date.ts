@@ -46,6 +46,12 @@ export class SiteWiseReportByKpiAndDate {
   endDate = signal<string>('');
 
   downloadingCsv: boolean = false;
+  loadingRats:boolean = false;
+  loadingStandardKpis:boolean = false;
+  loadingAreaTypes:boolean = false;
+  loadingAreas:boolean = false;
+  loadingGranularities:boolean = false;
+
 
   invalidRange = computed(() => {
     const start = this.startDate();
@@ -72,22 +78,30 @@ export class SiteWiseReportByKpiAndDate {
     this.getAllAreaTypes();
   }
 
+  loadingAll(){
+    return this.downloadingCsv || this.loadingRats || this.loadingStandardKpis || this.loadingAreaTypes || this.loadingAreas || this.loadingGranularities;
+  }
+
   //================== GETTERS =============================
 
   getAllRats(): void {
+    this.loadingRats = true;
     this.ratService.getAllRats().subscribe({
       next: data => {
         this.rats = data;
         this.rat.set(this.rats[0].name!);
-        this.getAllStandardKpiByRat(this.rats[0])
+        this.getAllStandardKpiByRat(this.rats[0]);
+        this.loadingRats = false;
       }, error: err => {
         console.error(err);
         this.alertService.error('Error retrieving RATs');
+        this.loadingRats = false;
       }
     })
   }
 
   getAllStandardKpiByRat(rat: RatDto) {
+    this.loadingStandardKpis = true;
     this.standardKpis = [];
     this.standardKpiService.getAllStandardKpi(rat.name!).subscribe({
       next: data => {
@@ -97,45 +111,59 @@ export class SiteWiseReportByKpiAndDate {
         } else {
           this.alertService.error(`Error retrieving Standard KPI for ${rat.label}`);
         }
+        this.loadingStandardKpis = false;
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
         this.alertService.error("Standard KPI retrieval failed");
+        this.loadingStandardKpis = false;
       }
     })
   }
 
   getAllGranularities() {
+    this.loadingGranularities = true;
     this.granularityService.getAllGranularities().subscribe({
       next: data => {
         this.granularities = data;
         this.granularity.set(this.granularities[0].name!)
+        this.loadingGranularities = false;
+      }, error: err => {
+        console.error(err);
+        this.alertService.error("Error retrieving Granularities");
+        this.loadingGranularities = false;
       }
     })
   }
 
   getAllAreaTypes() {
+    this.loadingAreaTypes = true;
     this.areaTypeService.getAllAreaTypes().subscribe({
         next: data => {
           this.areaTypes = data;
           this.areaType.set(this.areaTypes[0].name!);
           this.getAreasByAreaType(this.areaType()!);
+          this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
           this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.loadingAreaTypes = false;
         }
       }
     )
   }
 
   getAreasByAreaType(areaTypeName: string) {
+    this.loadingAreas = true;
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
         this.area.set(this.areas.at(0)?.name);
+        this.loadingAreas = false;
       }, error: error => {
         console.log(error);
         this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.loadingAreas = false;
       }
     })
   }

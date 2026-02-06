@@ -59,7 +59,7 @@ export class DashboardComponent implements OnInit {
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
 
-  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  selectedGranularity = signal<'day-average' | 'busy-hour'>('busy-hour');
 
   selectedCell = signal('');
 
@@ -105,6 +105,10 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.getAllStandardKpi(this.selectedRat())
     this.getUserProfile();
+  }
+
+  loadingAll(){
+    return this.loadingWorstCells || this.loadingKpiTrend;
   }
 
   // ----------- GETTERS ---------------------------

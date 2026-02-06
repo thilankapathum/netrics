@@ -51,26 +51,26 @@
       <div>
         <div class="tabs tabs-box tabs-xs border border-base-300">
           <!--          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD" checked="checked"/>-->
-          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD"
+          <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD"
                  [checked]="selectedRat() === 'ltefdd'" (change)="setSelectedRat($any($event.target).value)"/>
           <input disabled type="radio" name="rat_tabs" class="tab" value="ltetdd" aria-label="LTE-TDD"
                  [checked]="selectedRat() === 'ltetdd'" (change)="setSelectedRat($any($event.target).value)"/>
-          <input type="radio" name="rat_tabs" class="tab" value="nr" aria-label="NR"
+          <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" value="nr" aria-label="NR"
                  [checked]="selectedRat() === 'nr'"
                  (change)="setSelectedRat($any($event.target).value)"/>
-          <input type="radio" name="rat_tabs" class="tab" value="gsm" aria-label="GSM"
+          <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" value="gsm" aria-label="GSM"
                  [checked]="selectedRat() === 'gsm'" (change)="setSelectedRat($any($event.target).value)"/>
         </div>
       </div>
 
       <div class="flex flex-row join">
-        <select class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
+        <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
                 (change)="selectAreaType(areaType()!)">
           @for (at of areaTypes; track at.name) {
             <option [value]="at.name">{{ at.name }}</option>
           }
         </select>
-        <select class="select select-sm border join-item w-auto" [(ngModel)]="area"
+        <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="area"
                 (change)="selectArea(area()!)">
           @for (ar of areas; track ar.name) {
             <option [value]="ar.name">{{ ar.name }}</option>
@@ -78,17 +78,17 @@
         </select>
       </div>
       <div class="tabs tabs-box tabs-xs border border-base-300">
-        <input type="radio" name="granularity_tabs" class="tab text-primary hover:text-primary/80" value="day-average"
+        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-primary hover:text-primary/80" value="day-average"
                aria-label="Day Average"
                [checked]="selectedGranularity() === 'day-average'"
                (change)="setSelectedGranularity($any($event.target).value)"/>
-        <input type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70" value="busy-hour"
+        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70" value="busy-hour"
                aria-label="Busy Hour"
                [checked]="selectedGranularity() === 'busy-hour'"
                (change)="setSelectedGranularity($any($event.target).value)"/>
       </div>
       <div class="flex flex-row gap-2 items-center">
-        <select class="select select-sm border" [(ngModel)]="aggregation"
+        <select [disabled]="loadingAll()" class="select select-sm border" [(ngModel)]="aggregation"
                 (change)="selectAggregation(aggregation())">
           @if (dateRanges()?.['month'] && dateRanges()?.['week'] && dateRanges()?.['day']) {
             <option [value]="'day'" selected>Day <span
@@ -184,11 +184,11 @@
         <div class="flex flex-row gap-2">
           <h2 class="text-xl font-semibold">KPI Trend</h2>
           <div class="tabs tabs-box tabs-xs ml-auto">
-            <input type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
+            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
                    [(ngModel)]="selectedKpiTrendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
-            <input type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"
+            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"
                    [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
-            <input type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"
+            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"
                    [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
         </div>
@@ -205,7 +205,7 @@
       <section class=" flex flex-col gap-3 grow-1 p-4 border border-base-300 rounded-xl bg-base-100">
         <div class="flex flex-row">
           <h2 class="text-xl font-semibold">Worst Cells</h2>
-          <select class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
+          <select [disabled]="loadingAll()" class="select select-sm ml-auto" [(ngModel)]="selectedStandardKpi"
                   (change)="selectKpi(selectedStandardKpi(), selectedRat(), selectedGranularity())">
             <!--            <option disabled selected>KPI</option>-->
             @for (kpi of standardKpis; track $index) {
@@ -259,33 +259,33 @@
           <div class="join justify-center ml-auto">
             <div class="join justify-center gap-2 mt-2">
               <button class="join-item btn btn-xs"
-                      [disabled]="currentPage === 0"
+                      [disabled]="currentPage === 0 || loadingAll()"
                       (click)="prevPage()">«
               </button>
 
-              <button class="join-item btn btn-active btn-xs">
+              <button [disabled]="loadingAll()" class="join-item btn btn-active btn-xs">
                 {{ currentPage + 1 }} / {{ totalPages }}
               </button>
 
               <button class="join-item btn btn-xs"
-                      [disabled]="currentPage >= totalPages - 1"
+                      [disabled]="currentPage >= totalPages - 1 || loadingAll()"
                       (click)="nextPage()">»
               </button>
               <label class="label ms-4 text-xs">
-                <input type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)"
+                <input [disabled]="loadingAll()" type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)"
                        class="checkbox checkbox-sm"/>
                 Exclude zeroes
               </label>
               <label class="label ms-4 text-xs">
-                <input type="checkbox" [(ngModel)]="bandWise" (ngModelChange)="onBandWiseChange($event)"
+                <input [disabled]="loadingAll()" type="checkbox" [(ngModel)]="bandWise" (ngModelChange)="onBandWiseChange($event)"
                        class="checkbox checkbox-sm"/>
                 Band-wise
               </label>
 
               <div class="filter" [hidden]="!bandWise">
-                <input class="btn btn-xs filter-reset" (change)="selectBand('')" type="radio" name="bands" aria-label="All"/>
+                <input [disabled]="loadingAll()" class="btn btn-xs filter-reset" (change)="selectBand('')" type="radio" name="bands" aria-label="All"/>
                 @for (band of bands; track $index){
-                  <input class="btn btn-xs" [(ngModel)]="selectedBand" [value]="band.name" (change)="selectBand(band.name!)" type="radio" name="bands" [attr.aria-label]="band.name"/>
+                  <input [disabled]="loadingAll()" class="btn btn-xs" [(ngModel)]="selectedBand" [value]="band.name" (change)="selectBand(band.name!)" type="radio" name="bands" [attr.aria-label]="band.name"/>
                 }
               </div>
 

@@ -93,8 +93,11 @@ export class PulseComponent implements OnInit {
   loadingWorstCells: boolean = false;
   loadingKpiTrend: boolean = false;
   loadingAnalysisModalChart: boolean = false;
+  loadingAreaTypes: boolean = false;
+  loadingAreas: boolean = false;
+  loadingDateRanges: boolean = false;
 
-  showMissingCellInfoModal:boolean = false;
+  showMissingCellInfoModal: boolean = false;
 
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
   @ViewChild('cellMissingInfoModal') cellMissingInfoModal!: ElementRef<HTMLDialogElement>;
@@ -117,6 +120,10 @@ export class PulseComponent implements OnInit {
     this.queryDateRanges();
   }
 
+  loadingAll() {
+    return this.loadingBasicKpi || this.loadingWorstCells || this.loadingKpiTrend || this.loadingAnalysisModalChart || this.loadingAreaTypes || this.loadingAreas || this.loadingDateRanges;
+  }
+
   queryDateRanges() {
     for (let range of this.aggregationList) {
       this.getDateRanges(range, this.selectedRat(), this.selectedGranularity());
@@ -124,6 +131,7 @@ export class PulseComponent implements OnInit {
   }
 
   getDateRanges(aggregation: string, selectedRat: string, granularityName: string) {
+    this.loadingDateRanges = true;
     this.dateService.getLatestDateRange(aggregation, selectedRat, granularityName).subscribe(
       {
         next: data => {
@@ -131,10 +139,12 @@ export class PulseComponent implements OnInit {
             ...range,
             [aggregation]: data
           }));
+          this.loadingDateRanges = false;
         }, error: err => {
           console.log('Error getting date range');
           console.error(err);
           this.alertService.error('Error getting date range');
+          this.loadingDateRanges = false;
         }
       }
     )
@@ -270,6 +280,7 @@ export class PulseComponent implements OnInit {
   //----------- GETTERS ----------------------------------
 
   getAreaTypes() {
+    this.loadingAreaTypes = true;
     this.areaTypeService.getAllAreaTypes().subscribe({
         next: data => {
           this.areaTypes = data;
@@ -282,9 +293,11 @@ export class PulseComponent implements OnInit {
             this.areaType.set(districtsAreaType?.name);
           }
           this.getAreasByAreaType(this.areaType()!);
+          this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
           this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.loadingAreaTypes = false;
         }
       }
     )
@@ -292,6 +305,7 @@ export class PulseComponent implements OnInit {
 
 
   getAreasByAreaType(areaTypeName: string) {
+    this.loadingAreas = true;
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
@@ -307,9 +321,11 @@ export class PulseComponent implements OnInit {
         }
         this.getBasicKpi(this.selectedRat());
         this.getAllStandardKpi(this.selectedRat());
+        this.loadingAreas = false;
       }, error: error => {
         console.log(error);
         this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.loadingAreas = false;
       }
     })
   }
@@ -656,7 +672,7 @@ export class PulseComponent implements OnInit {
   }
 
   //----------------- MODALS -------------------------------
-  openMissingCellInfoModal(){
+  openMissingCellInfoModal() {
     this.showMissingCellInfoModal = true;
   }
 
