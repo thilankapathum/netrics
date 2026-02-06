@@ -4,6 +4,7 @@ import {RouterLink} from '@angular/router';
 import {PsStandardKpi} from './ps-standard-kpi/ps-standard-kpi';
 import {PsCells} from './ps-cells/ps-cells';
 import {PsCreateSite} from './ps-create-site/ps-create-site';
+import {PsEvictCache} from './ps-evict-cache/ps-evict-cache';
 
 @Component({
   selector: 'app-pulse-settings',
@@ -12,7 +13,8 @@ import {PsCreateSite} from './ps-create-site/ps-create-site';
     RouterLink,
     PsStandardKpi,
     PsCells,
-    PsCreateSite
+    PsCreateSite,
+    PsEvictCache
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'
@@ -23,6 +25,7 @@ export class PulseSettings {
   showStandardKpiModal:boolean = false;
   showMissingCellInfoModal:boolean = false;
   showCreateSiteModal:boolean = false;
+  showEvictCacheModal:boolean = false;
 
   //---------- OPEN MODALS ------------------------
 
@@ -42,6 +45,10 @@ export class PulseSettings {
     this.showCreateSiteModal = true;
   }
 
+  openEvictCacheModal() {
+    this.showEvictCacheModal = true;
+  }
+
   //---------- CLOSE MODALS
 
   closeUserAreaMappingModal() {
@@ -58,6 +65,10 @@ export class PulseSettings {
 
   closeCreateSiteModal() {
     this.showCreateSiteModal = false;
+  }
+
+  closeEvictCacheModal() {
+    this.showEvictCacheModal = false;
   }
 
 }

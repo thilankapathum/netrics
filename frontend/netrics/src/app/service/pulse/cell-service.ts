@@ -18,6 +18,10 @@ export class CellService {
     return this.http.get(`${this.baseUrl}/missing/export`, {responseType: 'blob'});
   }
 
+  exportAllCells(){
+    return this.http.get(`${this.baseUrl}/all/export`, {responseType: 'blob'});
+  }
+
   importCellsWithCorrectedInfo(file: File): Observable<Blob> {
     const url = `${this.baseUrl}/missing/import`;
     const formData = new FormData();

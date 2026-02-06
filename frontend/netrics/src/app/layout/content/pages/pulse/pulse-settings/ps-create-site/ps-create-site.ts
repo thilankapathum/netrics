@@ -36,10 +36,6 @@ export class PsCreateSite {
   siteListJson = signal<string>('');
 
   constructor(private alertService: AlertService,
-              private ratService: RatService,
-              private areaTypeService: AreaTypeService,
-              private granularityService: GranularityService,
-              private dashboardService: DashboardService,
               private authService: AuthService,
               private siteService: SiteService) {
   }

@@ -16,6 +16,8 @@ export class PsCells {
   missingCellInfoCount = signal(0);
 
   loadingMissingCellInfoUpload: boolean = false;
+  loadingMissingCellInfoDownload: boolean = false;
+  loadingAllCellsDownload: boolean = false;
 
   @Input() open: boolean = false;
   @Output() closed = new EventEmitter<void>();
@@ -31,6 +33,7 @@ export class PsCells {
   }
 
   exportCellsWithMissingInfo() {
+    this.loadingMissingCellInfoDownload = true;
     this.cellService.exportCellsWithMissingInfo().subscribe({
       next: (blob) => {
         const downloadUrl = window.URL.createObjectURL(blob);
@@ -39,11 +42,34 @@ export class PsCells {
         a.download = 'missing_cell_info.csv';
         a.click();
         window.URL.revokeObjectURL(downloadUrl);
+        this.loadingMissingCellInfoDownload = false;
       },
       error: error => {
         console.log("Error exporting missing cell information:");
         console.error(error);
         this.alertService.error("Error exporting missing cell information!");
+        this.loadingMissingCellInfoDownload = false;
+      }
+    })
+  }
+
+  exportAllCells(){
+    this.loadingAllCellsDownload = true;
+    this.cellService.exportAllCells().subscribe({
+      next: (blob) => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'all_cell_info.csv';
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        this.loadingAllCellsDownload = false;
+      },
+      error: error => {
+        console.log("Error exporting cell information:");
+        console.error(error);
+        this.alertService.error(`Error exporting missing cell information! - ${error.statusText}`);
+        this.loadingAllCellsDownload = false;
       }
     })
   }

@@ -46,6 +46,17 @@ public class CellController {
         return ResponseEntity.ok(dto);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("all/export")
+    public void exportAllCells(HttpServletResponse response) throws IOException {
+        response.setContentType("text/csv");
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=all_cells_info.csv");
+
+        List<CellDto> cellDtos = cellService.getAllCellInfo();
+
+        csvService.writeCellsToCsv(cellDtos, response.getWriter());
+    }
+
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PutMapping
     public ResponseEntity<CellDto> updateCell(@RequestBody @Valid CellDto dto) {

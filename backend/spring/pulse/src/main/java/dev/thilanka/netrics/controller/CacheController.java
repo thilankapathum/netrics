@@ -20,11 +20,15 @@ public class CacheController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("evict-all")
     public ResponseEntity<String> evictAllCaches() {
+        Integer cacheCount = 0;
+        StringBuilder evictedCaches = new StringBuilder("All caches cleared! ");
         for (String name : cacheManager.getCacheNames()) {
             cacheManager.getCache(name).clear();
             System.out.println("Cleared cache: " + name);
+            evictedCaches.append(name).append(", ");
+            cacheCount++;
         }
-        return ResponseEntity.ok("All caches cleared!");
+        return ResponseEntity.ok(cacheCount.toString());
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")

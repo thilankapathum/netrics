@@ -32,11 +32,14 @@ public interface CellService {
 
     List<CellDto> getAllCells();
 
+    List<CellDto> getAllCellInfo();
+
     List<CellNameDto> searchCell(String cellName);
 
     List<CellDto> createLatestCells(String ratName, String granularityName);
 
     CompletableFuture<Integer> reloadCells();
+
     CompletableFuture<Integer> reloadCells(String ratName, String granularityName);
 
     List<Cell> findCellsWithMissingInfo();

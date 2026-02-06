@@ -174,6 +174,11 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    public List<CellDto> getAllCellInfo() {
+        return cellRepository.findAllCells();
+    }
+
+    @Override
     public List<CellNameDto> searchCell(String cellName) {
         if (this.allCells.isEmpty()) {
             System.out.println("allCells List is empty");
