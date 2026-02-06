@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service;
 
+import dev.thilanka.netrics.dto.WorstCellCreationStatusDto;
 import dev.thilanka.netrics.dto.WorstCellSaveDto;
 import dev.thilanka.netrics.dto.WorstCellsWithLatestDto;
 
@@ -22,4 +23,7 @@ public interface WorstCellDashboardService {
 
     public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName, String granularityName);
 
+    public WorstCellCreationStatusDto getWorstCellCreationStatus();
+
+    public boolean isCreatingWorstCells();
 }

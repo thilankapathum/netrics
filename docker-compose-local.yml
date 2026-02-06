@@ -299,7 +299,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: thilankaw/netrics/frontend:0.0.8-test
+    image: thilankaw/netrics/frontend:0.0.9-test
     container_name: frontend
     expose:
       - "80"
