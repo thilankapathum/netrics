@@ -33,6 +33,7 @@
     <h2 class="text-md font-semibold mb-3">Engineering Data Management</h2>
     <div class="flex flex-row flex-wrap gap-3">
       <button class="btn btn-sm" (click)="openMissingCellInfoModal()">Missing Cell Information</button>
+      <button class="btn btn-sm" (click)="openCreateSiteModal()">Create Site</button>
     </div>
   </div>
 
@@ -42,3 +43,4 @@
                                      (closed)="closeUserAreaMappingModal()"></app-pulse-setting-user-area-mapping>
 <app-ps-standard-kpi [open]="showStandardKpiModal" (closed)="closeStandardKpiModal()"></app-ps-standard-kpi>
 <app-ps-cells [open]="showMissingCellInfoModal" (closed)="closeMissingCellInfoModal()"></app-ps-cells>
+<app-ps-create-site [open]="showCreateSiteModal" (closed)="closeCreateSiteModal()" ></app-ps-create-site>

@@ -3,6 +3,7 @@ import {PulseSettingUserAreaMapping} from './pulse-setting-user-area-mapping/pul
 import {RouterLink} from '@angular/router';
 import {PsStandardKpi} from './ps-standard-kpi/ps-standard-kpi';
 import {PsCells} from './ps-cells/ps-cells';
+import {PsCreateSite} from './ps-create-site/ps-create-site';
 
 @Component({
   selector: 'app-pulse-settings',
@@ -10,7 +11,8 @@ import {PsCells} from './ps-cells/ps-cells';
     PulseSettingUserAreaMapping,
     RouterLink,
     PsStandardKpi,
-    PsCells
+    PsCells,
+    PsCreateSite
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'
@@ -20,6 +22,7 @@ export class PulseSettings {
   showUserAreaMappingModal:boolean = false;
   showStandardKpiModal:boolean = false;
   showMissingCellInfoModal:boolean = false;
+  showCreateSiteModal:boolean = false;
 
   //---------- OPEN MODALS ------------------------
 
@@ -35,6 +38,10 @@ export class PulseSettings {
     this.showMissingCellInfoModal = true;
   }
 
+  openCreateSiteModal() {
+    this.showCreateSiteModal = true;
+  }
+
   //---------- CLOSE MODALS
 
   closeUserAreaMappingModal() {
@@ -47,6 +54,10 @@ export class PulseSettings {
 
   closeMissingCellInfoModal() {
     this.showMissingCellInfoModal = false;
+  }
+
+  closeCreateSiteModal() {
+    this.showCreateSiteModal = false;
   }
 
 }
