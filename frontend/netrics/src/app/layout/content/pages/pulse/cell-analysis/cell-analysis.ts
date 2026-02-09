@@ -48,6 +48,9 @@ export class CellAnalysis implements OnInit {
   filteredCells = signal<Array<CellNameDto>>([]);
 
   loadingTrendData = signal<boolean>(false);
+  loadingRats = signal(false);
+  loadingStandardKpis = signal<boolean>(false);
+
   cellSelected = signal<boolean>(false);
   isCellSearchDropDownOpen = signal<boolean>(false);
 
@@ -107,24 +110,29 @@ export class CellAnalysis implements OnInit {
   }
 
   getRat(ratName: string) {
+    this.loadingRats.set(true);
     this.ratService.findByName(ratName).subscribe({
       next: data => {
         if (data.name != undefined) {   //-- Validate RAT
           this.rat.set(data);
           this.getAllStandardKpi(this.rat()?.name!);    // Get all standard KPI of the RAT
+          this.loadingRats.set(false);
         } else {
           console.error('RAT is unavailable');
           this.alertService.error('RAT is unavailable');
+          this.loadingRats.set(false);
         }
       }, error: error => {
         console.error('Error retrieving RAT');
         console.error(error);
         this.alertService.error('Error retrieving RAT');
+        this.loadingRats.set(false);
       }
     })
   }
 
   getAllStandardKpi(ratName: string) {
+    this.loadingStandardKpis.set(true);
     this.standardKpis = [];
     this.standardKpiService.getAllStandardKpi(ratName).subscribe({
       next: data => {
@@ -141,13 +149,16 @@ export class CellAnalysis implements OnInit {
             this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);    // Set 1st standard KPI from the list as default KPI
           }
           this.selectKpi(this.selectedStandardKpi(), ratName, false, this.selectedGranularity());    // Getting Worst-cells and Trend-data
+          this.loadingStandardKpis.set(false);
         } else {
           this.alertService.error("KPI are unavailable for the RAT");
+          this.loadingStandardKpis.set(false);
         }
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
         this.alertService.error("Standard KPI retrieval failed");
+        this.loadingStandardKpis.set(false);
       }
     })
   }
@@ -176,7 +187,6 @@ export class CellAnalysis implements OnInit {
         this.kpiTrendData = data;
         if (this.kpiTrendData.length > 0) {
           if (this.selectedChartType() === 's_cell_s_kpi') {    //-- Single-cell Single-KPI scenario
-            // this.chartSeries.set(this.chartService.buildSeriesKpiDataDto(data));
             this.chartSeries.set(this.chartService.buildSeriesForCell(data));
           } else if (this.selectedChartType() === 'm_cell_s_kpi') {   //-- Multi-cell Single KPI scenario
 
@@ -247,6 +257,7 @@ export class CellAnalysis implements OnInit {
   }
 
   selectCell(cellNameDto: CellNameDto, selectByDropDown: boolean) {
+    console.log(this.chartCellName())
     if (selectByDropDown) {   //-- Check if the RAT of the selecting cell in frontend is different from current RAT
       console.log(this.selectedRat())
       this.chartSeries.set([]);
@@ -286,6 +297,16 @@ export class CellAnalysis implements OnInit {
 
   clearSharedServiceData(): void {
     this.sharedService.clearAll();
+  }
+
+  isCellSelected(cellName: string): boolean {
+    // Extract cell names from chartSeries which contains the actual cellName property
+    const selectedCellNames = this.chartSeries().map(s => s.cellName);
+    return selectedCellNames.includes(cellName);
+  }
+
+  loadingAll(){
+    return this.loadingTrendData() || this.loadingRats() || this.loadingStandardKpis();
   }
 
 }
