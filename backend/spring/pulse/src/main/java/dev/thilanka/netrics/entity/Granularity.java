@@ -31,5 +31,8 @@ public class Granularity {
     List<KpiDay> kpiDays;
 
     @OneToMany(mappedBy = "granularity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    List<KpiHour> kpiHours;
+
+    @OneToMany(mappedBy = "granularity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<WorstCell> worstCells;
 }

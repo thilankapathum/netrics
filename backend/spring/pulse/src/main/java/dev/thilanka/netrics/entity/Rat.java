@@ -26,6 +26,9 @@ public class Rat {
     private List<KpiDay> kpiDays;
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHours;
+
+    @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<BasicKpi> basicKpis;
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)

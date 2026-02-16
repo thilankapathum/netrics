@@ -40,6 +40,15 @@ public class StandardKpi {
     @OneToMany(mappedBy = "denominatorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<KpiDay> kpiDaysDenominator;
 
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHours;
+
+    @OneToMany(mappedBy = "numeratorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHoursNumerator;
+
+    @OneToMany(mappedBy = "denominatorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHoursDenominator;
+
 
     @OneToOne(mappedBy = "standardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private StandardRawKpiMapping standardKpi;

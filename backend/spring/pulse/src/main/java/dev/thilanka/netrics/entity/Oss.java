@@ -29,4 +29,7 @@ public class Oss {
 
     @OneToMany(mappedBy = "oss", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<KpiDay> kpiDays;
+
+    @OneToMany(mappedBy = "oss", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHours;
 }
