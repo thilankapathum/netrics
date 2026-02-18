@@ -22,6 +22,7 @@ export type ChartOptions = {
   legend: ApexLegend;
   theme: ApexTheme;
   grid: ApexGrid;
+  tooltip: ApexTooltip;
 };
 
 @Component({
@@ -121,6 +122,11 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
           style: {
             colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
+        }
+      },
+      tooltip: {
+        x: {
+          format: 'yyyy-MM-dd HH:mm'
         }
       },
       yaxis: {

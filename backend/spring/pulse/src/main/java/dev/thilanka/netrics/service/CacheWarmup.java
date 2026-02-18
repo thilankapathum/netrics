@@ -8,4 +8,6 @@ public interface CacheWarmup {
     int evictByRatNameAndGranularityName(String ratName, String granularityName);
 
     void warmUpCache(String ratName, String granularityName);
+
+    void evictCellKpiTrends();
 }

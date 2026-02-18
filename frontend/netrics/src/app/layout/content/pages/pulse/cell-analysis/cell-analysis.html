@@ -115,7 +115,7 @@
       <div>
         <div class="flex flex-row gap-2">
           <div class="tabs tabs-box tabs-xs ml-auto">
-            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
+            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Week (hourly)" checked="checked"
                    [(ngModel)]="trendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
             <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="trendPeriod"
                    [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>

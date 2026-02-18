@@ -53,6 +53,13 @@ public class CacheController {
         return ResponseEntity.ok(ratName + " caches cleared and warmed-up!");
     }
 
+    @PostMapping("evict-cell-kpi-trends")
+    public ResponseEntity<String> evictCellKpiTrends() {
+        System.out.println("Clearing Cell KPI Trends Cache...");
+        cacheWarmup.evictCellKpiTrends();
+        return ResponseEntity.ok("Cell KPI Trends caches cleared and warmed-up!");
+    }
+
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping("warm-up")
     public ResponseEntity<String> warmUpCaches(@RequestParam("ratName") String ratName, @RequestParam("granularityName") String granularityName) {

@@ -4,6 +4,7 @@ import dev.thilanka.netrics.dto.DateRangeDto;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.repository.KpiDayRepository;
+import dev.thilanka.netrics.repository.KpiHourRepository;
 import dev.thilanka.netrics.service.DateService;
 import dev.thilanka.netrics.service.GranularityService;
 import dev.thilanka.netrics.service.RatService;
@@ -21,24 +22,30 @@ import java.time.format.DateTimeFormatter;
 @RequiredArgsConstructor
 public class DateServiceImpl implements DateService {
     private final KpiDayRepository kpiDayRepository;
+    private final KpiHourRepository kpiHourRepository;
     private final RatService ratService;
     private final GranularityService granularityService;
 
     @Override
     public LocalDateTime getLatestDate(Rat rat, Granularity granularity) {
-        return kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
+
+        if (granularity.getName().equals("hour")) {     //-- Hourly granularity should be taken from hourly KPI table
+            return kpiHourRepository.getLatestDate(rat.getId(), granularity.getId());
+        } else {
+            return kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
+        }
     }
 
     @Override
     public LocalDateTime getLatestDateStart(Rat rat, String period, Granularity granularity) {
-        return getLatestPreviousDate(period, rat,granularity).plusDays(1L);
+        return getLatestPreviousDate(period, rat, granularity).plusDays(1L);
     }
 
     @Override
     public LocalDateTime getLatestDate(String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-        return kpiDayRepository.getLatestDate(rat.getId(),granularity.getId());
+        return kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
     }
 
     @Override
@@ -55,20 +62,20 @@ public class DateServiceImpl implements DateService {
 //        System.out.println("Latest Date date: " + latestDate.toLocalDate().atStartOfDay());
 //        System.out.println("latestDate " + latestDate.toString());
 
-        LocalDateTime latestPrevDate = getLatestPreviousDate(period, rat,granularity).plusDays(1);
+        LocalDateTime latestPrevDate = getLatestPreviousDate(period, rat, granularity).plusDays(1);
 //        System.out.println("latestPrevDate " + latestPrevDate.toString() );
 
-        return new DateRangeDto(Timestamp.valueOf(latestDate),Timestamp.valueOf(latestPrevDate));
+        return new DateRangeDto(Timestamp.valueOf(latestDate), Timestamp.valueOf(latestPrevDate));
     }
 
     @Override
     public LocalDateTime getLatestPreviousDate(String period, Rat rat, Granularity granularity) {
         switch (period) {
             case "day" -> {
-                return getLatestDate(rat,granularity).minusDays(1);
+                return getLatestDate(rat, granularity).minusDays(1);
             }
             case "week" -> {
-                return getLatestDate(rat,granularity).minusDays(7);
+                return getLatestDate(rat, granularity).minusDays(7);
             }
             case "month" -> {
                 return getLatestDate(rat, granularity).minusDays(30);
@@ -95,7 +102,7 @@ public class DateServiceImpl implements DateService {
     public LocalDateTime getLatestPreviousDate(String period, String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-        return getLatestPreviousDate(period, rat,granularity);
+        return getLatestPreviousDate(period, rat, granularity);
     }
 
     @Override
@@ -130,9 +137,9 @@ public class DateServiceImpl implements DateService {
 
     @Override
     public DayOfWeek extractDayOfWeek(String day) {
-        try{
+        try {
             return DayOfWeek.valueOf(day.trim().toUpperCase());
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Incorrect Refresh-Day: " + day);
         }
     }
@@ -140,7 +147,7 @@ public class DateServiceImpl implements DateService {
     @Override
     public LocalDateTime extractDate(String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        return LocalDate.parse(date,formatter).atStartOfDay();
+        return LocalDate.parse(date, formatter).atStartOfDay();
     }
 
     @Override

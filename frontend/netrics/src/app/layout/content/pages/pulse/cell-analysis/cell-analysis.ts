@@ -182,6 +182,11 @@ export class CellAnalysis implements OnInit {
 
   getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
     this.loadingTrendData.set(true);
+
+    if (period === 'week'){
+      granularityName = 'hour'
+    }
+
     this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName).subscribe({
       next: data => {
         this.kpiTrendData = data;
