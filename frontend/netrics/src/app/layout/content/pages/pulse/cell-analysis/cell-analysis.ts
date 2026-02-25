@@ -166,21 +166,6 @@ export class CellAnalysis implements OnInit {
   }
 
   selectKpi(kpi: string, ratName: string, selectByOption: boolean, granularityName: string) {
-    // if (selectByOption) {   //-- To check whether KPI selected by client's Option group. To clear existing charts if KPI is changed
-    //
-    //   const cells: string[] = []
-    //   this.chartSeries().forEach(s => cells.push(s.cellName));  //-- Record current cell list to query new KPI for the same cells
-    //
-    //   this.chartSeries.set([]); //-- Reset Chart
-    //
-    //   //-- Querying newly selected KPI for the already selected cells
-    //   for (let cell of cells) {
-    //     this.getTrendDataByKpiAndCell(kpi, cell, this.trendPeriod(), ratName, granularityName);
-    //   }
-    // } else {    //-- selectKpi method is called from another method (not from client)
-    //   this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName, granularityName);
-    // }
-
     if (selectByOption) {
       const cells = this.chartSeries().map(s => s.cellName);
       this.chartSeries.set([]);
@@ -196,18 +181,12 @@ export class CellAnalysis implements OnInit {
   }
 
   getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
-    // this.loadingTrendData.set(true);
     this.pendingRequests.update(n => n + 1);
-
-    // if (period === 'week'){
-    //   granularityName = 'hour'
-    // }
 
     const _granularity = this.resolveGranularity(period,granularityName);
 
     this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, _granularity).subscribe({
       next: data => {
-        // this.kpiTrendData = data;
         this.kpiTrendData.set(data);
         if (this.kpiTrendData().length > 0) {
           if (this.selectedChartType() === 's_cell_s_kpi') {    //-- Single-cell Single-KPI scenario
@@ -234,16 +213,13 @@ export class CellAnalysis implements OnInit {
               return [...filtered, ...seriesForCell];
             });
           }
-          // this.loadingTrendData.set(false);
           this.pendingRequests.update(n => Math.max(0, n - 1));
         } else {
           console.error(`KPI trend data unavailable for the cell ${cellName}`);
           this.alertService.error(`KPI trend data unavailable for ${cellName}`);
-          // this.loadingTrendData.set(false);
           this.pendingRequests.update(n => Math.max(0, n - 1));
         }
       }, error: error => {
-        // this.loadingTrendData.set(false);
         this.pendingRequests.update(n => Math.max(0, n - 1));
         console.error('Error retrieving KPI Trend data');
         console.error(error);
@@ -255,10 +231,6 @@ export class CellAnalysis implements OnInit {
   private resolveGranularity(period: string, selectedGranularity: string): string {
     return period === 'week' ? 'hour' : selectedGranularity;
   }
-
-  // onPeriodChange(event: Event) {
-  //   this.getTrendDataByKpiAndCell(this.selectedStandardKpi(), this.cellName(), this.trendPeriod(), this.rat()?.name!, this.selectedGranularity())
-  // }
 
   onPeriodChange(event: Event) {
     if (this.selectedChartType() === 'm_cell_s_kpi') {
@@ -321,21 +293,7 @@ export class CellAnalysis implements OnInit {
   setSelectedChartType(type: 's_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi') {
     this.selectedChartType.set(type);
     this.chartSeries.set([]);
-    //
-    // switch (type) {
-    //   case 's_cell_s_kpi':
-    //     this.chartSeries.set([]);
-    //     break;
-    //   case "m_cell_s_kpi":
-    //     this.chartSeries.set([]);
-    //     break;
-    // }
   }
-
-  // removeChartCell(name: string) {
-  //   this.chartSeries.update(series =>
-  //     series.filter(s => s.name !== name));
-  // }
 
   removeChartCell(name: string) {
     const removed = this.chartSeries().find(s => s.name === name);

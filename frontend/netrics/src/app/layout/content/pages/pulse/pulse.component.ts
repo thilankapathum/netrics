@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, effect, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
 import {CommonModule, DecimalPipe} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {BasickpiService} from '../../../../service/pulse/ltefdd/basickpi.service';
@@ -11,12 +11,10 @@ import {StandardkpiService} from '../../../../service/pulse/ltefdd/standardkpi.s
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 import {Linechart} from '../../../../components/charts/linechart/linechart/linechart';
-import {firstValueFrom, forkJoin, map, Observable, of} from 'rxjs';
+import {firstValueFrom, forkJoin, map, Observable} from 'rxjs';
 import {ChartService} from '../../../../service/components/chart/chart.service';
 import {WorstCells} from '../../../../models/pulse/WorstCells';
 import {AlertService} from '../../../../components/alert/alert.service';
-import {DistrictDto} from '../../../../models/pulse/DistrictDto';
-import {DistrictService} from '../../../../service/pulse/district/district.service';
 import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
 import {Router, RouterLink} from '@angular/router';
 import {SharedService} from '../../../../service/pulse/shared-service';
@@ -33,7 +31,6 @@ import {CellService} from '../../../../service/pulse/cell-service';
 import {BandService} from '../../../../service/pulse/band-service';
 import {BandDto} from '../../../../models/pulse/BandDto';
 import {BandWorstCellsKpiTrend} from '../../../../models/pulse/BandWorstCellsKpiTrend';
-import {ApexAxisChartSeries} from 'ng-apexcharts';
 import {BandKpiSeries} from '../../../../models/apexCharts/BandKpiSeries';
 import {PsCells} from './pulse-settings/ps-cells/ps-cells';
 
@@ -68,6 +65,7 @@ export class PulseComponent implements OnInit {
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
   selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
+  selectedKpiTrendPeriodModal = signal<'month' | 'week' | 'quarter'>('month')
   kpiTrendData: KpiTrendDto[] = [];
   bandKpiTrend = signal<KpiTrendDto[]>([]);
   bandWorstCellsKpiTrends: BandWorstCellsKpiTrend[] = [];
@@ -121,7 +119,7 @@ export class PulseComponent implements OnInit {
   }
 
   loadingAll() {
-    return this.loadingBasicKpi || this.loadingWorstCells || this.loadingKpiTrend || this.loadingAnalysisModalChart || this.loadingAreaTypes || this.loadingAreas || this.loadingDateRanges;
+    return this.loadingBasicKpi || this.loadingWorstCells || this.loadingKpiTrend  || this.loadingAreaTypes || this.loadingAreas || this.loadingDateRanges;
   }
 
   queryDateRanges() {
@@ -545,6 +543,10 @@ export class PulseComponent implements OnInit {
     }
   }
 
+  onPeriodChangeModal($event: Event) {
+    this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell,this.selectedKpiTrendPeriodModal(),this.selectedRat(), this.selectedGranularity());
+  }
+
 
   //------------------- WORST-CELL PAGINATION -----------------------------
 
@@ -573,7 +575,8 @@ export class PulseComponent implements OnInit {
     this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
     this.analysisModal.nativeElement.showModal();
-    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat(), this.selectedGranularity())
+    this.selectedKpiTrendPeriodModal.set('month');
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity())
       .subscribe({
         next: data => {
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
@@ -587,8 +590,42 @@ export class PulseComponent implements OnInit {
       })
   }
 
+  onNextCell(){
+    if (this.isNextCellAvailable(this.analysisModalCell, this.allWorstCells)) {
+      let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
+      this.analysisModalCell = this.allWorstCells[currentIndex + 1].cellName!;
+      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+    }
+  }
+
+  onPrevCell(){
+    if (this.isPrevCellAvailable(this.analysisModalCell, this.allWorstCells)) {
+      let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
+      this.analysisModalCell = this.allWorstCells[currentIndex - 1].cellName!;
+      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+    }
+  }
+
 
   //============ MODAL KPI TREND CHART =================
+
+  queryModalTrendDataByKpiNameAndCell(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
+    this.chartSeries = [];
+    const resolvedGranularity = this.resolveGranularity(trendPeriod, granularityName);
+    this.loadingAnalysisModalChart = true;
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, trendPeriod, ratName, resolvedGranularity)
+      .subscribe({
+        next: data => {
+          this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
+          this.loadingAnalysisModalChart = false;
+        }, error: err => {
+          this.loadingAnalysisModalChart = false;
+          console.log("Error getDataByKpiLabelAndCell:");
+          console.error(err);
+          this.alertService.error("KPI Data retrieval failed");
+        }
+      });
+  }
 
   getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
     return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
@@ -669,6 +706,24 @@ export class PulseComponent implements OnInit {
       return item.value! > standardKpi.threshold;
     }
     return false;
+  }
+
+  private resolveGranularity(period: string, selectedGranularity: string): string {
+    return period === 'week' ? 'hour' : selectedGranularity;
+  }
+
+   isNextCellAvailable(cellName:string, worstCellList: WorstCells[]){
+    const currentIndex = this.extractCurrentCellIndex(cellName, worstCellList);
+    return currentIndex + 1 < worstCellList.length;
+  }
+
+   isPrevCellAvailable(cellName:string, worstCellList: WorstCells[]){
+    const currentIndex = this.extractCurrentCellIndex(cellName, worstCellList);
+    return currentIndex > 0;
+  }
+
+   extractCurrentCellIndex(cellName:string, worstCellList: WorstCells[]){
+    return worstCellList.findIndex(cN => cN.cellName === cellName);
   }
 
   //----------------- MODALS -------------------------------

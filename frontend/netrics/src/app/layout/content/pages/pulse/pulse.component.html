@@ -1,20 +1,55 @@
 <dialog #analysisModal id="analyse_modal" class="modal w-full ">
   <div class="modal-box max-w-6xl border border-base-300">
-    <h3 class="text-lg font-bold">{{ analysisModalCell }}</h3>
+
+    <div class="flex flex-row gap-2 flex-wrap mb-2">
+      <h3 class="text-lg font-bold"> <span class="font-medium text-secondary">{{extractCurrentCellIndex(analysisModalCell, allWorstCells) + 1}}.</span> {{ analysisModalCell }}</h3>
+      <div class="tabs tabs-box tabs-xs ml-auto">
+        <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab" aria-label="Week (hourly)"
+               [(ngModel)]="selectedKpiTrendPeriodModal" [value]="'week'" (ngModelChange)="onPeriodChangeModal($event)"/>
+        <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab" aria-label="Month" checked="checked"
+               [(ngModel)]="selectedKpiTrendPeriodModal"
+               [value]="'month'" (ngModelChange)="onPeriodChangeModal($event)"/>
+        <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab" aria-label="Quarter"
+               [(ngModel)]="selectedKpiTrendPeriodModal"
+               [value]="'quarter'" (ngModelChange)="onPeriodChangeModal($event)"/>
+      </div>
+    </div>
+
     @if (loadingAnalysisModalChart) {
       <div class="flex w-full flex-col gap-4 mt-2 mb-2">
         <div class="skeleton h-84 w-full"></div>
       </div>
     }
+
     <app-linechart [hidden]="loadingAnalysisModalChart" [chartSeries]="chartSeries"></app-linechart>
     <div class="modal-action">
+      <div class="flex flex-row mr-auto gap-2">
+        <button [disabled]="!isPrevCellAvailable(analysisModalCell, allWorstCells)" class="btn btn-outline btn-secondary btn-sm" (click)="onPrevCell()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+        </button>
+
+        <button [disabled]="!isNextCellAvailable(analysisModalCell, allWorstCells)" class="btn btn-outline btn-secondary btn-sm" (click)="onNextCell()">
+
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
       <a class="btn btn-outline btn-primary btn-sm" (click)="onCellNavigate()" [routerLink]="getRouterLinkForCell()">
-        More
+        Cell Analysis
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round"/>
         </svg>
       </a>
+
+
+
       <form method="dialog">
         <!-- if there is a button in form, it will close the modal -->
         <button class="btn btn-sm">
