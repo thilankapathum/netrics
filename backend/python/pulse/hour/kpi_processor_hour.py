@@ -52,16 +52,13 @@ class KPIProcessor:
 
         self.clear_redis_cache_url = self.config['clear_redis_cache_url']
 
-        # Support both old and new config format
         if 'base_folders' in self.config:
             self.base_folders = self.config['base_folders']
         else:
-            # Backward compatibility: convert old base_folder to new format
             self.base_folders = {
                 'hour': self.config.get('base_folder', '/app/hour')
             }
 
-        # Database-driven configuration
         self.rats = {}
         self.standard_kpis = {}
         self.kpi_mappings = {}
@@ -70,10 +67,8 @@ class KPIProcessor:
         self.district_codes = {}
         self.granularities = {}
 
-        # Load configuration from database
         self.load_database_configuration()
 
-        # Create necessary directories for all RATs and granularities
         self.create_rat_directories()
 
     def load_config(self, config_file: str) -> Dict:
@@ -116,12 +111,9 @@ class KPIProcessor:
                 for folder_type in ['ftp', 'processed', 'temp', 'log']:
                     folder_path = folders[folder_type]
                     os.makedirs(folder_path, exist_ok=True)
-                    # logger.info(f"Created directory: {folder_path}")
         logger.info(f"Created directories for RATs")
 
     def clear_redis_cache(self, rat_name: str, granularity_name:str):
-        """Clear redis cache for specific RAT"""
-        # logger.info(f"Clearing redis cache for RAT: {rat_name}...")
         try:
             url = f"{self.clear_redis_cache_url}"
             logger.info(f"Calling Cell KPI trend cache eviction URL: {url}")
@@ -135,13 +127,11 @@ class KPIProcessor:
             logger.error(f"Failed to clear redis cache: {e}\n")
 
     def load_database_configuration(self):
-        """Load configuration from database tables"""
         connection = None
         try:
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor(cursor_factory=RealDictCursor)
 
-            # Load granularities
             logger.info("Loading granularities from database...")
             cursor.execute("SELECT id, name, label FROM granularity WHERE name = 'hour'")
             granularity_data = cursor.fetchall()
@@ -155,7 +145,6 @@ class KPIProcessor:
             logger.info(
                 f"Loaded {len(self.granularities)} granularities: {[g['name'] for g in self.granularities.values()]}")
 
-            # Load RATs
             logger.info("Loading RATs from database...")
             cursor.execute("SELECT id, name, label FROM rat ORDER BY id")
             rats_data = cursor.fetchall()
@@ -164,7 +153,6 @@ class KPIProcessor:
                 rat_id = rat['id']
                 rat_name = rat['name']
 
-                # Create folder structure for each granularity
                 folders_by_granularity = {}
                 for granularity_id, granularity_info in self.granularities.items():
                     granularity_name = granularity_info['name']
@@ -185,7 +173,6 @@ class KPIProcessor:
 
             logger.info(f"Loaded {len(self.rats)} RATs: {[r['name'] for r in self.rats.values()]}")
 
-            # Load standard KPIs
             cursor.execute("SELECT id, kpi_name, unit, type, worst_order, threshold, rat_id FROM standard_kpi")
             for kpi in cursor.fetchall():
                 rat_id = kpi['rat_id']
@@ -196,7 +183,6 @@ class KPIProcessor:
                     'worst_order': kpi['worst_order'], 'threshold': kpi['threshold']
                 }
 
-            # Load standard KPI mappings
             cursor.execute("""
                 SELECT m.id, m.standard_kpi_id, m.numerator_id, m.denominator_id, m.rat_id,
                        s.kpi_name as standard_kpi_name, n.kpi_name as numerator_kpi_name,
@@ -218,7 +204,6 @@ class KPIProcessor:
                     'denominator_kpi_name': mapping['denominator_kpi_name']
                 }
 
-            # Load OSS configs
             cursor.execute("SELECT id, oss_name, identifier, vendor FROM oss")
             for oss in cursor.fetchall():
                 self.oss_configs[oss['identifier']] = {
@@ -227,7 +212,6 @@ class KPIProcessor:
                     'sheet_name': 0, 'skip_rows': 0, 'encoding': 'utf-8', 'delimiter': ","
                 }
 
-            # Load KPI mappings
             cursor.execute("""
                 SELECT m.id, m.standard_kpi_id, m.oss_kpi_name, m.oss_id,
                        m.multiplication_factor, m.rat_id, s.kpi_name as standard_kpi_name,
@@ -249,7 +233,6 @@ class KPIProcessor:
                 }
                 self.kpi_mappings[rat_id][mapping['oss_kpi_name']] = mapping['standard_kpi_name']
 
-            # Load district codes
             cursor.execute("SELECT id, category, code, district_id FROM district_codes ORDER BY LENGTH(code) DESC")
             for district in cursor.fetchall():
                 self.district_codes[district['code']] = {
@@ -311,18 +294,6 @@ class KPIProcessor:
             )
             """
             cursor.execute(create_table_query)
-
-            # indexes = [
-            #     "CREATE INDEX IF NOT EXISTS idx_kpi_values_timestamp ON kpi_values(timestamp)",
-            #     "CREATE INDEX IF NOT EXISTS idx_kpi_values_cell_name ON kpi_values(cell_name)",
-            #     "CREATE INDEX IF NOT EXISTS idx_kpi_values_oss_id ON kpi_values(oss_id)",
-            #     "CREATE INDEX IF NOT EXISTS idx_kpi_values_district_code_id ON kpi_values(district_code_id)",
-            #     "CREATE INDEX IF NOT EXISTS idx_kpi_values_rat_id ON kpi_values(rat_id)",
-            #     "CREATE INDEX IF NOT EXISTS idx_kpi_values_granularity_id ON kpi_values(granularity_id)"
-            # ]
-
-            # for index_query in indexes:
-            #     cursor.execute(index_query)
 
             connection.commit()
             logger.info("Database tables created successfully \n")
@@ -525,7 +496,6 @@ class KPIProcessor:
 
     def unpivot_dataframe(self, df: pd.DataFrame, oss_identifier: str, oss_config: dict,
                           file_name: str, rat_id: int, granularity_id: int) -> pd.DataFrame:
-        """Convert to unpivoted format with granularity"""
         df = self.standardize_timestamp_column(df)
         df = self.standardize_identifier_columns(df)
 
@@ -535,106 +505,128 @@ class KPIProcessor:
         if not kpi_columns:
             return pd.DataFrame()
 
-        conversion_errors = defaultdict(int)
-        processed_rows = []
-        standard_kpi_groups = {}
-
+        # Build mapping lookup once
+        col_mapping = {}
         for col in kpi_columns:
             mapping_info = self.map_oss_kpi_to_standard(col, oss_identifier, rat_id)
             if mapping_info:
                 standard_kpi_name = mapping_info['standard_kpi_name']
-                if rat_id in self.standard_kpis and standard_kpi_name in self.standard_kpis[rat_id]:
-                    if self.standard_kpis[rat_id][standard_kpi_name].get('type') == 'standard':
-                        if standard_kpi_name not in standard_kpi_groups:
-                            standard_kpi_groups[standard_kpi_name] = []
-                        standard_kpi_groups[standard_kpi_name].append(
-                            {'column_name': col, 'mapping_info': mapping_info})
+                if (rat_id in self.standard_kpis and
+                        standard_kpi_name in self.standard_kpis[rat_id] and
+                        self.standard_kpis[rat_id][standard_kpi_name].get('type') == 'standard'):
+                    col_mapping[col] = mapping_info
 
-        for standard_kpi_name, kpi_group in standard_kpi_groups.items():
-            for kpi_info in kpi_group:
-                col = kpi_info['column_name']
-                mapping_info = kpi_info['mapping_info']
-                kpi_values_info = self.get_kpi_values_for_standard_kpi(df, standard_kpi_name, oss_identifier, rat_id)
+        if not col_mapping:
+            return pd.DataFrame()
 
-                for _, row in df.iterrows():
-                    multiplication_factor = mapping_info.get('multiplication_factor', 1.0)
-                    cleaned_value = self.clean_kpi_value(row[col], multiplication_factor, True, conversion_errors)
+        # Precompute district codes vectorized
+        if 'cell_name' in df.columns:
+            df['district_code_id'] = df['cell_name'].apply(self.get_district_code_id)
+        else:
+            df['district_code_id'] = None
 
-                    if cleaned_value is None:
-                        continue
+        # Precompute data types per standard KPI (based on unit, not per-row)
+        def get_data_type_for_kpi(standard_kpi_name):
+            if rat_id in self.standard_kpis and standard_kpi_name in self.standard_kpis[rat_id]:
+                unit = self.standard_kpis[rat_id][standard_kpi_name].get('unit', '')
+                if unit == '%':
+                    return 'percentage'
+            return 'decimal'
 
-                    district_code_id = self.get_district_code_id(row.get('cell_name'))
+        all_frames = []
+        conversion_errors = defaultdict(int)
 
-                    numerator_value = None
-                    denominator_value = None
+        for col, mapping_info in col_mapping.items():
+            standard_kpi_name = mapping_info['standard_kpi_name']
+            multiplication_factor = float(mapping_info.get('multiplication_factor', 1.0))
+            kpi_values_info = self.get_kpi_values_for_standard_kpi(df, standard_kpi_name, oss_identifier, rat_id)
+            data_type = get_data_type_for_kpi(standard_kpi_name)
 
-                    if kpi_values_info['numerator_value'] and kpi_values_info['numerator_value'] in row:
-                        num_mapping = self.map_oss_kpi_to_standard(kpi_values_info['numerator_value'], oss_identifier,
-                                                                   rat_id)
-                        num_mult = num_mapping.get('multiplication_factor', 1.0) if num_mapping else 1.0
-                        numerator_value = self.clean_kpi_value(row[kpi_values_info['numerator_value']], num_mult, True,
-                                                               conversion_errors)
+            # Vectorized value cleaning
+            raw_values = df[col].astype(str).str.strip().str.replace('%', '', regex=False).str.replace(',', '',
+                                                                                                       regex=False)
+            kpi_values = pd.to_numeric(raw_values, errors='coerce') * multiplication_factor
 
-                    if kpi_values_info['denominator_value'] and kpi_values_info['denominator_value'] in row:
-                        denom_mapping = self.map_oss_kpi_to_standard(kpi_values_info['denominator_value'],
-                                                                     oss_identifier, rat_id)
-                        denom_mult = denom_mapping.get('multiplication_factor', 1.0) if denom_mapping else 1.0
-                        denominator_value = self.clean_kpi_value(row[kpi_values_info['denominator_value']], denom_mult,
-                                                                 True, conversion_errors)
+            # Track errors
+            bad_mask = kpi_values.isna() & df[col].notna()
+            for bad_val in df.loc[bad_mask, col].astype(str).unique():
+                conversion_errors[bad_val] += int(bad_mask.sum())
 
-                    processed_rows.append({
-                        'timestamp': row.get('timestamp'),
-                        'cell_name': row.get('cell_name'),
-                        'site_name': row.get('site_name'),
-                        'standard_kpi_id': mapping_info.get('standard_kpi_id'),
-                        'standard_kpi_name': standard_kpi_name,
-                        'kpi_value': cleaned_value,
-                        'data_type': self.determine_data_type(row[col], standard_kpi_name, rat_id),
-                        'oss_id': oss_config['id'],
-                        'oss_kpi_name': col,
-                        'file_name': file_name,
-                        'numerator_kpi_id': kpi_values_info['numerator_kpi_id'],
-                        'numerator_kpi_value': numerator_value,
-                        'denominator_kpi_id': kpi_values_info['denominator_kpi_id'],
-                        'denominator_kpi_value': denominator_value,
-                        'district_code_id': district_code_id,
-                        'rat_id': rat_id,
-                        'granularity_id': granularity_id
-                    })
+            # Drop null kpi values
+            valid_mask = kpi_values.notna()
+
+            sub_df = df[valid_mask].copy()
+            sub_df['kpi_value'] = kpi_values[valid_mask].values
+            sub_df['standard_kpi_id'] = mapping_info.get('standard_kpi_id')
+            sub_df['standard_kpi_name'] = standard_kpi_name
+            sub_df['data_type'] = data_type
+            sub_df['oss_id'] = oss_config['id']
+            sub_df['oss_kpi_name'] = col
+            sub_df['file_name'] = file_name
+            sub_df['rat_id'] = rat_id
+            sub_df['granularity_id'] = granularity_id
+            sub_df['numerator_kpi_id'] = kpi_values_info['numerator_kpi_id']
+            sub_df['denominator_kpi_id'] = kpi_values_info['denominator_kpi_id']
+
+            # Numerator/denominator vectorized
+            num_col = kpi_values_info.get('numerator_value')
+            denom_col = kpi_values_info.get('denominator_value')
+
+            if num_col and num_col in df.columns:
+                num_mapping = self.map_oss_kpi_to_standard(num_col, oss_identifier, rat_id)
+                num_mult = float(num_mapping.get('multiplication_factor', 1.0)) if num_mapping else 1.0
+                sub_df['numerator_kpi_value'] = pd.to_numeric(
+                    df.loc[valid_mask, num_col].astype(str).str.strip().str.replace('%', '', regex=False).str.replace(
+                        ',', '', regex=False),
+                    errors='coerce') * num_mult
+            else:
+                sub_df['numerator_kpi_value'] = None
+
+            if denom_col and denom_col in df.columns:
+                denom_mapping = self.map_oss_kpi_to_standard(denom_col, oss_identifier, rat_id)
+                denom_mult = float(denom_mapping.get('multiplication_factor', 1.0)) if denom_mapping else 1.0
+                sub_df['denominator_kpi_value'] = pd.to_numeric(
+                    df.loc[valid_mask, denom_col].astype(str).str.strip().str.replace('%', '', regex=False).str.replace(
+                        ',', '', regex=False),
+                    errors='coerce') * denom_mult
+            else:
+                sub_df['denominator_kpi_value'] = None
+
+            keep_cols = ['timestamp', 'cell_name', 'site_name', 'district_code_id',
+                         'standard_kpi_id', 'standard_kpi_name', 'kpi_value', 'data_type',
+                         'oss_id', 'oss_kpi_name', 'file_name', 'numerator_kpi_id',
+                         'numerator_kpi_value', 'denominator_kpi_id', 'denominator_kpi_value',
+                         'rat_id', 'granularity_id']
+            all_frames.append(sub_df[[c for c in keep_cols if c in sub_df.columns]])
 
         if conversion_errors:
             rat_name = self.rats[rat_id]['name']
             for value, count in sorted(conversion_errors.items(), key=lambda x: x[1], reverse=True):
                 logger.warning(f"[{rat_name}] Could not convert value: '{value}' - {count} occurrences")
 
-        if not processed_rows:
+        if not all_frames:
             return pd.DataFrame()
 
-        final_df = pd.DataFrame(processed_rows)
+        final_df = pd.concat(all_frames, ignore_index=True)
         if 'timestamp' in final_df.columns:
             final_df['timestamp'] = pd.to_datetime(final_df['timestamp'], errors='coerce')
 
         return final_df
 
     def convert_nan_to_none(self, value):
-        """Convert NaN to None for PostgreSQL"""
         if pd.isna(value) or value == '' or str(value).strip().lower() == 'nan':
             return None
         return value
 
     def create_error_log_file(self, rat_id: int, granularity_name: str, original_filename: str, error_records: List[Dict]) -> str:
-        """Create an error log file for failed record insertions"""
         rat_info = self.rats[rat_id]
-        # log_folder = rat_info['folders']['log']
         log_folder = rat_info['folders'][granularity_name]['log']
 
-        # Create log filename based on original file
         base_filename = os.path.splitext(os.path.basename(original_filename))[0]
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         error_log_filename = f"{base_filename}_errors_{timestamp}.log"
         error_log_path = os.path.join(log_folder, error_log_filename)
 
-        # Write error log
         with open(error_log_path, 'w', encoding='utf-8') as f:
             f.write(f"Error Log for File: {original_filename}\n")
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -654,184 +646,153 @@ class KPIProcessor:
         return error_log_path
 
 
-    def insert_data_to_postgresql(
-            self,
-            df: pd.DataFrame,
-            rat_id: int,
-            original_filename: str,
-            granularity_name: str
-    ) -> bool:
-        """
-        High-performance batch insert into TimescaleDB using execute_values.
-        Tracks skipped rows (duplicates) using ON CONFLICT DO NOTHING.
-
-        - Batch inserts (fast)
-        - Skipped rows counted
-        - Per-row error isolation on actual errors
-        - Progress + ETA logging
-        """
-
+    def insert_data_to_postgresql(self, df: pd.DataFrame, rat_id: int,
+                                  original_filename: str, granularity_name: str) -> bool:
         if df.empty:
             logger.warning("No data to insert")
             return True
 
+        import io
         connection = None
         cursor = None
-        error_records = []
-        successful_inserts = 0
-        skipped_records = 0
-        total_records = len(df)
-
-        start_time = time.time()
-        granularity_id = self.get_granularity_id_by_name(granularity_name)
         rat_name = self.rats[rat_id]["name"]
+        granularity_id = self.get_granularity_id_by_name(granularity_name)
+        total_records = len(df)
+        start_time = time.time()
 
-        # 🔧 Tuning parameters
-        BATCH_SIZE = 5000
-        PROGRESS_INTERVAL = 5000
-
-        insert_query = """
-            INSERT INTO kpi_values_hour (
-                timestamp,
-                cell_name,
-                site_name,
-                standard_kpi_id,
-                kpi_value,
-                data_type,
-                oss_id,
-                file_name,
-                numerator_kpi_id,
-                numerator_kpi_value,
-                denominator_kpi_id,
-                denominator_kpi_value,
-                district_code_id,
-                rat_id,
-                granularity_id
-            )
-            VALUES %s
-            ON CONFLICT (
-                timestamp,
-                cell_name,
-                standard_kpi_id,
-                oss_id,
-                rat_id,
-                granularity_id
-            )
-            DO NOTHING;
-        """
+        columns = [
+            'timestamp', 'cell_name', 'site_name', 'standard_kpi_id', 'kpi_value',
+            'data_type', 'oss_id', 'file_name', 'numerator_kpi_id', 'numerator_kpi_value',
+            'denominator_kpi_id', 'denominator_kpi_value', 'district_code_id', 'rat_id', 'granularity_id'
+        ]
 
         try:
-            logger.info(f"[{granularity_name} - {rat_name}] Preparing data insert...")
             connection = psycopg2.connect(**self.db_config)
             cursor = connection.cursor()
 
-            # ⚡ Faster WAL behavior
             cursor.execute("SET synchronous_commit = OFF")
             cursor.execute("SET jit = OFF")
+            cursor.execute("SET work_mem = '256MB'")
+            cursor.execute("SET session_replication_role = 'replica'")  # skips index maintenance during COPY
 
-            logger.info(f"[{granularity_name} - {rat_name}] Inserting {total_records} records...")
+            # Add static columns
+            df = df.copy()
+            df['rat_id'] = rat_id
+            df['granularity_id'] = granularity_id
 
-            batch = []
-            batch_start_index = 0
+            # Normalize timestamps to remove timezone info
+            df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize(None)
 
-            for idx, row in enumerate(df.itertuples(index=False), start=1):
-                batch.append(
+            # Replace NaN with None
+            df = df.where(pd.notna(df), other=None)
+
+            # Cast bigint columns to nullable integer to avoid "49.0" formatting
+            bigint_cols = ['standard_kpi_id', 'oss_id', 'numerator_kpi_id', 'denominator_kpi_id',
+                           'district_code_id', 'rat_id', 'granularity_id']
+            for col in bigint_cols:
+                if col in df.columns:
+                    df[col] = pd.array(df[col], dtype=pd.Int64Dtype())
+
+            # Ensure correct column order and existence
+            for col in columns:
+                if col not in df.columns:
+                    df[col] = None
+
+            export_df = df[columns].copy()
+
+            before_dedup = len(export_df)
+            export_df = export_df.drop_duplicates(
+                subset=['timestamp', 'cell_name', 'standard_kpi_id', 'oss_id', 'rat_id'],
+                keep='last'
+            )
+            intra_file_dupes = before_dedup - len(export_df)
+            if intra_file_dupes:
+                logger.info(
+                    f"[{granularity_name} - {rat_name}] Dropped {intra_file_dupes} intra-file duplicate records")
+
+            # ---- PRE-FILTER DUPLICATES ----
+            logger.info(f"[{granularity_name} - {rat_name}] Checking for existing records...")
+            min_ts = export_df['timestamp'].min()
+            max_ts = export_df['timestamp'].max()
+
+            cursor.execute("""
+                SELECT timestamp::timestamp without time zone, cell_name, standard_kpi_id, oss_id, rat_id
+                FROM kpi_values_hour
+                WHERE timestamp BETWEEN %s AND %s
+                  AND granularity_id = %s
+            """, (min_ts, max_ts, granularity_id))
+
+            existing_rows = cursor.fetchall()
+
+            if existing_rows:
+                existing_keys = set(
                     (
-                        row.timestamp,
-                        row.cell_name,
-                        row.site_name,
-                        row.standard_kpi_id,
-                        row.kpi_value,
-                        row.data_type,
-                        row.oss_id,
-                        row.file_name,
-                        self.convert_nan_to_none(row.numerator_kpi_id),
-                        self.convert_nan_to_none(row.numerator_kpi_value),
-                        self.convert_nan_to_none(row.denominator_kpi_id),
-                        self.convert_nan_to_none(row.denominator_kpi_value),
-                        self.convert_nan_to_none(row.district_code_id),
-                        rat_id,
-                        granularity_id,
+                        pd.Timestamp(row[0]).replace(tzinfo=None),
+                        row[1],
+                        int(row[2]),
+                        int(row[3]),
+                        int(row[4])
                     )
+                    for row in existing_rows
                 )
+                logger.info(
+                    f"[{granularity_name} - {rat_name}] Found {len(existing_keys)} existing records in time window")
 
-                if len(batch) >= BATCH_SIZE or idx == total_records:
-                    try:
-                        # ⚡ Bulk insert
-                        execute_values(cursor, insert_query, batch, page_size=BATCH_SIZE)
-                        connection.commit()
+                before_count = len(export_df)
 
-                        # Track inserted vs skipped rows
-                        inserted = cursor.rowcount
-                        skipped = len(batch) - inserted
-                        successful_inserts += inserted
-                        skipped_records += skipped
+                export_df = export_df[
+                    ~pd.Series(
+                        list(zip(
+                            export_df['timestamp'].dt.floor('s'),  # strip sub-second precision
+                            export_df['cell_name'],
+                            export_df['standard_kpi_id'],
+                            export_df['oss_id'],
+                            export_df['rat_id']
+                        )),
+                        index=export_df.index
+                    ).isin(existing_keys)
+                ]
 
-                    except Error as batch_error:
-                        # Batch failed → fallback to per-row inserts
-                        connection.rollback()
-                        for offset, record in enumerate(batch):
-                            try:
-                                cursor.execute(
-                                    insert_query.replace(
-                                        "VALUES %s",
-                                        "VALUES (" + ",".join(["%s"] * 15) + ")"
-                                    ),
-                                    record
-                                )
-                                connection.commit()
-                                successful_inserts += 1
-                            except Error as row_error:
-                                connection.rollback()
-                                error_records.append(
-                                    {
-                                        "row_index": batch_start_index + offset,
-                                        "error_type": type(row_error).__name__,
-                                        "error_message": str(row_error),
-                                        "row_data": df.iloc[batch_start_index + offset].to_dict(),
-                                    }
-                                )
+                skipped = before_count - len(export_df)
+                logger.info(f"[{granularity_name} - {rat_name}] Pre-filtered {skipped} duplicate records")
+            else:
+                logger.info(
+                    f"[{granularity_name} - {rat_name}] No existing records in time window — skipping duplicate check")
+            # ---- END PRE-FILTER ----
 
-                    # 📊 Progress reporting
-                    if (successful_inserts + skipped_records) % PROGRESS_INTERVAL == 0 or idx == total_records:
-                        elapsed = time.time() - start_time
-                        rate = (successful_inserts + skipped_records) / elapsed if elapsed > 0 else 0
-                        remaining = total_records - (successful_inserts + skipped_records)
-                        eta = timedelta(seconds=int(remaining / rate)) if rate > 0 else "N/A"
+            if export_df.empty:
+                logger.info(f"[{granularity_name} - {rat_name}] All records already exist, nothing to insert")
+                return True
 
-                        msg = (
-                            f"[{granularity_name} - {rat_name}] "
-                            f"{successful_inserts}/{total_records} inserted | "
-                            f"{skipped_records} skipped | "
-                            f"errors: {len(error_records)} | "
-                            f"rate: {rate:.0f} rec/s | ETA: {eta}"
-                        )
+            insert_count = len(export_df)
+            logger.info(
+                f"[{granularity_name} - {rat_name}] COPYing {insert_count} records directly into kpi_values_hour...")
 
-                        sys.stdout.write("\r" + msg)
-                        sys.stdout.flush()
+            buffer = io.StringIO()
+            export_df.to_csv(buffer, index=False, header=False, na_rep='\\N')
+            buffer.seek(0)
 
-                    batch.clear()
-                    batch_start_index = idx
+            cursor.copy_expert(
+                f"COPY kpi_values_hour ({','.join(columns)}) FROM STDIN WITH (FORMAT CSV, NULL '\\N')",
+                buffer
+            )
 
-            sys.stdout.write("\n")
-            sys.stdout.flush()
+            connection.commit()
 
-            logger.info(f"[{granularity_name} - {rat_name}] Successfully inserted {successful_inserts} records")
-            logger.info(f"[{granularity_name} - {rat_name}] Skipped (duplicates) {skipped_records} records")
-
-            if error_records:
-                logger.warning(f"[{granularity_name} - {rat_name}] Failed to insert {len(error_records)} records")
-                error_log_path = self.create_error_log_file(rat_id, granularity_name, original_filename, error_records)
-                logger.info(f"[{granularity_name} - {rat_name}] Error log created: {error_log_path}")
-                return False
-
-            logger.info(f"[{granularity_name} - {rat_name}] All remaining records inserted successfully")
+            elapsed = time.time() - start_time
+            rate = insert_count / elapsed if elapsed > 0 else 0
+            logger.info(
+                f"[{granularity_name} - {rat_name}] "
+                f"Inserted {insert_count} | "
+                f"Skipped at pre-filter {total_records - insert_count} | "
+                f"{rate:.0f} rec/s | {elapsed:.1f}s total"
+            )
             return True
 
-        except Error as e:
-            sys.stdout.write("\n")
-            sys.stdout.flush()
-            logger.exception("Database error during insert")
+        except Exception as e:
+            if connection:
+                connection.rollback()
+            logger.exception(f"[{granularity_name} - {rat_name}] Database error during insert: {e}")
             return False
 
         finally:
@@ -872,11 +833,7 @@ class KPIProcessor:
 
     def process_data_file(self, file_path: str, file_type: str, oss_identifier: str, oss_config: dict,
                           original_filename: str, rat_id: int, granularity_name: str) -> bool:
-        """Process a single data file (XLSX or CSV) for a specific RAT
 
-        Returns:
-            bool: True if processing was successful, False otherwise
-        """
         granularity_id = self.get_granularity_id_by_name(granularity_name)
 
         try:
@@ -884,7 +841,6 @@ class KPIProcessor:
             logger.info(f"[{granularity_name} - {rat_name}] Reading {file_type.upper()} file: {file_path}")
             logger.info(f"[{granularity_name} - {rat_name}] OSS identifier: {oss_identifier}")
 
-            # Read the data file
             df = self.read_data_file(file_path, file_type, oss_config)
 
             if df.empty:
@@ -892,21 +848,17 @@ class KPIProcessor:
                 return False
 
             logger.info(f"[{granularity_name} - {rat_name}] Read {len(df)} rows and {len(df.columns)} columns from {file_path}")
-            # logger.info(f"[{granularity_name} - {rat_name}] Column names: {list(df.columns)}")
             logger.info(f"[{granularity_name} - {rat_name}] Normalizing column names...")
 
-            # Normalize column names
             df = self.normalize_column_names(df)
 
             logger.info(f"[{granularity_name} - {rat_name}] Unpivoting dataframe...")
-            # Convert to unpivoted format using database mappings with numerator/denominator support
             unpivoted_df = self.unpivot_dataframe(df, oss_identifier, oss_config, original_filename, rat_id, granularity_id)
 
             if unpivoted_df.empty:
                 logger.warning(f"[{granularity_name} - {rat_name}] No data to insert after unpivoting and mapping")
                 return False
 
-            # Insert into database
             success = self.insert_data_to_postgresql(unpivoted_df, rat_id, original_filename, granularity_name)
 
             if success:
@@ -923,10 +875,8 @@ class KPIProcessor:
             return False
 
     def mark_file_as_processed(self, file_path: str, rat_id: int, granularity_name:str):
-        """Move processed file to processed folder"""
         try:
             rat_info = self.rats[rat_id]
-            # processed_folder = rat_info['folders']['processed']
             processed_folder = rat_info['folders'][granularity_name]['processed']
             rat_name = rat_info['name']
 
@@ -940,10 +890,8 @@ class KPIProcessor:
             logger.info(f"========== END FILE ==========")
 
     def cleanup_temp_files(self, rat_id: int, granularity_name:str):
-        """Clean up temporary files for specific RAT"""
         try:
             rat_info = self.rats[rat_id]
-            # temp_folder = rat_info['folders']['temp']
             temp_folder = rat_info['folders'][granularity_name]['temp']
 
             for file in os.listdir(temp_folder):
@@ -953,13 +901,8 @@ class KPIProcessor:
             logger.error(f"Error cleaning up temp files: {e}")
 
     def process_new_files_for_rat(self, rat_id: int, granularity_name: str):
-        """Process new files for a specific RAT"""
         rat_info = self.rats[rat_id]
         rat_name = rat_info['name']
-
-        # logger.info(f"{'=' * 60}")
-        # logger.info(f"{'-' * 10} Processing RAT: {rat_name} (ID: {rat_id}) {'-' * 10}")
-        # logger.info(f"{'-' * 60}")
 
         new_files = self.get_new_files(rat_id, granularity_name)
 
@@ -969,7 +912,6 @@ class KPIProcessor:
 
         logger.info(f"[{granularity_name} - {rat_name}] Found {len(new_files)} new files to process")
 
-        # Track if any files were successfully processed
         files_processed_successfully = 0
         files_with_errors = 0
 
@@ -980,36 +922,28 @@ class KPIProcessor:
                 filename = os.path.basename(file_path)
                 logger.info(f"[{granularity_name} - {rat_name}] Processing {filename}")
 
-                # Identify OSS source using database configuration
                 oss_identifier, oss_config = self.identify_oss_source(filename)
 
                 if not oss_identifier:
                     logger.warning(f"[{granularity_name} - {rat_name}] Could not identify OSS for file: {filename}")
                     continue
 
-                # Determine file type and processing method
                 file_format, needs_extraction = self.get_file_info(file_path)
 
                 if needs_extraction and file_format == 'zip':
-                    # logger.info(f"[{granularity_name} - {rat_name}] File needs extraction")
-                    # Extract data file from ZIP
                     extraction_result = self.extract_data_file_from_zip(file_path, rat_id, granularity_name)
 
                     if extraction_result:
                         data_file_path, file_type = extraction_result
-                        # Process the extracted data file
                         processing_success = self.process_data_file(data_file_path, file_type, oss_identifier, oss_config, filename, rat_id, granularity_name)
 
                 elif not needs_extraction and file_format in ['xlsx', 'csv']:
-                    # Process file directly
-                    # logger.info(f"[{granularity_name} - {rat_name}] File does not need extraction")
                     processing_success = self.process_data_file(file_path, file_format, oss_identifier, oss_config, filename, rat_id, granularity_name)
 
                 else:
                     logger.warning(f"[{granularity_name} - {rat_name}] Unsupported file format: {file_format}")
                     continue
 
-                # Only mark file as processed if processing was successful
                 if processing_success:
                     self.mark_file_as_processed(file_path, rat_id, granularity_name)
                     files_processed_successfully += 1
@@ -1018,7 +952,6 @@ class KPIProcessor:
                     logger.error(f"[{granularity_name} - {rat_name}] {'-' * 10} END FILE (FAILED!) {'-' * 10}")
                     files_with_errors += 1
 
-                # Clean up temp files regardless of success
                 self.cleanup_temp_files(rat_id, granularity_name)
 
             except Exception as e:
@@ -1029,17 +962,14 @@ class KPIProcessor:
                 logger.error(f"[{granularity_name} - {rat_name}] {'-' * 10} END FILE (ERROR!) {'-' * 10}")
                 files_with_errors += 1
 
-                # Clean up temp files even on error
                 try:
                     self.cleanup_temp_files(rat_id, granularity_name)
                 except:
                     pass
 
-        # Clear Redis cache once after processing all files for this RAT
         if files_processed_successfully > 0:
             logger.info(f"[{granularity_name} - {rat_name}] Processed {files_processed_successfully} file(s) successfully")
-            # logger.info(f"[{granularity_name} - {rat_name}] Triggering cache eviction and warmup for RAT...")
-            # logger.info(f"skipping clearing cache...")
+
             self.clear_redis_cache(rat_name, granularity_name)
         else:
             logger.info(f"[{granularity_name} - {rat_name}] No files were processed successfully. Skipping cache clearing.")
@@ -1048,18 +978,11 @@ class KPIProcessor:
             logger.warning(f"[{granularity_name} - {rat_name}] {files_with_errors} file(s) encountered errors during processing")
 
     def process_new_files(self):
-        """Process new files for all RATs using database configuration"""
-        # logger.info(f"{'#' * 80}")
         logger.info(f"{'=' * 3} STARTING KPI PROCESSING CYCLE AT {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {'=' * 3}")
-        # logger.info(f"{'#' * 80}\n")
-
-        # logger.info(f"Available granularities: {self.granularities}")
 
         for granularity_id, gran in self.granularities.items():
             granularity_name = gran['name']
-            # logger.info(f"Processing granularity: {granularity_name}")
 
-            # Process files for each RAT
             for rat_id in self.rats.keys():
                 try:
                     self.process_new_files_for_rat(rat_id, granularity_name)
@@ -1069,17 +992,12 @@ class KPIProcessor:
                     import traceback
                     logger.error(f"Traceback: {traceback.format_exc()}")
 
-        # logger.info(f"{'#' * 80}")
         logger.info(f"{'=' * 3} COMPLETED KPI PROCESSING CYCLE AT {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {'=' * 3}\n")
-        # logger.info(f"{'#' * 80}\n")
 
-    def run_continuously(self, interval_minutes: int = 60):
-        """Run the processor continuously with specified interval"""
+    def run_continuously(self, interval_minutes: int = 1):
         logger.info(f"Starting continuous processing with {interval_minutes} minute intervals")
         rats_str = ", ".join(f"{r['name']} ({r['label']})" for r in self.rats.values())
-        # logger.info("Configured RATs: %s", rats_str)
 
-        # Create database tables on startup
         self.create_database_tables()
 
         while True:
@@ -1096,11 +1014,9 @@ class KPIProcessor:
 
 
 if __name__ == "__main__":
-    # Initialize and run the processor
     processor = KPIProcessor()
 
-    # Run continuously (every 60 minutes)
-    processor.run_continuously(interval_minutes=60)
+    processor.run_continuously(interval_minutes=1)
 
     # Or run once
     # processor.process_new_files()

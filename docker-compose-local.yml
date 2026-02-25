@@ -236,7 +236,7 @@ services:
       - "${DOMAIN_IP}:host-gateway"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.1.3
+    image: thilankaw/netrics/pulse:0.1.4
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -298,8 +298,26 @@ services:
       pulse:
         condition: service_healthy
 
+  kpip-hour:
+    image: thilankaw/netrics/kpip-hour:0.0.1
+    container_name: kpip-hour
+    tty: true          # REQUIRED for single-line updates
+    stdin_open: true   # REQUIRED for single-line updates
+    env_file:
+      - .env
+    networks:
+      - private_net
+    volumes:
+      - ./backend/python/pulse/files/hour:/app/day-average
+    #      - /home/ftpuser/apps/netrics/files/hour:/app/hour
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pulse:
+        condition: service_healthy
+
   frontend:
-    image: thilankaw/netrics/frontend:0.0.9-test
+    image: thilankaw/netrics/frontend:0.0.10-test
     container_name: frontend
     expose:
       - "80"

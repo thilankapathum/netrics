@@ -7,7 +7,7 @@
     "password": "password"
   },
   "base_folders": {
-    "hour": ".\\files\\hour"
+    "hour": "..\\files\\hour"
   },
   "clear_redis_cache_url": "http://localhost:8001/api/v1/pulse/cache/evict-cell-kpi-trends"
 }
