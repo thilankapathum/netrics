@@ -1,4 +1,5 @@
 @import "tailwindcss";
+/*@import "leaflet/dist/leaflet.css";*/
 @plugin "daisyui" {
   themes: [netrics_light, netrics_dark]; /* use your themes only */
 }
