@@ -29,4 +29,7 @@ public class Band {
 
     @OneToMany(mappedBy = "band", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Cell> cells;
+
+    @OneToMany(mappedBy = "band", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Carrier> carriers;
 }

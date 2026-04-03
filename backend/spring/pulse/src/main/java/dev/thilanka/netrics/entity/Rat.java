@@ -45,4 +45,7 @@ public class Rat {
 
     @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Cell> cells;
+
+    @OneToMany(mappedBy = "rat", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Carrier> carriers;
 }

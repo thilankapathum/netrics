@@ -33,6 +33,8 @@ export class PsCreateSite {
 
   siteCode = signal<string>('');
   siteName = signal<string>('');
+  latitude = signal<number | undefined>(undefined);
+  longitude = signal<number | undefined>(undefined);
   siteListJson = signal<string>('');
 
   constructor(private alertService: AlertService,
@@ -47,7 +49,7 @@ export class PsCreateSite {
 
   createSite(): void {
     this.creatingSite.set(true);
-    const site: SiteDto = {siteCode: this.siteCode(), siteName: this.siteName()};
+    const site: SiteDto = {siteCode: this.siteCode(), siteName: this.siteName(), latitude: this.latitude(), longitude: this.longitude()};
 
     this.siteService.createSite(site).subscribe({
       next: value => {
@@ -55,6 +57,8 @@ export class PsCreateSite {
         this.closed.emit();
         this.siteCode.set('');
         this.siteName.set('');
+        this.latitude.set(undefined);
+        this.longitude.set(undefined);
         this.creatingSite.set(false);
       }, error: err => {
         console.log(err);
@@ -68,7 +72,7 @@ export class PsCreateSite {
     this.creatingSites.set(true);
     this.siteService.createSiteList(json).subscribe({
       next: value => {
-        console.log(value);
+        // console.log('value',value);
         const createdCount = value.length;
         this.alertService.success(`${createdCount} sites created successfully.`);
         this.creatingSites.set(false);
@@ -83,7 +87,9 @@ export class PsCreateSite {
 
   isInputsValid() {
     // return !(this.rat() != '' && this.areaType() != '' && this.granularity() != '' && this.selectedDate() != '');
-    return this.siteCode() != '' && this.siteCode().length > 5 && this.siteName() != '' && this.siteName().length > 2;
+    return this.siteCode() != '' && this.siteCode().length > 5 && this.siteName() != '' && this.siteName().length > 2
+      && this.latitude() != undefined && this.longitude() != undefined && this.latitude()! > -90 && this.longitude()! > -180
+      && this.latitude()! < 90 && this.longitude()! < 180;
   }
 
   isJsonInputValid(){

@@ -322,4 +322,10 @@ public class Mapper {
                 cell.getBand() != null ? cell.getBand().getName() : null
         );
     }
+
+    // ================= CARRIER ======================
+
+    public CarrierDto carrierToDto(Carrier carrier) {
+        return new CarrierDto(carrier.getName(), carrier.getRadius(), carrier.getRat().getName(), carrier.getBand().getName());
+    }
 }

@@ -17,8 +17,22 @@
         <input [disabled]="createMultipleSites()" type="text" placeholder="Kandy 1" class="input input-sm"
                [(ngModel)]="siteName"/>
       </div>
+      <div class="w-32">
+        <p>Latitude</p>
+      </div>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+        <input [disabled]="createMultipleSites()" type="text" placeholder="8.12345" class="input input-sm"
+               [(ngModel)]="latitude"/>
+      </div>
 
-
+      <div class="w-32">
+        <p>Longitude</p>
+      </div>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+        <input [disabled]="createMultipleSites()" type="text" placeholder="81.1234" class="input input-sm"
+               [(ngModel)]="longitude"/>
+      </div>
+      
     </div>
     <div class="flex flex-row mt-12 items-center">
       <div class="tooltip text-xs flex flex-row gap-4">
