@@ -14,7 +14,8 @@ volumes:
 services:
   postgres:
 #    image: postgres:17-alpine
-    image: timescale/timescaledb:latest-pg17
+#    image: timescale/timescaledb:latest-pg17
+    image: timescale/timescaledb-ha:pg17
     container_name: postgres
     restart: unless-stopped
     environment:
@@ -37,8 +38,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    command: >
-      postgres -c shared_preload_libraries=timescaledb
+    command: ["postgres", "-c", "shared_preload_libraries=timescaledb,pg_stat_statements"]
+#    command: >
+#      postgres -c shared_preload_libraries=timescaledb
 
   pgadmin:
     image: dpage/pgadmin4
