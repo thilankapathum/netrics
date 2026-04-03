@@ -26,11 +26,13 @@ public class SiteServiceImpl implements SiteService {
         Site site = Site.builder()
                 .siteCode(dto.siteCode())
                 .siteName(dto.siteName())
+                .latitude(dto.latitude())
+                .longitude(dto.longitude())
                 .build();
 
         Site savedSite = createSite(site);
 
-        return new SiteDto(savedSite.getSiteCode(), savedSite.getSiteName());
+        return new SiteDto(savedSite.getSiteCode(), savedSite.getSiteName(), savedSite.getLatitude(), savedSite.getLongitude());
     }
 
     @Override
@@ -62,6 +64,6 @@ public class SiteServiceImpl implements SiteService {
 
         Site site = findBySiteCode(siteCode);
 
-        return new SiteDto(site.getSiteCode(),site.getSiteName());
+        return new SiteDto(site.getSiteCode(),site.getSiteName(),site.getLatitude(),site.getLongitude());
     }
 }
