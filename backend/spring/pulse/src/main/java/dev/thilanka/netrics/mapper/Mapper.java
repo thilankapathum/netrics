@@ -328,4 +328,10 @@ public class Mapper {
     public CarrierDto carrierToDto(Carrier carrier) {
         return new CarrierDto(carrier.getName(), carrier.getRadius(), carrier.getRat().getName(), carrier.getBand().getName());
     }
+
+    // ================= SITES ========================
+
+    public SiteDto siteToDto(Site site) {
+        return new SiteDto(site.getSiteCode(), site.getSiteName(), site.getLatitude(), site.getLongitude());
+    }
 }

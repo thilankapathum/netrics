@@ -30,4 +30,19 @@ export class SiteService {
     );
   }
 
+  exportSitesWithMissingInfo() {
+    return this.http.get(`${this.baseUrl}/missing/export`, {responseType: 'blob'});
+  }
+
+  exportAllSites(){
+    return this.http.get(`${this.baseUrl}/all/export`, {responseType: 'blob'});
+  }
+
+  importSitesWithCorrectedInfo(file: File): Observable<Blob> {
+    const url = `${this.baseUrl}/missing/import`;
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(url, formData, {responseType: 'blob'});
+  }
+
 }

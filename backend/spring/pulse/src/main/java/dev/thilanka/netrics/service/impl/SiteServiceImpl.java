@@ -1,7 +1,10 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.dto.SiteCsvImportResultDto;
 import dev.thilanka.netrics.dto.SiteDto;
 import dev.thilanka.netrics.entity.Site;
+import dev.thilanka.netrics.entity.enums.CsvImportStatus;
+import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.service.SiteService;
 import lombok.RequiredArgsConstructor;
@@ -9,11 +12,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SiteServiceImpl implements SiteService {
     private final SiteRepository siteRepository;
+    private final Mapper mapper;
 
     @Override
     public Site createSite(Site site) {
@@ -40,11 +46,11 @@ public class SiteServiceImpl implements SiteService {
 
         List<SiteDto> savedDtos = new ArrayList<>();
 
-        for (SiteDto dto: dtos){
+        for (SiteDto dto : dtos) {
             try {
                 SiteDto savedDto = createSite(dto);
                 savedDtos.add(savedDto);
-            } catch (Exception e){
+            } catch (Exception e) {
                 System.out.println("Error creating site: " + e.getMessage());
             }
         }
@@ -56,7 +62,7 @@ public class SiteServiceImpl implements SiteService {
     public Site findBySiteCode(String siteCode) {
 
         return siteRepository.findBySiteCode(siteCode)
-                .orElseThrow(()-> new RuntimeException("Site not found by " + siteCode));
+                .orElseThrow(() -> new RuntimeException("Site not found by " + siteCode));
     }
 
     @Override
@@ -64,6 +70,98 @@ public class SiteServiceImpl implements SiteService {
 
         Site site = findBySiteCode(siteCode);
 
-        return new SiteDto(site.getSiteCode(),site.getSiteName(),site.getLatitude(),site.getLongitude());
+        return new SiteDto(site.getSiteCode(), site.getSiteName(), site.getLatitude(), site.getLongitude());
+    }
+
+    @Override
+    public List<Site> findSitesWithMissingInfo() {
+        return siteRepository.findSitesWithMissingInfo();
+    }
+
+    @Override
+    public List<SiteDto> getSitesWithMissingInfo() {
+        List<Site> sites = findSitesWithMissingInfo();
+
+        return sites.stream().map(mapper::siteToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Site> findAllSites() {
+        return siteRepository.findAll();
+    }
+
+    @Override
+    public List<SiteDto> getAllSites() {
+        List<Site> sites = findAllSites();
+
+        return sites.stream().map(mapper::siteToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public Site updateSite(Site site) {
+        Optional<Site> existingSite = siteRepository.findBySiteCode(site.getSiteCode());
+
+        if (existingSite.isPresent()) {
+
+            Site updatingSite = existingSite.get();
+
+            if (!site.getSiteName().isEmpty()) {
+                updatingSite.setSiteName(site.getSiteName());
+            }
+            if (!site.getLatitude().isNaN()) {
+                updatingSite.setLatitude(site.getLatitude());
+            }
+            if (!site.getLongitude().isNaN()) {
+                updatingSite.setLongitude(site.getLongitude());
+            }
+
+            return siteRepository.save(updatingSite);
+
+        } else throw new RuntimeException("Site not found by " + site.getSiteCode());
+
+//        existingSite.ifPresent(s -> site.setId(s.getId()));
+//        return siteRepository.save(updatin);
+    }
+
+    @Override
+    public SiteDto updateSite(SiteDto siteDto) {
+        Site site = Site.builder()
+                .siteCode(siteDto.siteCode())
+                .siteName(siteDto.siteName())
+                .latitude(siteDto.latitude())
+                .longitude(siteDto.longitude())
+                .build();
+
+        return mapper.siteToDto(updateSite(site));
+    }
+
+    @Override
+    public List<SiteDto> updateSites(List<SiteDto> siteDtos) {
+        List<SiteDto> updatedSites = new ArrayList<>();
+
+        for (SiteDto dto : siteDtos) {
+            try {
+                updatedSites.add(updateSite(dto));
+            } catch (Exception e) {
+                System.out.println("Error updating site: " + e.getMessage());
+            }
+        }
+        return updatedSites;
+    }
+
+    @Override
+    public List<SiteCsvImportResultDto> updateSitesWithResults(List<SiteDto> dtos) {
+        List<SiteCsvImportResultDto> importResultDtos = new ArrayList<>();
+
+        for (SiteDto dto : dtos) {
+            try {
+                SiteDto updatedSite = updateSite(dto);
+                importResultDtos.add(new SiteCsvImportResultDto(updatedSite, CsvImportStatus.SUCCESS,""));
+            } catch (Exception e) {
+                System.out.println("Error updating site: "+ dto.siteCode() + e.getMessage());
+                importResultDtos.add(new SiteCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
+            }
+        }
+        return importResultDtos;
     }
 }

@@ -5,6 +5,7 @@ import {PsStandardKpi} from './ps-standard-kpi/ps-standard-kpi';
 import {PsCells} from './ps-cells/ps-cells';
 import {PsCreateSite} from './ps-create-site/ps-create-site';
 import {PsEvictCache} from './ps-evict-cache/ps-evict-cache';
+import {PsSiteInfo} from './ps-site-info/ps-site-info';
 
 @Component({
   selector: 'app-pulse-settings',
@@ -14,7 +15,8 @@ import {PsEvictCache} from './ps-evict-cache/ps-evict-cache';
     PsStandardKpi,
     PsCells,
     PsCreateSite,
-    PsEvictCache
+    PsEvictCache,
+    PsSiteInfo
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'
@@ -26,6 +28,7 @@ export class PulseSettings {
   showMissingCellInfoModal:boolean = false;
   showCreateSiteModal:boolean = false;
   showEvictCacheModal:boolean = false;
+  showSiteInformationModal:boolean = false;
 
   //---------- OPEN MODALS ------------------------
 
@@ -43,6 +46,10 @@ export class PulseSettings {
 
   openCreateSiteModal() {
     this.showCreateSiteModal = true;
+  }
+
+  openSiteInformationModal() {
+    this.showSiteInformationModal = true;
   }
 
   openEvictCacheModal() {
@@ -65,6 +72,10 @@ export class PulseSettings {
 
   closeCreateSiteModal() {
     this.showCreateSiteModal = false;
+  }
+
+  closeSiteInformationModal() {
+    this.showSiteInformationModal = false;
   }
 
   closeEvictCacheModal() {

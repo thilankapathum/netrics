@@ -1,11 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
-import dev.thilanka.netrics.dto.CellCsvImportResultDto;
-import dev.thilanka.netrics.dto.CellDto;
-import dev.thilanka.netrics.dto.SiteKpiReportDto;
-import dev.thilanka.netrics.entity.enums.CellCsvHeader;
-import dev.thilanka.netrics.entity.enums.CellCsvImportResultHeader;
-import dev.thilanka.netrics.entity.enums.SiteKpiReportHeader;
+import dev.thilanka.netrics.dto.*;
+import dev.thilanka.netrics.entity.enums.*;
 import dev.thilanka.netrics.service.CsvService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
@@ -38,6 +34,16 @@ public class CsvServiceImpl implements CsvService {
             .map(SiteKpiReportHeader::getHeader)
             .toArray(String[]::new);
 
+    private static final String[] SITE_HEADERS = Arrays
+            .stream(SiteCsvHeader.values())
+            .map(SiteCsvHeader::getHeader)
+            .toArray(String[]::new);
+
+    private static final String[] SITE_IMPORT_RESULT_HEADERS = Arrays
+            .stream(SiteCsvImportResultHeader.values())
+            .map(SiteCsvImportResultHeader::getHeader)
+            .toArray(String[]::new);
+
     @Override
     public void writeCellsToCsv(List<CellDto> dtos, Writer writer) {
 
@@ -53,6 +59,26 @@ public class CsvServiceImpl implements CsvService {
                         dto.nodeName(),
                         dto.ratName(),
                         dto.bandName()
+                );
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write CSV: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void writeSitesToCsv(List<SiteDto> dtos, Writer writer) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(SITE_HEADERS)
+                .get();
+
+        try (CSVPrinter csvPrinter = new CSVPrinter(writer, csvFormat)){
+            for (SiteDto dto : dtos) {
+                csvPrinter.printRecord(
+                        dto.siteCode(),
+                        dto.siteName(),
+                        dto.latitude(),
+                        dto.longitude()
                 );
             }
         } catch (IOException e) {
@@ -92,6 +118,35 @@ public class CsvServiceImpl implements CsvService {
     }
 
     @Override
+    public List<SiteDto> readSitesFromCsv(InputStream inputStream) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setTrim(true)
+                .get();
+
+        try (Reader reader = new InputStreamReader(inputStream);
+             CSVParser csvParser = CSVParser.parse(reader, csvFormat)) {
+
+            List<SiteDto> siteDtos = new ArrayList<>();
+
+            for (CSVRecord record : csvParser) {
+                SiteDto dto = new SiteDto(
+                        record.get(SiteCsvHeader.SITE_CODE.getHeader()),
+                        record.get(SiteCsvHeader.SITE_NAME.getHeader()),
+                        parseDouble(record.get(SiteCsvHeader.LATITUDE.getHeader())),
+                        parseDouble(record.get(SiteCsvHeader.LONGITUDE.getHeader()))
+                );
+                siteDtos.add(dto);
+            }
+            return siteDtos;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public void writeCellImportResultToCsv(List<CellCsvImportResultDto> results, Writer writer) {
         CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
                 .setHeader(CELL_IMPORT_RESULT_HEADERS)
@@ -111,6 +166,28 @@ public class CsvServiceImpl implements CsvService {
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to write Cell Import Result CSV " + e);
+        }
+    }
+
+    @Override
+    public void writeSiteImportResultToCsv(List<SiteCsvImportResultDto> results, Writer writer) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(SITE_IMPORT_RESULT_HEADERS)
+                .get();
+
+        try (CSVPrinter printer = new CSVPrinter(writer,csvFormat)){
+            for (SiteCsvImportResultDto result: results){
+                printer.printRecord(
+                        result.siteDto().siteCode(),
+                        result.siteDto().siteName(),
+                        result.siteDto().latitude(),
+                        result.siteDto().longitude(),
+                        result.status(),
+                        result.errorMessage()
+                );
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write Site Import Result CSV " + e);
         }
     }
 
@@ -136,5 +213,16 @@ public class CsvServiceImpl implements CsvService {
             throw new RuntimeException("Failed to write Cell Import Result CSV " + e);
         }
 
+    }
+
+    private Double parseDouble(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid number format: " + value, e);
+        }
     }
 }
