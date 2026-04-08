@@ -30,6 +30,8 @@ public class CellServiceImpl implements CellService {
     private final GranularityService granularityService;
     private final KpiDayService kpiDayService;
     private final DateService dateService;
+    private final CarrierService carrierService;
+    private final SectorService sectorService;
 
     Integer cellCountWithMissingInfo = 0;
     List<CellDto> allCells = new ArrayList<>();
@@ -65,6 +67,28 @@ public class CellServiceImpl implements CellService {
         if (dto.bandName() != null) {
             Band band = bandService.findByName(dto.bandName());
             cell.band(band);
+        }
+
+        if (dto.azimuth() != null) {
+            cell.azimuth(dto.azimuth());
+        }
+
+        if (dto.beamwidth() != null) {
+            cell.beamwidth(dto.beamwidth());
+        }
+
+        if (dto.isMultiBeam()) {
+            cell.isMultiBeam(true);
+        }
+
+        if (dto.carrierName() != null) {
+            Carrier carrier = carrierService.findByName(dto.carrierName());
+            cell.carrier(carrier);
+        }
+
+        if (dto.sectorName() != null) {
+            Sector sector = sectorService.findBySectorName(dto.sectorName());
+            cell.sector(sector);
         }
 
         return cell.build();
@@ -105,8 +129,65 @@ public class CellServiceImpl implements CellService {
 
         Optional<Cell> existingCell = cellRepository.findByCellName(cell.getCellName());
 
-        existingCell.ifPresent(value -> cell.setId(value.getId()));
-        return cellRepository.save(cell);
+        // RAT IS NOT UPDATABLE - IT'S SET AT CREATION OF THE CELL
+        //TODO: Better handling for updating fields
+
+        if (existingCell.isPresent()) {
+
+            Cell updatingCell = existingCell.get();
+
+            if (cell.getNodeName() != null) {
+                updatingCell.setNodeName(cell.getNodeName());
+            }
+            if (cell.getSector() != null) {
+                updatingCell.setSector(cell.getSector());
+            }
+
+            if (cell.getAzimuth() == null && updatingCell.getAzimuth() == null) {
+                if (updatingCell.getSector() != null) {
+                    updatingCell.setAzimuth(updatingCell.getSector().getAzimuth());
+                }
+            } else if (cell.getAzimuth() != null && cell.getAzimuth() >= 0 && cell.getAzimuth() <= 360) {
+                updatingCell.setAzimuth(cell.getAzimuth());
+            }
+
+//            if (cell.getAzimuth() >= 0 && cell.getAzimuth() <= 360) {
+//                updatingCell.setAzimuth(cell.getAzimuth());
+//            }
+
+            if (cell.isMultiBeam()) {
+                updatingCell.setMultiBeam(true);
+            }
+
+            if (cell.getBeamwidth() == null && updatingCell.getBeamwidth() == null) {
+                if (!updatingCell.isMultiBeam()) {
+                    updatingCell.setBeamwidth(65);      //-- Setting default beamwidth for a single-beam cell
+                }
+            } else if (cell.getBeamwidth() != null &&  cell.getBeamwidth() >= 0 && cell.getBeamwidth() <= 360) {
+                updatingCell.setBeamwidth(cell.getBeamwidth());
+            }
+//            if (cell.isMultiBeam()) {
+//                updatingCell.setMultiBeam(true);
+//            }
+            if (cell.getSite() != null) {
+                updatingCell.setSite(cell.getSite());
+            }
+            if (cell.getBand() != null) {
+                updatingCell.setBand(cell.getBand());
+            }
+            if (cell.getCarrier() != null) {
+                updatingCell.setCarrier(cell.getCarrier());
+            }
+//            if (cell.getSector() != null) {
+//                updatingCell.setSector(cell.getSector());
+//            }
+
+            return cellRepository.save(updatingCell);
+        } else throw new RuntimeException("Cannot find cell by: " + cell.getCellName());
+
+//        existingCell.ifPresent(value -> cell.setId(value.getId()));
+//        return cellRepository.save(cell);
+
     }
 
     @Override

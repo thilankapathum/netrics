@@ -58,7 +58,12 @@ public class CsvServiceImpl implements CsvService {
                         dto.siteCode(),
                         dto.nodeName(),
                         dto.ratName(),
-                        dto.bandName()
+                        dto.bandName(),
+                        dto.azimuth(),
+                        dto.beamwidth(),
+                        dto.isMultiBeam(),
+                        dto.carrierName(),
+                        dto.sectorName()
                 );
             }
         } catch (IOException e) {
@@ -72,7 +77,7 @@ public class CsvServiceImpl implements CsvService {
                 .setHeader(SITE_HEADERS)
                 .get();
 
-        try (CSVPrinter csvPrinter = new CSVPrinter(writer, csvFormat)){
+        try (CSVPrinter csvPrinter = new CSVPrinter(writer, csvFormat)) {
             for (SiteDto dto : dtos) {
                 csvPrinter.printRecord(
                         dto.siteCode(),
@@ -106,7 +111,12 @@ public class CsvServiceImpl implements CsvService {
                         record.get(CellCsvHeader.NODE_NAME.getHeader()),
                         record.get(CellCsvHeader.RAT_NAME.getHeader()),
                         record.get(CellCsvHeader.SITE_CODE.getHeader()),
-                        record.get(CellCsvHeader.BAND_NAME.getHeader())
+                        record.get(CellCsvHeader.BAND_NAME.getHeader()),
+                        parseInteger(record.get(CellCsvHeader.AZIMUTH.getHeader())),
+                        parseInteger(record.get(CellCsvHeader.BEAMWIDTH.getHeader())),
+                        parseBoolean(record.get(CellCsvHeader.IS_MULTI_BEAM.getHeader())),
+                        record.get(CellCsvHeader.CARRIER_NAME.getHeader()),
+                        record.get(CellCsvHeader.SECTOR_NAME.getHeader())
                 );
                 cellDtos.add(dto);
             }
@@ -152,14 +162,19 @@ public class CsvServiceImpl implements CsvService {
                 .setHeader(CELL_IMPORT_RESULT_HEADERS)
                 .get();
 
-        try (CSVPrinter printer = new CSVPrinter(writer,csvFormat)){
-            for (CellCsvImportResultDto result: results){
+        try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
+            for (CellCsvImportResultDto result : results) {
                 printer.printRecord(
                         result.cellDto().cellName(),
                         result.cellDto().siteCode(),
                         result.cellDto().nodeName(),
                         result.cellDto().ratName(),
                         result.cellDto().bandName(),
+                        result.cellDto().azimuth(),
+                        result.cellDto().beamwidth(),
+                        result.cellDto().isMultiBeam(),
+                        result.cellDto().carrierName(),
+                        result.cellDto().sectorName(),
                         result.status(),
                         result.errorMessage()
                 );
@@ -175,8 +190,8 @@ public class CsvServiceImpl implements CsvService {
                 .setHeader(SITE_IMPORT_RESULT_HEADERS)
                 .get();
 
-        try (CSVPrinter printer = new CSVPrinter(writer,csvFormat)){
-            for (SiteCsvImportResultDto result: results){
+        try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
+            for (SiteCsvImportResultDto result : results) {
                 printer.printRecord(
                         result.siteDto().siteCode(),
                         result.siteDto().siteName(),
@@ -198,8 +213,8 @@ public class CsvServiceImpl implements CsvService {
                 .setHeader(SITE_KPI_REPORT_HEADERS)
                 .get();
 
-        try (CSVPrinter printer = new CSVPrinter(writer,csvFormat)){
-            for (SiteKpiReportDto dto: dtos){
+        try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
+            for (SiteKpiReportDto dto : dtos) {
                 printer.printRecord(
                         dto.timestamp(),
                         dto.siteCode(),
@@ -209,11 +224,13 @@ public class CsvServiceImpl implements CsvService {
                 );
             }
 
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException("Failed to write Cell Import Result CSV " + e);
         }
 
     }
+
+    // =============  UTILS  ======================================================
 
     private Double parseDouble(String value) {
         if (value == null || value.isBlank()) {
@@ -223,6 +240,28 @@ public class CsvServiceImpl implements CsvService {
             return Double.parseDouble(value);
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid number format: " + value, e);
+        }
+    }
+
+    private Integer parseInteger(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid number format: " + value, e);
+        }
+    }
+
+    private boolean parseBoolean(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        try {
+            return Boolean.parseBoolean(value);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid boolean format: " + value, e);
         }
     }
 }

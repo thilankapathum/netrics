@@ -1,6 +1,8 @@
 package dev.thilanka.netrics.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 
 @Getter
@@ -21,6 +23,16 @@ public class Cell {
     @Column(nullable = true)
     private String nodeName;
 
+    @Max(360)
+    @Min(0)
+    private Integer azimuth;
+
+    @Max(360)
+    @Min(0)
+    private Integer beamwidth;
+
+    private boolean isMultiBeam;
+
     @ManyToOne
     @JoinColumn(name = "rat_id", nullable = true)
     private Rat rat;
@@ -32,4 +44,12 @@ public class Cell {
     @ManyToOne
     @JoinColumn(name = "band_id", nullable = true)
     private Band band;
+
+    @ManyToOne
+    @JoinColumn(name = "carrier_id", nullable = true)
+    private Carrier carrier;
+
+    @ManyToOne
+    @JoinColumn(name = "sector_id", nullable = true)
+    private Sector sector;
 }

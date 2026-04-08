@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -31,4 +33,7 @@ public class Carrier {
     @ManyToOne
     @JoinColumn(name = "band_id")
     private Band band;
+
+    @OneToMany(mappedBy = "carrier", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Cell> cells;
 }

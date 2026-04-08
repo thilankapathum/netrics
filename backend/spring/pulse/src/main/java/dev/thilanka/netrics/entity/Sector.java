@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -33,4 +35,7 @@ public class Sector {
     @ManyToOne
     @JoinColumn(name = "site_id")
     private Site site;
+
+    @OneToMany(mappedBy = "sector", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Cell> cells;
 }

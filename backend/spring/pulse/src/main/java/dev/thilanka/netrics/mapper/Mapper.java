@@ -319,7 +319,12 @@ public class Mapper {
                 cell.getNodeName(),
                 cell.getRat() != null ? cell.getRat().getName() : null,
                 cell.getSite() != null ? cell.getSite().getSiteCode() : null,
-                cell.getBand() != null ? cell.getBand().getName() : null
+                cell.getBand() != null ? cell.getBand().getName() : null,
+                cell.getAzimuth(),
+                cell.getBeamwidth(),
+                cell.isMultiBeam(),
+                cell.getCarrier() != null ? cell.getCarrier().getName() : null,
+                cell.getSector() != null ? cell.getSector().getName() : null
         );
     }
 
