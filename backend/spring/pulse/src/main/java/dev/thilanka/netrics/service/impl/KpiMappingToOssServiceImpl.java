@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.KpiMappingToOssDto;
 import dev.thilanka.netrics.entity.Oss;
 import dev.thilanka.netrics.entity.Rat;
@@ -47,7 +48,7 @@ public class KpiMappingToOssServiceImpl implements KpiMappingToOssService {
         Rat rat = ratService.findRatByName(dto.ratName());
 
         Oss oss = ossRepository.findByIdentifier(dto.ossIdentifier())
-                .orElseThrow(() -> new RuntimeException("OSS not found by: " + dto.ossIdentifier()));
+                .orElseThrow(() -> new ResourceNotFoundException("OSS", "Identifier", dto.ossIdentifier()));
 
         StandardKpi standardKpi = standardKpiService
                 .findByKpiName(dto.standardKpi(),rat);

@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.DistrictCodeDto;
 import dev.thilanka.netrics.dto.KpiDataDto;
 import dev.thilanka.netrics.entity.Area;
@@ -25,8 +26,6 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     private final KpiDayService kpiDayService;
     private final RatService ratService;
     private final Mapper mapper;
-//    private final AreaDistrictCodeMappingService areaDistrictCodeMappingService;
-//    private final AreaService areaService;
 
     @Override
     public List<DistrictCodeDto> getAll() {
@@ -82,7 +81,7 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     @Override
     public DistrictCode findByDistrictCode(String districtCode) {
         return districtCodeRepository.findByCode(districtCode)
-                .orElseThrow(() -> new RuntimeException("District code not found by: " + districtCode));
+                .orElseThrow(() -> new ResourceNotFoundException("District Code", "Code", districtCode));
     }
 
     private void updateKpiDayWithoutDistrict(String ratName) {

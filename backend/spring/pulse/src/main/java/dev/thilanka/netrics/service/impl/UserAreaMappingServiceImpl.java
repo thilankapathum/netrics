@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.AreaDto;
 import dev.thilanka.netrics.dto.UserAreaMappingDto;
 import dev.thilanka.netrics.entity.Area;
@@ -38,7 +39,7 @@ public class UserAreaMappingServiceImpl implements UserAreaMappingService {
     @Override
     public Area findAreaByUserId(String userId) {
         UserAreaMapping userAreaMapping = userAreaMappingRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Area not found by User ID " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Area", "User ID", userId));
         return userAreaMapping.getArea();
     }
 

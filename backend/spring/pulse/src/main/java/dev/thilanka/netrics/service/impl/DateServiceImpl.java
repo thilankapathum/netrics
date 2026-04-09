@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.BusinessValidationException;
 import dev.thilanka.netrics.dto.DateRangeDto;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
@@ -51,20 +52,10 @@ public class DateServiceImpl implements DateService {
     @Override
     @Cacheable(value = "latestDateRange", key = "#period + '_' + #granularityName + '_' + #ratName")
     public DateRangeDto getLatestDateRange(String period, String ratName, String granularityName) {
-//        System.out.println("DateService " + period + ratName + granularityName);
         Rat rat = ratService.findRatByName(ratName);
-//        System.out.println("RAT" + rat.getLabel());
-
         Granularity granularity = granularityService.findGranularityByName(granularityName);
-//        System.out.println("Granularity: " + granularity.getLabel());
-
         LocalDateTime latestDate = getLatestDate(rat, granularity).toLocalDate().atStartOfDay();
-//        System.out.println("Latest Date date: " + latestDate.toLocalDate().atStartOfDay());
-//        System.out.println("latestDate " + latestDate.toString());
-
         LocalDateTime latestPrevDate = getLatestPreviousDate(period, rat, granularity).plusDays(1);
-//        System.out.println("latestPrevDate " + latestPrevDate.toString() );
-
         return new DateRangeDto(Timestamp.valueOf(latestDate), Timestamp.valueOf(latestPrevDate));
     }
 
@@ -140,7 +131,7 @@ public class DateServiceImpl implements DateService {
         try {
             return DayOfWeek.valueOf(day.trim().toUpperCase());
         } catch (Exception e) {
-            throw new RuntimeException("Incorrect Refresh-Day: " + day);
+            throw new BusinessValidationException("Incorrect refresh day: " + day);
         }
     }
 

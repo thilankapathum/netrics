@@ -1,5 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.BusinessValidationException;
+import dev.thilanka.netrics.common.exception.FileProcessingException;
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.enums.*;
 import dev.thilanka.netrics.service.CsvService;
@@ -67,7 +69,7 @@ public class CsvServiceImpl implements CsvService {
                 );
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write CSV: " + e.getMessage());
+            throw new FileProcessingException("Failed to write CSV", e);
         }
     }
 
@@ -87,7 +89,7 @@ public class CsvServiceImpl implements CsvService {
                 );
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write CSV: " + e.getMessage());
+            throw new FileProcessingException("Failed to write CSV", e);
         }
     }
 
@@ -123,7 +125,7 @@ public class CsvServiceImpl implements CsvService {
             return cellDtos;
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new FileProcessingException("Failed to read CSV", e);
         }
     }
 
@@ -152,7 +154,7 @@ public class CsvServiceImpl implements CsvService {
             return siteDtos;
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new FileProcessingException("Failed to read CSV", e);
         }
     }
 
@@ -180,7 +182,7 @@ public class CsvServiceImpl implements CsvService {
                 );
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write Cell Import Result CSV " + e);
+            throw new FileProcessingException("Failed to write CSV", e);
         }
     }
 
@@ -202,7 +204,7 @@ public class CsvServiceImpl implements CsvService {
                 );
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write Site Import Result CSV " + e);
+            throw new FileProcessingException("Failed to write CSV", e);
         }
     }
 
@@ -225,7 +227,7 @@ public class CsvServiceImpl implements CsvService {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write Cell Import Result CSV " + e);
+            throw new FileProcessingException("Failed to write CSV", e);
         }
 
     }
@@ -239,7 +241,7 @@ public class CsvServiceImpl implements CsvService {
         try {
             return Double.parseDouble(value);
         } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid number format: " + value, e);
+            throw new BusinessValidationException("Invalid number format: " + value);
         }
     }
 
@@ -250,7 +252,7 @@ public class CsvServiceImpl implements CsvService {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid number format: " + value, e);
+            throw new BusinessValidationException("Invalid number format: " + value);
         }
     }
 
@@ -261,7 +263,7 @@ public class CsvServiceImpl implements CsvService {
         try {
             return Boolean.parseBoolean(value);
         } catch (Exception e) {
-            throw new RuntimeException("Invalid boolean format: " + value, e);
+            throw new BusinessValidationException("Invalid boolean value: " + value);
         }
     }
 }

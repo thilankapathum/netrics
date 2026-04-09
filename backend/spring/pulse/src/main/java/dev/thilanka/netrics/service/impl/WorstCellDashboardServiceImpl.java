@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.DataQueryException;
 import dev.thilanka.netrics.dto.AreaDto;
 import dev.thilanka.netrics.dto.WorstCellCreationStatusDto;
 import dev.thilanka.netrics.dto.WorstCellSaveDto;
@@ -63,7 +64,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
                     worstCell.getArea().getId(),
                     worstCell.isExcludeZeroes(),
                     worstCell.getGranularity().getId()
-            ).orElseThrow(() -> new RuntimeException("Worst cell query error!"));
+            ).orElseThrow(() -> new DataQueryException("Worst cell query error"));
 
             return mapper.toWorstCellSaveDto(existingWorstCell);
         }

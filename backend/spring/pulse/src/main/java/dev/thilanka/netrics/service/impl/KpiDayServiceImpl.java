@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.DataQueryException;
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
@@ -63,10 +64,10 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         if (standardKpi.getAggregation().equals("SUM")) {
             return kpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(), granularity.getId())
-                    .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
+                    .orElseThrow(() -> new DataQueryException("Cannot retrieve KPI values"));
         } else {
             return kpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(), granularity.getId())
-                    .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
+                    .orElseThrow(() -> new DataQueryException("Cannot retrieve KPI values"));
         }
     }
 
@@ -126,14 +127,14 @@ public class KpiDayServiceImpl implements KpiDayService {
                         district.getId(),
                         rat.getId(),
                         granularity.getId())
-                .orElseThrow(() -> new RuntimeException("KPI Snapshot Query failed!"));
+                .orElseThrow(() -> new DataQueryException("KPI Snapshot Query failed"));
     }
 
     private KpiSnapshotDto getLatestKpiSnapshotByArea(String kpiName, LocalDateTime currStart, LocalDateTime currEnd, LocalDateTime preStart, LocalDateTime preEnd, Area area, Rat rat, Granularity granularity) {
         StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName, rat.getId());
 
         return kpiDayRepository.findKpiSnapshotByArea(standardKpi.getId(), currStart, currEnd, preStart, preEnd, area.getId(), rat.getId(), granularity.getId())
-                .orElseThrow(() -> new RuntimeException("KPI Snapshot Query failed!"));
+                .orElseThrow(() -> new DataQueryException("KPI Snapshot Query failed"));
     }
 
 

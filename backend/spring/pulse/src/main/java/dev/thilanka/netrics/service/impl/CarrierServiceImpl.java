@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.CarrierDto;
 import dev.thilanka.netrics.entity.Band;
 import dev.thilanka.netrics.entity.Carrier;
@@ -51,7 +52,7 @@ public class CarrierServiceImpl implements CarrierService {
     @Override
     public Carrier findByName(String name) {
         return carrierRepository.findByName(name)
-                .orElseThrow(()-> new RuntimeException("Carrier with name " + name + " not found"));
+                .orElseThrow(()-> new ResourceNotFoundException("Carrier", "name", name));
     }
 
     @Override

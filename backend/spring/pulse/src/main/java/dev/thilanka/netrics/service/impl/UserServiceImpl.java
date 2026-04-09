@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.UserDto;
 import dev.thilanka.netrics.entity.User;
 import dev.thilanka.netrics.mapper.Mapper;
@@ -37,7 +38,7 @@ public class UserServiceImpl implements UserService {
     public User findUserById(Long id) {
         return userRepository
                 .findById(id)
-                .orElseThrow(()-> new RuntimeException("User not found by ID: " + id));
+                .orElseThrow(()-> new ResourceNotFoundException("User", "ID", id));
     }
 
     @Override
@@ -50,13 +51,13 @@ public class UserServiceImpl implements UserService {
     public User findUserByUsername(String username) {
         return userRepository
                 .findByUsername(username)
-                .orElseThrow(()-> new RuntimeException("User not found by: " + username));
+                .orElseThrow(()-> new ResourceNotFoundException("User", "Username", username));
     }
 
     @Override
     public User findByUserId(String userId) {
         return userRepository
                 .findByUserId(userId)
-                .orElseThrow(()-> new RuntimeException("User not found by User-Id: " + userId));
+                .orElseThrow(()-> new ResourceNotFoundException("User", "User ID", userId));
     }
 }

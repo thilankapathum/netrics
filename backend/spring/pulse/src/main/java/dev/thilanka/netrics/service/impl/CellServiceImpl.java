@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.CellNameDto;
@@ -232,7 +233,7 @@ public class CellServiceImpl implements CellService {
     @Override
     public Cell findByCellName(String cellName) {
         return cellRepository.findByCellName(cellName)
-                .orElseThrow(() -> new RuntimeException("Cell not found by " + cellName));
+                .orElseThrow(() -> new ResourceNotFoundException("Cell", "Cell Name",  cellName));
     }
 
     @Override

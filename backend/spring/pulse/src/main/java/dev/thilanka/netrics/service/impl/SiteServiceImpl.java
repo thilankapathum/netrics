@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.SiteCsvImportResultDto;
 import dev.thilanka.netrics.dto.SiteDto;
 import dev.thilanka.netrics.entity.Site;
@@ -62,7 +63,7 @@ public class SiteServiceImpl implements SiteService {
     public Site findBySiteCode(String siteCode) {
 
         return siteRepository.findBySiteCode(siteCode)
-                .orElseThrow(() -> new RuntimeException("Site not found by " + siteCode));
+                .orElseThrow(() -> new ResourceNotFoundException("Site", "Site ID", siteCode));
     }
 
     @Override
@@ -117,7 +118,7 @@ public class SiteServiceImpl implements SiteService {
 
             return siteRepository.save(updatingSite);
 
-        } else throw new RuntimeException("Site not found by " + site.getSiteCode());
+        } else throw new ResourceNotFoundException("Site", "Site ID", site.getSiteCode());
 
 //        existingSite.ifPresent(s -> site.setId(s.getId()));
 //        return siteRepository.save(updatin);
@@ -156,9 +157,9 @@ public class SiteServiceImpl implements SiteService {
         for (SiteDto dto : dtos) {
             try {
                 SiteDto updatedSite = updateSite(dto);
-                importResultDtos.add(new SiteCsvImportResultDto(updatedSite, CsvImportStatus.SUCCESS,""));
+                importResultDtos.add(new SiteCsvImportResultDto(updatedSite, CsvImportStatus.SUCCESS, ""));
             } catch (Exception e) {
-                System.out.println("Error updating site: "+ dto.siteCode() + e.getMessage());
+                System.out.println("Error updating site: " + dto.siteCode() + e.getMessage());
                 importResultDtos.add(new SiteCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
             }
         }

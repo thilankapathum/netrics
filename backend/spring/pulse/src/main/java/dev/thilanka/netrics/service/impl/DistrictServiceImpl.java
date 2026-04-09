@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.DistrictDto;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.mapper.Mapper;
@@ -19,7 +20,6 @@ public class DistrictServiceImpl implements DistrictService {
 
     @Override
     public List<DistrictDto> getAll() {
-//        List<District> districts = districtRepository.findAll();
         List<District> districts = districtRepository.findAllDistrictsAsc();
         return districts.stream().map(mapper::districtToDto).toList();
     }
@@ -44,6 +44,6 @@ public class DistrictServiceImpl implements DistrictService {
     @Override
     public District findDistrictByName(String name) {
         return districtRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("Cannot find District by: " + name));
+                .orElseThrow(() -> new ResourceNotFoundException("District", "Name", name));
     }
 }

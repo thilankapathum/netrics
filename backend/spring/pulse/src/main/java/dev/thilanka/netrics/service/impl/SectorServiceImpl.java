@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.SectorDto;
 import dev.thilanka.netrics.entity.Sector;
 import dev.thilanka.netrics.entity.Site;
@@ -56,7 +57,7 @@ public class SectorServiceImpl implements SectorService {
     @Override
     public Sector findBySectorName(String name) {
         return sectorRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("Sector not found by Name " + name));
+                .orElseThrow(() -> new ResourceNotFoundException("Sector", "Name", name));
     }
 
     @Override
@@ -69,7 +70,7 @@ public class SectorServiceImpl implements SectorService {
     public Sector findBySiteAndIndex(String siteCode, Integer sectorIndex) {
         Site site = siteService.findBySiteCode(siteCode);
         return sectorRepository.findBySiteIdAndSectorIndex(site.getId(), sectorIndex)
-                .orElseThrow(() -> new RuntimeException("Sector not found by Index" + sectorIndex + " & Site Code " + siteCode));
+                .orElseThrow(() -> new ResourceNotFoundException("Sector", "Site ID & Sector Index", siteCode + " : " + sectorIndex));
     }
 
     @Override

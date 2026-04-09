@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.RatDto;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.mapper.Mapper;
@@ -33,7 +34,7 @@ public class RatServiceImpl implements RatService {
     @Override
     public RatDto getRatDtoByName(String name) {
         Rat rat = ratRepository.findByName(name)
-                .orElseThrow(()-> new RuntimeException("RAT not found by name: " + name));
+                .orElseThrow(()-> new ResourceNotFoundException("RAT", "Name", name));
 
         return mapper.toRatDto(rat);
     }
@@ -41,7 +42,7 @@ public class RatServiceImpl implements RatService {
     @Override
     public RatDto getRatDtoByLabel(String label) {
         Rat rat = ratRepository.findByLabel(label)
-                .orElseThrow(() -> new RuntimeException("RAT not found by label: " + label));
+                .orElseThrow(() -> new ResourceNotFoundException("RAT", "Label", label));
         return mapper.toRatDto(rat);
     }
 
@@ -55,7 +56,7 @@ public class RatServiceImpl implements RatService {
     @Override
     public Rat findRatByName(String name) {
         return ratRepository.findByName(name)
-                .orElseThrow(()-> new RuntimeException("RAT not found by: " + name));
+                .orElseThrow(()-> new ResourceNotFoundException("RAT", "Name", name));
     }
 
     @Override
