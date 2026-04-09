@@ -4,12 +4,15 @@ import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.CellNameDto;
+import dev.thilanka.netrics.dto.CellUpdateResult;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.CellRepository;
 import dev.thilanka.netrics.service.*;
+import dev.thilanka.netrics.util.GeoUtilService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CellServiceImpl implements CellService {
@@ -33,6 +37,7 @@ public class CellServiceImpl implements CellService {
     private final DateService dateService;
     private final CarrierService carrierService;
     private final SectorService sectorService;
+    private final GeoUtilService geoUtilService;
 
     Integer cellCountWithMissingInfo = 0;
     List<CellDto> allCells = new ArrayList<>();
@@ -113,88 +118,120 @@ public class CellServiceImpl implements CellService {
                     savedDtos.add(savedDto);
                 } catch (Exception e) {
                     failedCells++;
-                    System.out.println("failed saving cell. " + e.getMessage());
+                    log.warn("failed saving cell. {}", e.getMessage());
                 }
             }
         }
 
-        System.out.print("Saved " + savedDtos.size() + "/" + dtos.size() + " cells. ");
-        if (duplicateCells > 0) System.out.println("Duplicate cells " + duplicateCells + "/" + dtos.size() + " found.");
-        if (failedCells > 0) System.out.println("Failed saving " + failedCells + "/" + dtos.size() + " cells.");
+        log.info("Saved " + savedDtos.size() + "/" + dtos.size() + " cells. ");
+        if (duplicateCells > 0) log.info("Duplicate cells " + duplicateCells + "/" + dtos.size() + " found.");
+        if (failedCells > 0) log.info("Failed saving " + failedCells + "/" + dtos.size() + " cells.");
         System.out.println(" ");
         return savedDtos;
     }
 
     @Override
     public Cell updateCell(Cell cell) {
-
-        Optional<Cell> existingCell = cellRepository.findByCellName(cell.getCellName());
-
-        // RAT IS NOT UPDATABLE - IT'S SET AT CREATION OF THE CELL
-        //TODO: Better handling for updating fields
-
-        if (existingCell.isPresent()) {
-
-            Cell updatingCell = existingCell.get();
-
-            if (cell.getNodeName() != null) {
-                updatingCell.setNodeName(cell.getNodeName());
-            }
-            if (cell.getSector() != null) {
-                updatingCell.setSector(cell.getSector());
-            }
-
-            if (cell.getAzimuth() == null && updatingCell.getAzimuth() == null) {
-                if (updatingCell.getSector() != null) {
-                    updatingCell.setAzimuth(updatingCell.getSector().getAzimuth());
-                }
-            } else if (cell.getAzimuth() != null && cell.getAzimuth() >= 0 && cell.getAzimuth() <= 360) {
-                updatingCell.setAzimuth(cell.getAzimuth());
-            }
-
-//            if (cell.getAzimuth() >= 0 && cell.getAzimuth() <= 360) {
-//                updatingCell.setAzimuth(cell.getAzimuth());
-//            }
-
-            if (cell.isMultiBeam()) {
-                updatingCell.setMultiBeam(true);
-            }
-
-            if (cell.getBeamwidth() == null && updatingCell.getBeamwidth() == null) {
-                if (!updatingCell.isMultiBeam()) {
-                    updatingCell.setBeamwidth(65);      //-- Setting default beamwidth for a single-beam cell
-                }
-            } else if (cell.getBeamwidth() != null &&  cell.getBeamwidth() >= 0 && cell.getBeamwidth() <= 360) {
-                updatingCell.setBeamwidth(cell.getBeamwidth());
-            }
-//            if (cell.isMultiBeam()) {
-//                updatingCell.setMultiBeam(true);
-//            }
-            if (cell.getSite() != null) {
-                updatingCell.setSite(cell.getSite());
-            }
-            if (cell.getBand() != null) {
-                updatingCell.setBand(cell.getBand());
-            }
-            if (cell.getCarrier() != null) {
-                updatingCell.setCarrier(cell.getCarrier());
-            }
-//            if (cell.getSector() != null) {
-//                updatingCell.setSector(cell.getSector());
-//            }
-
-            return cellRepository.save(updatingCell);
-        } else throw new RuntimeException("Cannot find cell by: " + cell.getCellName());
-
-//        existingCell.ifPresent(value -> cell.setId(value.getId()));
-//        return cellRepository.save(cell);
-
+        Cell existingCell = cellRepository.findByCellName(cell.getCellName())
+                .orElseThrow(() -> new ResourceNotFoundException("Cell", "Cell Name", cell.getCellName()));
+        return cellRepository.save(cell);
     }
 
     @Override
-    public CellDto updateCell(CellDto dto) {
-        Cell cell = dtoToCell(dto);
-        return mapper.cellToDto(updateCell(cell));
+    public CellUpdateResult updateCell(CellDto dto) {       //-- RAT is not updatable
+
+        List<String> warnings = new ArrayList<>();
+
+        Cell cell = cellRepository.findByCellName(dto.cellName())
+                .orElseThrow(() -> new ResourceNotFoundException("Cell", "Cell Name", dto.cellName()));
+
+        if (dto.nodeName() != null) {
+            cell.setNodeName(dto.nodeName());
+        } else {
+            warnings.add("Node name not found");
+        }
+
+        if (dto.azimuth() != null) {
+            if (geoUtilService.isValidAzimuth(dto.azimuth())) {
+                cell.setAzimuth(dto.azimuth());
+            } else {
+                warnings.add("Invalid azimuth: " + dto.azimuth());
+            }
+        } else {
+            warnings.add("Azimuth not specified");
+        }
+
+        if (dto.beamwidth() != null) {
+            if (geoUtilService.isValidBeamwidth(dto.beamwidth())) {
+                cell.setBeamwidth(dto.beamwidth());
+            } else {
+                warnings.add("Invalid beamwidth: " + dto.beamwidth());
+            }
+        } else {
+            warnings.add("Beamwidth not specified");
+        }
+
+        if (dto.isMultiBeam() != null) {
+            cell.setMultiBeam(dto.isMultiBeam());
+        } else {
+            warnings.add("Multi-Beam not specified");
+        }
+
+
+        if (dto.siteCode() != null) {
+            try {
+                Site site = siteService.findBySiteCode(dto.siteCode());
+                cell.setSite(site);
+            } catch (Exception e) {
+                log.warn("Site not found by: {}", dto.siteCode());
+                warnings.add("Site not found by: " + dto.siteCode());
+            }
+        } else {
+            warnings.add("Site ID not specified");
+        }
+
+        if (dto.bandName() != null) {
+            try {
+                Band band = bandService.findByName(dto.bandName());
+                cell.setBand(band);
+            } catch (Exception e) {
+                log.warn("Band name not found by: {}", dto.bandName());
+                warnings.add("Band name not found by: " + dto.bandName());
+            }
+        } else {
+            warnings.add("Band not specified");
+        }
+
+        if (dto.carrierName() != null) {
+            try {
+                Carrier carrier = carrierService.findByName(dto.carrierName());
+                cell.setCarrier(carrier);
+            } catch (Exception e) {
+                log.warn("Carrier name not found by: {}", dto.carrierName());
+                warnings.add("Carrier not found by: " + dto.carrierName());
+            }
+        } else {
+            warnings.add("Carrier not specified");
+        }
+
+        if (dto.sectorName() != null) {
+            try {
+                Sector sector = sectorService.findBySectorName(dto.sectorName());
+                cell.setSector(sector);
+            } catch (Exception e) {
+                log.warn("Sector name not found by: {}", dto.sectorName());
+                warnings.add("Sector not found by: " + dto.sectorName());
+            }
+        } else {
+            warnings.add("Sector not specified");
+        }
+
+        applyDefaultValues(cell);
+
+        Cell updatedCell = cellRepository.save(cell);
+        CellDto cellDto = mapper.cellToDto(updatedCell);
+
+        return new CellUpdateResult(cellDto, warnings);
     }
 
     @Override
@@ -203,14 +240,12 @@ public class CellServiceImpl implements CellService {
 
         for (CellDto dto : dtos) {
             try {
-                CellDto updatedCell = updateCell(dto);
+                CellDto updatedCell = updateCell(dto).cellDto();
                 updatedCells.add(updatedCell);
             } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println("Error updating cell due to: " + e.getMessage());
+                log.warn("Cell update failed by: {} | {}", dto.cellName(), e.getMessage());
             }
         }
-
         return updatedCells;
     }
 
@@ -220,10 +255,15 @@ public class CellServiceImpl implements CellService {
 
         for (CellDto dto : dtos) {
             try {
-                CellDto updatedCell = updateCell(dto);
-                importResultDtos.add(new CellCsvImportResultDto(updatedCell, CsvImportStatus.SUCCESS, ""));
+                CellUpdateResult result = updateCell(dto);
+                String errorMessage = String.join(", ", result.warnings());
+                if (result.warnings().isEmpty()) {
+                    importResultDtos.add(new CellCsvImportResultDto(result.cellDto(), CsvImportStatus.SUCCESS, ""));
+                } else {
+                    importResultDtos.add(new CellCsvImportResultDto(result.cellDto(), CsvImportStatus.PARTIAL_SUCCESS, errorMessage));
+                }
             } catch (Exception e) {
-                System.out.println(dto.cellName() + " Error: " + e.getMessage());
+                log.warn("Error updating cell due to: {}", e.getMessage());
                 importResultDtos.add(new CellCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
             }
         }
@@ -233,7 +273,7 @@ public class CellServiceImpl implements CellService {
     @Override
     public Cell findByCellName(String cellName) {
         return cellRepository.findByCellName(cellName)
-                .orElseThrow(() -> new ResourceNotFoundException("Cell", "Cell Name",  cellName));
+                .orElseThrow(() -> new ResourceNotFoundException("Cell", "Cell Name", cellName));
     }
 
     @Override
@@ -249,9 +289,7 @@ public class CellServiceImpl implements CellService {
 
     @Override
     public List<CellDto> getAllCells() {
-
         List<Cell> cells = findAllCells();
-
         return cells.stream().map(mapper::cellToDto).collect(Collectors.toList());
     }
 
@@ -263,7 +301,7 @@ public class CellServiceImpl implements CellService {
     @Override
     public List<CellNameDto> searchCell(String cellName) {
         if (this.allCells.isEmpty()) {
-            System.out.println("allCells List is empty");
+            log.warn("allCells List is empty");
             reloadCells();
         }
 
@@ -301,18 +339,18 @@ public class CellServiceImpl implements CellService {
 
     @Override
     public CompletableFuture<Integer> reloadCells() {
-        System.out.println("reloading cells...");
+        log.info("Reloading cells...");
         this.allCells = getAllCells();
-        System.out.println("Loaded " + this.allCells.size() + " cells");
+        log.info("Loaded {} cells", this.allCells.size());
         return CompletableFuture.completedFuture(this.allCells.size());
     }
 
     @Override
     public CompletableFuture<Integer> reloadCells(String ratName, String granularityName) {
 
-        System.out.println("[" + ratName + " - " + granularityName + "] Creating Cells...");
+        log.info("[{} - {}] Creating Cells...", ratName, granularityName);
         List<CellDto> cellDtos = createLatestCells(ratName, granularityName);
-        System.out.println("[" + granularityName + " - " + ratName + "] created " + cellDtos.size() + " Cells");
+        log.info("[{} - {}] created {} Cells", granularityName, ratName, cellDtos.size());
         this.allCells = getAllCells();
 
         return CompletableFuture.completedFuture(this.allCells.size());
@@ -355,5 +393,15 @@ public class CellServiceImpl implements CellService {
 
         assert rat != null;
         return new CellNameDto(dto.cellName(), dto.ratName(), rat.getLabel());
+    }
+
+    private void applyDefaultValues(Cell cell) {
+        if (cell.getAzimuth() == null && cell.getSector() != null) {
+            cell.setAzimuth(cell.getSector().getAzimuth());
+        }
+
+        if (cell.getBeamwidth() == null && !cell.isMultiBeam()) {
+            cell.setBeamwidth(65);
+        }
     }
 }

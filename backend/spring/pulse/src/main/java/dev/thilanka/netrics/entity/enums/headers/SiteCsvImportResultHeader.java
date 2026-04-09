@@ -1,4 +1,4 @@
-package dev.thilanka.netrics.entity.enums;
+package dev.thilanka.netrics.entity.enums.headers;
 
 import lombok.Getter;
 

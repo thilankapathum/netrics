@@ -3,7 +3,7 @@ package dev.thilanka.netrics.service.impl;
 import dev.thilanka.netrics.common.exception.BusinessValidationException;
 import dev.thilanka.netrics.common.exception.FileProcessingException;
 import dev.thilanka.netrics.dto.*;
-import dev.thilanka.netrics.entity.enums.*;
+import dev.thilanka.netrics.entity.enums.headers.*;
 import dev.thilanka.netrics.service.CsvService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
@@ -109,16 +109,16 @@ public class CsvServiceImpl implements CsvService {
 
             for (CSVRecord record : csvParser) {
                 CellDto dto = new CellDto(
-                        record.get(CellCsvHeader.CELL_NAME.getHeader()),
-                        record.get(CellCsvHeader.NODE_NAME.getHeader()),
-                        record.get(CellCsvHeader.RAT_NAME.getHeader()),
-                        record.get(CellCsvHeader.SITE_CODE.getHeader()),
-                        record.get(CellCsvHeader.BAND_NAME.getHeader()),
-                        parseInteger(record.get(CellCsvHeader.AZIMUTH.getHeader())),
-                        parseInteger(record.get(CellCsvHeader.BEAMWIDTH.getHeader())),
-                        parseBoolean(record.get(CellCsvHeader.IS_MULTI_BEAM.getHeader())),
-                        record.get(CellCsvHeader.CARRIER_NAME.getHeader()),
-                        record.get(CellCsvHeader.SECTOR_NAME.getHeader())
+                        normalize(record.get(CellCsvHeader.CELL_NAME.getHeader())),
+                        normalize(record.get(CellCsvHeader.NODE_NAME.getHeader())),
+                        normalize(record.get(CellCsvHeader.RAT_NAME.getHeader())),
+                        normalize(record.get(CellCsvHeader.SITE_CODE.getHeader())),
+                        normalize(record.get(CellCsvHeader.BAND_NAME.getHeader())),
+                        parseInteger(normalize(record.get(CellCsvHeader.AZIMUTH.getHeader()))),
+                        parseInteger(normalize(record.get(CellCsvHeader.BEAMWIDTH.getHeader()))),
+                        parseBoolean(normalize(record.get(CellCsvHeader.IS_MULTI_BEAM.getHeader()))),
+                        normalize(record.get(CellCsvHeader.CARRIER_NAME.getHeader())),
+                        normalize(record.get(CellCsvHeader.SECTOR_NAME.getHeader()))
                 );
                 cellDtos.add(dto);
             }
@@ -265,5 +265,9 @@ public class CsvServiceImpl implements CsvService {
         } catch (Exception e) {
             throw new BusinessValidationException("Invalid boolean value: " + value);
         }
+    }
+
+    private String normalize(String value) {
+        return (value == null || value.trim().isEmpty()) ? null : value.trim();
     }
 }

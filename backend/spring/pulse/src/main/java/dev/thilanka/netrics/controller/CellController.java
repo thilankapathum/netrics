@@ -2,6 +2,7 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
+import dev.thilanka.netrics.dto.CellUpdateResult;
 import dev.thilanka.netrics.service.CellService;
 import dev.thilanka.netrics.service.CsvService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -60,8 +61,8 @@ public class CellController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PutMapping
     public ResponseEntity<CellDto> updateCell(@RequestBody @Valid CellDto dto) {
-        CellDto updatedDto = cellService.updateCell(dto);
-        return new ResponseEntity<>(updatedDto, HttpStatus.CREATED);
+        CellUpdateResult updatedDto = cellService.updateCell(dto);
+        return new ResponseEntity<>(updatedDto.cellDto(), HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")

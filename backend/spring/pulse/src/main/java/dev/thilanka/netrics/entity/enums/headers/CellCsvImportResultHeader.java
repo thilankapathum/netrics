@@ -1,11 +1,9 @@
-package dev.thilanka.netrics.entity.enums;
+package dev.thilanka.netrics.entity.enums.headers;
 
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-public enum CellCsvHeader {
-
+public enum CellCsvImportResultHeader {
     CELL_NAME("Cell Name"),
     SITE_CODE("Site ID"),
     NODE_NAME("Node Name"),
@@ -15,11 +13,13 @@ public enum CellCsvHeader {
     BEAMWIDTH("Beamwidth"),
     IS_MULTI_BEAM("Multi-Beam Cell"),
     CARRIER_NAME("Carrier Name"),
-    SECTOR_NAME("Sector Name");
+    SECTOR_NAME("Sector Name"),
+    IMPORT_STATUS("Status"),
+    ERROR_MESSAGE("Error Message");
 
     private final String header;
 
-    CellCsvHeader(String header){
+    CellCsvImportResultHeader(String header){
         this.header = header;
     }
 }

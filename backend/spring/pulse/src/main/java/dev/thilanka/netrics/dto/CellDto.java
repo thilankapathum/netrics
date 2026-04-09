@@ -8,7 +8,7 @@ public record CellDto(
         String bandName,
         Integer azimuth,
         Integer beamwidth,
-        boolean isMultiBeam,
+        Boolean isMultiBeam,
         String carrierName,
         String sectorName
 ) {
