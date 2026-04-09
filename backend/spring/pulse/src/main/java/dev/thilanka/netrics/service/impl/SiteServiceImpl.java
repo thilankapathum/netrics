@@ -3,12 +3,14 @@ package dev.thilanka.netrics.service.impl;
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.SiteCsvImportResultDto;
 import dev.thilanka.netrics.dto.SiteDto;
+import dev.thilanka.netrics.dto.SiteUpdateResult;
 import dev.thilanka.netrics.entity.Site;
 import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.service.SiteService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SiteServiceImpl implements SiteService {
     private final SiteRepository siteRepository;
     private final Mapper mapper;
@@ -52,7 +55,7 @@ public class SiteServiceImpl implements SiteService {
                 SiteDto savedDto = createSite(dto);
                 savedDtos.add(savedDto);
             } catch (Exception e) {
-                System.out.println("Error creating site: " + e.getMessage());
+                log.warn("Error creating site: {}{}", dto.siteCode(), e.getMessage());
             }
         }
 
@@ -125,15 +128,33 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    public SiteDto updateSite(SiteDto siteDto) {
-        Site site = Site.builder()
-                .siteCode(siteDto.siteCode())
-                .siteName(siteDto.siteName())
-                .latitude(siteDto.latitude())
-                .longitude(siteDto.longitude())
-                .build();
+    public SiteUpdateResult updateSite(SiteDto siteDto) {
 
-        return mapper.siteToDto(updateSite(site));
+        List<String> warnings = new ArrayList<>();
+
+        Site site = siteRepository.findBySiteCode(siteDto.siteCode())
+                .orElseThrow(() -> new ResourceNotFoundException("Site", "Site ID", siteDto.siteCode()));
+
+        if (siteDto.siteName() != null && !siteDto.siteName().isEmpty()) {
+            site.setSiteName(siteDto.siteName());
+        } else {
+            warnings.add("Site Name not specified");
+        }
+
+        if (siteDto.latitude() != null && !siteDto.latitude().isNaN()) {
+            site.setLatitude(siteDto.latitude());
+        } else {
+            warnings.add("Invalid Latitude '" + siteDto.latitude() + "'");
+        }
+
+        if (siteDto.longitude() != null && !siteDto.longitude().isNaN()) {
+            site.setLongitude(siteDto.longitude());
+        } else {
+            warnings.add("Invalid Longitude '" + siteDto.longitude() + "'");
+        }
+
+        Site updatedSite = siteRepository.save(site);
+        return new SiteUpdateResult(mapper.siteToDto(updatedSite), warnings);
     }
 
     @Override
@@ -142,9 +163,9 @@ public class SiteServiceImpl implements SiteService {
 
         for (SiteDto dto : siteDtos) {
             try {
-                updatedSites.add(updateSite(dto));
+                updatedSites.add(updateSite(dto).siteDto());
             } catch (Exception e) {
-                System.out.println("Error updating site: " + e.getMessage());
+                log.warn("Error updating site: {} | {}", dto.siteCode(), e.getMessage());
             }
         }
         return updatedSites;
@@ -156,10 +177,20 @@ public class SiteServiceImpl implements SiteService {
 
         for (SiteDto dto : dtos) {
             try {
-                SiteDto updatedSite = updateSite(dto);
-                importResultDtos.add(new SiteCsvImportResultDto(updatedSite, CsvImportStatus.SUCCESS, ""));
+                SiteUpdateResult result = updateSite(dto);
+                String errorMessage = String.join(", ", result.warnings());
+//                SiteDto updatedSite = updateSite(dto);
+                if (result.warnings().isEmpty()) {
+                    importResultDtos.add(new SiteCsvImportResultDto(result.siteDto(), CsvImportStatus.SUCCESS, ""));
+                } else {
+                    importResultDtos.add(new SiteCsvImportResultDto(result.siteDto(), CsvImportStatus.PARTIAL_SUCCESS, errorMessage));
+                }
+            } catch (ResourceNotFoundException e) {     //-- If no site exist by SiteCode
+                log.warn(e.getMessage());
+                SiteDto newSite = createSite(dto);
+                importResultDtos.add(new SiteCsvImportResultDto(newSite, CsvImportStatus.SUCCESS, "New site created"));
             } catch (Exception e) {
-                System.out.println("Error updating site: " + dto.siteCode() + e.getMessage());
+                log.warn("Error updating site {} | {}", dto.siteCode(), e.getMessage());
                 importResultDtos.add(new SiteCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
             }
         }

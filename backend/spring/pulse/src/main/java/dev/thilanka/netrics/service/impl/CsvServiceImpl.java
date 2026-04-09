@@ -5,6 +5,7 @@ import dev.thilanka.netrics.common.exception.FileProcessingException;
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.enums.headers.*;
 import dev.thilanka.netrics.service.CsvService;
+import dev.thilanka.netrics.util.DataTypeUtilService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -20,6 +21,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CsvServiceImpl implements CsvService {
+
+    private final DataTypeUtilService dataTypeUtilService;
 
     private static final String[] CELL_HEADERS = Arrays
             .stream(CellCsvHeader.values())
@@ -109,16 +112,16 @@ public class CsvServiceImpl implements CsvService {
 
             for (CSVRecord record : csvParser) {
                 CellDto dto = new CellDto(
-                        normalize(record.get(CellCsvHeader.CELL_NAME.getHeader())),
-                        normalize(record.get(CellCsvHeader.NODE_NAME.getHeader())),
-                        normalize(record.get(CellCsvHeader.RAT_NAME.getHeader())),
-                        normalize(record.get(CellCsvHeader.SITE_CODE.getHeader())),
-                        normalize(record.get(CellCsvHeader.BAND_NAME.getHeader())),
-                        parseInteger(normalize(record.get(CellCsvHeader.AZIMUTH.getHeader()))),
-                        parseInteger(normalize(record.get(CellCsvHeader.BEAMWIDTH.getHeader()))),
-                        parseBoolean(normalize(record.get(CellCsvHeader.IS_MULTI_BEAM.getHeader()))),
-                        normalize(record.get(CellCsvHeader.CARRIER_NAME.getHeader())),
-                        normalize(record.get(CellCsvHeader.SECTOR_NAME.getHeader()))
+                        dataTypeUtilService.normalizeString((record.get(CellCsvHeader.CELL_NAME.getHeader()))),
+                        dataTypeUtilService.normalizeString(record.get(CellCsvHeader.NODE_NAME.getHeader())),
+                        dataTypeUtilService.normalizeString(record.get(CellCsvHeader.RAT_NAME.getHeader())),
+                        dataTypeUtilService.normalizeString(record.get(CellCsvHeader.SITE_CODE.getHeader())),
+                        dataTypeUtilService.normalizeString(record.get(CellCsvHeader.BAND_NAME.getHeader())),
+                        dataTypeUtilService.parseInteger(dataTypeUtilService.normalizeString(record.get(CellCsvHeader.AZIMUTH.getHeader()))),
+                        dataTypeUtilService.parseInteger(dataTypeUtilService.normalizeString(record.get(CellCsvHeader.BEAMWIDTH.getHeader()))),
+                        dataTypeUtilService.parseBoolean(dataTypeUtilService.normalizeString(record.get(CellCsvHeader.IS_MULTI_BEAM.getHeader()))),
+                        dataTypeUtilService.normalizeString(record.get(CellCsvHeader.CARRIER_NAME.getHeader())),
+                        dataTypeUtilService.normalizeString(record.get(CellCsvHeader.SECTOR_NAME.getHeader()))
                 );
                 cellDtos.add(dto);
             }
@@ -146,8 +149,8 @@ public class CsvServiceImpl implements CsvService {
                 SiteDto dto = new SiteDto(
                         record.get(SiteCsvHeader.SITE_CODE.getHeader()),
                         record.get(SiteCsvHeader.SITE_NAME.getHeader()),
-                        parseDouble(record.get(SiteCsvHeader.LATITUDE.getHeader())),
-                        parseDouble(record.get(SiteCsvHeader.LONGITUDE.getHeader()))
+                        dataTypeUtilService.parseDouble(record.get(SiteCsvHeader.LATITUDE.getHeader())),
+                        dataTypeUtilService.parseDouble(record.get(SiteCsvHeader.LONGITUDE.getHeader()))
                 );
                 siteDtos.add(dto);
             }
@@ -230,44 +233,5 @@ public class CsvServiceImpl implements CsvService {
             throw new FileProcessingException("Failed to write CSV", e);
         }
 
-    }
-
-    // =============  UTILS  ======================================================
-
-    private Double parseDouble(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            throw new BusinessValidationException("Invalid number format: " + value);
-        }
-    }
-
-    private Integer parseInteger(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            throw new BusinessValidationException("Invalid number format: " + value);
-        }
-    }
-
-    private boolean parseBoolean(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        try {
-            return Boolean.parseBoolean(value);
-        } catch (Exception e) {
-            throw new BusinessValidationException("Invalid boolean value: " + value);
-        }
-    }
-
-    private String normalize(String value) {
-        return (value == null || value.trim().isEmpty()) ? null : value.trim();
     }
 }
