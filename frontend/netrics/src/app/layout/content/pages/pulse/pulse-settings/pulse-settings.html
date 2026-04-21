@@ -51,8 +51,19 @@
         }
         <button class="btn btn-sm" (click)="openMissingCellInfoModal()">Cell Information</button>
       </div>
+      <div class="indicator">
+        @if (missingSectorInfoCount() > 0) {
+          <span class="indicator-item  badge badge-error badge-xs">{{ missingSectorInfoCount() }}</span>
+        }
+        <button class="btn btn-sm" (click)="openMissingSectorInfoModal()">Sector Information</button>
+      </div>
       <button class="btn btn-sm" (click)="openCreateSiteModal()">Create Site</button>
-      <button class="btn btn-sm" (click)="openSiteInformationModal()">Site Information</button>
+      <div class="indicator">
+        @if (missingSiteInfoCount() > 0) {
+          <span class="indicator-item  badge badge-error badge-xs">{{ missingSiteInfoCount() }}</span>
+        }
+        <button class="btn btn-sm" (click)="openSiteInformationModal()">Site Information</button>
+      </div>
     </div>
   </div>
 
@@ -95,3 +106,4 @@
 <app-ps-create-site [open]="showCreateSiteModal" (closed)="closeCreateSiteModal()"></app-ps-create-site>
 <app-ps-evict-cache [open]="showEvictCacheModal" (closed)="closeEvictCacheModal()"></app-ps-evict-cache>
 <app-ps-site-info [open]="showSiteInformationModal" (closed)="closeSiteInformationModal()"></app-ps-site-info>
+<app-ps-sector-info [open]="showMissingSectorInfoModal" (closed)="closeMissingSectorInfoModal()"></app-ps-sector-info>

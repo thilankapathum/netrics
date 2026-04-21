@@ -205,10 +205,10 @@ public class CsvServiceImpl implements CsvService {
 
             for (CSVRecord record : csvParser) {
                 SectorDto dto = new SectorDto(
-                        dataTypeUtilService.parseInteger(record.get(SectorCsvHeader.SITE_CODE.getHeader())),
-                        record.get(SectorCsvHeader.SECTOR_NAME.getHeader()),
                         dataTypeUtilService.parseInteger(record.get(SectorCsvHeader.SECTOR_INDEX.getHeader())),
-                        record.get(SectorCsvHeader.AZIMUTH.getHeader())
+                        record.get(SectorCsvHeader.SECTOR_NAME.getHeader()),
+                        dataTypeUtilService.parseInteger(record.get(SectorCsvHeader.AZIMUTH.getHeader())),
+                        record.get(SectorCsvHeader.SITE_CODE.getHeader())
                 );
                 sectorDtos.add(dto);
             }
@@ -270,7 +270,24 @@ public class CsvServiceImpl implements CsvService {
 
     @Override
     public void writeSectorImportResultToCsv(List<SectorCsvImportResultDto> results, Writer writer) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(SECTOR_IMPORT_RESULT_HEADERS)
+                .get();
 
+        try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
+            for (SectorCsvImportResultDto result : results) {
+                printer.printRecord(
+                        result.sectorDto().siteCode(),
+                        result.sectorDto().name(),
+                        result.sectorDto().sectorIndex(),
+                        result.sectorDto().azimuth(),
+                        result.status(),
+                        result.errorMessage()
+                );
+            }
+        } catch (IOException e) {
+            throw new FileProcessingException("Failed to write CSV", e);
+        }
     }
 
     @Override

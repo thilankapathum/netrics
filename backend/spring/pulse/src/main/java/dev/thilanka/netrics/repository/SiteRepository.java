@@ -18,4 +18,13 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
         	OR longitude IS NULL
     """, nativeQuery = true)
     List<Site> findSitesWithMissingInfo();
+
+    @Query(value = """
+        SELECT COUNT(*) FROM public.sites
+        WHERE site_code IS NULL
+        	OR site_name IS NULL
+        	OR latitude IS NULL
+        	OR longitude IS NULL;
+    """, nativeQuery = true)
+    Integer findSiteCountWithMissingInfo();
 }

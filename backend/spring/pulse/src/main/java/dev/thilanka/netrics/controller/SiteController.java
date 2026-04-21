@@ -57,6 +57,7 @@ public class SiteController {
 
         List<SiteDto> siteDtos = siteService.getSitesWithMissingInfo();
         csvService.writeSitesToCsv(siteDtos, response.getWriter());
+        siteService.reloadSiteCountWithMissingInfo();
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
@@ -68,6 +69,7 @@ public class SiteController {
         List<SiteDto> siteDtos = siteService.getAllSites();
 
         csvService.writeSitesToCsv(siteDtos, response.getWriter());
+        siteService.reloadSiteCountWithMissingInfo();
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
@@ -80,7 +82,22 @@ public class SiteController {
         response.setContentType("text/csv");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = site_import_result.csv");
         csvService.writeSiteImportResultToCsv(results, response.getWriter());
+        siteService.reloadSiteCountWithMissingInfo();
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("missing/count")
+    public ResponseEntity<Integer> getSiteCountWithMissingInfo(){
+        Integer count = siteService.getSiteCountWithMissingInfo();
+        return ResponseEntity.ok(count);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("missing/reload-count")
+    public ResponseEntity<Integer> reloadSiteCountWithMissingInfo(){
+        Integer count = siteService.reloadSiteCountWithMissingInfo();
+        return ResponseEntity.ok(count);
     }
 
 }

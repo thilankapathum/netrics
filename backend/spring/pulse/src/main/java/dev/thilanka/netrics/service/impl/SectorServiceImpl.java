@@ -30,6 +30,8 @@ public class SectorServiceImpl implements SectorService {
     private final GeoUtilService geoUtilService;
     private final Mapper mapper;
 
+    Integer sectorCountWithMissingInfo = 0;
+
     @Override
     public Sector createSector(Sector sector) {
         return sectorRepository.save(sector);
@@ -91,7 +93,7 @@ public class SectorServiceImpl implements SectorService {
             warnings.add("Sector Index not specified");
         }
 
-        if (dto.name() != null && dto.name().isEmpty()) {
+        if (dto.name() != null && !dto.name().isEmpty()) {
             sector.setName(dto.name());
         } else {
             warnings.add("Sector Name not specified");
@@ -192,5 +194,16 @@ public class SectorServiceImpl implements SectorService {
     public List<SectorDto> getAllSectors() {
         List<Sector> sectors = findAllSectors();
         return sectors.stream().map(mapper::sectorToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public Integer reloadSectorCountWithMissingInfo() {
+        this.sectorCountWithMissingInfo = sectorRepository.findSectorCountWithMissingInfo();
+        return this.sectorCountWithMissingInfo;
+    }
+
+    @Override
+    public Integer getSectorCountWithMissingInfo() {
+        return this.sectorCountWithMissingInfo;
     }
 }

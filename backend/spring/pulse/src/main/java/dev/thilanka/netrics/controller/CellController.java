@@ -60,6 +60,7 @@ public class CellController {
         List<CellDto> cellDtos = cellService.getAllCellInfo();
 
         csvService.writeCellsToCsv(cellDtos, response.getWriter());
+        cellService.reloadCellCountWithMissingInfo();
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
@@ -85,6 +86,7 @@ public class CellController {
         List<CellDto> cellDtos = cellService.getCellsWithMissingInfo();
 
         csvService.writeCellsToCsv(cellDtos, response.getWriter());
+        cellService.reloadCellCountWithMissingInfo();
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
@@ -97,6 +99,7 @@ public class CellController {
         response.setContentType("text/csv");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = cell_import_result.csv");
         csvService.writeCellImportResultToCsv(results, response.getWriter());
+        cellService.reloadCellCountWithMissingInfo();
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 

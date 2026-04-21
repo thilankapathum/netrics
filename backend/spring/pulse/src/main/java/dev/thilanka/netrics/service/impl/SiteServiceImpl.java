@@ -25,6 +25,8 @@ public class SiteServiceImpl implements SiteService {
     private final SiteRepository siteRepository;
     private final Mapper mapper;
 
+    private Integer siteCountWithMissingInfo = 0;
+
     @Override
     public Site createSite(Site site) {
         return siteRepository.save(site);
@@ -195,5 +197,16 @@ public class SiteServiceImpl implements SiteService {
             }
         }
         return importResultDtos;
+    }
+
+    @Override
+    public Integer reloadSiteCountWithMissingInfo() {
+        this.siteCountWithMissingInfo = siteRepository.findSiteCountWithMissingInfo();
+        return this.siteCountWithMissingInfo;
+    }
+
+    @Override
+    public Integer getSiteCountWithMissingInfo() {
+        return this.siteCountWithMissingInfo;
     }
 }

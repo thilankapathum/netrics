@@ -21,4 +21,13 @@ public interface SectorRepository extends JpaRepository<Sector, Long> {
                 	OR site_id IS NULL
             """, nativeQuery = true)
     List<Sector> findSectorsWithMissingInfo();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM sectors
+            WHERE
+                azimuth IS NULL
+                OR site_id IS NULL;
+            """, nativeQuery = true)
+    Integer findSectorCountWithMissingInfo();
 }

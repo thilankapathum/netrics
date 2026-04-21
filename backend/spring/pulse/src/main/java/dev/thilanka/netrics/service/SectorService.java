@@ -36,4 +36,8 @@ public interface SectorService {
     List<Sector> findAllSectors();
 
     List<SectorDto> getAllSectors();
+
+    Integer reloadSectorCountWithMissingInfo();
+
+    Integer getSectorCountWithMissingInfo();
 }

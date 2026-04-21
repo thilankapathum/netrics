@@ -57,6 +57,7 @@ public class SectorController {
 
         List<SectorDto> sectorDtos = sectorService.getSectorsWithMissingInfo();
         csvService.writeSectorsToCsv(sectorDtos, response.getWriter());
+        sectorService.reloadSectorCountWithMissingInfo();
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
@@ -67,6 +68,7 @@ public class SectorController {
 
         List<SectorDto> sectorDtos = sectorService.getAllSectors();
         csvService.writeSectorsToCsv(sectorDtos, response.getWriter());
+        sectorService.reloadSectorCountWithMissingInfo();
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
@@ -78,6 +80,21 @@ public class SectorController {
         response.setContentType("text/csv");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = sector_import_result.csv");
         csvService.writeSectorImportResultToCsv(results, response.getWriter());
+        sectorService.reloadSectorCountWithMissingInfo();
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("missing/count")
+    public ResponseEntity<Integer> getSectorCountWithMissingInfo(){
+        Integer count = sectorService.getSectorCountWithMissingInfo();
+        return ResponseEntity.ok(count);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("missing/reload-count")
+    public ResponseEntity<Integer> reloadSectorCountWithMissingInfo(){
+        Integer count = sectorService.reloadSectorCountWithMissingInfo();
+        return ResponseEntity.ok(count);
     }
 }
