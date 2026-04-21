@@ -34,11 +34,6 @@ public class CsvServiceImpl implements CsvService {
             .map(CellCsvImportResultHeader::getHeader)
             .toArray(String[]::new);
 
-    private static final String[] SITE_KPI_REPORT_HEADERS = Arrays
-            .stream(SiteKpiReportHeader.values())
-            .map(SiteKpiReportHeader::getHeader)
-            .toArray(String[]::new);
-
     private static final String[] SITE_HEADERS = Arrays
             .stream(SiteCsvHeader.values())
             .map(SiteCsvHeader::getHeader)
@@ -47,6 +42,21 @@ public class CsvServiceImpl implements CsvService {
     private static final String[] SITE_IMPORT_RESULT_HEADERS = Arrays
             .stream(SiteCsvImportResultHeader.values())
             .map(SiteCsvImportResultHeader::getHeader)
+            .toArray(String[]::new);
+
+    private static final String[] SECTOR_HEADERS = Arrays
+            .stream(SectorCsvHeader.values())
+            .map(SectorCsvHeader::getHeader)
+            .toArray(String[]::new);
+
+    private static final String[] SECTOR_IMPORT_RESULT_HEADERS = Arrays
+            .stream(SectorCsvImportResultHeader.values())
+            .map(SectorCsvImportResultHeader::getHeader)
+            .toArray(String[]::new);
+
+    private static final String[] SITE_KPI_REPORT_HEADERS = Arrays
+            .stream(SiteKpiReportHeader.values())
+            .map(SiteKpiReportHeader::getHeader)
             .toArray(String[]::new);
 
     @Override
@@ -89,6 +99,26 @@ public class CsvServiceImpl implements CsvService {
                         dto.siteName(),
                         dto.latitude(),
                         dto.longitude()
+                );
+            }
+        } catch (IOException e) {
+            throw new FileProcessingException("Failed to write CSV", e);
+        }
+    }
+
+    @Override
+    public void writeSectorsToCsv(List<SectorDto> dtos, Writer writer) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(SECTOR_HEADERS)
+                .get();
+
+        try (CSVPrinter csvPrinter = new CSVPrinter(writer, csvFormat)) {
+            for (SectorDto dto : dtos) {
+                csvPrinter.printRecord(
+                        dto.siteCode(),
+                        dto.name(),
+                        dto.sectorIndex(),
+                        dto.azimuth()
                 );
             }
         } catch (IOException e) {
@@ -162,6 +192,33 @@ public class CsvServiceImpl implements CsvService {
     }
 
     @Override
+    public List<SectorDto> readSectorsFromCsv(InputStream inputStream) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setTrim(true)
+                .get();
+
+        try (Reader reader = new InputStreamReader(inputStream);
+             CSVParser csvParser = CSVParser.parse(reader, csvFormat)) {
+            List<SectorDto> sectorDtos = new ArrayList<>();
+
+            for (CSVRecord record : csvParser) {
+                SectorDto dto = new SectorDto(
+                        dataTypeUtilService.parseInteger(record.get(SectorCsvHeader.SITE_CODE.getHeader())),
+                        record.get(SectorCsvHeader.SECTOR_NAME.getHeader()),
+                        dataTypeUtilService.parseInteger(record.get(SectorCsvHeader.SECTOR_INDEX.getHeader())),
+                        record.get(SectorCsvHeader.AZIMUTH.getHeader())
+                );
+                sectorDtos.add(dto);
+            }
+            return sectorDtos;
+        } catch (IOException e) {
+            throw new FileProcessingException("Failed to read CSV", e);
+        }
+    }
+
+    @Override
     public void writeCellImportResultToCsv(List<CellCsvImportResultDto> results, Writer writer) {
         CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
                 .setHeader(CELL_IMPORT_RESULT_HEADERS)
@@ -209,6 +266,11 @@ public class CsvServiceImpl implements CsvService {
         } catch (IOException e) {
             throw new FileProcessingException("Failed to write CSV", e);
         }
+    }
+
+    @Override
+    public void writeSectorImportResultToCsv(List<SectorCsvImportResultDto> results, Writer writer) {
+
     }
 
     @Override

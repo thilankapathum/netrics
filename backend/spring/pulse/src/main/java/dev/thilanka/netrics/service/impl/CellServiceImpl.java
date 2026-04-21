@@ -1,25 +1,20 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
-import dev.thilanka.netrics.dto.CellCsvImportResultDto;
-import dev.thilanka.netrics.dto.CellDto;
-import dev.thilanka.netrics.dto.CellNameDto;
-import dev.thilanka.netrics.dto.CellUpdateResult;
+import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.CellRepository;
 import dev.thilanka.netrics.service.*;
+import dev.thilanka.netrics.util.DataTypeUtilService;
 import dev.thilanka.netrics.util.GeoUtilService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -38,6 +33,7 @@ public class CellServiceImpl implements CellService {
     private final CarrierService carrierService;
     private final SectorService sectorService;
     private final GeoUtilService geoUtilService;
+    private final DataTypeUtilService dataTypeUtilService;
 
     Integer cellCountWithMissingInfo = 0;
     List<CellDto> allCells = new ArrayList<>();
@@ -123,9 +119,9 @@ public class CellServiceImpl implements CellService {
             }
         }
 
-        log.info("Saved " + savedDtos.size() + "/" + dtos.size() + " cells. ");
-        if (duplicateCells > 0) log.info("Duplicate cells " + duplicateCells + "/" + dtos.size() + " found.");
-        if (failedCells > 0) log.info("Failed saving " + failedCells + "/" + dtos.size() + " cells.");
+        log.info("Saved {}/{} cells. ", savedDtos.size(), dtos.size());
+        if (duplicateCells > 0) log.info("Duplicate cells {}/{} found.", duplicateCells, dtos.size());
+        if (failedCells > 0) log.info("Failed saving {}/{} cells.", failedCells, dtos.size());
         System.out.println(" ");
         return savedDtos;
     }
@@ -142,8 +138,7 @@ public class CellServiceImpl implements CellService {
 
         List<String> warnings = new ArrayList<>();
 
-        Cell cell = cellRepository.findByCellName(dto.cellName())
-                .orElseThrow(() -> new ResourceNotFoundException("Cell", "Cell Name", dto.cellName()));
+        Cell cell = findByCellName(dto.cellName());
 
         if (dto.nodeName() != null) {
             cell.setNodeName(dto.nodeName());
@@ -218,15 +213,34 @@ public class CellServiceImpl implements CellService {
             try {
                 Sector sector = sectorService.findBySectorName(dto.sectorName());
                 cell.setSector(sector);
-            } catch (Exception e) {
+            } catch (ResourceNotFoundException e) {
                 log.warn("Sector name not found by: {}", dto.sectorName());
-                warnings.add("Sector not found by: " + dto.sectorName());
+
+                String[] splitSector = dataTypeUtilService.splitSectorName(dto.sectorName());
+                String siteCode = splitSector[0];
+                Integer sectorIndex = Integer.parseInt(splitSector[1]);
+
+                if (Objects.equals(siteCode, cell.getSite().getSiteCode())) {
+                    Sector sector = Sector.builder()
+                            .sectorIndex(sectorIndex)
+                            .name(dto.sectorName())
+                            .site(cell.getSite())
+                            .azimuth(cell.getAzimuth())
+                            .build();
+                    Sector newSector = sectorService.createSector(sector);
+                    cell.setSector(newSector);
+                    warnings.add("New sector created " + dto.sectorName());
+                } else {
+                    warnings.add("Site ID - Sector name mismatch");
+                }
+            } catch (Exception e) {
+                log.warn("Sector modification failed: {}", dto.sectorName());
             }
         } else {
             warnings.add("Sector not specified");
         }
 
-        applyDefaultValues(cell);
+        applyDefaultValues(cell, warnings);
 
         Cell updatedCell = cellRepository.save(cell);
         CellDto cellDto = mapper.cellToDto(updatedCell);
@@ -395,13 +409,15 @@ public class CellServiceImpl implements CellService {
         return new CellNameDto(dto.cellName(), dto.ratName(), rat.getLabel());
     }
 
-    private void applyDefaultValues(Cell cell) {
+    private void applyDefaultValues(Cell cell, List<String> warnings) {
         if (cell.getAzimuth() == null && cell.getSector() != null) {
             cell.setAzimuth(cell.getSector().getAzimuth());
+            warnings.add("Azimuth auto added: " + cell.getSector().getAzimuth());
         }
 
         if (cell.getBeamwidth() == null && !cell.isMultiBeam()) {
             cell.setBeamwidth(65);
+            warnings.add("Beamwidth auto added: " + 65);
         }
     }
 }

@@ -339,4 +339,10 @@ public class Mapper {
     public SiteDto siteToDto(Site site) {
         return new SiteDto(site.getSiteCode(), site.getSiteName(), site.getLatitude(), site.getLongitude());
     }
+
+    // ================ SECTOR ========================
+
+    public SectorDto sectorToDto(Sector sector) {
+        return new SectorDto(sector.getSectorIndex(), sector.getName(), sector.getAzimuth(), sector.getSite().getSiteCode());
+    }
 }

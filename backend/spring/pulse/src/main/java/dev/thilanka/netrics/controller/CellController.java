@@ -43,6 +43,10 @@ public class CellController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
     public ResponseEntity<CellDto> getCellByName(@RequestParam("cellName") String cellName) {
+
+        System.out.println("RAW cellName = [" + cellName + "]");
+        System.out.println("LENGTH = " + cellName.length());
+
         CellDto dto = cellService.getByCellName(cellName);
         return ResponseEntity.ok(dto);
     }

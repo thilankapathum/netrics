@@ -41,4 +41,12 @@ public class DataTypeUtilService {
     public String normalizeString(String value) {
         return (value == null || value.trim().isEmpty()) ? null : value.trim();
     }
+
+    public String[] splitSectorName(String sectorName) {
+        String[] parts = sectorName.split("__");
+
+        if (parts.length == 2) {
+            return parts;
+        } else throw new BusinessValidationException("Invalid sector name: " + sectorName);
+    }
 }

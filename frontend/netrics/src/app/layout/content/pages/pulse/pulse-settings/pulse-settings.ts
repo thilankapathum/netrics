@@ -1,11 +1,13 @@
-import {Component, ElementRef, ViewChild} from '@angular/core';
+import {Component, ElementRef, signal, ViewChild} from '@angular/core';
 import {PulseSettingUserAreaMapping} from './pulse-setting-user-area-mapping/pulse-setting-user-area-mapping';
-import {RouterLink} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {PsStandardKpi} from './ps-standard-kpi/ps-standard-kpi';
 import {PsCells} from './ps-cells/ps-cells';
 import {PsCreateSite} from './ps-create-site/ps-create-site';
 import {PsEvictCache} from './ps-evict-cache/ps-evict-cache';
 import {PsSiteInfo} from './ps-site-info/ps-site-info';
+import {CellService} from '../../../../../service/pulse/cell-service';
+import {AlertService} from '../../../../../components/alert/alert.service';
 
 @Component({
   selector: 'app-pulse-settings',
@@ -29,6 +31,12 @@ export class PulseSettings {
   showCreateSiteModal:boolean = false;
   showEvictCacheModal:boolean = false;
   showSiteInformationModal:boolean = false;
+  missingCellInfoCount = signal(0);
+
+  constructor(private cellService:CellService,
+              private alertService: AlertService,) {
+    this.getCellCountWithMissingInfo();
+  }
 
   //---------- OPEN MODALS ------------------------
 
@@ -80,6 +88,20 @@ export class PulseSettings {
 
   closeEvictCacheModal() {
     this.showEvictCacheModal = false;
+  }
+
+
+  getCellCountWithMissingInfo() {
+    this.cellService.getCellCountWithMissingInfo().subscribe({
+      next: data => {
+        this.missingCellInfoCount.set(data);
+      },
+      error: error => {
+        console.log("Error getCellCountWithMissingInfo:");
+        console.error(error);
+        this.alertService.error("Error retrieving Cell count with missing information");
+      }
+    })
   }
 
 }

@@ -44,8 +44,13 @@
 
       <h2 class="text-md font-semibold mb-3">Engineering Data Management</h2>
     </div>
-    <div class="flex flex-row flex-wrap gap-3">
-      <button class="btn btn-sm" (click)="openMissingCellInfoModal()">Cell Information</button>
+    <div class="flex flex-row flex-wrap gap-4">
+      <div class="indicator">
+        @if (missingCellInfoCount() > 0) {
+          <span class="indicator-item  badge badge-error badge-xs">{{ missingCellInfoCount() }}</span>
+        }
+        <button class="btn btn-sm" (click)="openMissingCellInfoModal()">Cell Information</button>
+      </div>
       <button class="btn btn-sm" (click)="openCreateSiteModal()">Create Site</button>
       <button class="btn btn-sm" (click)="openSiteInformationModal()">Site Information</button>
     </div>
@@ -61,7 +66,7 @@
       </svg>
       <h2 class="text-md font-semibold mb-3">KPI Management</h2>
     </div>
-    <div class="flex flex-row flex-wrap gap-3">
+    <div class="flex flex-row flex-wrap gap-4">
       <button class="btn btn-sm" (click)="openStandardKpiModal()">Create Standard KPI</button>
     </div>
   </div>
@@ -76,12 +81,10 @@
       </svg>
       <h2 class="text-md font-semibold mb-3">User Management</h2>
     </div>
-    <div class="flex flex-row flex-wrap gap-3">
+    <div class="flex flex-row flex-wrap gap-4">
       <button class="btn btn-sm" (click)="openUserAreaMappingModal()">User-Area Mapping</button>
     </div>
   </div>
-
-
 
 
 </div>
@@ -90,5 +93,5 @@
 <app-ps-standard-kpi [open]="showStandardKpiModal" (closed)="closeStandardKpiModal()"></app-ps-standard-kpi>
 <app-ps-cells [open]="showMissingCellInfoModal" (closed)="closeMissingCellInfoModal()"></app-ps-cells>
 <app-ps-create-site [open]="showCreateSiteModal" (closed)="closeCreateSiteModal()"></app-ps-create-site>
-<app-ps-evict-cache [open]="showEvictCacheModal" (closed)="closeEvictCacheModal()" ></app-ps-evict-cache>
+<app-ps-evict-cache [open]="showEvictCacheModal" (closed)="closeEvictCacheModal()"></app-ps-evict-cache>
 <app-ps-site-info [open]="showSiteInformationModal" (closed)="closeSiteInformationModal()"></app-ps-site-info>

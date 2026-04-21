@@ -13,13 +13,19 @@ public interface CsvService {
 
     void writeSitesToCsv(List<SiteDto> dtos, Writer writer);
 
+    void writeSectorsToCsv(List<SectorDto> dtos, Writer writer);
+
     List<CellDto> readCellsFromCsv(InputStream inputStream);
 
     List<SiteDto> readSitesFromCsv(InputStream inputStream);
 
+    List<SectorDto> readSectorsFromCsv(InputStream inputStream);
+
     void writeCellImportResultToCsv(List<CellCsvImportResultDto> results, Writer writer);
 
     void writeSiteImportResultToCsv(List<SiteCsvImportResultDto> results, Writer writer);
+
+    void writeSectorImportResultToCsv(List<SectorCsvImportResultDto> results, Writer writer);
 
     void writeSiteWiseReportByKpiAndDateToCsv(List<SiteKpiReportDto> dtos, Writer writer) throws IOException;
 }
