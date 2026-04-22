@@ -1,29 +1,61 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Input, OnChanges, OnInit, signal, SimpleChanges} from '@angular/core';
 import * as L from 'leaflet';
 import {MapSector} from '../../../../../../models/pulse/MapSector';
 import {MapCellService} from '../../../../../../service/pulse/map-cell-service';
 import {AlertService} from '../../../../../../components/alert/alert.service';
 import {MapCellDto} from '../../../../../../models/pulse/MapCellDto';
+import {ReactiveFormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
+import {DatePipe} from '@angular/common';
+import {debounceTime, filter, Subject, takeUntil} from 'rxjs';
 
 @Component({
   selector: 'app-sector-map',
-  imports: [],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    DatePipe
+  ],
   templateUrl: './sector-map.html',
   styleUrl: './sector-map.css'
 })
-export class SectorMap implements OnInit {
+export class SectorMap implements OnInit, OnChanges {
+
+  @Input() ratName: string = '';
+  @Input() granularityName: string = '';
+  @Input() standardKpiName: string = '';
+  @Input() date: string = '';
+  // @Input() date = signal<string | undefined>(undefined);
+
+  //'2026-02-23'
 
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
+  private reloadTrigger = new Subject<void>();
+
+  loadingCells: boolean = false;
+  private isMapReady: boolean = false;
 
   constructor(private mapCellService: MapCellService,
               private alertService: AlertService,) {
   }
 
-
   ngOnInit(): void {
     this.initMap();
-    this.loadCells();
+
+    //-- To avoid multiple API calls within a small time-window due to sudden changes to many @Input values
+    this.reloadTrigger.pipe(
+      filter(() => this.isMapReady),
+      debounceTime(250)
+    ).subscribe(() => {
+      this.loadCells();
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['ratName'] || changes['granularityName'] || changes['standardKpiName'] || changes['date']) {
+      this.reloadTrigger.next();
+    }
   }
 
   initMap() {
@@ -34,13 +66,17 @@ export class SectorMap implements OnInit {
 
     this.sectorLayer.addTo(this.map);
 
+    this.isMapReady = true;
+
     //-- Reload when moving
     this.map.on('moveend', () => {
-      this.loadCells();
+      this.reloadTrigger.next();
     });
+
   }
 
   loadCells() {
+    this.loadingCells = true;
     const bounds = this.map.getBounds();
 
     const params: any = {
@@ -51,21 +87,23 @@ export class SectorMap implements OnInit {
     };
 
     //TODO: Apply correct arguments
-    this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, 'cell_availability', 'ltefdd', 'day-average').subscribe(
+    this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date).subscribe(
       {
         next: data => {
           this.renderCells(data);
-          console.log(data);
-        } , error: err=> {
+          this.loadingCells = false;
+        }, error: err => {
           console.log(err);
           this.alertService.error(`Error ${err.message}`);
+          this.loadingCells = false;
         }
       }
     )
   }
 
   reloadCells(): void {
-    this.loadCells();
+    if (!this.map) return; // map not ready
+    this.reloadTrigger.next();
   }
 
   renderCells(cells: MapCellDto[]): void {
@@ -162,7 +200,6 @@ export class SectorMap implements OnInit {
 
   //TODO: Open cell analysis window on sector click
   onSectorClick(sector: MapSector) {
-    console.log('Sector clicked:', sector);
     alert(`Cell: ${sector.cellName}\nKPI: ${sector.kpiValue}`);
   }
 

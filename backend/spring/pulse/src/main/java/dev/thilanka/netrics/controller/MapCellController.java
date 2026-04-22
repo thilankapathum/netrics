@@ -26,8 +26,9 @@ public class MapCellController {
                                                        @RequestParam("maxLat") Double maxLat,
                                                        @RequestParam("standardKpiName") String standardKpiName,
                                                        @RequestParam("ratName") String ratName,
-                                                       @RequestParam("granularityName") String granularityName) {
-        List<MapCell> mapCells = mapCellService.getMapCellsByKpi(minLng, minLat, maxLng, maxLat, standardKpiName, ratName, granularityName);
+                                                       @RequestParam("granularityName") String granularityName,
+                                                       @RequestParam("date") String date) {
+        List<MapCell> mapCells = mapCellService.getMapCellsByKpi(minLng, minLat, maxLng, maxLat, standardKpiName, ratName, granularityName, date);
         return ResponseEntity.ok(mapCells);
     }
 }

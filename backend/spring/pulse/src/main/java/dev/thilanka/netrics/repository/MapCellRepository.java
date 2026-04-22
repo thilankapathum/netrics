@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface MapCellRepository extends JpaRepository<KpiDay, Long> {
@@ -30,8 +31,8 @@ public interface MapCellRepository extends JpaRepository<KpiDay, Long> {
                 AND kv.rat_id = :ratId
                 AND kv.granularity_id = :granularityId
                 AND s.geom && ST_MakeEnvelope(:minLng,:minLat, :maxLng, :maxLat, 4326)
-                and kv.timestamp = '2026-02-23'
-                and c.azimuth is not null
+                AND kv.timestamp BETWEEN :startTime AND :endTime
+                and c.azimuth is not null;
             """, nativeQuery = true)
     List<MapCell> queryCellsByKpi(
             @Param("minLng") Double minLng,
@@ -40,6 +41,8 @@ public interface MapCellRepository extends JpaRepository<KpiDay, Long> {
             @Param("maxLat") Double maxLat,
             @Param("standardKpiId") Long standardKpiId,
             @Param("ratId") Long ratId,
-            @Param("granularityId") Long granularityId
+            @Param("granularityId") Long granularityId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
     );
 }

@@ -14,7 +14,7 @@ export class MapCellService {
     this.baseUrl = `${this.urlService.getPulseUrl()}/map-cells`;
   }
 
-  getCellsByStandardKpi(minLng: number, minLat: number, maxLng: number, maxLat: number, standardKpiName: string, ratName: string, granularityName: string) {
+  getCellsByStandardKpi(minLng: number, minLat: number, maxLng: number, maxLat: number, standardKpiName: string, ratName: string, granularityName: string, date:string) {
     return this.http.get<Array<MapCellDto>>(`${this.baseUrl}/standard-kpi`, {
       params: {
         minLng,
@@ -23,7 +23,8 @@ export class MapCellService {
         maxLat,
         standardKpiName,
         ratName,
-        granularityName
+        granularityName,
+        date
       }
     });
   }

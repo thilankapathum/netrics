@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping("/api/v1/pulse/dates")
 @RequiredArgsConstructor
@@ -21,5 +23,11 @@ public class DateController {
     ResponseEntity<DateRangeDto> getLatestDateRange(@RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName){
         DateRangeDto dateRange = dateService.getLatestDateRange(period, ratName,granularityName);
         return ResponseEntity.ok(dateRange);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("latest-date")
+    ResponseEntity<LocalDateTime> getLatestDate(@RequestParam String ratName, @RequestParam String granularityName) {
+        return ResponseEntity.ok(dateService.getLatestDate(ratName, granularityName));
     }
 }

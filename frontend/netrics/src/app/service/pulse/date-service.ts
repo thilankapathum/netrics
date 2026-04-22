@@ -24,4 +24,12 @@ export class DateService {
     });
   }
 
+  getLatestDate(ratName: string, granularityName: string) {
+    return this.http.get<string>(`${this.baseUrl}/latest-date`, {
+      params: {
+        ratName, granularityName
+      }
+    });
+  }
+
 }
