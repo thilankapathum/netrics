@@ -1,4 +1,4 @@
-export interface MapSector {
+export interface MapCellDto {
   siteCode: string;
   siteName: string;
   cellName: string;

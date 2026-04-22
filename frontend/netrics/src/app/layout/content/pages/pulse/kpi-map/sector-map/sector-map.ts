@@ -1,6 +1,9 @@
 import {Component, OnInit} from '@angular/core';
 import * as L from 'leaflet';
 import {MapSector} from '../../../../../../models/pulse/MapSector';
+import {MapCellService} from '../../../../../../service/pulse/map-cell-service';
+import {AlertService} from '../../../../../../components/alert/alert.service';
+import {MapCellDto} from '../../../../../../models/pulse/MapCellDto';
 
 @Component({
   selector: 'app-sector-map',
@@ -13,10 +16,14 @@ export class SectorMap implements OnInit {
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
 
+  constructor(private mapCellService: MapCellService,
+              private alertService: AlertService,) {
+  }
+
 
   ngOnInit(): void {
     this.initMap();
-    this.loadSectors();
+    this.loadCells();
   }
 
   initMap() {
@@ -29,11 +36,11 @@ export class SectorMap implements OnInit {
 
     //-- Reload when moving
     this.map.on('moveend', () => {
-      this.loadSectors();
+      this.loadCells();
     });
   }
 
-  loadSectors() {
+  loadCells() {
     const bounds = this.map.getBounds();
 
     const params: any = {
@@ -43,164 +50,36 @@ export class SectorMap implements OnInit {
       maxLng: bounds.getEast()
     };
 
-    // TODO: Retrieve data
-    // this.kpiMapService.getData();
-    const data = [
+    //TODO: Apply correct arguments
+    this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, 'cell_availability', 'ltefdd', 'day-average').subscribe(
       {
-        "siteCode": "KANDY1",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-18-1",
-        "latitude": 7.8731,
-        "longitude": 80.7718,
-        "azimuth": 0,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 200
-      },
-      {
-        "siteCode": "KANDY1",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-18-2",
-        "latitude": 7.8731,
-        "longitude": 80.7718,
-        "azimuth": 120,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 200
-      },
-      {
-        "siteCode": "KANDY1",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-18-3",
-        "latitude": 7.8731,
-        "longitude": 80.7718,
-        "azimuth": 240,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 200
-      },
-      {
-        "siteCode": "KANDY1",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-90-1",
-        "latitude": 7.8731,
-        "longitude": 80.7718,
-        "azimuth": 0,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 400
-      },
-      {
-        "siteCode": "KANDY1",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-90-2",
-        "latitude": 7.8731,
-        "longitude": 80.7718,
-        "azimuth": 120,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 400
-      },
-      {
-        "siteCode": "KANDY1",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-90-3",
-        "latitude": 7.8731,
-        "longitude": 80.7718,
-        "azimuth": 240,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 400
-      },
-      {
-        "siteCode": "KANDY2",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-18-1",
-        "latitude": 7.931638126100931,
-        "longitude": 80.7291512064211,
-        "azimuth": 60,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 200
-      },
-      {
-        "siteCode": "KANDY2",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-18-2",
-        "latitude": 7.931638126100931,
-        "longitude": 80.7291512064211,
-        "azimuth": 180,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 200
-      },
-      {
-        "siteCode": "KANDY2",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-18-3",
-        "latitude": 7.931638126100931,
-        "longitude": 80.7291512064211,
-        "azimuth": 300,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 200
-      },
-      {
-        "siteCode": "KANDY2",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-90-1",
-        "latitude": 7.931638126100931,
-        "longitude": 80.7291512064211,
-        "azimuth": 60,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 400
-      },
-      {
-        "siteCode": "KANDY2",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-90-2",
-        "latitude": 7.931638126100931,
-        "longitude": 80.7291512064211,
-        "azimuth": 180,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 400
-      },
-      {
-        "siteCode": "KANDY2",
-        "siteName": "Kandy 1",
-        "cellName": "KANDY1-90-3",
-        "latitude": 7.931638126100931,
-        "longitude": 80.7291512064211,
-        "azimuth": 300,
-        "beamwidth": 65,
-        "kpiValue": 99,
-        "radius": 400
+        next: data => {
+          this.renderCells(data);
+          console.log(data);
+        } , error: err=> {
+          console.log(err);
+          this.alertService.error(`Error ${err.message}`);
+        }
       }
-    ];
-
-    this.renderSectors(data);
+    )
   }
 
-  reloadSectors(): void {
-    this.loadSectors();
+  reloadCells(): void {
+    this.loadCells();
   }
 
-  renderSectors(sectors: MapSector[]): void {
+  renderCells(cells: MapCellDto[]): void {
     this.sectorLayer.clearLayers();
 
-    sectors.sort((a, b) => b.radius - a.radius);
+    cells.sort((a, b) => b.radius - a.radius);
 
-    sectors.forEach(sector => {
-      const polygon = this.drawSector(
-        sector.latitude,
-        sector.longitude,
-        sector.azimuth,
-        sector.beamwidth,
-        sector.radius
-
-        // this.getDynamicRadius
+    cells.forEach(cell => {
+      const polygon = this.drawCell(
+        cell.latitude,
+        cell.longitude,
+        cell.azimuth,
+        cell.beamwidth,
+        cell.radius
       );
 
       const defaultStyle = {
@@ -221,19 +100,20 @@ export class SectorMap implements OnInit {
       });
 
       polygon.bindTooltip(
-        `<b> ${sector.cellName}</b> <br>
-        Site: ${sector.siteName}<br/>`
+        `<b> ${cell.cellName}</b> <br>
+        Site: ${cell.siteName}<br/>
+        KPI: ${cell.kpiLabel} <b>${cell.kpiValue}</b><br/>`
       );
 
       polygon.on('click', () => {
-        this.onSectorClick(sector);
+        this.onSectorClick(cell);
       });
 
       polygon.addTo(this.sectorLayer);
     });
   }
 
-  drawSector(lat: number, lng: number, azimuth: number, beamwidth: number, radius: number): L.Polygon {
+  drawCell(lat: number, lng: number, azimuth: number, beamwidth: number, radius: number): L.Polygon {
     const points: L.LatLngExpression[] = [];
     const startAngle = azimuth - beamwidth / 2;
     const endAngle = azimuth + beamwidth / 2;
@@ -280,6 +160,7 @@ export class SectorMap implements OnInit {
 
   }
 
+  //TODO: Open cell analysis window on sector click
   onSectorClick(sector: MapSector) {
     console.log('Sector clicked:', sector);
     alert(`Cell: ${sector.cellName}\nKPI: ${sector.kpiValue}`);
