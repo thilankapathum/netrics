@@ -362,4 +362,20 @@ public class Mapper {
                 thrSet.getLastModifiedBy()
         );
     }
+
+    public MapCellThrSetResponseDto mapCellThrSetToResponseDto(MapCellThrSet thrSet) {
+        return new MapCellThrSetResponseDto(
+                thrSet.getId(),
+                thrSet.getStandardKpi().getKpiName(),
+                thrSet.getGranularity().getName(),
+                thrSet.getRat().getName(),
+                thrSet.isAdmin()
+        );
+    }
+
+    //=================     MAP-CELL-THRESHOLDS ======================
+
+    public MapCellThresholdDto mapCellThresholdToDto(MapCellThreshold thr) {
+        return new MapCellThresholdDto(thr.getMinValue(), thr.getMaxValue(), thr.getColor(), thr.getLabel(),thr.getPriority(),thr.getMapCellThrSet().getId());
+    }
 }
