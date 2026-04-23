@@ -66,7 +66,7 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
             WorstCellComment savedComment = worstCellCommentRepository.save(worstCellComment);
             return mapper.worstCellCommentToDto(savedComment);
         } else {
-            System.out.println("Unauthorized to delete comment");
+            System.out.println("Unauthorized to update comment");
             return null;
         }
 

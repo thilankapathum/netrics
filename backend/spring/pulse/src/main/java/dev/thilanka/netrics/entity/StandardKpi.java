@@ -59,6 +59,9 @@ public class StandardKpi {
     @OneToOne(mappedBy = "denominator", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private StandardRawKpiMapping denominator;
 
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<MapCellThrSet> mapCellThrSets;
+
     @ManyToOne
     @JoinColumn(name = "basic_kpi_id")
     private BasicKpi basicKpi;

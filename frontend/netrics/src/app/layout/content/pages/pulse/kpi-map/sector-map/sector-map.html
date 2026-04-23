@@ -3,7 +3,7 @@
 <!--<div id="map"></div>-->
 <div class="map-container">
   <div id="map" class="rounded-xl"></div>
-  @if (loadingCells) {
+  @if (loadingCells || loadingAll) {
     <div class="map-loading-overlay">
       <!--      <div class="p-6 bg-base-100/50 flex rounded-xl items-center gap-3">-->
       <span class="loading loading-spinner loading-md"></span>

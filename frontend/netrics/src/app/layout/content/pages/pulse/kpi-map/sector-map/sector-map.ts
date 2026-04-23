@@ -25,6 +25,7 @@ export class SectorMap implements OnInit, OnChanges {
   @Input() granularityName: string = '';
   @Input() standardKpiName: string = '';
   @Input() date: string = '';
+  @Input() loadingAll: boolean = false;
   // @Input() date = signal<string | undefined>(undefined);
 
   //'2026-02-23'

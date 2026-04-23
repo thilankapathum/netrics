@@ -345,4 +345,21 @@ public class Mapper {
     public SectorDto sectorToDto(Sector sector) {
         return new SectorDto(sector.getSectorIndex(), sector.getName(), sector.getAzimuth(), sector.getSite().getSiteCode());
     }
+
+    //=================     MAP-CELL-THRESHOLD-SET ======================
+    public MapCellThrSetDto mapCellThrSetToDto(MapCellThrSet thrSet) {
+        return new MapCellThrSetDto(
+                thrSet.getStandardKpi().getKpiName(),
+                thrSet.getGranularity().getName(),
+                thrSet.getRat().getName(),
+                thrSet.getUserId(),
+                thrSet.isAdmin(),
+                thrSet.isActive(),
+                thrSet.isDeleted(),
+                thrSet.getCreatedAt(),
+                thrSet.getLastModifiedAt(),
+                thrSet.getCreatedBy(),
+                thrSet.getLastModifiedBy()
+        );
+    }
 }

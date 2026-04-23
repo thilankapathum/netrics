@@ -35,4 +35,7 @@ public class Granularity {
 
     @OneToMany(mappedBy = "granularity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<WorstCell> worstCells;
+
+    @OneToMany(mappedBy = "granularity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<MapCellThrSet> mapCellThrSets;
 }
