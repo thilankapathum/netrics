@@ -1,0 +1,55 @@
+<div class="border border-base-300 rounded-md h-full flex flex-col">
+  <!--  <h2 class="text-md font-bold text-base-content">Legend</h2>-->
+  <div class="p-4">
+    <div class="text-sm opacity-50">Legend</div>
+    <div class="text-lg font-semibold ">{{ standardKpi() }}</div>
+  </div>
+
+  <ul class="list" [hidden]="!isThresholdAvailable()">
+    @for (threshold of sortedThresholds; track $index; let i = $index) {
+
+      <li class="list-row">
+        <div class="text-2xl font-thin opacity-30 tabular-nums">
+          {{ i + 1 }}
+        </div>
+
+        <div
+          class="size-8 rounded-box"
+          [style.background]="threshold.color">
+        </div>
+
+        <div class="list-col-grow">
+          <div class="font-semibold">
+            {{ threshold.minValue }} - {{ threshold.maxValue }}
+          </div>
+          <div class="text-xs  opacity-60">{{ threshold.label }}</div>
+        </div>
+      </li>
+    }
+  </ul>
+
+  <div [hidden]="isThresholdAvailable()" class="card w-auto card-md border border-info rounded-xl bg-base-100 m-4">
+    <div class="card-body text-secondary">
+      <h2 class="card-title text-info">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 8V8.1L11.9502 8.1002V8H12.0498Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Legend Template Not Defined
+      </h2>
+      <p>You haven’t created a Legend Template for this KPI. Please check and create one if necessary.</p>
+      <button class="btn btn-sm w-min mt-2" (click)="createCellMapLegend()">Create</button>
+    </div>
+  </div>
+  <div class="p-4 w-fit mt-auto">
+    <div class="tabs tabs-box tabs-xs border border-base-300 ml-auto">
+      <input type="radio" name="is_default_tabs"
+             class="tab" [attr.value]="true"
+             aria-label="Default" [checked]="isAdmin" (change)="changeLegendType(true)"/>
+      <input type="radio" name="is_default_tabs"
+             class="tab" [attr.value]="false"
+             aria-label="Custom" [checked]="!isAdmin" (change)="changeLegendType(false)"/>
+    </div>
+  </div>
+</div>

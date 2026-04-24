@@ -1,8 +1,8 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {UrlService} from '../url/url-service';
-import {BandDto} from '../../models/pulse/BandDto';
-import {MapCellDto} from '../../models/pulse/MapCellDto';
+import {UrlService} from '../../url/url-service';
+import {BandDto} from '../../../models/pulse/BandDto';
+import {MapCellDto} from '../../../models/pulse/MapCellDto';
 
 @Injectable({
   providedIn: 'root'

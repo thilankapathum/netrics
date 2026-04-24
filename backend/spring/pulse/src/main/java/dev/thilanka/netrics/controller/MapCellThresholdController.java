@@ -33,9 +33,20 @@ public class MapCellThresholdController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("thr-set-thresholds")
-    public ResponseEntity<MapCellThrSetAndThresholds> getThrSetAndThresholdsByThrSetId(@RequestParam("id") Long id) {
+    @GetMapping("thr-set-thresholds/id/{id}")
+    public ResponseEntity<MapCellThrSetAndThresholds> getThrSetAndThresholdsByThrSetId(@PathVariable("id") Long id) {
         MapCellThrSetAndThresholds thresholds = mapCellThresholdService.getThrSetAndThresholdsByThrSetId(id);
         return new ResponseEntity<>(thresholds, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("thr-set-thresholds")
+    public ResponseEntity<MapCellThrSetAndThresholds> getThrSetAndThresholds(
+            @RequestParam("standardKpiName") String standardKpiName,
+            @RequestParam("granularityName") String granularityName,
+            @RequestParam("ratName") String ratName,
+            @RequestParam("isAdmin") boolean isAdmin) {
+        MapCellThrSetAndThresholds thresholds = mapCellThresholdService.getThrSetAndThresholds(standardKpiName,ratName,granularityName,isAdmin);
+        return ResponseEntity.ok(thresholds);
     }
 }

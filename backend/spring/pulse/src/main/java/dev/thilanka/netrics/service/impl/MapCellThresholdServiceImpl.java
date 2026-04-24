@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.MapCellThrSetAndThresholds;
+import dev.thilanka.netrics.dto.MapCellThrSetResponseDto;
 import dev.thilanka.netrics.dto.MapCellThresholdDto;
 import dev.thilanka.netrics.entity.MapCellThrSet;
 import dev.thilanka.netrics.entity.MapCellThreshold;
@@ -58,9 +59,17 @@ public class MapCellThresholdServiceImpl implements MapCellThresholdService {
 
     @Override
     public MapCellThrSetAndThresholds getThrSetAndThresholdsByThrSetId(Long id) {
-        MapCellThrSet thrSet =  mapCellThrSetService.findThrSetById(id);
+        MapCellThrSet thrSet = mapCellThrSetService.findThrSetById(id);
         List<MapCellThreshold> thresholds = mapCellThresholdRepository.findByMapCellThrSetId(id);
         List<MapCellThresholdDto> thresholdDtos = thresholds.stream().map(mapper::mapCellThresholdToDto).collect(Collectors.toList());
         return new MapCellThrSetAndThresholds(mapper.mapCellThrSetToResponseDto(thrSet), thresholdDtos);
+    }
+
+    @Override
+    public MapCellThrSetAndThresholds getThrSetAndThresholds(String standardKpiName, String ratName, String granularityName, boolean isAdmin) {
+        MapCellThrSetResponseDto thrSetResponse = mapCellThrSetService.getThrSetResponse(standardKpiName, ratName, granularityName, isAdmin);
+        List<MapCellThreshold> thresholds = mapCellThresholdRepository.findByMapCellThrSetId(thrSetResponse.id());
+        List<MapCellThresholdDto> thresholdDtos = thresholds.stream().map(mapper::mapCellThresholdToDto).collect(Collectors.toList());
+        return new MapCellThrSetAndThresholds(thrSetResponse, thresholdDtos);
     }
 }

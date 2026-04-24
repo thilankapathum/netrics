@@ -17,4 +17,6 @@ public interface MapCellThresholdService {
     List<MapCellThresholdDto> getThresholdsByThrSetId(Long id);
 
     MapCellThrSetAndThresholds getThrSetAndThresholdsByThrSetId(Long id);
+
+    MapCellThrSetAndThresholds getThrSetAndThresholds(String standardKpiName, String ratName,String granularityName,  boolean isAdmin);
 }

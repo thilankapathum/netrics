@@ -18,6 +18,10 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {UserAreaService} from '../../../../../service/pulse/user-area-service';
 import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
 import {DateService} from '../../../../../service/pulse/date-service';
+import {MapCellThresholdService} from '../../../../../service/pulse/map-cell/map-cell-threshold-service';
+import {MapCellThrSetAndThresholds} from '../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
+import {CellMapLegend} from './cell-map-legend/cell-map-legend';
+import {CellMapLegendEdit} from './cell-map-legend-edit/cell-map-legend-edit';
 
 @Component({
   selector: 'app-kpi-map',
@@ -26,13 +30,15 @@ import {DateService} from '../../../../../service/pulse/date-service';
     DatePipe,
     ReactiveFormsModule,
     RouterLink,
-    FormsModule
+    FormsModule,
+    CellMapLegend,
+    CellMapLegendEdit
   ],
   templateUrl: './kpi-map.html',
   styleUrl: './kpi-map.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class KpiMap implements OnInit{
+export class KpiMap implements OnInit {
 
   rat = signal<string | undefined>(undefined);
   rats: RatDto[] = [];
@@ -54,14 +60,21 @@ export class KpiMap implements OnInit{
 
   date = signal<string | undefined>(undefined);
 
+  mapCellThrSetAndThresholds = signal<MapCellThrSetAndThresholds | undefined>(undefined);
+
+  isAdmin = signal<boolean>(true);
+  isThresholdAvailable = signal<boolean>(true);
+
   loadingRats: boolean = false;
   loadingGranularity: boolean = false;
   loadingStandardKpis: boolean = false;
   loadingAreaTypes: boolean = false;
   loadingAreas: boolean = false;
 
-  constructor(private ratService:RatService,
-              private granularityService:GranularityService,
+  showCellMapLegendEditModal: boolean = false;
+
+  constructor(private ratService: RatService,
+              private granularityService: GranularityService,
               private areaTypeService: AreaTypeService,
               private areaService: AreaService,
               private alertService: AlertService,
@@ -69,7 +82,8 @@ export class KpiMap implements OnInit{
               private authService: AuthService,
               private userAreaService: UserAreaService,
               private standardKpiService: StandardkpiService,
-              private dateService: DateService,) {
+              private dateService: DateService,
+              private mapCellThresholdService: MapCellThresholdService,) {
   }
 
   ngOnInit() {
@@ -81,7 +95,6 @@ export class KpiMap implements OnInit{
   loadingAll() {
     return this.loadingAreaTypes || this.loadingAreas || this.loadingRats || this.loadingGranularity || this.loadingStandardKpis;
   }
-
 
 
   //------------ FILTERS ---------------------------
@@ -142,7 +155,7 @@ export class KpiMap implements OnInit{
           // if (this.sharedService.areaType() != '') {
           //   this.areaType.set(this.sharedService.areaType());
           // } else
-            if (this.userArea() != null) {
+          if (this.userArea() != null) {
             this.areaType.set(this.userArea()?.areaTypeName);
           } else {
             this.areaType.set(districtsAreaType?.name);
@@ -169,7 +182,7 @@ export class KpiMap implements OnInit{
         //   this.sharedService.area.set('');
         //   this.sharedService.areaType.set('');
         // } else
-          if (this.userArea() != null) {
+        if (this.userArea() != null) {
           this.area.set(this.userArea()?.name);
           this.userArea.set(undefined);   // Clear userArea details after initial loading
         } else {
@@ -186,7 +199,7 @@ export class KpiMap implements OnInit{
     })
   }
 
-  getGranularities(){
+  getGranularities() {
     this.loadingGranularity = true;
     this.granularityService.getAllGranularities().subscribe({
       next: data => {
@@ -202,7 +215,7 @@ export class KpiMap implements OnInit{
     })
   }
 
-  getRats(){
+  getRats() {
     this.loadingRats = true;
     this.ratService.getAllRats().subscribe({
       next: data => {
@@ -222,7 +235,7 @@ export class KpiMap implements OnInit{
 
   getLatestDate(ratName: string, granularityName: string) {
     this.dateService.getLatestDate(ratName, granularityName).subscribe({
-      next: data =>{
+      next: data => {
         const formattedDate = data.split('T')[0];
         this.date.set(formattedDate);
       }, error: error => {
@@ -246,6 +259,7 @@ export class KpiMap implements OnInit{
           // }
           this.standardKpi.set(this.standardKpis[0].kpiName)
           this.selectKpi(this.standardKpi()!, ratName, this.granularity()!);    // Getting Worst-cells and Trend-data
+          this.getThrSetAndThresholdsByThrSetId(this.standardKpi()!, this.rat()!, this.granularity()!, this.isAdmin())
         } else {
           this.alertService.error("KPI are unavailable for the RAT");
         }
@@ -259,13 +273,47 @@ export class KpiMap implements OnInit{
     })
   }
 
+  getThrSetAndThresholdsByThrSetId(standardKpiName: string, ratName: string, granularityName: string, isAdmin: boolean) {
+    this.mapCellThrSetAndThresholds.set(undefined);
+    this.mapCellThresholdService.getThrSetAndThresholds(standardKpiName, ratName, granularityName, isAdmin).subscribe({
+      next: data => {
+        this.mapCellThrSetAndThresholds.set(data);
+        this.isThresholdAvailable.set(true);
+        // console.log(data);
+      }, error: error => {
+        console.log(error);
+        if (error.status === 404) {
+          this.isThresholdAvailable.set(false);
+        } else {
+          this.alertService.error(`Error retrieving thresholds ${error.status}:${error.statusText}`);
+        }
+      }
+    })
+  }
+
   async selectKpi(kpi: string, ratName: string, granularityName: string) {
     // await this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), kpi, this.selectedKpiTrendPeriod(), ratName, this.excludeZeroes, granularityName, this.area()!, this.aggregation());
     this.standardKpi.set(kpi);
+    this.getThrSetAndThresholdsByThrSetId(kpi, ratName, this.granularity()!, this.isAdmin());
+  }
+
+  onLegendTypeChange(type: boolean) {
+    this.isAdmin.set(type);
+    this.getThrSetAndThresholdsByThrSetId(this.standardKpi()!, this.rat()!, this.granularity()!, this.isAdmin());
   }
 
   onDateChange(event: any) {
     // Cally emits event.target.value
     this.date.set(event.target.value);
+  }
+
+  //-------------------- OPEN MODAL -----------------------------
+  openCellMapLegendEditModal(): void {
+    this.showCellMapLegendEditModal = true;
+  }
+
+  //------------------- CLOSE MODAL ----------------------------
+  closeCellMapLegendEditModal(): void {
+    this.showCellMapLegendEditModal = false;
   }
 }

@@ -1,13 +1,14 @@
 import {Component, Input, OnChanges, OnInit, signal, SimpleChanges} from '@angular/core';
 import * as L from 'leaflet';
 import {MapSector} from '../../../../../../models/pulse/MapSector';
-import {MapCellService} from '../../../../../../service/pulse/map-cell-service';
+import {MapCellService} from '../../../../../../service/pulse/map-cell/map-cell-service';
 import {AlertService} from '../../../../../../components/alert/alert.service';
 import {MapCellDto} from '../../../../../../models/pulse/MapCellDto';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {DatePipe} from '@angular/common';
 import {debounceTime, filter, Subject, takeUntil} from 'rxjs';
+import {MapCellThrSetAndThresholds} from '../../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
 
 @Component({
   selector: 'app-sector-map',
@@ -26,9 +27,7 @@ export class SectorMap implements OnInit, OnChanges {
   @Input() standardKpiName: string = '';
   @Input() date: string = '';
   @Input() loadingAll: boolean = false;
-  // @Input() date = signal<string | undefined>(undefined);
-
-  //'2026-02-23'
+  @Input() mapCellThrSetAndThresholds = signal<MapCellThrSetAndThresholds | undefined>(undefined);
 
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
@@ -47,6 +46,7 @@ export class SectorMap implements OnInit, OnChanges {
     //-- To avoid multiple API calls within a small time-window due to sudden changes to many @Input values
     this.reloadTrigger.pipe(
       filter(() => this.isMapReady),
+      filter(() => this.hasValidInputs()),
       debounceTime(250)
     ).subscribe(() => {
       this.loadCells();
@@ -77,6 +77,9 @@ export class SectorMap implements OnInit, OnChanges {
   }
 
   loadCells() {
+
+    if (!this.hasValidInputs()) return;
+
     this.loadingCells = true;
     const bounds = this.map.getBounds();
 
@@ -87,7 +90,6 @@ export class SectorMap implements OnInit, OnChanges {
       maxLng: bounds.getEast()
     };
 
-    //TODO: Apply correct arguments
     this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date).subscribe(
       {
         next: data => {
@@ -121,9 +123,11 @@ export class SectorMap implements OnInit, OnChanges {
         cell.radius
       );
 
+      const polygonColor = this.getPolygonColor(cell.kpiValue);
+
       const defaultStyle = {
-        color: 'red',
-        fillColor: 'pink',
+        color: polygonColor,
+        fillColor: polygonColor,
         fillOpacity: 0.4,
         weight: 1
       };
@@ -199,9 +203,29 @@ export class SectorMap implements OnInit, OnChanges {
 
   }
 
+  getPolygonColor(kpiValue: number): string {
+    if (!this.mapCellThrSetAndThresholds()?.thresholds || this.mapCellThrSetAndThresholds()?.thresholds?.length === 0) {
+      return 'grey';
+    }
+
+    const match = this.mapCellThrSetAndThresholds()?.thresholds?.find(thr =>
+      kpiValue >= thr.minValue && kpiValue < thr.maxValue);
+
+    return match ? match.color : 'grey';
+  }
+
   //TODO: Open cell analysis window on sector click
   onSectorClick(sector: MapSector) {
     alert(`Cell: ${sector.cellName}\nKPI: ${sector.kpiValue}`);
+  }
+
+  hasValidInputs(): boolean {
+    return !!(
+      this.standardKpiName &&
+      this.ratName &&
+      this.granularityName &&
+      this.date
+    );
   }
 
 }
