@@ -19,4 +19,8 @@ public interface MapCellThresholdService {
     MapCellThrSetAndThresholds getThrSetAndThresholdsByThrSetId(Long id);
 
     MapCellThrSetAndThresholds getThrSetAndThresholds(String standardKpiName, String ratName,String granularityName,  boolean isAdmin);
+
+    MapCellThrSetAndThresholds createMapCellThrSetAndThresholds(MapCellThrSetAndThresholds thrSetAndThresholds);
+
+    MapCellThrSetAndThresholds updateMapCellThrSetAndThresholds(MapCellThrSetAndThresholds thrSetAndThresholds);
 }

@@ -4,4 +4,5 @@ export interface MapCellThrSetResponseDto{
   granularityName: string;
   ratName:string;
   isAdmin: boolean;
+  userId: string;
 }

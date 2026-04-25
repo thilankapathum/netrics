@@ -1,6 +1,5 @@
 package dev.thilanka.netrics.service;
 
-import dev.thilanka.netrics.dto.MapCellThrSetAndThresholds;
 import dev.thilanka.netrics.dto.MapCellThrSetDto;
 import dev.thilanka.netrics.dto.MapCellThrSetResponseDto;
 import dev.thilanka.netrics.entity.Granularity;
@@ -12,9 +11,9 @@ public interface MapCellThrSetService {
 
     MapCellThrSet createThrSet(MapCellThrSet thrSet);
 
-    MapCellThrSetDto createThrSet(MapCellThrSetDto thrSetDto);
+    MapCellThrSet createThrSet(MapCellThrSetResponseDto thrSetDto);
 
-    MapCellThrSetResponseDto createThrSet(MapCellThrSetResponseDto dto);
+    MapCellThrSetResponseDto createThrSetResponse(MapCellThrSetResponseDto dto);
 
     MapCellThrSet findThrSetById(Long id);
 

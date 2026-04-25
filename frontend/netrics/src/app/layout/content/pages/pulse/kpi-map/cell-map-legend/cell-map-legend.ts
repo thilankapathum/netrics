@@ -12,15 +12,17 @@ export class CellMapLegend {
 
   @Input() mapCellThrSetAndThresholds = signal<MapCellThrSetAndThresholds | undefined>(undefined);
 
-  @Input() standardKpi = signal<string | undefined>(undefined);
-
-  @Input() isAdmin :boolean = true;
+  // @Input() standardKpiLabel = signal<string | undefined>(undefined);
+  @Input() standardKpiLabel: string | undefined = undefined;
+  @Input() isThresholdEditable:boolean = false;
+  @Input() isThresholdsCustomizable:boolean = false;
+  @Input() isAdmin: boolean = true;
   @Output() isAdminChange: EventEmitter<boolean> = new EventEmitter();
   @Output() openCellMapLegendEditModal: EventEmitter<void> = new EventEmitter();
 
   @Input() isThresholdAvailable = signal<boolean>(true);
 
-  get sortedThresholds():MapCellThresholdDto[]{
+  get sortedThresholds(): MapCellThresholdDto[] {
     return this.mapCellThrSetAndThresholds()?.thresholds
       ?.slice().sort((a, b) => a.priority - b.priority) ?? [];
   }

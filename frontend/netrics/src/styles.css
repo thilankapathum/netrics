@@ -145,6 +145,11 @@ span.tsize-48 {
   --tooltip-text-size: 0.65rem;
 }
 
+.leaflet-tooltip {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px;
+}
+
 
 /* Force visibility for debugging */
 /*section, table, tr, td, th, div {*/

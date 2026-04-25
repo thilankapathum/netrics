@@ -18,7 +18,7 @@ public class MapCellThrSetController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PostMapping
     public ResponseEntity<MapCellThrSetResponseDto> createThrSet(@RequestBody @Valid MapCellThrSetResponseDto dto) {
-        MapCellThrSetResponseDto savedThrSet = mapCellThrSetService.createThrSet(dto);
+        MapCellThrSetResponseDto savedThrSet = mapCellThrSetService.createThrSetResponse(dto);
         return new ResponseEntity<>(savedThrSet, HttpStatus.CREATED);
     }
 

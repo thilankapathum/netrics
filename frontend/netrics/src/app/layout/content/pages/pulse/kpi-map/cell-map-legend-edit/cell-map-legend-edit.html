@@ -1,6 +1,6 @@
-<dialog #cellMapLegendEdit id="cell_map_legend_edit_modal" [class.modal-open]="open" class="modal w-full">
+<dialog #cellMapLegendEdit id="cell_map_legend_edit_modal" [class.modal-open]="open()" class="modal w-full">
   <div class="modal-box max-w-2xl">
-    <h3 class="text-lg font-bold mb-2">Update Missing Cell Information</h3>
+    <h3 class="text-lg font-bold mb-2">Create Legend Template</h3>
 
     <div class="overflow-x-auto">
       <table class="table">
@@ -17,97 +17,88 @@
         </thead>
         <tbody>
         <!-- row 1 -->
-          @for (threshold of sortedThresholds; track $index; let i = $index) {
-            <tr>
-              <td>{{ threshold.priority }}</td>
+          @for (threshold of sortedThresholds(); track threshold.priority; let i = $index) {
+            <tr >
+
+              <!-- Priority -->
+              <td>{{ i + 1 }}</td>
+
+              <!-- Color Picker -->
               <td>
-                <div class="flex items-center gap-3">
-                  <div
-                    class="size-4 rounded-box"
-                    [style.background]="threshold.color">
-                  </div>
-                  <!--                <div>-->
-                  <!--                  <div class="font-bold">Hart Hagerty</div>-->
-                  <!--                  <div class="text-sm opacity-50">United States</div>-->
-                  <!--                </div>-->
-                </div>
+                <input type="color"
+                       class="input input-xs p-0 w-10 h-8"
+                       [value]="threshold.color"
+                       (input)="updateThreshold(i, 'color', $any($event.target).value)"/>
               </td>
+
+              <!-- Min -->
               <td>
-                {{ threshold.minValue }}
-                <!--              Zemlak, Daniel and Leannon-->
-                <!--              <br/>-->
-                <!--              <span class="badge badge-ghost badge-sm">Desktop Support Technician</span>-->
+
+                <input [class.input-error]="threshold.minValue >= threshold.maxValue" type="number"
+                       class="input input-xs w-20"
+                       [value]="threshold.minValue"
+                       (input)="updateThreshold(i, 'minValue', +$any($event.target).value)"/>
+
+
               </td>
-              <td>{{ threshold.maxValue }}</td>
-              <th>
-                <button class="btn btn-ghost btn-xs">{{ threshold.label }}</button>
-              </th>
+
+              <!-- Max -->
+              <td>
+                <input [class.input-error]="threshold.minValue >= threshold.maxValue" type="number"
+                       class="input input-xs w-20"
+                       [value]="threshold.maxValue"
+                       (input)="updateThreshold(i, 'maxValue', +$any($event.target).value)"/>
+              </td>
+
+              <!-- Label -->
+              <td>
+                <input type="text"
+                       class="input input-xs w-28"
+                       [value]="threshold.label"
+                       (input)="updateThreshold(i, 'label', $any($event.target).value)"/>
+              </td>
+
+              <!-- Delete -->
+              <td>
+                <button class="btn btn-xs btn-error btn-outline"
+                        (click)="removeThreshold(i)">
+                  <svg  width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 10V17M10 10V17M6 6V17.8C6 18.9201 6 19.4798 6.21799 19.9076C6.40973 20.2839 6.71547 20.5905 7.0918 20.7822C7.5192 21 8.07899 21 9.19691 21H14.8031C15.921 21 16.48 21 16.9074 20.7822C17.2837 20.5905 17.5905 20.2839 17.7822 19.9076C18 19.4802 18 18.921 18 17.8031V6M6 6H8M6 6H4M8 6H16M8 6C8 5.06812 8 4.60241 8.15224 4.23486C8.35523 3.74481 8.74432 3.35523 9.23438 3.15224C9.60192 3 10.0681 3 11 3H13C13.9319 3 14.3978 3 14.7654 3.15224C15.2554 3.35523 15.6447 3.74481 15.8477 4.23486C15.9999 4.6024 16 5.06812 16 6M16 6H18M18 6H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+
+                </button>
+              </td>
+
             </tr>
+
           }
         <!-- row 2 -->
 
         </tbody>
       </table>
+      <div class="mt-3">
+        <button class="btn btn-xs btn-primary btn-outline" (click)="addThreshold()">
+          + Add Threshold
+        </button>
+      </div>
+      @if (hasOverlap()) {
+        <div role="alert" class="alert alert-error alert-soft alert-xs mt-3">
+          <span>Threshold ranges are overlapping</span>
+        </div>
+      }
     </div>
-<!--    <p class="mb-4">There are <span class="text-error">{{ missingCellInfoCount() }}</span> cells with missing-->
-<!--      information</p>-->
-<!--    <div class="flex flex-row justify-around flex-wrap p-4">-->
-<!--      <div class="flex flex-col gap-6">-->
-<!--        <div class="flex flex-col gap-3">-->
-<!--          <p>Download Cells with missing information</p>-->
-<!--          <button [disabled]="loadingMissingCellInfoDownload" class="btn btn-sm self-start" (click)="exportCellsWithMissingInfo()">-->
-<!--            <span [hidden]="!loadingMissingCellInfoDownload" class="loading loading-spinner loading-xs"></span>-->
-<!--            <span [hidden]="loadingMissingCellInfoDownload">-->
-<!--              <svg class="text-error" width="16" height="16" viewBox="0 0 24 24" fill="none"-->
-<!--                   xmlns="http://www.w3.org/2000/svg">-->
-<!--                <path-->
-<!--                  d="M12 12V18M12 18L15 16M12 18L9 16M13 3.00087C12.9045 3 12.7973 3 12.6747 3H8.2002C7.08009 3 6.51962 3 6.0918 3.21799C5.71547 3.40973 5.40973 3.71547 5.21799 4.0918C5 4.51962 5 5.08009 5 6.2002V17.8002C5 18.9203 5 19.4801 5.21799 19.9079C5.40973 20.2842 5.71547 20.5905 6.0918 20.7822C6.5192 21 7.07899 21 8.19691 21H15.8031C16.921 21 17.48 21 17.9074 20.7822C18.2837 20.5905 18.5905 20.2842 18.7822 19.9079C19 19.4805 19 18.9215 19 17.8036V9.32568C19 9.20296 19 9.09561 18.9991 9M13 3.00087C13.2856 3.00347 13.4663 3.01385 13.6388 3.05526C13.8429 3.10425 14.0379 3.18526 14.2168 3.29492C14.4186 3.41857 14.5918 3.59182 14.9375 3.9375L18.063 7.06298C18.4089 7.40889 18.5809 7.58136 18.7046 7.78319C18.8142 7.96214 18.8953 8.15726 18.9443 8.36133C18.9857 8.53376 18.9963 8.71451 18.9991 9M13 3.00087V5.8C13 6.9201 13 7.47977 13.218 7.90759C13.4097 8.28392 13.7155 8.59048 14.0918 8.78223C14.5192 9 15.079 9 16.1969 9H18.9991M18.9991 9H19.0002"-->
-<!--                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
-<!--              </svg>-->
-<!--            </span>-->
-<!--            Download Missing-->
-<!--          </button>-->
-<!--        </div>-->
-<!--        <div class="flex flex-col gap-3">-->
-<!--          <p>Download all Cells</p>-->
-<!--          <button [disabled]="loadingAllCellsDownload" class="btn btn-sm self-start" (click)="exportAllCells()">-->
-<!--            <span [hidden]="!loadingAllCellsDownload" class="loading loading-spinner loading-xs"></span>-->
-<!--            <span [hidden]="loadingAllCellsDownload">-->
-<!--              <svg class="text-primary" width="16" height="16" viewBox="0 0 24 24" fill="none"-->
-<!--                   xmlns="http://www.w3.org/2000/svg">-->
-<!--                <path-->
-<!--                  d="M12 12V18M12 18L15 16M12 18L9 16M13 3.00087C12.9045 3 12.7973 3 12.6747 3H8.2002C7.08009 3 6.51962 3 6.0918 3.21799C5.71547 3.40973 5.40973 3.71547 5.21799 4.0918C5 4.51962 5 5.08009 5 6.2002V17.8002C5 18.9203 5 19.4801 5.21799 19.9079C5.40973 20.2842 5.71547 20.5905 6.0918 20.7822C6.5192 21 7.07899 21 8.19691 21H15.8031C16.921 21 17.48 21 17.9074 20.7822C18.2837 20.5905 18.5905 20.2842 18.7822 19.9079C19 19.4805 19 18.9215 19 17.8036V9.32568C19 9.20296 19 9.09561 18.9991 9M13 3.00087C13.2856 3.00347 13.4663 3.01385 13.6388 3.05526C13.8429 3.10425 14.0379 3.18526 14.2168 3.29492C14.4186 3.41857 14.5918 3.59182 14.9375 3.9375L18.063 7.06298C18.4089 7.40889 18.5809 7.58136 18.7046 7.78319C18.8142 7.96214 18.8953 8.15726 18.9443 8.36133C18.9857 8.53376 18.9963 8.71451 18.9991 9M13 3.00087V5.8C13 6.9201 13 7.47977 13.218 7.90759C13.4097 8.28392 13.7155 8.59048 14.0918 8.78223C14.5192 9 15.079 9 16.1969 9H18.9991M18.9991 9H19.0002"-->
-<!--                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
-<!--              </svg>-->
-<!--            </span>-->
-<!--            Download All-->
-<!--          </button>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--      <div class="divider divider-horizontal">OR</div>-->
-<!--      <div class="flex flex-col gap-3">-->
-<!--        <p>Upload Cell Information</p>-->
-<!--        <input [disabled]="loadingMissingCellInfoUpload" #cellMissingInfoFileInput type="file"-->
-<!--               class="file-input input-sm"/>-->
-<!--        <button [disabled]="loadingMissingCellInfoUpload" class="btn btn-sm self-start"-->
-<!--                (click)="importCellsWithCorrectedInfo(cellMissingInfoFileInput)">-->
-<!--          <span [hidden]="!loadingMissingCellInfoUpload" class="loading loading-spinner loading-xs"></span>-->
-<!--          <span [hidden]="loadingMissingCellInfoUpload">-->
-<!--            <svg class="text-accent" width="16" height="16" viewBox="0 0 24 24" fill="none"-->
-<!--                 xmlns="http://www.w3.org/2000/svg">-->
-<!--              <path-->
-<!--                d="M12 18V12M12 12L9 14M12 12L15 14M13 3.00087C12.9045 3 12.7973 3 12.6747 3H8.2002C7.08009 3 6.51962 3 6.0918 3.21799C5.71547 3.40973 5.40973 3.71547 5.21799 4.0918C5 4.51962 5 5.08009 5 6.2002V17.8002C5 18.9203 5 19.4801 5.21799 19.9079C5.40973 20.2842 5.71547 20.5905 6.0918 20.7822C6.51921 21 7.079 21 8.19694 21L15.8031 21C16.921 21 17.48 21 17.9074 20.7822C18.2837 20.5905 18.5905 20.2842 18.7822 19.9079C19 19.4805 19 18.9215 19 17.8036V9.32568C19 9.20296 19 9.09561 18.9991 9M13 3.00087C13.2856 3.00347 13.4663 3.01385 13.6388 3.05526C13.8429 3.10425 14.0379 3.18526 14.2168 3.29492C14.4186 3.41857 14.5918 3.59182 14.9375 3.9375L18.063 7.06298C18.4089 7.40889 18.5809 7.58136 18.7046 7.78319C18.8142 7.96214 18.8953 8.15726 18.9443 8.36133C18.9857 8.53376 18.9963 8.71451 18.9991 9M13 3.00087V5.8C13 6.9201 13 7.47977 13.218 7.90759C13.4097 8.28392 13.7155 8.59048 14.0918 8.78223C14.5192 9 15.079 9 16.1969 9H18.9991M18.9991 9H19.0002"-->
-<!--                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
-<!--            </svg>-->
-<!--          </span>-->
-<!--          Upload-->
-<!--        </button>-->
-<!--        &lt;!&ndash;        <progress [hidden]="!loadingMissingCellInfoUpload" class="progress w-auto"></progress>&ndash;&gt;-->
 
-<!--      </div>-->
-<!--    </div>-->
     <div class="modal-action">
       <form class="flex flex-row gap-2">
+        <button [disabled]="!areThresholdsValid() || savingThresholds" class="btn btn-sm btn-primary" (click)="onSave()">
+          <span [hidden]="!savingThresholds" class="loading loading-spinner loading-xs"></span>
+          <span [hidden]="savingThresholds">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 21.0002L7 21M17 21.0002L17.8031 21C18.921 21 19.48 21 19.9074 20.7822C20.2837 20.5905 20.5905 20.2843 20.7822 19.908C21 19.4806 21 18.921 21 17.8031V9.21955C21 8.77072 21 8.54521 20.9521 8.33105C20.9095 8.14 20.8393 7.95652 20.7432 7.78595C20.6366 7.59674 20.487 7.43055 20.1929 7.10378L17.4377 4.04241C17.0969 3.66374 16.9242 3.47181 16.7168 3.33398C16.5303 3.21 16.3242 3.11858 16.1073 3.06287C15.8625 3 15.5998 3 15.075 3H6.2002C5.08009 3 4.51962 3 4.0918 3.21799C3.71547 3.40973 3.40973 3.71547 3.21799 4.0918C3 4.51962 3 5.08009 3 6.2002V17.8002C3 18.9203 3 19.4796 3.21799 19.9074C3.40973 20.2837 3.71547 20.5905 4.0918 20.7822C4.5192 21 5.07899 21 6.19691 21H7M17 21.0002V17.1969C17 16.079 17 15.5192 16.7822 15.0918C16.5905 14.7155 16.2837 14.4097 15.9074 14.218C15.4796 14 14.9203 14 13.8002 14H10.2002C9.08009 14 8.51962 14 8.0918 14.218C7.71547 14.4097 7.40973 14.7155 7.21799 15.0918C7 15.5196 7 16.0801 7 17.2002V21M15 7H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+        </span>
+          Save</button>
         <button class="btn btn-sm" type="button" (click)="onCancel()">
           Close
           <span class="text-secondary">

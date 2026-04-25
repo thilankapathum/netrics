@@ -5,6 +5,7 @@ public record MapCellThrSetResponseDto(
         String standardKpiName,
         String granularityName,
         String ratName,
-        boolean isAdmin
+        boolean isAdmin,
+        String userId
 ) {
 }

@@ -10,14 +10,12 @@ import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.StandardKpi;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.MapCellThrSetRepository;
-import dev.thilanka.netrics.repository.RatRepository;
 import dev.thilanka.netrics.service.GranularityService;
 import dev.thilanka.netrics.service.MapCellThrSetService;
 import dev.thilanka.netrics.service.RatService;
 import dev.thilanka.netrics.service.StandardKpiService;
 import dev.thilanka.netrics.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.AuditorAware;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,7 +34,7 @@ public class MapCellThrSetServiceImpl implements MapCellThrSetService {
     }
 
     @Override
-    public MapCellThrSetDto createThrSet(MapCellThrSetDto thrSetDto) {
+    public MapCellThrSet createThrSet(MapCellThrSetResponseDto thrSetDto) {
 
         Rat rat = ratService.findRatByName(thrSetDto.ratName());
         Granularity granularity = granularityService.findGranularityByName(thrSetDto.granularityName());
@@ -51,19 +49,17 @@ public class MapCellThrSetServiceImpl implements MapCellThrSetService {
                     .rat(rat)
                     .userId(userId)
                     .isAdmin(thrSetDto.isAdmin() && isAdmin)    //-- validate isAdmin with user's actual roles
-                    .isActive(thrSetDto.isActive())
-                    .isDeleted(thrSetDto.isDeleted())
+                    .isActive(true)
+                    .isDeleted(false)
                     .build();
 
-            MapCellThrSet savedThrSet = mapCellThrSetRepository.save(thrSet);
-
-            return mapper.mapCellThrSetToDto(savedThrSet);
+            return mapCellThrSetRepository.save(thrSet);
         } else throw new UnauthorizedAccessException("User unavailable");
 
     }
 
     @Override
-    public MapCellThrSetResponseDto createThrSet(MapCellThrSetResponseDto dto) {
+    public MapCellThrSetResponseDto createThrSetResponse(MapCellThrSetResponseDto dto) {
         Rat rat = ratService.findRatByName(dto.ratName());
         Granularity granularity = granularityService.findGranularityByName(dto.granularityName());
         StandardKpi standardKpi = standardKpiService.findByKpiName(dto.standardKpiName(), rat);

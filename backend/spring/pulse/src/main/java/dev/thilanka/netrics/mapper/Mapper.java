@@ -369,7 +369,8 @@ public class Mapper {
                 thrSet.getStandardKpi().getKpiName(),
                 thrSet.getGranularity().getName(),
                 thrSet.getRat().getName(),
-                thrSet.isAdmin()
+                thrSet.isAdmin(),
+                thrSet.getUserId()
         );
     }
 

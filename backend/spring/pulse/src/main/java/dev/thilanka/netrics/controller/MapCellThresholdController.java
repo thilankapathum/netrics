@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.controller;
 
+import dev.thilanka.netrics.common.exception.BusinessValidationException;
 import dev.thilanka.netrics.dto.MapCellThrSetAndThresholds;
 import dev.thilanka.netrics.dto.MapCellThresholdDto;
 import dev.thilanka.netrics.service.MapCellThresholdService;
@@ -33,20 +34,42 @@ public class MapCellThresholdController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("thr-set-thresholds/id/{id}")
+    @GetMapping("templates/id/{id}")
     public ResponseEntity<MapCellThrSetAndThresholds> getThrSetAndThresholdsByThrSetId(@PathVariable("id") Long id) {
         MapCellThrSetAndThresholds thresholds = mapCellThresholdService.getThrSetAndThresholdsByThrSetId(id);
         return new ResponseEntity<>(thresholds, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("thr-set-thresholds")
+    @GetMapping("templates")
     public ResponseEntity<MapCellThrSetAndThresholds> getThrSetAndThresholds(
             @RequestParam("standardKpiName") String standardKpiName,
             @RequestParam("granularityName") String granularityName,
             @RequestParam("ratName") String ratName,
             @RequestParam("isAdmin") boolean isAdmin) {
-        MapCellThrSetAndThresholds thresholds = mapCellThresholdService.getThrSetAndThresholds(standardKpiName,ratName,granularityName,isAdmin);
+        MapCellThrSetAndThresholds thresholds = mapCellThresholdService.getThrSetAndThresholds(standardKpiName, ratName, granularityName, isAdmin);
         return ResponseEntity.ok(thresholds);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PostMapping("templates")
+    public ResponseEntity<MapCellThrSetAndThresholds> createThrSetAndThresholds(@RequestBody @Valid MapCellThrSetAndThresholds dto) {
+        if (dto.thrSet().id() == 0) {
+            MapCellThrSetAndThresholds savedThrSetAndThresholds = mapCellThresholdService.createMapCellThrSetAndThresholds(dto);
+            return new ResponseEntity<>(savedThrSetAndThresholds, HttpStatus.CREATED);
+        } else {
+            throw new BusinessValidationException("Threshold set already exists");
+        }
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PutMapping("templates")
+    public ResponseEntity<MapCellThrSetAndThresholds> updateThresholds(@RequestBody @Valid MapCellThrSetAndThresholds dto) {
+        if (dto.thrSet().id() != 0) {
+            MapCellThrSetAndThresholds updated = mapCellThresholdService.updateMapCellThrSetAndThresholds(dto);
+            return new ResponseEntity<>(updated, HttpStatus.OK);
+        } else {
+            throw new BusinessValidationException("Request invalid for updating Thresholds");
+        }
     }
 }

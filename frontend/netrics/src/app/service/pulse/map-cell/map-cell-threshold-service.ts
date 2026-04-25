@@ -25,7 +25,7 @@ export class MapCellThresholdService {
   }
 
   getThrSetAndThresholdsByThrSetId(id: number): Observable<MapCellThrSetAndThresholds> {
-    return this.http.get<MapCellThrSetAndThresholds>(`${this.baseUrl}/thr-set-thresholds/${id}`);
+    return this.http.get<MapCellThrSetAndThresholds>(`${this.baseUrl}/templates/${id}`);
   }
 
   getThrSetAndThresholds(standardKpiName: string, ratName: string, granularityName: string, isAdmin: boolean): Observable<MapCellThrSetAndThresholds> {
@@ -35,6 +35,14 @@ export class MapCellThresholdService {
       .set('granularityName', granularityName)
       .set('isAdmin', isAdmin);
 
-    return this.http.get<MapCellThrSetAndThresholds>(`${this.baseUrl}/thr-set-thresholds`, {params});
+    return this.http.get<MapCellThrSetAndThresholds>(`${this.baseUrl}/templates`, {params});
+  }
+
+  createThrSetAndThresholds(thrSetAndThresholds: MapCellThrSetAndThresholds):Observable<MapCellThrSetAndThresholds>{
+    return this.http.post<MapCellThrSetAndThresholds>(`${this.baseUrl}/templates`, thrSetAndThresholds);
+  }
+
+  updateThresholds(thrSetAndThresholds: MapCellThrSetAndThresholds): Observable<MapCellThrSetAndThresholds>{
+    return this.http.put<MapCellThrSetAndThresholds>(`${this.baseUrl}/templates`, thrSetAndThresholds);
   }
 }

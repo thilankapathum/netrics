@@ -1,4 +1,4 @@
-import {Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, signal} from '@angular/core';
+import {Component, computed, CUSTOM_ELEMENTS_SCHEMA, OnInit, signal} from '@angular/core';
 import {SectorMap} from './sector-map/sector-map';
 import {RatDto} from '../../../../../models/pulse/RatDto';
 import {GranularityDto} from '../../../../../models/pulse/GranularityDto';
@@ -13,7 +13,6 @@ import {AreaService} from '../../../../../service/pulse/area-service';
 import {AlertService} from '../../../../../components/alert/alert.service';
 import {Router, RouterLink} from '@angular/router';
 import {AuthService} from '../../../../../auth/service/auth-service';
-import {DatePipe} from '@angular/common';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {UserAreaService} from '../../../../../service/pulse/user-area-service';
 import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
@@ -27,7 +26,6 @@ import {CellMapLegendEdit} from './cell-map-legend-edit/cell-map-legend-edit';
   selector: 'app-kpi-map',
   imports: [
     SectorMap,
-    DatePipe,
     ReactiveFormsModule,
     RouterLink,
     FormsModule,
@@ -65,13 +63,18 @@ export class KpiMap implements OnInit {
   isAdmin = signal<boolean>(true);
   isThresholdAvailable = signal<boolean>(true);
 
+  isThresholdsEditable = computed(()=>
+    (this.isAdmin() && this.isUserAdmin()) || (!this.isAdmin() && this.isUserAuthorized()));
+
   loadingRats: boolean = false;
   loadingGranularity: boolean = false;
   loadingStandardKpis: boolean = false;
   loadingAreaTypes: boolean = false;
   loadingAreas: boolean = false;
+  savingThresholds: boolean = false;
 
-  showCellMapLegendEditModal: boolean = false;
+  showCellMapLegendEditModal=signal<boolean>(false);
+
 
   constructor(private ratService: RatService,
               private granularityService: GranularityService,
@@ -307,13 +310,59 @@ export class KpiMap implements OnInit {
     this.date.set(event.target.value);
   }
 
+  extractStandardKpiLabel(kpiName: string):string | undefined {
+    return this.standardKpis.find(kpi => kpi.kpiName === kpiName)?.label;
+  }
+
+  isUserAdmin(){
+    return this.authService.hasRole('PULSE_DELETE')
+  }
+
+  isUserAuthorized(){
+    return this.userProfile.id === this.mapCellThrSetAndThresholds()?.thrSet?.userId;
+  }
+
+  isThresholdsCustomizable():boolean{
+    return this.authService.hasRole('PULSE_UPDATE')
+  }
+
   //-------------------- OPEN MODAL -----------------------------
   openCellMapLegendEditModal(): void {
-    this.showCellMapLegendEditModal = true;
+    this.showCellMapLegendEditModal.set(true);
   }
 
   //------------------- CLOSE MODAL ----------------------------
   closeCellMapLegendEditModal(): void {
-    this.showCellMapLegendEditModal = false;
+    this.showCellMapLegendEditModal.set(false);
+  }
+
+  saveThrSetAndThresholds(thrSetAndThresholds: MapCellThrSetAndThresholds){
+    this.savingThresholds = true;
+    if (thrSetAndThresholds.thrSet?.id == 0){
+      this.mapCellThresholdService.createThrSetAndThresholds(thrSetAndThresholds).subscribe({
+        next: data => {
+          this.mapCellThrSetAndThresholds.set(data);
+          this.alertService.success(`Threshold Template Successfully saved!`);
+          this.savingThresholds = false;
+        }, error: error => {
+          console.log(error);
+          this.alertService.error(`Error creating Threshold Set ${error.status}:${error.statusText}`);
+          this.savingThresholds = false;
+        }
+      })
+    } else {
+      this.mapCellThresholdService.updateThresholds(thrSetAndThresholds).subscribe({
+        next: data => {
+          this.mapCellThrSetAndThresholds.set(data);
+          this.alertService.success(`Threshold Template Successfully updated!`);
+          this.savingThresholds = false;
+        }, error: error => {
+          console.log(error);
+          this.alertService.error(`Error updating thresholds ${error.status}:${error.statusText}`);
+          this.savingThresholds = false;
+        }
+      })
+    }
+
   }
 }

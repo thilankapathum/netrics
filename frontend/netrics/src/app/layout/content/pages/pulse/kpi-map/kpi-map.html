@@ -28,13 +28,13 @@
       </div>
 
       <div class="flex flex-row join">
-        <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
+        <select [disabled]="loadingAll() || true" class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
                 (change)="selectAreaType(areaType()!)">
           @for (at of areaTypes; track at.name) {
             <option [value]="at.name">{{ at.name }}</option>
           }
         </select>
-        <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="area"
+        <select [disabled]="loadingAll() || true" class="select select-sm border join-item w-auto" [(ngModel)]="area"
                 (change)="selectArea(area()!)">
           @for (ar of areas; track ar.name) {
             <option [value]="ar.name">{{ ar.name }}</option>
@@ -96,12 +96,26 @@
     </nav>
   </div>
   <section>
-    <div class="grid sm:grid-cols-[1fr_240px] gap-4 p-2 border border-base-300 rounded-xl bg-base-100">
+    <div class="grid sm:grid-cols-[1fr_240px] gap-2 p-2 border border-base-300 rounded-xl bg-base-100">
       <app-sector-map [ratName]="rat()!" [granularityName]="granularity()!"
-                      [standardKpiName]="standardKpi()!" [date]="date()!" [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds" [loadingAll]="loadingAll()"></app-sector-map>
-      <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds" [standardKpi]="standardKpi" [isAdmin]="isAdmin()" (isAdminChange)="onLegendTypeChange($event)" [isThresholdAvailable]="isThresholdAvailable" (openCellMapLegendEditModal)="openCellMapLegendEditModal()"></app-cell-map-legend>
+                      [standardKpiName]="standardKpi()!" [date]="date()!"
+                      [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
+                      [loadingAll]="loadingAll()"></app-sector-map>
+
+      <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
+                           [standardKpiLabel]="extractStandardKpiLabel(standardKpi()!)"
+                           [isAdmin]="isAdmin()"
+                           (isAdminChange)="onLegendTypeChange($event)"
+                           [isThresholdAvailable]="isThresholdAvailable"
+                           (openCellMapLegendEditModal)="openCellMapLegendEditModal()"
+                           [isThresholdEditable]="isThresholdsEditable()"
+                           [isThresholdsCustomizable]="isThresholdsCustomizable()"></app-cell-map-legend>
     </div>
   </section>
 </div>
 
-<app-cell-map-legend-edit [open]="showCellMapLegendEditModal" (closed)="closeCellMapLegendEditModal()" [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"></app-cell-map-legend-edit>
+<app-cell-map-legend-edit [open]="showCellMapLegendEditModal" (save)="saveThrSetAndThresholds($event)"
+                          (closed)="closeCellMapLegendEditModal()"
+                          [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds" [ratName]="rat()!"
+                          [granularityName]="granularity()!" [standardKpiName]="standardKpi()!" [isAdmin]="isAdmin()"
+                          [savingThresholds]="savingThresholds"></app-cell-map-legend-edit>

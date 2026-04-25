@@ -12,7 +12,7 @@ import dev.thilanka.netrics.service.MapCellThresholdService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,5 +71,73 @@ public class MapCellThresholdServiceImpl implements MapCellThresholdService {
         List<MapCellThreshold> thresholds = mapCellThresholdRepository.findByMapCellThrSetId(thrSetResponse.id());
         List<MapCellThresholdDto> thresholdDtos = thresholds.stream().map(mapper::mapCellThresholdToDto).collect(Collectors.toList());
         return new MapCellThrSetAndThresholds(thrSetResponse, thresholdDtos);
+    }
+
+    @Override
+    public MapCellThrSetAndThresholds createMapCellThrSetAndThresholds(MapCellThrSetAndThresholds thrSetAndThresholds) {
+
+        MapCellThrSet savedThrSet = mapCellThrSetService.createThrSet(thrSetAndThresholds.thrSet());
+        List<MapCellThreshold> savedThresholds = new ArrayList<>();
+
+        for (MapCellThresholdDto dto : thrSetAndThresholds.thresholds()) {
+            MapCellThreshold threshold = MapCellThreshold.builder()
+                    .minValue(dto.minValue())
+                    .maxValue(dto.maxValue())
+                    .color(dto.color())
+                    .label(dto.label())
+                    .priority(dto.priority())
+                    .mapCellThrSet(savedThrSet)
+                    .build();
+            savedThresholds.add(mapCellThresholdRepository.save(threshold));
+        }
+
+        List<MapCellThresholdDto> savedThresholdDtos = savedThresholds.stream().map(mapper::mapCellThresholdToDto).collect(Collectors.toList());
+
+        return new MapCellThrSetAndThresholds(mapper.mapCellThrSetToResponseDto(savedThrSet), savedThresholdDtos);
+    }
+
+    @Override
+    public MapCellThrSetAndThresholds updateMapCellThrSetAndThresholds(MapCellThrSetAndThresholds thrSetAndThresholds) {
+
+        MapCellThrSet thrSet = mapCellThrSetService.findThrSetById(thrSetAndThresholds.thrSet().id());
+        List<MapCellThreshold> thresholds = mapCellThresholdRepository.findByMapCellThrSetId(thrSet.getId());
+        Set<Integer> priorities = new HashSet<>();
+
+        Map<Integer, MapCellThreshold> existingMap = thresholds.stream().collect(Collectors.toMap(MapCellThreshold::getPriority, t -> t));
+
+        for (MapCellThresholdDto dto : thrSetAndThresholds.thresholds()) {
+
+            if (dto.priority() != null && existingMap.containsKey(dto.priority())) {
+                //update exiting
+                MapCellThreshold threshold = existingMap.get(dto.priority());
+
+                threshold.setMinValue(dto.minValue());
+                threshold.setMaxValue(dto.maxValue());
+                threshold.setColor(dto.color());
+                threshold.setLabel(dto.label());
+
+                MapCellThreshold updatedThreshold = mapCellThresholdRepository.save(threshold);
+
+                priorities.add(dto.priority());
+            } else {
+                MapCellThresholdDto createdThreshold = createThreshold(dto);
+                priorities.add(createdThreshold.priority());
+            }
+        }
+
+        List<MapCellThreshold> updatedThresholds = mapCellThresholdRepository.findByMapCellThrSetId(thrSet.getId());
+
+        List<MapCellThreshold> toDelete = updatedThresholds.stream()
+                .filter(t -> !priorities.contains(t.getPriority()))
+                .toList();
+
+        mapCellThresholdRepository.deleteAll(toDelete);
+
+        List<MapCellThreshold> finalThresholds = mapCellThresholdRepository.findByMapCellThrSetId(thrSet.getId());
+
+        return new MapCellThrSetAndThresholds(
+                mapper.mapCellThrSetToResponseDto(thrSet),
+                finalThresholds.stream()
+                        .map(mapper::mapCellThresholdToDto).collect(Collectors.toList()));
     }
 }

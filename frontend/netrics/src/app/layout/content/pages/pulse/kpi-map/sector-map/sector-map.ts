@@ -126,9 +126,9 @@ export class SectorMap implements OnInit, OnChanges {
       const polygonColor = this.getPolygonColor(cell.kpiValue);
 
       const defaultStyle = {
-        color: polygonColor,
+        color: '#808080',
         fillColor: polygonColor,
-        fillOpacity: 0.4,
+        fillOpacity: 0.6,
         weight: 1
       };
 
@@ -145,7 +145,7 @@ export class SectorMap implements OnInit, OnChanges {
       polygon.bindTooltip(
         `<b> ${cell.cellName}</b> <br>
         Site: ${cell.siteName}<br/>
-        KPI: ${cell.kpiLabel} <b>${cell.kpiValue}</b><br/>`
+        KPI: ${cell.kpiLabel} <b>${cell.kpiValue?.toFixed(2)}</b><br/>`
       );
 
       polygon.on('click', () => {
@@ -216,7 +216,7 @@ export class SectorMap implements OnInit, OnChanges {
 
   //TODO: Open cell analysis window on sector click
   onSectorClick(sector: MapSector) {
-    alert(`Cell: ${sector.cellName}\nKPI: ${sector.kpiValue}`);
+    alert(`${sector.cellName}\n${sector.kpiLabel}: ${sector.kpiValue}`);
   }
 
   hasValidInputs(): boolean {
