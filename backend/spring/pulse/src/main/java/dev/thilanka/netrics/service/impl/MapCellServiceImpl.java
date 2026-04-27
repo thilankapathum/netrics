@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.MapCell;
+import dev.thilanka.netrics.entity.Area;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.StandardKpi;
@@ -20,17 +21,20 @@ public class MapCellServiceImpl implements MapCellService {
     private final RatService ratService;
     private final GranularityService granularityService;
     private final DateService dateService;
+    private final AreaService areaService;
 
 
     @Override
-    public List<MapCell> getMapCellsByKpi(Double minLng, Double minLat, Double maxLng, Double maxLat, String standardKpiName, String ratName, String granularityName, String date) {
+    public List<MapCell> getMapCellsByKpi(Double minLng, Double minLat, Double maxLng, Double maxLat, String standardKpiName, String ratName, String granularityName, String date, String areaName) {
 
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         LocalDateTime startTime = dateService.extractDate(date);
         LocalDateTime endTime = startTime.plusSeconds(granularity.getPlusSeconds());
+        Area area = areaService.findAreaByName(areaName);
 
-        return mapCellRepository.queryCellsByKpi(minLng, minLat, maxLng, maxLat, standardKpi.getId(), rat.getId(), granularity.getId(), startTime, endTime);
+
+        return mapCellRepository.queryCellsByKpi(minLng, minLat, maxLng, maxLat, standardKpi.getId(), rat.getId(), granularity.getId(), startTime, endTime, area.getId());
     }
 }

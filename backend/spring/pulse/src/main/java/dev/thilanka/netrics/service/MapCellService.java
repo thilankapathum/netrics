@@ -5,5 +5,5 @@ import dev.thilanka.netrics.dto.MapCell;
 import java.util.List;
 
 public interface MapCellService {
-    List<MapCell> getMapCellsByKpi(Double minLng, Double minLat, Double maxLng, Double maxLat ,String standardKpiName, String ratName, String granularityName, String date);
+    List<MapCell> getMapCellsByKpi(Double minLng, Double minLat, Double maxLng, Double maxLat ,String standardKpiName, String ratName, String granularityName, String date, String areaName);
 }

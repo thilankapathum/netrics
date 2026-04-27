@@ -28,13 +28,13 @@
       </div>
 
       <div class="flex flex-row join">
-        <select [disabled]="loadingAll() || true" class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
+        <select [disabled]="loadingAll() " class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
                 (change)="selectAreaType(areaType()!)">
           @for (at of areaTypes; track at.name) {
             <option [value]="at.name">{{ at.name }}</option>
           }
         </select>
-        <select [disabled]="loadingAll() || true" class="select select-sm border join-item w-auto" [(ngModel)]="area"
+        <select [disabled]="loadingAll() " class="select select-sm border join-item w-auto" [(ngModel)]="area"
                 (change)="selectArea(area()!)">
           @for (ar of areas; track ar.name) {
             <option [value]="ar.name">{{ ar.name }}</option>
@@ -100,6 +100,7 @@
       <app-sector-map [ratName]="rat()!" [granularityName]="granularity()!"
                       [standardKpiName]="standardKpi()!" [date]="date()!"
                       [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
+                      [areaName]="area()!"
                       [loadingAll]="loadingAll()"></app-sector-map>
 
       <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"

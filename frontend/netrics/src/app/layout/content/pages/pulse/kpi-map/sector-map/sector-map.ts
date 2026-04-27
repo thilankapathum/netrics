@@ -26,12 +26,14 @@ export class SectorMap implements OnInit, OnChanges {
   @Input() granularityName: string = '';
   @Input() standardKpiName: string = '';
   @Input() date: string = '';
+  @Input() areaName: string = '';
   @Input() loadingAll: boolean = false;
   @Input() mapCellThrSetAndThresholds = signal<MapCellThrSetAndThresholds | undefined>(undefined);
 
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
   private reloadTrigger = new Subject<void>();
+  currentCells: MapCellDto[] = [];
 
   loadingCells: boolean = false;
   private isMapReady: boolean = false;
@@ -54,7 +56,7 @@ export class SectorMap implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['ratName'] || changes['granularityName'] || changes['standardKpiName'] || changes['date']) {
+    if (changes['ratName'] || changes['granularityName'] || changes['standardKpiName'] || changes['date'] || changes['areaName']) {
       this.reloadTrigger.next();
     }
   }
@@ -74,6 +76,10 @@ export class SectorMap implements OnInit, OnChanges {
       this.reloadTrigger.next();
     });
 
+    this.map.on('zoomend', () => {
+      this.renderCells(this.currentCells);
+    })
+
   }
 
   loadCells() {
@@ -90,10 +96,12 @@ export class SectorMap implements OnInit, OnChanges {
       maxLng: bounds.getEast()
     };
 
-    this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date).subscribe(
+    this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date, this.areaName).subscribe(
       {
         next: data => {
-          this.renderCells(data);
+          console.log(params);
+          this.currentCells = data;
+          this.renderCells(this.currentCells);
           this.loadingCells = false;
         }, error: err => {
           console.log(err);
@@ -115,12 +123,15 @@ export class SectorMap implements OnInit, OnChanges {
     cells.sort((a, b) => b.radius - a.radius);
 
     cells.forEach(cell => {
+
+      const dynamicRadius = this.getDynamicRadius(cell.radius);
+
       const polygon = this.drawCell(
         cell.latitude,
         cell.longitude,
         cell.azimuth,
         cell.beamwidth,
-        cell.radius
+        dynamicRadius
       );
 
       const polygonColor = this.getPolygonColor(cell.kpiValue);
@@ -143,9 +154,9 @@ export class SectorMap implements OnInit, OnChanges {
       });
 
       polygon.bindTooltip(
-        `<b> ${cell.cellName}</b> <br>
-        Site: ${cell.siteName}<br/>
-        KPI: ${cell.kpiLabel} <b>${cell.kpiValue?.toFixed(2)}</b><br/>`
+        ` <span class="font-semibold text-primary"> ${cell.cellName}</span>    <br>
+        <span class="text-gray-800">${cell.kpiLabel}: <b>${cell.kpiValue?.toFixed(2)}</b></span><br/>
+        <span class="text-xs text-gray-400">${cell.siteCode} - ${cell.siteName}</span> <br/>`
       );
 
       polygon.on('click', () => {
@@ -199,8 +210,14 @@ export class SectorMap implements OnInit, OnChanges {
     polygon.setStyle(defaultStyle);
   }
 
-  getDynamicRadius() {
+  getDynamicRadius(baseRadius: number): number {
+    const zoom = this.map.getZoom();
+    const zoomFactor = (20 - zoom) / 10; // normalized inverse
+    return baseRadius * zoomFactor;
 
+    // const scale = Math.pow(1.25, 12 - zoom);
+    // const dynamic = baseRadius * scale;
+    // return Math.min(Math.max(dynamic, baseRadius * 0.3), baseRadius * 1.5);
   }
 
   getPolygonColor(kpiValue: number): string {

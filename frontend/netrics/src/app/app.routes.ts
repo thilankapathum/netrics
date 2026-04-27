@@ -58,7 +58,7 @@ export const routes: Routes = [
           },
           {
             path: 'map',
-            canActivate: [authGuard, roleGuard(['PULSE_DELETE'])],
+            canActivate: [authGuard, roleGuard(['PULSE_UPDATE'])],
             component: KpiMap
           },
           {
