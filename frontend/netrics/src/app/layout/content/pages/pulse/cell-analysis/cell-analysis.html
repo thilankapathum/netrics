@@ -11,7 +11,8 @@
           </svg>
           Home
         </a></li>
-        <li [hidden]="!isDataInSharedService()"><a routerLink="/pulse">Worst Cell Analysis</a></li>
+        <li [hidden]="!checkReturnPage('pulse')"><a routerLink="/pulse">Worst Cell Analysis</a></li>
+        <li [hidden]="!checkReturnPage('pulse/map')"><a routerLink="/pulse/map">Spatial Analysis</a></li>
         <li class=" font-bold">Cell Analysis</li>
       </ul>
     </div>

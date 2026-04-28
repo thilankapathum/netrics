@@ -21,6 +21,8 @@ import {MapCellThresholdService} from '../../../../../service/pulse/map-cell/map
 import {MapCellThrSetAndThresholds} from '../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
 import {CellMapLegend} from './cell-map-legend/cell-map-legend';
 import {CellMapLegendEdit} from './cell-map-legend-edit/cell-map-legend-edit';
+import {CellMapCellAnalysis} from './cell-map-cell-analysis/cell-map-cell-analysis';
+import {SharedService} from '../../../../../service/pulse/shared-service';
 
 @Component({
   selector: 'app-kpi-map',
@@ -30,7 +32,8 @@ import {CellMapLegendEdit} from './cell-map-legend-edit/cell-map-legend-edit';
     RouterLink,
     FormsModule,
     CellMapLegend,
-    CellMapLegendEdit
+    CellMapLegendEdit,
+    CellMapCellAnalysis
   ],
   templateUrl: './kpi-map.html',
   styleUrl: './kpi-map.css',
@@ -63,7 +66,9 @@ export class KpiMap implements OnInit {
   isAdmin = signal<boolean>(true);
   isThresholdAvailable = signal<boolean>(true);
 
-  isThresholdsEditable = computed(()=>
+  selectedCellName = signal<string>('');
+
+  isThresholdsEditable = computed(() =>
     (this.isAdmin() && this.isUserAdmin()) || (!this.isAdmin() && this.isUserAuthorized()));
 
   loadingRats: boolean = false;
@@ -73,7 +78,8 @@ export class KpiMap implements OnInit {
   loadingAreas: boolean = false;
   savingThresholds: boolean = false;
 
-  showCellMapLegendEditModal=signal<boolean>(false);
+  showCellMapLegendEditModal = signal<boolean>(false);
+  showCellMapCellAnalysisModal = signal<boolean>(false);
 
 
   constructor(private ratService: RatService,
@@ -86,7 +92,8 @@ export class KpiMap implements OnInit {
               private userAreaService: UserAreaService,
               private standardKpiService: StandardkpiService,
               private dateService: DateService,
-              private mapCellThresholdService: MapCellThresholdService,) {
+              private mapCellThresholdService: MapCellThresholdService,
+              private sharedService: SharedService) {
   }
 
   ngOnInit() {
@@ -109,8 +116,6 @@ export class KpiMap implements OnInit {
 
   selectArea(areaName: string) {
     this.area.set(areaName);
-    // this.cdr.detectChanges(); // Force change detection
-    // this.getBasicKpi(this.selectedRat());
     this.selectKpi(this.standardKpi()!, this.rat()!, this.granularity()!);
   }
 
@@ -155,10 +160,9 @@ export class KpiMap implements OnInit {
         next: data => {
           this.areaTypes = data;
           const districtsAreaType = this.areaTypes.find(at => at.name === 'District');
-          // if (this.sharedService.areaType() != '') {
-          //   this.areaType.set(this.sharedService.areaType());
-          // } else
-          if (this.userArea() != null) {
+          if (this.sharedService.areaType() != '') {
+            this.areaType.set(this.sharedService.areaType());
+          } else if (this.userArea() != null) {
             this.areaType.set(this.userArea()?.areaTypeName);
           } else {
             this.areaType.set(districtsAreaType?.name);
@@ -180,18 +184,14 @@ export class KpiMap implements OnInit {
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
-        // if (this.sharedService.area() != '') {
-        //   this.area.set(this.sharedService.area());
-        //   this.sharedService.area.set('');
-        //   this.sharedService.areaType.set('');
-        // } else
-        if (this.userArea() != null) {
+        if (this.sharedService.area() != '') {
+          this.area.set(this.sharedService.area());
+        } else if (this.userArea() != null) {
           this.area.set(this.userArea()?.name);
           this.userArea.set(undefined);   // Clear userArea details after initial loading
         } else {
           this.area.set(this.areas.at(0)?.name);
         }
-        // this.getAllStandardKpi(this.rat()!);
 
         this.loadingAreas = false;
       }, error: error => {
@@ -207,7 +207,11 @@ export class KpiMap implements OnInit {
     this.granularityService.getAllGranularities().subscribe({
       next: data => {
         this.granularities = data;
-        this.granularity.set(this.granularities[0]?.name);
+        if (this.sharedService.selectedGranularity() != '') {
+          this.granularity.set(this.sharedService.selectedGranularity());
+        } else {
+          this.granularity.set(this.granularities[0]?.name);
+        }
         this.getRats();
         this.loadingGranularity = false;
       }, error: error => {
@@ -223,9 +227,14 @@ export class KpiMap implements OnInit {
     this.ratService.getAllRats().subscribe({
       next: data => {
         this.rats = data;
-        this.rat.set(this.rats[0]?.name);
-        // this.setRat(this.rats[0].name);
-        this.getLatestDate(this.rat()!, this.granularity()!);
+
+        if (this.sharedService.selectedRat() !== '') {
+          this.rat.set(this.sharedService.selectedRat());
+
+        } else {
+          this.rat.set(this.rats[0]?.name);
+        }
+
         this.getAllStandardKpi(this.rat()!);
         this.loadingRats = false;
       }, error: error => {
@@ -236,17 +245,6 @@ export class KpiMap implements OnInit {
     })
   }
 
-  getLatestDate(ratName: string, granularityName: string) {
-    this.dateService.getLatestDate(ratName, granularityName).subscribe({
-      next: data => {
-        const formattedDate = data.split('T')[0];
-        this.date.set(formattedDate);
-      }, error: error => {
-        console.log(error);
-        this.alertService.error(`Error retrieving latest date`);
-      }
-    })
-  }
 
   getAllStandardKpi(ratName: string) {
     this.loadingStandardKpis = true;
@@ -255,12 +253,13 @@ export class KpiMap implements OnInit {
       next: data => {
         this.standardKpis = data;
         if (this.standardKpis.length > 0) {
-          // if (this.sharedService.selectedStandardKpi() != '' && this.selectedRat() === this.sharedService.selectedRat()) {
-          //   this.selectedStandardKpi.set(this.sharedService.selectedStandardKpi());
-          // } else {
-          //   this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
-          // }
-          this.standardKpi.set(this.standardKpis[0].kpiName)
+          if (this.sharedService.selectedStandardKpi() != '' && this.rat() === this.sharedService.selectedRat()) {
+            this.standardKpi.set(this.sharedService.selectedStandardKpi());
+            // this.sharedService.selectedRat.set('');
+          } else {
+            this.standardKpi.set(this.standardKpis[0].kpiName);
+          }
+          this.getLatestDate(this.rat()!, this.granularity()!);
           this.selectKpi(this.standardKpi()!, ratName, this.granularity()!);    // Getting Worst-cells and Trend-data
           this.getThrSetAndThresholdsByThrSetId(this.standardKpi()!, this.rat()!, this.granularity()!, this.isAdmin())
         } else {
@@ -276,13 +275,29 @@ export class KpiMap implements OnInit {
     })
   }
 
+  getLatestDate(ratName: string, granularityName: string) {
+    this.dateService.getLatestDate(ratName, granularityName).subscribe({
+      next: data => {
+        const formattedDate = data.split('T')[0];
+        if (this.sharedService.cellMapDate() != '') {
+          this.date.set(this.sharedService.cellMapDate());
+        } else {
+          this.date.set(formattedDate);
+        }
+        this.sharedService.clearAll();
+      }, error: error => {
+        console.log(error);
+        this.alertService.error(`Error retrieving latest date`);
+      }
+    })
+  }
+
   getThrSetAndThresholdsByThrSetId(standardKpiName: string, ratName: string, granularityName: string, isAdmin: boolean) {
     this.mapCellThrSetAndThresholds.set(undefined);
     this.mapCellThresholdService.getThrSetAndThresholds(standardKpiName, ratName, granularityName, isAdmin).subscribe({
       next: data => {
         this.mapCellThrSetAndThresholds.set(data);
         this.isThresholdAvailable.set(true);
-        // console.log(data);
       }, error: error => {
         console.log(error);
         if (error.status === 404) {
@@ -310,19 +325,19 @@ export class KpiMap implements OnInit {
     this.date.set(event.target.value);
   }
 
-  extractStandardKpiLabel(kpiName: string):string | undefined {
+  extractStandardKpiLabel(kpiName: string): string | undefined {
     return this.standardKpis.find(kpi => kpi.kpiName === kpiName)?.label;
   }
 
-  isUserAdmin(){
+  isUserAdmin() {
     return this.authService.hasRole('PULSE_DELETE')
   }
 
-  isUserAuthorized(){
+  isUserAuthorized() {
     return this.userProfile.id === this.mapCellThrSetAndThresholds()?.thrSet?.userId;
   }
 
-  isThresholdsCustomizable():boolean{
+  isThresholdsCustomizable(): boolean {
     return this.authService.hasRole('PULSE_UPDATE')
   }
 
@@ -331,14 +346,30 @@ export class KpiMap implements OnInit {
     this.showCellMapLegendEditModal.set(true);
   }
 
+  openCellMapCellAnalysisModal(): void {
+    this.showCellMapCellAnalysisModal.set(true);
+    this.sharedService.areaType.set(this.areaType()!);
+    this.sharedService.area.set(this.area()!);
+    this.sharedService.cellMapDate.set(this.date()!);
+    this.sharedService.selectedRat.set(this.rat()!);
+    this.sharedService.selectedGranularity.set(this.granularity()!);
+    this.sharedService.selectedStandardKpi.set(this.standardKpi()!);
+    this.sharedService.cellMapDate.set(this.date()!);
+  }
+
   //------------------- CLOSE MODAL ----------------------------
   closeCellMapLegendEditModal(): void {
     this.showCellMapLegendEditModal.set(false);
   }
 
-  saveThrSetAndThresholds(thrSetAndThresholds: MapCellThrSetAndThresholds){
+  closeCellMapCellAnalysisModal(): void {
+    this.showCellMapCellAnalysisModal.set(false);
+    this.sharedService.clearAll();
+  }
+
+  saveThrSetAndThresholds(thrSetAndThresholds: MapCellThrSetAndThresholds) {
     this.savingThresholds = true;
-    if (thrSetAndThresholds.thrSet?.id == 0){
+    if (thrSetAndThresholds.thrSet?.id == 0) {
       this.mapCellThresholdService.createThrSetAndThresholds(thrSetAndThresholds).subscribe({
         next: data => {
           this.mapCellThrSetAndThresholds.set(data);
@@ -364,5 +395,9 @@ export class KpiMap implements OnInit {
       })
     }
 
+  }
+
+  onCellSelection(cellName: string) {
+    this.selectedCellName.set(cellName);
   }
 }

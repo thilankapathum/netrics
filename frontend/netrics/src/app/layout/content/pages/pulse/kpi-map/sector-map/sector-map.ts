@@ -1,4 +1,4 @@
-import {Component, Input, OnChanges, OnInit, signal, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges} from '@angular/core';
 import * as L from 'leaflet';
 import {MapSector} from '../../../../../../models/pulse/MapSector';
 import {MapCellService} from '../../../../../../service/pulse/map-cell/map-cell-service';
@@ -9,6 +9,7 @@ import {RouterLink} from '@angular/router';
 import {DatePipe} from '@angular/common';
 import {debounceTime, filter, Subject, takeUntil} from 'rxjs';
 import {MapCellThrSetAndThresholds} from '../../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
+import {SharedService} from '../../../../../../service/pulse/shared-service';
 
 @Component({
   selector: 'app-sector-map',
@@ -29,6 +30,8 @@ export class SectorMap implements OnInit, OnChanges {
   @Input() areaName: string = '';
   @Input() loadingAll: boolean = false;
   @Input() mapCellThrSetAndThresholds = signal<MapCellThrSetAndThresholds | undefined>(undefined);
+  @Output() selectedCellName = new EventEmitter<string>();
+  @Output() openAnalysisDialog = new EventEmitter<boolean>();
 
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
@@ -39,7 +42,8 @@ export class SectorMap implements OnInit, OnChanges {
   private isMapReady: boolean = false;
 
   constructor(private mapCellService: MapCellService,
-              private alertService: AlertService,) {
+              private alertService: AlertService,
+              private sharedService: SharedService,) {
   }
 
   ngOnInit(): void {
@@ -62,7 +66,10 @@ export class SectorMap implements OnInit, OnChanges {
   }
 
   initMap() {
-    this.map = L.map('map').setView([7.8731, 80.7718], 8);
+    // this.map = L.map('map').setView([7.8731, 80.7718], 8);
+    const viewCoordinates = this.sharedService.viewCoordinates;
+    const zoom = this.sharedService.zoom;
+    this.map = L.map('map').setView(viewCoordinates, zoom);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {attribution: 'OSM'}).addTo(this.map);
@@ -96,10 +103,17 @@ export class SectorMap implements OnInit, OnChanges {
       maxLng: bounds.getEast()
     };
 
+    this.sharedService.minLat = params.minLat;
+    this.sharedService.maxLat = params.maxLat;
+    this.sharedService.minLng = params.minLng;
+    this.sharedService.maxLng = params.maxLng;
+
+    this.sharedService.zoom = this.map.getZoom();
+    this.sharedService.viewCoordinates = this.map.getCenter();
+
     this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date, this.areaName).subscribe(
       {
         next: data => {
-          console.log(params);
           this.currentCells = data;
           this.renderCells(this.currentCells);
           this.loadingCells = false;
@@ -233,7 +247,10 @@ export class SectorMap implements OnInit, OnChanges {
 
   //TODO: Open cell analysis window on sector click
   onSectorClick(sector: MapSector) {
-    alert(`${sector.cellName}\n${sector.kpiLabel}: ${sector.kpiValue}`);
+    this.selectedCellName.emit(sector.cellName);
+    this.openAnalysisDialog.emit(true);
+
+    // alert(`${sector.cellName}\n${sector.kpiLabel}: ${sector.kpiValue}`);
   }
 
   hasValidInputs(): boolean {

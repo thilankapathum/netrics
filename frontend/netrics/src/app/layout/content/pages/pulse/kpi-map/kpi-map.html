@@ -62,7 +62,7 @@
         </select>
       </div>
       <div class="flex flex-row gap-2 items-center">
-        <button #startDateBtn
+        <button [disabled]="loadingAll()"  #startDateBtn
                 class="input input-bordered input-sm w-auto"
                 popovertarget="cally-popover-start" id="cally-start"
                 style="anchor-name:--cally-start">
@@ -79,7 +79,7 @@
         <div popover
              id="cally-popover-start" class="dropdown bg-base-100 rounded-box shadow-lg"
              style="position-anchor:--cally-start">
-          <calendar-date class="cally bg-base-100 border border-base-300 shadow-lg rounded-box"
+          <calendar-date [attr.value]="date()" class="cally bg-base-100 border border-base-300 shadow-lg rounded-box"
                          (change)="onDateChange($event)">
             <svg aria-label="Previous" class="fill-current w-4 h-4" slot="previous" xmlns="http://www.w3.org/2000/svg"
                  viewBox="0 0 24 24">
@@ -101,7 +101,9 @@
                       [standardKpiName]="standardKpi()!" [date]="date()!"
                       [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
                       [areaName]="area()!"
-                      [loadingAll]="loadingAll()"></app-sector-map>
+                      [loadingAll]="loadingAll()"
+      (selectedCellName)="onCellSelection($event)"
+      (openAnalysisDialog)="openCellMapCellAnalysisModal()"></app-sector-map>
 
       <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
                            [standardKpiLabel]="extractStandardKpiLabel(standardKpi()!)"
@@ -120,3 +122,9 @@
                           [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds" [ratName]="rat()!"
                           [granularityName]="granularity()!" [standardKpiName]="standardKpi()!" [isAdmin]="isAdmin()"
                           [savingThresholds]="savingThresholds"></app-cell-map-legend-edit>
+
+<app-cell-map-cell-analysis [open]="showCellMapCellAnalysisModal" (closed)="closeCellMapCellAnalysisModal()"
+                            [standardKpiName]="standardKpi"
+                            [ratName]="rat"
+                            [granularityName]="granularity"
+[cellName]="selectedCellName()"></app-cell-map-cell-analysis>

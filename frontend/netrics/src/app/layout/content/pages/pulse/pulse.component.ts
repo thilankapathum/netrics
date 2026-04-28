@@ -43,8 +43,10 @@ import {PsCells} from './pulse-settings/ps-cells/ps-cells';
 })
 export class PulseComponent implements OnInit {
 
-  selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
-  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  // selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
+  // selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  selectedRat = signal<string>('ltefdd');
+  selectedGranularity = signal<string>('day-average');
   dateRanges = signal<{ [aggregation: string]: DateRangeDto | undefined }>({});
 
   areaTypes: AreaTypeDto[] = [];
@@ -672,6 +674,7 @@ export class PulseComponent implements OnInit {
     this.sharedService.currentPage = this.currentPage;
     this.sharedService.bandWise = this.bandWise;
     this.sharedService.selectedBand.set(this.selectedBand());
+    this.sharedService.returnPage = 'pulse';
   }
 
   clearSharedServiceData(): void {

@@ -29,8 +29,10 @@ import {CellKpiSeries} from '../../../../../models/apexCharts/CellKpiSeries';
 })
 export class CellAnalysis implements OnInit {
 
-  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
-  selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
+  // selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  selectedGranularity = signal<string>('day-average');
+  // selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
+  selectedRat = signal<string>('ltefdd');
   rat = signal<RatDto | undefined>(undefined);
   cellName = signal('');
   selectedStandardKpi = signal('');
@@ -305,10 +307,11 @@ export class CellAnalysis implements OnInit {
 
   //---------- UTILITY METHODS -------------------
 
-  isDataInSharedService():boolean {
+  checkReturnPage(returnPage:string):boolean {
     const sharedCell: string = this.sharedService.selectedCell();
     const sharedStandardKpi: string = this.sharedService.selectedStandardKpi();
-    return sharedCell !== '' && sharedStandardKpi !== '';
+    const _returnPage: string = this.sharedService.returnPage;
+    return sharedCell !== '' && sharedStandardKpi !== '' && returnPage ===_returnPage;
   }
 
   clearSharedServiceData(): void {
