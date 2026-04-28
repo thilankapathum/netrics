@@ -1,8 +1,9 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {UrlService} from '../../url/url-service';
 import {BandDto} from '../../../models/pulse/BandDto';
 import {MapCellDto} from '../../../models/pulse/MapCellDto';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,27 @@ export class MapCellService {
 
   constructor(private http: HttpClient, private urlService: UrlService) {
     this.baseUrl = `${this.urlService.getPulseUrl()}/map-cells`;
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  getCellsByTile(z: number, x: number, y: number,
+                 standardKpiName: string, ratName: string,
+                 granularityName: string, date: string,
+                 areaName: string): Observable<MapCellDto[]> {
+
+    const params = new HttpParams()
+      .set('standardKpiName', standardKpiName)
+      .set('ratName', ratName)
+      .set('granularityName', granularityName)
+      .set('date', date)
+      .set('areaName', areaName);
+
+    return this.http.get<MapCellDto[]>(
+      `${this.baseUrl}/tile/${z}/${x}/${y}`, { params }
+    );
   }
 
   getCellsByStandardKpi(minLng: number, minLat: number, maxLng: number, maxLat: number, standardKpiName: string, ratName: string, granularityName: string, date:string, areaName:string) {

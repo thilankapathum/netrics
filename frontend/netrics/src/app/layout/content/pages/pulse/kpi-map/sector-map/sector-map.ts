@@ -7,7 +7,7 @@ import {MapCellDto} from '../../../../../../models/pulse/MapCellDto';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {DatePipe} from '@angular/common';
-import {debounceTime, filter, Subject, takeUntil} from 'rxjs';
+import {debounceTime, filter, finalize, forkJoin, Subject, takeUntil, tap} from 'rxjs';
 import {MapCellThrSetAndThresholds} from '../../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
 import {SharedService} from '../../../../../../service/pulse/shared-service';
 
@@ -38,6 +38,9 @@ export class SectorMap implements OnInit, OnChanges {
   private reloadTrigger = new Subject<void>();
   currentCells: MapCellDto[] = [];
 
+  private loadedTiles = new Map<string, MapCellDto[]>();
+  private activeTileKeys = new Set<string>();
+
   loadingCells: boolean = false;
   private isMapReady: boolean = false;
 
@@ -60,7 +63,14 @@ export class SectorMap implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['ratName'] || changes['granularityName'] || changes['standardKpiName'] || changes['date'] || changes['areaName']) {
+    // if (changes['ratName'] || changes['granularityName'] || changes['standardKpiName'] || changes['date'] || changes['areaName']) {
+    //   this.reloadTrigger.next();
+    // }
+
+    const filterChanged = changes['ratName'] || changes['standardKpiName'] || changes['granularityName'] || changes['date'] || changes['areaName'];
+
+    if (filterChanged) {
+      this.loadedTiles.clear();   // Filters changed → old tiles are stale
       this.reloadTrigger.next();
     }
   }
@@ -78,14 +88,18 @@ export class SectorMap implements OnInit, OnChanges {
 
     this.isMapReady = true;
 
-    //-- Reload when moving
-    this.map.on('moveend', () => {
+    this.map.on('moveend zoomend', () => {
       this.reloadTrigger.next();
-    });
-
-    this.map.on('zoomend', () => {
-      this.renderCells(this.currentCells);
     })
+
+    //-- Reload when moving
+    // this.map.on('moveend', () => {
+    //   this.reloadTrigger.next();
+    // });
+    //
+    // this.map.on('zoomend', () => {
+    //   this.renderCells(this.currentCells);
+    // })
 
   }
 
@@ -93,8 +107,45 @@ export class SectorMap implements OnInit, OnChanges {
 
     if (!this.hasValidInputs()) return;
 
-    this.loadingCells = true;
+    const zoom = Math.min(this.map.getZoom(), 14);
     const bounds = this.map.getBounds();
+    const tileRange = this.getTileRange(bounds, zoom);
+
+    const missingTiles: { z: number; x: number; y: number }[] = [];
+
+    for (let x = tileRange.minX; x <= tileRange.maxX; x++) {
+      for (let y = tileRange.minY; y <= tileRange.maxY; y++) {
+        const key = `${zoom}:${x}:${y}`;
+        if (!this.loadedTiles.has(key)) {
+          missingTiles.push({z: zoom, x, y});
+        }
+      }
+    }
+
+    if (missingTiles.length === 0) {
+      // All tiles already cached — just re-render from memory
+      this.renderFromCache(zoom, tileRange);
+      return;
+    }
+
+    this.loadingCells = true;
+
+    const requests = missingTiles.map(({z, x, y}) =>
+      this.mapCellService.getCellsByTile(
+        z, x, y,
+        this.standardKpiName, this.ratName,
+        this.granularityName, this.date, this.areaName
+      ).pipe(
+        tap(cells => this.loadedTiles.set(`${z}:${x}:${y}`, cells))
+      )
+    );
+
+    forkJoin(requests).pipe(
+      finalize(() => this.loadingCells = false)
+    ).subscribe({
+      next: () => this.renderFromCache(zoom, tileRange),
+      error: err => this.alertService.error(`Error loading tiles: ${err.message}`)
+    });
 
     const params: any = {
       minLat: bounds.getSouth(),
@@ -102,28 +153,28 @@ export class SectorMap implements OnInit, OnChanges {
       minLng: bounds.getWest(),
       maxLng: bounds.getEast()
     };
-
+    //
     this.sharedService.minLat = params.minLat;
     this.sharedService.maxLat = params.maxLat;
     this.sharedService.minLng = params.minLng;
     this.sharedService.maxLng = params.maxLng;
-
+    //
     this.sharedService.zoom = this.map.getZoom();
     this.sharedService.viewCoordinates = this.map.getCenter();
-
-    this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date, this.areaName).subscribe(
-      {
-        next: data => {
-          this.currentCells = data;
-          this.renderCells(this.currentCells);
-          this.loadingCells = false;
-        }, error: err => {
-          console.log(err);
-          this.alertService.error(`Error ${err.message}`);
-          this.loadingCells = false;
-        }
-      }
-    )
+    //
+    // this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date, this.areaName).subscribe(
+    //   {
+    //     next: data => {
+    //       this.currentCells = data;
+    //       this.renderCells(this.currentCells);
+    //       this.loadingCells = false;
+    //     }, error: err => {
+    //       console.log(err);
+    //       this.alertService.error(`Error ${err.message}`);
+    //       this.loadingCells = false;
+    //     }
+    //   }
+    // )
   }
 
   reloadCells(): void {
@@ -245,7 +296,6 @@ export class SectorMap implements OnInit, OnChanges {
     return match ? match.color : 'grey';
   }
 
-  //TODO: Open cell analysis window on sector click
   onSectorClick(sector: MapSector) {
     this.selectedCellName.emit(sector.cellName);
     this.openAnalysisDialog.emit(true);
@@ -260,6 +310,39 @@ export class SectorMap implements OnInit, OnChanges {
       this.granularityName &&
       this.date
     );
+  }
+
+  private renderFromCache(zoom: number, tileRange: { minX: number; maxX: number; minY: number; maxY: number }): void {
+
+    const allCells: MapCellDto[] = [];
+    for (let x = tileRange.minX; x <= tileRange.maxX; x++) {
+      for (let y = tileRange.minY; y <= tileRange.maxY; y++) {
+        const cells = this.loadedTiles.get(`${zoom}:${x}:${y}`);
+        if (cells) allCells.push(...cells);
+      }
+    }
+
+    // Deduplicate — a cell near a tile boundary appears in 2 tiles due to buffer
+    const unique = [...new Map(allCells.map(c => [c.cellName, c])).values()];
+    this.currentCells = unique;
+    this.renderCells(unique);
+  }
+
+  private latLngToTile(lat: number, lng: number, zoom: number): [number, number] {
+    const x = Math.floor((lng + 180) / 360 * Math.pow(2, zoom));
+    const y = Math.floor(
+      (1 - Math.log(Math.tan(lat * Math.PI / 180) +
+        1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)
+    );
+    return [x, y];
+  }
+
+  private getTileRange(bounds: L.LatLngBounds, zoom: number) {
+    const [minX, minY] = this.latLngToTile(
+      bounds.getNorth(), bounds.getWest(), zoom);
+    const [maxX, maxY] = this.latLngToTile(
+      bounds.getSouth(), bounds.getEast(), zoom);
+    return {minX, maxX: maxX, minY, maxY};
   }
 
 }
