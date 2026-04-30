@@ -23,6 +23,8 @@ import {CellMapLegend} from './cell-map-legend/cell-map-legend';
 import {CellMapLegendEdit} from './cell-map-legend-edit/cell-map-legend-edit';
 import {CellMapCellAnalysis} from './cell-map-cell-analysis/cell-map-cell-analysis';
 import {SharedService} from '../../../../../service/pulse/shared-service';
+import {SiteDto} from '../../../../../models/pulse/SiteDto';
+import {SiteService} from '../../../../../service/pulse/site-service';
 
 @Component({
   selector: 'app-kpi-map',
@@ -68,6 +70,10 @@ export class KpiMap implements OnInit {
 
   selectedCellName = signal<string>('');
 
+  searchSite = signal('');
+  selectedSite = signal<SiteDto | undefined>(undefined);
+  filteredSites = signal<SiteDto[]>([]);
+
   isThresholdsEditable = computed(() =>
     (this.isAdmin() && this.isUserAdmin()) || (!this.isAdmin() && this.isUserAuthorized()));
 
@@ -94,7 +100,8 @@ export class KpiMap implements OnInit {
               private standardKpiService: StandardkpiService,
               private dateService: DateService,
               private mapCellThresholdService: MapCellThresholdService,
-              private sharedService: SharedService) {
+              private sharedService: SharedService,
+              private siteService:SiteService) {
   }
 
   ngOnInit() {
@@ -325,6 +332,28 @@ export class KpiMap implements OnInit {
   onDateChange(event: any) {
     // Cally emits event.target.value
     this.date.set(event.target.value);
+  }
+
+  onSearchSite(value:string){
+    this.searchSite.set(value);
+
+    if (value.length > 2){
+      this.siteService.searchSites(value).subscribe({
+        next: data=>{
+          this.filteredSites.set(data);
+        }, error: error => {
+          console.log(error);
+          this.alertService.error(`Error searching site. ${error.status} ${error.statusText}`);
+        }
+      });
+    } else{
+      this.filteredSites.set([]);
+    }
+  }
+
+  selectSite(site:SiteDto){
+    // console.log('selected site', site)
+    this.selectedSite.set(site);
   }
 
   extractStandardKpiLabel(kpiName: string): string | undefined {

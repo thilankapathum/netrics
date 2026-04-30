@@ -11,6 +11,7 @@ import {debounceTime, filter, finalize, forkJoin, Subject, takeUntil, tap} from 
 import {MapCellThrSetAndThresholds} from '../../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
 import {SharedService} from '../../../../../../service/pulse/shared-service';
 import {SiteDto} from '../../../../../../models/pulse/SiteDto';
+import {SiteService} from '../../../../../../service/pulse/site-service';
 
 @Component({
   selector: 'app-sector-map',
@@ -33,8 +34,9 @@ export class SectorMap implements OnInit, OnChanges {
   @Input() mapCellThrSetAndThresholds = signal<MapCellThrSetAndThresholds | undefined>(undefined);
   @Output() selectedCellName = new EventEmitter<string>();
   @Output() openAnalysisDialog = new EventEmitter<boolean>();
-  @Input() showSiteLabels:boolean = true;
-
+  @Input() showSiteLabels: boolean = true;
+  // @Input() selectedSite = signal<SiteDto | undefined>(undefined);
+  @Input() selectedSite: SiteDto = {siteCode: '', siteName: ''};
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
   private labelLayer = new L.LayerGroup();
@@ -43,6 +45,9 @@ export class SectorMap implements OnInit, OnChanges {
   private siteLabelTrigger = new Subject<void>();
 
   currentCells: MapCellDto[] = [];
+
+  // filteredSites = signal<SiteDto[]>([]);
+  private readonly SITE_FLY_ZOOM = 15;
 
   private loadedTiles = new Map<string, MapCellDto[]>();
   private loadedSiteTiles = new Map<string, SiteDto[]>();
@@ -55,7 +60,8 @@ export class SectorMap implements OnInit, OnChanges {
 
   constructor(private mapCellService: MapCellService,
               private alertService: AlertService,
-              private sharedService: SharedService,) {
+              private sharedService: SharedService,
+              private siteService: SiteService) {
   }
 
   ngOnInit(): void {
@@ -81,6 +87,9 @@ export class SectorMap implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+
+    // console.log('changes', changes);
+
     const filterChanged = changes['ratName'] ||
       changes['standardKpiName'] ||
       changes['granularityName'] ||
@@ -95,11 +104,16 @@ export class SectorMap implements OnInit, OnChanges {
     }
 
     if (changes['showSiteLabels']) {
-      if(this.showSiteLabels){
+      if (this.showSiteLabels) {
         this.siteLabelTrigger.next();
       } else {
         this.labelLayer.clearLayers();
       }
+    }
+
+    if (changes['selectedSite']) {
+      // console.log('change selectedSite', this.selectedSite);
+      this.flyToSite(this.selectedSite);
     }
   }
 
@@ -423,6 +437,16 @@ export class SectorMap implements OnInit, OnChanges {
     this.openAnalysisDialog.emit(true);
 
     // alert(`${sector.cellName}\n${sector.kpiLabel}: ${sector.kpiValue}`);
+  }
+
+
+  flyToSite(site: SiteDto) {
+    // this.searchSite.set(site.siteCode);
+    // this.filteredSites.set([]);
+    this.map.flyTo([site.latitude!, site.longitude!], this.SITE_FLY_ZOOM, {
+      animate: true,
+      duration: 1
+    });
   }
 
   hasValidInputs(): boolean {

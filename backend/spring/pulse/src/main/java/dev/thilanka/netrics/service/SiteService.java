@@ -36,7 +36,12 @@ public interface SiteService {
     List<SiteCsvImportResultDto> updateSitesWithResults(List<SiteDto> dtos);
 
     Integer reloadSiteCountWithMissingInfo();
+
     Integer getSiteCountWithMissingInfo();
+
+    List<SiteDto> reloadSites();
+
+    List<SiteDto> searchSites(String siteCode);
 
 
 }

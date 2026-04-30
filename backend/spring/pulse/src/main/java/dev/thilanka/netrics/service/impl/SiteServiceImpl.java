@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
+import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.SiteCsvImportResultDto;
 import dev.thilanka.netrics.dto.SiteDto;
 import dev.thilanka.netrics.dto.SiteUpdateResult;
@@ -9,14 +10,13 @@ import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.service.SiteService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,9 +28,18 @@ public class SiteServiceImpl implements SiteService {
 
     private Integer siteCountWithMissingInfo = 0;
 
+    private volatile List<SiteDto> cachedSites = Collections.emptyList();
+
+    @PostConstruct
+    public void initSiteCache() {
+        reloadSites();
+        log.info("Site cache initialized with {} sites", cachedSites.size());
+    }
+
     @Override
     @CacheEvict(value = "siteTiles", allEntries = true)
     public Site createSite(Site site) {
+        reloadSites();
         return siteRepository.save(site);
     }
 
@@ -124,12 +133,10 @@ public class SiteServiceImpl implements SiteService {
                 updatingSite.setLongitude(site.getLongitude());
             }
 
+            reloadSites();
             return siteRepository.save(updatingSite);
 
         } else throw new ResourceNotFoundException("Site", "Site ID", site.getSiteCode());
-
-//        existingSite.ifPresent(s -> site.setId(s.getId()));
-//        return siteRepository.save(updatin);
     }
 
     @Override
@@ -160,6 +167,7 @@ public class SiteServiceImpl implements SiteService {
         }
 
         Site updatedSite = siteRepository.save(site);
+        reloadSites();
         return new SiteUpdateResult(mapper.siteToDto(updatedSite), warnings);
     }
 
@@ -175,6 +183,7 @@ public class SiteServiceImpl implements SiteService {
                 log.warn("Error updating site: {} | {}", dto.siteCode(), e.getMessage());
             }
         }
+        reloadSites();
         return updatedSites;
     }
 
@@ -186,7 +195,6 @@ public class SiteServiceImpl implements SiteService {
             try {
                 SiteUpdateResult result = updateSite(dto);
                 String errorMessage = String.join(", ", result.warnings());
-//                SiteDto updatedSite = updateSite(dto);
                 if (result.warnings().isEmpty()) {
                     importResultDtos.add(new SiteCsvImportResultDto(result.siteDto(), CsvImportStatus.SUCCESS, ""));
                 } else {
@@ -213,5 +221,38 @@ public class SiteServiceImpl implements SiteService {
     @Override
     public Integer getSiteCountWithMissingInfo() {
         return this.siteCountWithMissingInfo;
+    }
+
+    @Override
+    public List<SiteDto> reloadSites() {
+
+        List<SiteDto> loaded = siteRepository.findAll()
+                .stream()
+                .map(mapper::siteToDto)
+                .sorted(Comparator.comparing(SiteDto::siteCode))  // sort once at load
+                .collect(Collectors.toList());
+
+        this.cachedSites = Collections.unmodifiableList(loaded); // immutable snapshot
+        return this.cachedSites;
+    }
+
+    @Override
+    public List<SiteDto> searchSites(String siteCode) {
+        if (cachedSites.isEmpty()) {
+            log.warn("Site List is Empty. Reloading...");
+            reloadSites();
+        }
+
+        if (siteCode.isBlank()) {
+            return Collections.emptyList();
+        } else {
+            String lower = siteCode.toLowerCase();
+
+            return cachedSites.stream()
+                    .filter(s-> s.siteCode().toLowerCase().contains(lower))
+                    .limit(10)
+                    .toList();
+        }
+
     }
 }

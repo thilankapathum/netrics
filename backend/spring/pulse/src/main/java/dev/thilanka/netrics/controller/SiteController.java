@@ -100,4 +100,10 @@ public class SiteController {
         return ResponseEntity.ok(count);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("search")
+    public ResponseEntity<List<SiteDto>> searchSites(@RequestParam("search") String search){
+        return ResponseEntity.ok(siteService.searchSites(search));
+    }
+
 }

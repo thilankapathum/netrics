@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {UrlService} from '../url/url-service';
 import {SiteDto} from '../../models/pulse/SiteDto';
 import {Observable} from 'rxjs';
@@ -28,6 +28,11 @@ export class SiteService {
         }
       }
     );
+  }
+
+  searchSites(search:string):Observable<SiteDto[]>{
+    const params = new HttpParams().set('search', search);
+    return this.http.get<SiteDto[]>(`${this.baseUrl}/search`,{params});
   }
 
   exportSitesWithMissingInfo() {

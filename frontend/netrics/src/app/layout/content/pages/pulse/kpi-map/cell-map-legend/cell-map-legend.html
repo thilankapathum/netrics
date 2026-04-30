@@ -8,21 +8,17 @@
   <ul class="list" [hidden]="!isThresholdAvailable()">
     @for (threshold of sortedThresholds; track $index; let i = $index) {
 
-      <li class="list-row">
-        <div class="text-2xl font-thin opacity-30 tabular-nums">
-          {{ i + 1 }}
-        </div>
-
+      <li class="list-row items-center">
         <div
-          class="size-8 rounded-box"
+          class="size-4 rounded-box"
           [style.background]="threshold.color">
         </div>
 
-        <div class="list-col-grow">
+        <div class="flex flex-row gap-3 items-center">
           <div class="font-semibold">
             {{ threshold.minValue }} - {{ threshold.maxValue }}
           </div>
-          <div class="text-xs  opacity-60">{{ threshold.label }}</div>
+          <div class="text-xs text-base-content/60">{{ threshold.label }}</div>
         </div>
       </li>
     }
@@ -45,8 +41,8 @@
 
   <div class="flex flex-col mt-auto p-4 gap-2">
     <div class="flex align-middle">
-      <label class="text-base-content">
-        <input type="checkbox" class="checkbox checkbox-sm" (change)="changeShowSiteLabels()" [(ngModel)]="showSiteLabels" />
+      <label class="text-base-content/80 text-xs">
+        <input type="checkbox" class="checkbox checkbox-xs mr-2" (change)="changeShowSiteLabels()" [(ngModel)]="showSiteLabels" />
         Show Labels
       </label>
     </div>
