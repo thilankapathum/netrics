@@ -62,7 +62,7 @@
         </select>
       </div>
       <div class="flex flex-row gap-2 items-center">
-        <button [disabled]="loadingAll()"  #startDateBtn
+        <button [disabled]="loadingAll()" #startDateBtn
                 class="input input-bordered input-sm w-auto"
                 popovertarget="cally-popover-start" id="cally-start"
                 style="anchor-name:--cally-start">
@@ -102,8 +102,9 @@
                       [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
                       [areaName]="area()!"
                       [loadingAll]="loadingAll()"
-      (selectedCellName)="onCellSelection($event)"
-      (openAnalysisDialog)="openCellMapCellAnalysisModal()"></app-sector-map>
+                      (selectedCellName)="onCellSelection($event)"
+                      (openAnalysisDialog)="openCellMapCellAnalysisModal()"
+                      [showSiteLabels]="showSiteLabels"></app-sector-map>
 
       <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
                            [standardKpiLabel]="extractStandardKpiLabel(standardKpi()!)"
@@ -112,7 +113,9 @@
                            [isThresholdAvailable]="isThresholdAvailable"
                            (openCellMapLegendEditModal)="openCellMapLegendEditModal()"
                            [isThresholdEditable]="isThresholdsEditable()"
-                           [isThresholdsCustomizable]="isThresholdsCustomizable()"></app-cell-map-legend>
+                           [isThresholdsCustomizable]="isThresholdsCustomizable()"
+                           (isShowSiteLabelsChange)="onShowSiteLabelsChange($event)"
+      ></app-cell-map-legend>
     </div>
   </section>
 </div>
@@ -127,4 +130,4 @@
                             [standardKpiName]="standardKpi"
                             [ratName]="rat"
                             [granularityName]="granularity"
-[cellName]="selectedCellName()"></app-cell-map-cell-analysis>
+                            [cellName]="selectedCellName()"></app-cell-map-cell-analysis>

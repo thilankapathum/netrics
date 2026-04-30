@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.MapCell;
+import dev.thilanka.netrics.dto.SiteDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,6 +12,8 @@ public interface MapCellService {
     List<MapCell> getMapCellsByTile(int z, int x, int y,
                                     String standardKpiName, String ratName,
                                     String granularityName, String date, String areaName);
+
+    List<SiteDto> getSitesByTile(int z, int x, int y);
 
     byte[] getTile(int z, int x, int y,
                    Long standardKpiId,

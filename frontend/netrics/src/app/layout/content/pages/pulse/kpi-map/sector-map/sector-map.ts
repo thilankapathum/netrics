@@ -10,6 +10,7 @@ import {DatePipe} from '@angular/common';
 import {debounceTime, filter, finalize, forkJoin, Subject, takeUntil, tap} from 'rxjs';
 import {MapCellThrSetAndThresholds} from '../../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
 import {SharedService} from '../../../../../../service/pulse/shared-service';
+import {SiteDto} from '../../../../../../models/pulse/SiteDto';
 
 @Component({
   selector: 'app-sector-map',
@@ -32,14 +33,22 @@ export class SectorMap implements OnInit, OnChanges {
   @Input() mapCellThrSetAndThresholds = signal<MapCellThrSetAndThresholds | undefined>(undefined);
   @Output() selectedCellName = new EventEmitter<string>();
   @Output() openAnalysisDialog = new EventEmitter<boolean>();
+  @Input() showSiteLabels:boolean = true;
 
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
+  private labelLayer = new L.LayerGroup();
+
   private reloadTrigger = new Subject<void>();
+  private siteLabelTrigger = new Subject<void>();
+
   currentCells: MapCellDto[] = [];
 
   private loadedTiles = new Map<string, MapCellDto[]>();
-  private activeTileKeys = new Set<string>();
+  private loadedSiteTiles = new Map<string, SiteDto[]>();
+
+  private readonly LABEL_ZOOM_THRESHOLD = 13;
+  private readonly SITE_TILE_MAX_ZOOM = 14;
 
   loadingCells: boolean = false;
   private isMapReady: boolean = false;
@@ -60,23 +69,41 @@ export class SectorMap implements OnInit, OnChanges {
     ).subscribe(() => {
       this.loadCells();
     });
+
+    this.siteLabelTrigger.pipe(
+      filter(() => this.isMapReady),
+      filter(() => this.map.getZoom() >= this.LABEL_ZOOM_THRESHOLD),
+      filter(() => this.showSiteLabels),
+      debounceTime(250)
+    ).subscribe(() => {
+      this.loadSiteLabels()
+    })
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // if (changes['ratName'] || changes['granularityName'] || changes['standardKpiName'] || changes['date'] || changes['areaName']) {
-    //   this.reloadTrigger.next();
-    // }
-
-    const filterChanged = changes['ratName'] || changes['standardKpiName'] || changes['granularityName'] || changes['date'] || changes['areaName'];
+    const filterChanged = changes['ratName'] ||
+      changes['standardKpiName'] ||
+      changes['granularityName'] ||
+      changes['date'] ||
+      changes['areaName'];
 
     if (filterChanged) {
       this.loadedTiles.clear();   // Filters changed → old tiles are stale
+      this.loadedSiteTiles.clear();
       this.reloadTrigger.next();
+      this.siteLabelTrigger.next();
+    }
+
+    if (changes['showSiteLabels']) {
+      if(this.showSiteLabels){
+        this.siteLabelTrigger.next();
+      } else {
+        this.labelLayer.clearLayers();
+      }
     }
   }
 
   initMap() {
-    // this.map = L.map('map').setView([7.8731, 80.7718], 8);
     const viewCoordinates = this.sharedService.viewCoordinates;
     const zoom = this.sharedService.zoom;
     this.map = L.map('map').setView(viewCoordinates, zoom);
@@ -85,22 +112,25 @@ export class SectorMap implements OnInit, OnChanges {
       {attribution: 'OSM'}).addTo(this.map);
 
     this.sectorLayer.addTo(this.map);
+    this.labelLayer.addTo(this.map);
 
     this.isMapReady = true;
 
-    this.map.on('moveend zoomend', () => {
+    this.map.on('moveend', () => {
       this.reloadTrigger.next();
-    })
+      this.siteLabelTrigger.next();
+    });
 
-    //-- Reload when moving
-    // this.map.on('moveend', () => {
-    //   this.reloadTrigger.next();
-    // });
-    //
-    // this.map.on('zoomend', () => {
-    //   this.renderCells(this.currentCells);
-    // })
+    this.map.on('zoomend', () => {
+      this.loadedTiles.clear();
+      this.reloadTrigger.next();
 
+      if (!this.showSiteLabels || this.map.getZoom() < this.LABEL_ZOOM_THRESHOLD) {
+        this.labelLayer.clearLayers();
+      } else {
+        this.siteLabelTrigger.next();
+      }
+    });
   }
 
   loadCells() {
@@ -147,35 +177,92 @@ export class SectorMap implements OnInit, OnChanges {
       error: err => this.alertService.error(`Error loading tiles: ${err.message}`)
     });
 
-    const params: any = {
-      minLat: bounds.getSouth(),
-      maxLat: bounds.getNorth(),
-      minLng: bounds.getWest(),
-      maxLng: bounds.getEast()
-    };
-    //
-    this.sharedService.minLat = params.minLat;
-    this.sharedService.maxLat = params.maxLat;
-    this.sharedService.minLng = params.minLng;
-    this.sharedService.maxLng = params.maxLng;
-    //
+    const bounds2 = this.map.getBounds();
+
+    this.sharedService.minLat = bounds2.getSouth();
+    this.sharedService.maxLat = bounds2.getNorth();
+    this.sharedService.minLng = bounds2.getWest();
+    this.sharedService.maxLng = bounds2.getEast();
+
     this.sharedService.zoom = this.map.getZoom();
     this.sharedService.viewCoordinates = this.map.getCenter();
-    //
-    // this.mapCellService.getCellsByStandardKpi(params.minLng, params.minLat, params.maxLng, params.maxLat, this.standardKpiName, this.ratName, this.granularityName, this.date, this.areaName).subscribe(
-    //   {
-    //     next: data => {
-    //       this.currentCells = data;
-    //       this.renderCells(this.currentCells);
-    //       this.loadingCells = false;
-    //     }, error: err => {
-    //       console.log(err);
-    //       this.alertService.error(`Error ${err.message}`);
-    //       this.loadingCells = false;
-    //     }
-    //   }
-    // )
   }
+
+  private loadSiteLabels(): void {
+    const zoom = Math.min(this.map.getZoom(), this.SITE_TILE_MAX_ZOOM);
+    const bounds = this.map.getBounds();
+    const tileRange = this.getTileRange(bounds, zoom);
+
+    const missingTiles: { z: number; x: number; y: number }[] = [];
+
+    for (let x = tileRange.minX; x <= tileRange.maxX; x++) {
+      for (let y = tileRange.minY; y <= tileRange.maxY; y++) {
+        const key = `site:${zoom}:${x}:${y}`;
+        if (!this.loadedSiteTiles.has(key)) {
+          missingTiles.push({z: zoom, x, y});
+        }
+      }
+    }
+
+    if (missingTiles.length === 0) {
+      this.renderSiteLabelsFromCache(zoom, tileRange);
+      return;
+    }
+
+    const requests = missingTiles.map(({z, x, y}) =>
+      this.mapCellService.getSitesByTile(z, x, y).pipe(
+        tap(sites => this.loadedSiteTiles.set(`site:${z}:${x}:${y}`, sites))
+      )
+    );
+
+    forkJoin(requests).subscribe({
+      next: () => this.renderSiteLabelsFromCache(zoom, tileRange),
+      error: err => console.error('Site labels failed:', err)
+    });
+
+  }
+
+  private renderSiteLabelsFromCache(
+    zoom: number,
+    tileRange: {
+      minX: number;
+      maxX: number;
+      minY: number;
+      maxY: number
+    }): void {
+
+    this.labelLayer.clearLayers();
+
+    const allSites: SiteDto[] = [];
+    for (let x = tileRange.minX; x <= tileRange.maxX; x++) {
+      for (let y = tileRange.minY; y <= tileRange.maxY; y++) {
+        const sites = this.loadedSiteTiles.get(`site:${zoom}:${x}:${y}`);
+        if (sites) allSites.push(...sites);
+      }
+    }
+
+    // Deduplicate by siteCode (tile boundaries can return same site twice)
+    const unique = [...new Map(allSites.map(s => [s.siteCode, s])).values()];
+
+    unique.forEach(site => {
+      const icon = L.divIcon({
+        className: '',
+        html: `
+          <div style="transform:translate(-50%,-130%); pointer-events:none;">
+            <span style="font-size:12px; font-family: 'Inter', sans-serif;  font-weight:600; color:#3F3F46;
+                          padding:1px 5px; white-space:nowrap;
+                         ">
+              ${site.siteCode}
+            </span>
+          </div>`,
+        iconAnchor: [0, 0]
+      });
+
+      L.marker([site.latitude!, site.longitude!], {icon, interactive: false})
+        .addTo(this.labelLayer);
+    });
+  }
+
 
   reloadCells(): void {
     if (!this.map) return; // map not ready
@@ -267,8 +354,6 @@ export class SectorMap implements OnInit, OnChanges {
       weight: 3,
       fillOpacity: 0.6
     });
-
-    // polygon.bringToFront();
   }
 
   resetSectorStyle(polygon: L.Polygon, defaultStyle: any) {
@@ -279,10 +364,6 @@ export class SectorMap implements OnInit, OnChanges {
     const zoom = this.map.getZoom();
     const zoomFactor = (20 - zoom) / 10; // normalized inverse
     return baseRadius * zoomFactor;
-
-    // const scale = Math.pow(1.25, 12 - zoom);
-    // const dynamic = baseRadius * scale;
-    // return Math.min(Math.max(dynamic, baseRadius * 0.3), baseRadius * 1.5);
   }
 
   getPolygonColor(kpiValue: number): string {
@@ -295,6 +376,47 @@ export class SectorMap implements OnInit, OnChanges {
 
     return match ? match.color : 'grey';
   }
+
+  // private renderSiteLabels(cells: MapCellDto[]): void {
+  //   const currentZoom = this.map.getZoom();
+  //
+  //   // Hide labels when zoomed too far out — too many sites, too little space
+  //   if (currentZoom < this.LABEL_ZOOM_THRESHOLD) return;
+  //
+  //   // Group cells by siteCode — one label per site regardless of cell count
+  //   const siteMap = new Map<string, {
+  //     lat: number;
+  //     lng: number;
+  //     siteCode: string;
+  //     siteName: string;
+  //     cellCount: number
+  //   }>();
+  //
+  //   cells.forEach(cell => {
+  //     if (!siteMap.has(cell.siteCode)) {
+  //       siteMap.set(cell.siteCode, {
+  //         lat: cell.latitude,
+  //         lng: cell.longitude,
+  //         siteCode: cell.siteCode,
+  //         siteName: cell.siteName,
+  //         cellCount: 1
+  //       });
+  //     } else {
+  //       siteMap.get(cell.siteCode)!.cellCount++;
+  //     }
+  //   });
+  //
+  //   siteMap.forEach(site => {
+  //     const icon = L.divIcon({
+  //       className: 'site-label',
+  //       html: `<div>${site.siteCode}</div>`,
+  //       iconSize: [0, 0]
+  //     });
+  //
+  //     const marker = L.marker([site.lat, site.lng], {icon, interactive: false});
+  //     marker.addTo(this.labelLayer);
+  //   });
+  // }
 
   onSectorClick(sector: MapSector) {
     this.selectedCellName.emit(sector.cellName);

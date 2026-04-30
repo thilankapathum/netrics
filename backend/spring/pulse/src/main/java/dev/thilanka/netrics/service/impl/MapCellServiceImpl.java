@@ -2,6 +2,7 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.BoundingBox;
 import dev.thilanka.netrics.dto.MapCell;
+import dev.thilanka.netrics.dto.SiteDto;
 import dev.thilanka.netrics.entity.Area;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
@@ -27,6 +28,8 @@ public class MapCellServiceImpl implements MapCellService {
     private final AreaService areaService;
     private final TileUtils tileUtils;
 
+    private static final Double BUFFER_DEGREES = 0.005;
+
 
     @Override
     public List<MapCell> getMapCellsByKpi(Double minLng, Double minLat, Double maxLng, Double maxLat, String standardKpiName, String ratName, String granularityName, String date, String areaName) {
@@ -48,7 +51,7 @@ public class MapCellServiceImpl implements MapCellService {
     public List<MapCell> getMapCellsByTile(int z, int x, int y, String standardKpiName, String ratName, String granularityName, String date, String areaName) {
         BoundingBox bbox = tileUtils.tileToBoundingBox(x, y, z);
 
-        double bufferDegrees = 0.005;
+        double bufferDegrees = BUFFER_DEGREES;
 
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
@@ -59,6 +62,17 @@ public class MapCellServiceImpl implements MapCellService {
 
         return mapCellRepository.queryCellsByKpiTile(bbox.minLng(), bbox.minLat(), bbox.maxLng(), bbox.maxLat(),
                 bufferDegrees, standardKpi.getId(), rat.getId(), granularity.getId(), startTime, endTime, area.getId());
+    }
+
+    @Override
+    @Cacheable(
+            value = "siteTiles",
+            key = "#z + '_' + #x + '_' + #y"
+    )
+    public List<SiteDto> getSitesByTile(int z, int x, int y) {
+        BoundingBox bbox = tileUtils.tileToBoundingBox(x, y, z);
+
+        return mapCellRepository.querySitesByTile(bbox.minLng(), bbox.minLat(), bbox.maxLng(), bbox.maxLat());
     }
 
     @Override

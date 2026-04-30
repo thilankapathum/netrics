@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.dto.MapCell;
+import dev.thilanka.netrics.dto.SiteDto;
 import dev.thilanka.netrics.entity.KpiDay;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -84,17 +85,34 @@ public interface MapCellRepository extends JpaRepository<KpiDay, Long> {
                 )
             """, nativeQuery = true)
     List<MapCell> queryCellsByKpiTile(
-            @Param("minLng")        Double minLng,
-            @Param("minLat")        Double minLat,
-            @Param("maxLng")        Double maxLng,
-            @Param("maxLat")        Double maxLat,
+            @Param("minLng") Double minLng,
+            @Param("minLat") Double minLat,
+            @Param("maxLng") Double maxLng,
+            @Param("maxLat") Double maxLat,
             @Param("bufferDegrees") Double bufferDegrees,
             @Param("standardKpiId") Long standardKpiId,
-            @Param("ratId")         Long ratId,
+            @Param("ratId") Long ratId,
             @Param("granularityId") Long granularityId,
-            @Param("startTime")     LocalDateTime startTime,
-            @Param("endTime")       LocalDateTime endTime,
-            @Param("areaId")        Long areaId
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("areaId") Long areaId
+    );
+
+
+    @Query(value = """
+            SELECT
+                s.site_code,
+                s.site_name,
+                s.latitude,
+                s.longitude
+            FROM sites s
+            WHERE s.geom && ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)
+            """, nativeQuery = true)
+    List<SiteDto> querySitesByTile(
+            @Param("minLng") Double minLng,
+            @Param("minLat") Double minLat,
+            @Param("maxLng") Double maxLng,
+            @Param("maxLat") Double maxLat
     );
 
 
@@ -147,5 +165,5 @@ public interface MapCellRepository extends JpaRepository<KpiDay, Long> {
                    @Param("granularityId") Long granularityId,
                    @Param("startTime") LocalDateTime startTime,
                    @Param("endTime") LocalDateTime endTime,
-                   @Param("areaId") Long areaId );
+                   @Param("areaId") Long areaId);
 }

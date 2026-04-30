@@ -11,6 +11,7 @@ import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.service.SiteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class SiteServiceImpl implements SiteService {
     private Integer siteCountWithMissingInfo = 0;
 
     @Override
+    @CacheEvict(value = "siteTiles", allEntries = true)
     public Site createSite(Site site) {
         return siteRepository.save(site);
     }
@@ -104,6 +106,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
+    @CacheEvict(value = "siteTiles", allEntries = true)
     public Site updateSite(Site site) {
         Optional<Site> existingSite = siteRepository.findBySiteCode(site.getSiteCode());
 
@@ -130,6 +133,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
+    @CacheEvict(value = "siteTiles", allEntries = true)
     public SiteUpdateResult updateSite(SiteDto siteDto) {
 
         List<String> warnings = new ArrayList<>();
@@ -160,6 +164,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
+    @CacheEvict(value = "siteTiles", allEntries = true)
     public List<SiteDto> updateSites(List<SiteDto> siteDtos) {
         List<SiteDto> updatedSites = new ArrayList<>();
 

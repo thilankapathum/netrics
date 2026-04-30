@@ -4,6 +4,7 @@ import {UrlService} from '../../url/url-service';
 import {BandDto} from '../../../models/pulse/BandDto';
 import {MapCellDto} from '../../../models/pulse/MapCellDto';
 import {Observable} from 'rxjs';
+import {SiteDto} from '../../../models/pulse/SiteDto';
 
 @Injectable({
   providedIn: 'root'
@@ -32,11 +33,15 @@ export class MapCellService {
       .set('areaName', areaName);
 
     return this.http.get<MapCellDto[]>(
-      `${this.baseUrl}/tile/${z}/${x}/${y}`, { params }
+      `${this.baseUrl}/tile/${z}/${x}/${y}`, {params}
     );
   }
 
-  getCellsByStandardKpi(minLng: number, minLat: number, maxLng: number, maxLat: number, standardKpiName: string, ratName: string, granularityName: string, date:string, areaName:string) {
+  getSitesByTile(z: number, x: number, y: number):Observable<SiteDto[]> {
+    return this.http.get<Array<SiteDto>>(`${this.baseUrl}/site-tile/${z}/${x}/${y}`)
+  }
+
+  getCellsByStandardKpi(minLng: number, minLat: number, maxLng: number, maxLat: number, standardKpiName: string, ratName: string, granularityName: string, date: string, areaName: string) {
     return this.http.get<Array<MapCellDto>>(`${this.baseUrl}/standard-kpi`, {
       params: {
         minLng,

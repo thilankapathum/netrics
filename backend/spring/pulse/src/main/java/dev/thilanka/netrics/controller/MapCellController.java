@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.MapCell;
+import dev.thilanka.netrics.dto.SiteDto;
 import dev.thilanka.netrics.service.MapCellService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,6 @@ public class MapCellController {
     }
 
 
-    // Controller
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("tile/{z}/{x}/{y}")
     public ResponseEntity<List<MapCell>> getCellsByTile(
@@ -48,6 +48,17 @@ public class MapCellController {
                 .getMapCellsByTile(z, x, y, standardKpiName, ratName,
                         granularityName, date, areaName);
         return ResponseEntity.ok(cells);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("site-tile/{z}/{x}/{y}")
+    public ResponseEntity<List<SiteDto>> getSitesByTile(
+            @PathVariable int z,
+            @PathVariable int x,
+            @PathVariable int y
+    ){
+        List<SiteDto> sites = mapCellService.getSitesByTile(z, x, y);
+        return ResponseEntity.ok(sites);
     }
 
 

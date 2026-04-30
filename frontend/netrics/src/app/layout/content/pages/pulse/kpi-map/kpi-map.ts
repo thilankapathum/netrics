@@ -77,6 +77,7 @@ export class KpiMap implements OnInit {
   loadingAreaTypes: boolean = false;
   loadingAreas: boolean = false;
   savingThresholds: boolean = false;
+  showSiteLabels:boolean = true;
 
   showCellMapLegendEditModal = signal<boolean>(false);
   showCellMapCellAnalysisModal = signal<boolean>(false);
@@ -121,6 +122,7 @@ export class KpiMap implements OnInit {
 
   setGranularity(granularity: 'day-average' | 'busy-hour') {
     this.granularity.set(granularity);
+    this.getThrSetAndThresholdsByThrSetId(this.standardKpi()!,this.rat()!,this.granularity()!,this.isAdmin());
     // this.getWorstCellsAndKpiTrends(this.bandWise, this.selectedBand(), this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.excludeZeroes, this.selectedGranularity(), this.area()!, this.aggregation());
   }
 
@@ -399,5 +401,9 @@ export class KpiMap implements OnInit {
 
   onCellSelection(cellName: string) {
     this.selectedCellName.set(cellName);
+  }
+
+  onShowSiteLabelsChange(showSiteLabels: boolean): void {
+    this.showSiteLabels = showSiteLabels;
   }
 }
