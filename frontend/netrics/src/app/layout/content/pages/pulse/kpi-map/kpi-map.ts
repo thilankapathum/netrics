@@ -25,6 +25,8 @@ import {CellMapCellAnalysis} from './cell-map-cell-analysis/cell-map-cell-analys
 import {SharedService} from '../../../../../service/pulse/shared-service';
 import {SiteDto} from '../../../../../models/pulse/SiteDto';
 import {SiteService} from '../../../../../service/pulse/site-service';
+import {BandDto} from '../../../../../models/pulse/BandDto';
+import {BandService} from '../../../../../service/pulse/band-service';
 
 @Component({
   selector: 'app-kpi-map',
@@ -60,6 +62,11 @@ export class KpiMap implements OnInit {
 
   standardKpi = signal<string | undefined>(undefined);
   standardKpis: StandardKpiDto[] = [];
+
+  band = signal<string | undefined>(undefined);
+  bands : BandDto[] = [];
+  // filterByBands:boolean = false;
+  activeBand = signal<string>('');
 
   date = signal<string | undefined>(undefined);
 
@@ -101,7 +108,8 @@ export class KpiMap implements OnInit {
               private dateService: DateService,
               private mapCellThresholdService: MapCellThresholdService,
               private sharedService: SharedService,
-              private siteService:SiteService) {
+              private siteService:SiteService,
+              private bandService: BandService) {
   }
 
   ngOnInit() {
@@ -293,10 +301,23 @@ export class KpiMap implements OnInit {
         } else {
           this.date.set(formattedDate);
         }
+        this.getBandsByRat(this.rat()!);
         this.sharedService.clearAll();
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving latest date`);
+        this.alertService.error(`Error retrieving latest date. ${error.status}:${error.statusText}`);
+      }
+    })
+  }
+
+  getBandsByRat(ratName:string){
+    this.bandService.getBandsByRatName(ratName).subscribe({
+      next: data => {
+        this.bands = data;
+        console.log(this.bands);
+      }, error: error => {
+        console.log(error);
+        this.alertService.error(`Error retrieving Bands. ${error.status}:${error.statusText}`);
       }
     })
   }
@@ -323,6 +344,15 @@ export class KpiMap implements OnInit {
     this.standardKpi.set(kpi);
     this.getThrSetAndThresholdsByThrSetId(kpi, ratName, this.granularity()!, this.isAdmin());
   }
+
+  onActiveBandChange(band: string): void {
+    this.activeBand.set(band);
+  }
+
+  // selectBand(bandName:string):void{
+  //   this.band.set(bandName);
+  //   console.log('Selected Band-kpimap', this.band());
+  // }
 
   onLegendTypeChange(type: boolean) {
     this.isAdmin.set(type);
@@ -435,4 +465,11 @@ export class KpiMap implements OnInit {
   onShowSiteLabelsChange(showSiteLabels: boolean): void {
     this.showSiteLabels = showSiteLabels;
   }
+
+  // onFilterByBandsChange(filter: boolean): void {
+  //   this.filterByBands = filter;
+  //   if (!filter) {
+  //     this.band.set('');    // clear the band signal when filter is disabled
+  //   }
+  // }
 }

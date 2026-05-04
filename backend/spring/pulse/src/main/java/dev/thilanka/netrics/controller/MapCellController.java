@@ -51,6 +51,25 @@ public class MapCellController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("tile-band/{z}/{x}/{y}")
+    public ResponseEntity<List<MapCell>> getCellsByTileAndBand(
+            @PathVariable int z,
+            @PathVariable int x,
+            @PathVariable int y,
+            @RequestParam String standardKpiName,
+            @RequestParam String ratName,
+            @RequestParam String granularityName,
+            @RequestParam String date,
+            @RequestParam String areaName,
+            @RequestParam String bandName) {
+
+        List<MapCell> cells = mapCellService
+                .getMapCellsByTileAndBand(z, x, y, standardKpiName, ratName,
+                        granularityName, date, areaName, bandName);
+        return ResponseEntity.ok(cells);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("site-tile/{z}/{x}/{y}")
     public ResponseEntity<List<SiteDto>> getSitesByTile(
             @PathVariable int z,

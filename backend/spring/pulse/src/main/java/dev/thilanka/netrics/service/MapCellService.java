@@ -13,6 +13,10 @@ public interface MapCellService {
                                     String standardKpiName, String ratName,
                                     String granularityName, String date, String areaName);
 
+    List<MapCell> getMapCellsByTileAndBand(int z, int x, int y,
+                                           String standardKpiName, String ratName,
+                                           String granularityName, String date, String areaName, String bandName);
+
     List<SiteDto> getSitesByTile(int z, int x, int y);
 
     byte[] getTile(int z, int x, int y,

@@ -1,15 +1,9 @@
-<!--<p>sector-map works!</p>-->
-<!--<progress [hidden]="!loadingCells" class="progress w-56"></progress>-->
-<!--<div id="map"></div>-->
+
 <div class="map-container">
   <div id="map" class="rounded-md"></div>
   @if (loadingCells || loadingAll) {
     <div class="map-loading-overlay">
-      <!--      <div class="p-6 bg-base-100/50 flex rounded-xl items-center gap-3">-->
       <span class="loading loading-spinner loading-md"></span>
-      <!--        <div class="spinner"></div>-->
-      <!--        <div class="text-base-content">Loading KPI data...</div>-->
     </div>
-    <!--    </div>-->
   }
 </div>

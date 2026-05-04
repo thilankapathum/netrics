@@ -7,7 +7,7 @@ import {MapCellDto} from '../../../../../../models/pulse/MapCellDto';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {DatePipe} from '@angular/common';
-import {debounceTime, filter, finalize, forkJoin, Subject, takeUntil, tap} from 'rxjs';
+import {debounceTime, filter, finalize, forkJoin, Observable, Subject, takeUntil, tap} from 'rxjs';
 import {MapCellThrSetAndThresholds} from '../../../../../../models/pulse/map-cell/MapCellThrSetAndThresholds';
 import {SharedService} from '../../../../../../service/pulse/shared-service';
 import {SiteDto} from '../../../../../../models/pulse/SiteDto';
@@ -37,6 +37,8 @@ export class SectorMap implements OnInit, OnChanges {
   @Input() showSiteLabels: boolean = true;
   // @Input() selectedSite = signal<SiteDto | undefined>(undefined);
   @Input() selectedSite: SiteDto = {siteCode: '', siteName: ''};
+  // @Input() filterByBands: boolean = false;
+  @Input() selectedBand: string = '';
   private map!: L.Map;
   private sectorLayer = new L.LayerGroup();
   private labelLayer = new L.LayerGroup();
@@ -94,7 +96,9 @@ export class SectorMap implements OnInit, OnChanges {
       changes['standardKpiName'] ||
       changes['granularityName'] ||
       changes['date'] ||
-      changes['areaName'];
+      changes['areaName'] ||
+      changes['filterByBands'] ||
+      changes['selectedBand'];
 
     if (filterChanged) {
       this.loadedTiles.clear();   // Filters changed → old tiles are stale
@@ -174,15 +178,30 @@ export class SectorMap implements OnInit, OnChanges {
 
     this.loadingCells = true;
 
-    const requests = missingTiles.map(({z, x, y}) =>
-      this.mapCellService.getCellsByTile(
-        z, x, y,
-        this.standardKpiName, this.ratName,
-        this.granularityName, this.date, this.areaName
-      ).pipe(
-        tap(cells => this.loadedTiles.set(`${z}:${x}:${y}`, cells))
-      )
-    );
+    let requests:any[] = [];
+
+    const useBandFilter = this.selectedBand !== '';
+
+    if (useBandFilter) {
+      requests = missingTiles.map(({z, x, y}) =>
+        this.mapCellService.getCellsByTileAndBand(z, x, y,
+          this.standardKpiName, this.ratName,
+          this.granularityName, this.date, this.areaName, this.selectedBand
+        ).pipe(
+          tap(cells => this.loadedTiles.set(`${z}:${x}:${y}`, cells))
+        )
+      );
+    } else {
+      requests = missingTiles.map(({z, x, y}) =>
+        this.mapCellService.getCellsByTile(
+          z, x, y,
+          this.standardKpiName, this.ratName,
+          this.granularityName, this.date, this.areaName
+        ).pipe(
+          tap(cells => this.loadedTiles.set(`${z}:${x}:${y}`, cells))
+        )
+      );
+    }
 
     forkJoin(requests).pipe(
       finalize(() => this.loadingCells = false)

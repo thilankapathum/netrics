@@ -3,10 +3,7 @@ package dev.thilanka.netrics.service.impl;
 import dev.thilanka.netrics.dto.BoundingBox;
 import dev.thilanka.netrics.dto.MapCell;
 import dev.thilanka.netrics.dto.SiteDto;
-import dev.thilanka.netrics.entity.Area;
-import dev.thilanka.netrics.entity.Granularity;
-import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.StandardKpi;
+import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.repository.MapCellRepository;
 import dev.thilanka.netrics.service.*;
 import dev.thilanka.netrics.util.TileUtils;
@@ -27,6 +24,7 @@ public class MapCellServiceImpl implements MapCellService {
     private final DateService dateService;
     private final AreaService areaService;
     private final TileUtils tileUtils;
+    private final BandService bandService;
 
     private static final Double BUFFER_DEGREES = 0.005;
 
@@ -62,6 +60,26 @@ public class MapCellServiceImpl implements MapCellService {
 
         return mapCellRepository.queryCellsByKpiTile(bbox.minLng(), bbox.minLat(), bbox.maxLng(), bbox.maxLat(),
                 bufferDegrees, standardKpi.getId(), rat.getId(), granularity.getId(), startTime, endTime, area.getId());
+    }
+
+    @Override
+    @Cacheable(value = "mapCellTiles",
+            key = "#z + '_' + #x + '_' + #y + '_' + #standardKpiName + '_' + #date + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")
+    public List<MapCell> getMapCellsByTileAndBand(int z, int x, int y, String standardKpiName, String ratName, String granularityName, String date, String areaName, String bandName) {
+        BoundingBox bbox = tileUtils.tileToBoundingBox(x, y, z);
+
+        double bufferDegrees = BUFFER_DEGREES;
+
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
+        LocalDateTime startTime = dateService.extractDate(date);
+        LocalDateTime endTime = startTime.plusSeconds(granularity.getPlusSeconds());
+        Area area = areaService.findAreaByName(areaName);
+        Band band = bandService.findByName(bandName);
+
+        return mapCellRepository.queryCellsByKpiTileAndBand(bbox.minLng(), bbox.minLat(), bbox.maxLng(), bbox.maxLat(),
+                bufferDegrees, standardKpi.getId(), rat.getId(), granularity.getId(), startTime, endTime, area.getId(), band.getId());
     }
 
     @Override

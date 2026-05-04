@@ -37,6 +37,24 @@ export class MapCellService {
     );
   }
 
+  getCellsByTileAndBand(z: number, x: number, y: number,
+                 standardKpiName: string, ratName: string,
+                 granularityName: string, date: string,
+                 areaName: string, bandName: string): Observable<MapCellDto[]> {
+
+    const params = new HttpParams()
+      .set('standardKpiName', standardKpiName)
+      .set('ratName', ratName)
+      .set('granularityName', granularityName)
+      .set('date', date)
+      .set('areaName', areaName)
+      .set('bandName', bandName);
+
+    return this.http.get<MapCellDto[]>(
+      `${this.baseUrl}/tile-band/${z}/${x}/${y}`, {params}
+    );
+  }
+
   getSitesByTile(z: number, x: number, y: number):Observable<SiteDto[]> {
     return this.http.get<Array<SiteDto>>(`${this.baseUrl}/site-tile/${z}/${x}/${y}`)
   }

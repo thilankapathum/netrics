@@ -146,7 +146,8 @@
                       (selectedCellName)="onCellSelection($event)"
                       (openAnalysisDialog)="openCellMapCellAnalysisModal()"
                       [showSiteLabels]="showSiteLabels"
-                      [selectedSite]="selectedSite()!"></app-sector-map>
+                      [selectedSite]="selectedSite()!"
+                      [selectedBand]="activeBand()"></app-sector-map>
 
       <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
                            [standardKpiLabel]="extractStandardKpiLabel(standardKpi()!)"
@@ -157,6 +158,10 @@
                            [isThresholdEditable]="isThresholdsEditable()"
                            [isThresholdsCustomizable]="isThresholdsCustomizable()"
                            (isShowSiteLabelsChange)="onShowSiteLabelsChange($event)"
+                           [bands]="bands"
+                           (activeBandChange)="onActiveBandChange($event)"
+
+
       ></app-cell-map-legend>
     </div>
   </section>
