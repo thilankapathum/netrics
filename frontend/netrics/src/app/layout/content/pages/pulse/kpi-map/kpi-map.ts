@@ -27,6 +27,7 @@ import {SiteDto} from '../../../../../models/pulse/SiteDto';
 import {SiteService} from '../../../../../service/pulse/site-service';
 import {BandDto} from '../../../../../models/pulse/BandDto';
 import {BandService} from '../../../../../service/pulse/band-service';
+import {CellMapEngParaModify} from './cell-map-eng-para-modify/cell-map-eng-para-modify';
 
 @Component({
   selector: 'app-kpi-map',
@@ -37,7 +38,8 @@ import {BandService} from '../../../../../service/pulse/band-service';
     FormsModule,
     CellMapLegend,
     CellMapLegendEdit,
-    CellMapCellAnalysis
+    CellMapCellAnalysis,
+    CellMapEngParaModify
   ],
   templateUrl: './kpi-map.html',
   styleUrl: './kpi-map.css',
@@ -94,6 +96,7 @@ export class KpiMap implements OnInit {
 
   showCellMapLegendEditModal = signal<boolean>(false);
   showCellMapCellAnalysisModal = signal<boolean>(false);
+  showCellMapEngParaModifyModal = signal<boolean>(false);
 
 
   constructor(private ratService: RatService,
@@ -418,6 +421,10 @@ export class KpiMap implements OnInit {
     this.sharedService.cellMapDate.set(this.date()!);
   }
 
+  openCellMapEngParaModifyModal(): void {
+    this.showCellMapEngParaModifyModal.set(true);
+  }
+
   //------------------- CLOSE MODAL ----------------------------
   closeCellMapLegendEditModal(): void {
     this.showCellMapLegendEditModal.set(false);
@@ -426,6 +433,10 @@ export class KpiMap implements OnInit {
   closeCellMapCellAnalysisModal(): void {
     this.showCellMapCellAnalysisModal.set(false);
     this.sharedService.clearAll();
+  }
+
+  closeCellMapEngParaModifyModal(): void {
+    this.showCellMapEngParaModifyModal.set(false);
   }
 
   saveThrSetAndThresholds(thrSetAndThresholds: MapCellThrSetAndThresholds) {
@@ -464,6 +475,10 @@ export class KpiMap implements OnInit {
 
   onShowSiteLabelsChange(showSiteLabels: boolean): void {
     this.showSiteLabels = showSiteLabels;
+  }
+
+  isEngineeringParaEditable():boolean {
+    return this.authService.hasRole('PULSE_UPDATE');
   }
 
   // onFilterByBandsChange(filter: boolean): void {

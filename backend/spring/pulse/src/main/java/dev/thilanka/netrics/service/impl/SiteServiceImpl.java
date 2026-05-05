@@ -37,7 +37,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    @CacheEvict(value = "siteTiles", allEntries = true)
+    @CacheEvict(value = "mapCellTiles", allEntries = true)
     public Site createSite(Site site) {
         reloadSites();
         return siteRepository.save(site);
@@ -115,7 +115,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    @CacheEvict(value = "siteTiles", allEntries = true)
+    @CacheEvict(value = "mapCellTiles", allEntries = true)
     public Site updateSite(Site site) {
         Optional<Site> existingSite = siteRepository.findBySiteCode(site.getSiteCode());
 
@@ -140,7 +140,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    @CacheEvict(value = "siteTiles", allEntries = true)
+    @CacheEvict(value = "mapCellTiles", allEntries = true)
     public SiteUpdateResult updateSite(SiteDto siteDto) {
 
         List<String> warnings = new ArrayList<>();
@@ -172,7 +172,7 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
-    @CacheEvict(value = "siteTiles", allEntries = true)
+    @CacheEvict(value = "mapCellTiles", allEntries = true)
     public List<SiteDto> updateSites(List<SiteDto> siteDtos) {
         List<SiteDto> updatedSites = new ArrayList<>();
 

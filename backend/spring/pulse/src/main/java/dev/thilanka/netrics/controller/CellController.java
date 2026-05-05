@@ -43,10 +43,6 @@ public class CellController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
     public ResponseEntity<CellDto> getCellByName(@RequestParam("cellName") String cellName) {
-
-        System.out.println("RAW cellName = [" + cellName + "]");
-        System.out.println("LENGTH = " + cellName.length());
-
         CellDto dto = cellService.getByCellName(cellName);
         return ResponseEntity.ok(dto);
     }
@@ -63,7 +59,7 @@ public class CellController {
         cellService.reloadCellCountWithMissingInfo();
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @PutMapping
     public ResponseEntity<CellDto> updateCell(@RequestBody @Valid CellDto dto) {
         CellUpdateResult updatedDto = cellService.updateCell(dto);

@@ -84,7 +84,7 @@ public class MapCellServiceImpl implements MapCellService {
 
     @Override
     @Cacheable(
-            value = "siteTiles",
+            value = "mapCellTiles",
             key = "#z + '_' + #x + '_' + #y"
     )
     public List<SiteDto> getSitesByTile(int z, int x, int y) {

@@ -23,11 +23,14 @@ export class CellMapCellAnalysis {
 
   @Input() open = signal<boolean>(false);
   @Output() closed = new EventEmitter<void>();
+  @Output() openEngParaModify = new EventEmitter<void>();
 
   @Input() cellName: string = '';
   @Input() standardKpiName = signal<string | undefined>(undefined);
   @Input() ratName = signal<string | undefined>(undefined);
   @Input() granularityName = signal<string | undefined>(undefined);
+  @Input() isEngineeringParaEditable:boolean = false;
+
   trendPeriod = signal<'month' | 'week' | 'quarter'>('month')
 
   chartSeries: any = null;
@@ -52,6 +55,11 @@ export class CellMapCellAnalysis {
   onCancel(): void {
     this.initialized = false;
     this.closed.emit();
+  }
+
+  onEditEngParams(): void {
+    this.closed.emit();          // close this modal first (optional but clean UX)
+    this.openEngParaModify.emit();
   }
 
   loadingAll() {

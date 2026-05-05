@@ -173,8 +173,17 @@
                           [granularityName]="granularity()!" [standardKpiName]="standardKpi()!" [isAdmin]="isAdmin()"
                           [savingThresholds]="savingThresholds"></app-cell-map-legend-edit>
 
-<app-cell-map-cell-analysis [open]="showCellMapCellAnalysisModal" (closed)="closeCellMapCellAnalysisModal()"
+<app-cell-map-cell-analysis [open]="showCellMapCellAnalysisModal"
+                            (closed)="closeCellMapCellAnalysisModal()"
+                            (openEngParaModify)="openCellMapEngParaModifyModal()"
                             [standardKpiName]="standardKpi"
                             [ratName]="rat"
                             [granularityName]="granularity"
-                            [cellName]="selectedCellName()"></app-cell-map-cell-analysis>
+                            [cellName]="selectedCellName()"
+                            [isEngineeringParaEditable]="isEngineeringParaEditable()"
+></app-cell-map-cell-analysis>
+
+<app-cell-map-eng-para-modify [open]="showCellMapEngParaModifyModal"
+                              (closed)="closeCellMapEngParaModifyModal()"
+                              [cellName]="selectedCellName()"
+                              [isEngineeringParaEditable]="isEngineeringParaEditable()"></app-cell-map-eng-para-modify>

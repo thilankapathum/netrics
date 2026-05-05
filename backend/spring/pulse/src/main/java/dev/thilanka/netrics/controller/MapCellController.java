@@ -80,7 +80,7 @@ public class MapCellController {
         return ResponseEntity.ok(sites);
     }
 
-
+    @PreAuthorize("hasAuthority('ROLE_PULSE_DELETE')")
     @GetMapping(value = "tileX/{z}/{x}/{y}", produces = "application/x-protobuf")
     public ResponseEntity<byte[]> getTile(@PathVariable("z") int z,
                                           @PathVariable("x") int x,

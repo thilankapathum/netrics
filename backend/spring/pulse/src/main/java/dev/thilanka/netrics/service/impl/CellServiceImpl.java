@@ -11,6 +11,7 @@ import dev.thilanka.netrics.util.DataTypeUtilService;
 import dev.thilanka.netrics.util.GeoUtilService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -39,7 +40,9 @@ public class CellServiceImpl implements CellService {
     List<CellDto> allCells = new ArrayList<>();
 
     @Override
+    @CacheEvict(value = "mapCellTiles", allEntries = true)
     public Cell createCell(Cell cell) {
+        log.warn(String.format("Creating cell with id %d", cell.getId()));
         return cellRepository.save(cell);
     }
 
@@ -136,7 +139,9 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    @CacheEvict(value = "mapCellTiles", allEntries = true)
     public CellUpdateResult updateCell(CellDto dto) {       //-- RAT is not updatable
+        log.warn("UPDATE CELL" + dto.cellName());
 
         List<String> warnings = new ArrayList<>();
 
