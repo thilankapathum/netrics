@@ -1,16 +1,20 @@
 package dev.thilanka.netrics.entity;
 
+import dev.thilanka.netrics.entity.common.AuditEntity;
+import dev.thilanka.netrics.entity.common.AuditLog;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @Entity
 @Table(name = "kpi_mapping")
-public class KpiMappingToOss {
+@SuperBuilder
+@AuditLog
+public class KpiMappingToOss extends AuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

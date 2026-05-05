@@ -10,34 +10,27 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.util.Optional;
 
 public class ApplicationAuditAware implements AuditorAware<String> {
+    private static final String SYSTEM_USER = "SYSTEM";
+
     @Override
     public Optional<String> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()){
-            return Optional.empty();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Optional.of(SYSTEM_USER);
+        }
+
+        if (authentication instanceof AnonymousAuthenticationToken) {
+            return Optional.of("ANONYMOUS");  // distinguishable from SYSTEM
         }
 
         Object principal = authentication.getPrincipal();
 
-        if (principal instanceof Jwt jwt){
-            return Optional.ofNullable(jwt.getClaimAsString("sub"));
+        if (principal instanceof Jwt jwt) {
+            return Optional.ofNullable(jwt.getClaimAsString("sub"))
+                    .or(() -> Optional.of(SYSTEM_USER));
         }
-        return Optional.empty();
+        return Optional.of(SYSTEM_USER);
     }
-//    @Override
-//    public Optional<Long> getCurrentAuditor() {
-//        //-- Get current authentication from Security Context Holder of this session
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//
-//        //-- Check whether properly authenticated
-//        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken){
-//            return Optional.empty();
-//        }
-//
-//        User userPrincipal = (User) authentication.getPrincipal();
-//
-//        //-- Return authenticated user's ID
-//        return Optional.ofNullable(userPrincipal.getId());
-//    }
 }

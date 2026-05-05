@@ -1,18 +1,22 @@
 package dev.thilanka.netrics.entity;
 
+import dev.thilanka.netrics.entity.common.AuditEntity;
+import dev.thilanka.netrics.entity.common.AuditLog;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "cells")
-public class Cell {
+@AuditLog
+public class Cell extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,17 +1,21 @@
 package dev.thilanka.netrics.entity;
 
+import dev.thilanka.netrics.entity.common.AuditEntity;
+import dev.thilanka.netrics.entity.common.AuditLog;
 import dev.thilanka.netrics.entity.district.DistrictCode;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @Entity
 @Table(name = "area_district_code_mapping")
-public class AreaDistrictCodeMapping {
+@SuperBuilder
+@AuditLog
+public class AreaDistrictCodeMapping extends AuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

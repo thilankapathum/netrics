@@ -1,18 +1,22 @@
 package dev.thilanka.netrics.entity;
 
+import dev.thilanka.netrics.entity.common.AuditEntity;
+import dev.thilanka.netrics.entity.common.AuditLog;
 import dev.thilanka.netrics.entity.district.DistrictCode;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @Entity
 @Table(name = "user_area_mapping",
         uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id","area_id"})})
-public class UserAreaMapping {
+@SuperBuilder
+@AuditLog
+public class UserAreaMapping extends AuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

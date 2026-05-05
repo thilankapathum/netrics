@@ -79,8 +79,10 @@ public class CellServiceImpl implements CellService {
             cell.beamwidth(dto.beamwidth());
         }
 
-        if (dto.isMultiBeam()) {
+        if (dto.isMultiBeam() != null) {
             cell.isMultiBeam(true);
+        } else {
+            cell.isMultiBeam(false);
         }
 
         if (dto.carrierName() != null) {

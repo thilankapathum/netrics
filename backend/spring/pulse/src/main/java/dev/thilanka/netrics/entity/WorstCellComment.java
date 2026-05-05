@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.entity;
 
 import dev.thilanka.netrics.entity.common.AuditEntity;
+import dev.thilanka.netrics.entity.common.AuditLog;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -12,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Entity
 @Table(name = "worst_cell_comments")
+@AuditLog
 public class WorstCellComment extends AuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

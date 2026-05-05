@@ -29,6 +29,7 @@ public class AuditEntity {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @AuditLogIgnore
     @Column(insertable = false)
     private LocalDateTime lastModifiedAt;
 
@@ -37,6 +38,7 @@ public class AuditEntity {
     private String createdBy;
 
     @LastModifiedBy
+    @AuditLogIgnore
     @Column(insertable = false)
     private String lastModifiedBy;
 }
