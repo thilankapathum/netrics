@@ -1,9 +1,6 @@
 package dev.thilanka.netrics.controller;
 
-import dev.thilanka.netrics.dto.CellCsvImportResultDto;
-import dev.thilanka.netrics.dto.CellDto;
-import dev.thilanka.netrics.dto.SiteCsvImportResultDto;
-import dev.thilanka.netrics.dto.SiteDto;
+import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.service.CsvService;
 import dev.thilanka.netrics.service.SiteService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -40,6 +37,13 @@ public class SiteController {
     public ResponseEntity<List<SiteDto>> createSiteList(@RequestBody @Valid List<SiteDto> dtos){
         List<SiteDto> savedDtos = siteService.createSites(dtos);
         return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PutMapping
+    public ResponseEntity<SiteDto> updateSite(@RequestBody @Valid SiteDto dto){
+        SiteUpdateResult result = siteService.updateSite(dto);
+        return  new ResponseEntity<>(result.siteDto(), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")

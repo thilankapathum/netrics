@@ -18,7 +18,7 @@ export class SiteService {
     return this.http.post<SiteDto>(`${this.baseUrl}`, site);
   }
 
-  createSiteList(json:string){
+  createSiteList(json: string) {
     const body = JSON.parse(json);
     return this.http.post<Array<SiteDto>>(`${this.baseUrl}/list`,
       body,
@@ -30,16 +30,24 @@ export class SiteService {
     );
   }
 
-  searchSites(search:string):Observable<SiteDto[]>{
+  getSiteBySiteCode(siteCode: string): Observable<SiteDto> {
+    return this.http.get<SiteDto>(`${this.baseUrl}`, {params: {siteCode: siteCode}});
+  }
+
+  updateSite(site: SiteDto): Observable<SiteDto> {
+    return this.http.put<SiteDto>(`${this.baseUrl}`, site);
+  }
+
+  searchSites(search: string): Observable<SiteDto[]> {
     const params = new HttpParams().set('search', search);
-    return this.http.get<SiteDto[]>(`${this.baseUrl}/search`,{params});
+    return this.http.get<SiteDto[]>(`${this.baseUrl}/search`, {params});
   }
 
   exportSitesWithMissingInfo() {
     return this.http.get(`${this.baseUrl}/missing/export`, {responseType: 'blob'});
   }
 
-  exportAllSites(){
+  exportAllSites() {
     return this.http.get(`${this.baseUrl}/all/export`, {responseType: 'blob'});
   }
 
@@ -50,7 +58,7 @@ export class SiteService {
     return this.http.post(url, formData, {responseType: 'blob'});
   }
 
-  getSiteCountWithMissingInfo(){
+  getSiteCountWithMissingInfo() {
     return this.http.get<number>(`${this.baseUrl}/missing/count`);
   }
 
