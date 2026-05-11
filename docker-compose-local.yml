@@ -10,6 +10,7 @@ volumes:
   postgres_data:
   redis-data:
   pgadmin:
+  kafka_data:
 
 services:
   postgres:
@@ -278,6 +279,8 @@ services:
         condition: service_healthy
       discovery:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   kpip-day:
     image: thilankaw/netrics/kpip-day:0.0.8
@@ -359,3 +362,38 @@ services:
         condition: service_healthy
       pgadmin:
         condition: service_healthy
+
+  kafka:
+    image: apache/kafka:4.0.0
+    container_name: kafka
+    restart: unless-stopped
+    expose:
+      - "9092"
+    ports:
+      - "9092:9092"
+    networks:
+      - private_net
+      - public_net
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    healthcheck:
+      test: [ "CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - kafka_data:/var/lib/kafka/data
