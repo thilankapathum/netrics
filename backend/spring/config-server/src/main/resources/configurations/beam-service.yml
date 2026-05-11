@@ -37,6 +37,20 @@ spring:
     baseline-on-migrate: true
     enable: true
 
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+    consumer:
+      group-id: beam-service
+      auto-offset-reset: earliest   # read from start if no committed offset
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "dev.thilanka.netrics"
+        spring.json.value.default.type: "java.util.Map"  # safe fallback
+    topic:
+      site-events: pulse.site.events
+      sector-events: pulse.sector.events
+
 keycloak:
   realm-name: ${REALM_NAME:netrics}
   domain-ip: ${DOMAIN_IP:netrics.local}

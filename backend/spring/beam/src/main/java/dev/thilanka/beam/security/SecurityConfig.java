@@ -1,6 +1,5 @@
-package dev.thilanka.netrics.config;
+package dev.thilanka.beam.security;
 
-import dev.thilanka.netrics.common.security.KeycloakJwtGrantedAuthoritiesConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,7 +45,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                                 // Public endpoints
-                                .requestMatchers("/actuator/health", "/actuator/info", "/api/v1/pulse/cache/**").permitAll()
+                                .requestMatchers("/actuator/health", "/actuator/info", "/api/v1/beam/cache/**").permitAll()
 
                                 // Role-based access (example)
 //                        .requestMatchers("/admin/**").hasRole("ADMIN")

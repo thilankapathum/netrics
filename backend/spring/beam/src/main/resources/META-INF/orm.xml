@@ -1,0 +1,31 @@
+<!-- src/main/resources/META-INF/orm.xml -->
+<!--
+  Registers OperationLogListener as a *default* entity listener that fires for
+  every JPA-managed entity in the persistence unit.
+
+  The listener itself checks for @AuditLog before doing anything, so entities
+  without that annotation are effectively ignored at zero cost.
+
+  This means you do NOT need to add @EntityListeners(OperationLogListener.class)
+  to each entity class — simply place @AuditLog on the ones you want tracked.
+
+  To EXCLUDE a specific entity class from receiving default listeners, add:
+      @ExcludeDefaultListeners
+  to that entity.
+-->
+<entity-mappings
+        xmlns="https://jakarta.ee/xml/ns/persistence/orm"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm
+                            https://jakarta.ee/xml/ns/persistence/orm/orm_3_0.xsd"
+        version="3.0">
+
+    <persistence-unit-metadata>
+        <persistence-unit-defaults>
+            <entity-listeners>
+                <entity-listener class="dev.thilanka.beam.entity.common.OperationLogListener"/>
+            </entity-listeners>
+        </persistence-unit-defaults>
+    </persistence-unit-metadata>
+
+</entity-mappings>
