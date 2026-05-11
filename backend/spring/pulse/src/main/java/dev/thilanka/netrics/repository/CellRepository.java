@@ -1,9 +1,11 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.dto.CellDto;
+import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.entity.Cell;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,4 +59,15 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
             ORDER BY c.cell_name ASC;
             """, nativeQuery = true)
     List<CellDto> findAllCells();
+
+    @Query(value = """
+            SELECT c.cell_name, r.name AS rat_name, r.label AS rat_label
+            FROM public.cells c
+                JOIN sectors s ON s.id = c.sector_id
+                JOIN rat r ON r.id = c.rat_id
+            WHERE sector_id = :sectorId
+                AND rat_id = :ratId
+            ORDER BY c.cell_name LIMIT 20
+            """, nativeQuery = true)
+    List<CellNameDto> findCellsBySector(@Param("sectorId") Long sectorId, @Param("ratId") Long ratId);
 }

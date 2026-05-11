@@ -2,6 +2,7 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
+import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.dto.CellUpdateResult;
 import dev.thilanka.netrics.service.CellService;
 import dev.thilanka.netrics.service.CsvService;
@@ -45,6 +46,13 @@ public class CellController {
     public ResponseEntity<CellDto> getCellByName(@RequestParam("cellName") String cellName) {
         CellDto dto = cellService.getByCellName(cellName);
         return ResponseEntity.ok(dto);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("sector")
+    public ResponseEntity<List<CellNameDto>> getCellsBySector(@RequestParam("sectorName") String sectorName, @RequestParam("ratName") String ratName) {
+        List<CellNameDto> cells = cellService.getCellsBySector(sectorName, ratName);
+        return ResponseEntity.ok(cells);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")

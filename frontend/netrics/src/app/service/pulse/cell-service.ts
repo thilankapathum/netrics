@@ -38,6 +38,10 @@ export class CellService {
     return this.http.get<CellDto>(`${this.baseUrl}`, {params: {cellName: cellName}});
   }
 
+  getCellsBySector(sectorName:string, ratName:string):Observable<CellNameDto[]>{
+    return this.http.get<CellNameDto[]>(`${this.baseUrl}/sector`, {params: {sectorName, ratName}});
+  }
+
   updateCell(cell: CellDto):Observable<CellDto> {
     return this.http.put<CellDto>(`${this.baseUrl}`, cell);
   }

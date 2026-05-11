@@ -29,6 +29,10 @@ public interface SectorService {
 
     SectorDto getBySiteAndIndex(String siteCode, Integer sectorIndex);
 
+    List<SectorDto> reloadSectors();
+
+    List<SectorDto> searchSectors(String searchString);
+
     List<Sector> findSectorsWithMissingInfo();
 
     List<SectorDto> getSectorsWithMissingInfo();

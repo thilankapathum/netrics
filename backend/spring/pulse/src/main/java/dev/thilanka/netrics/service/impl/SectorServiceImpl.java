@@ -4,6 +4,7 @@ import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.SectorCsvImportResultDto;
 import dev.thilanka.netrics.dto.SectorDto;
 import dev.thilanka.netrics.dto.SectorUpdateResult;
+import dev.thilanka.netrics.dto.SiteDto;
 import dev.thilanka.netrics.entity.Sector;
 import dev.thilanka.netrics.entity.Site;
 import dev.thilanka.netrics.entity.enums.CsvImportStatus;
@@ -18,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,8 @@ public class SectorServiceImpl implements SectorService {
     private final SiteService siteService;
     private final GeoUtilService geoUtilService;
     private final Mapper mapper;
+
+    private volatile List<SectorDto> cachedSectors = Collections.emptyList();
 
     Integer sectorCountWithMissingInfo = 0;
 
@@ -172,6 +177,38 @@ public class SectorServiceImpl implements SectorService {
     public SectorDto getBySiteAndIndex(String siteCode, Integer sectorIndex) {
         Sector sector = findBySiteAndIndex(siteCode, sectorIndex);
         return new SectorDto(sector.getSectorIndex(), sector.getName(), sector.getAzimuth(), sector.getSite().getSiteCode());
+    }
+
+    @Override
+    public List<SectorDto> reloadSectors() {
+        List<SectorDto> loaded = findAllSectors()
+                .stream().map(mapper::sectorToDto)
+                .sorted(Comparator.comparing(SectorDto::name))
+                .collect(Collectors.toList());
+
+        this.cachedSectors = Collections.unmodifiableList(loaded);
+        log.info("Loaded {} sectors",  cachedSectors.size());
+        return this.cachedSectors;
+    }
+
+    @Override
+    public List<SectorDto> searchSectors(String searchString) {
+        if (cachedSectors.isEmpty()) {
+            log.warn("Sector List is empty. Reloading...");
+            reloadSectors();
+
+        }
+
+        if (searchString.isBlank()) {
+            return Collections.emptyList();
+        } else {
+            String lower = searchString.toLowerCase();
+
+            return cachedSectors.stream()
+                    .filter(s -> s.name().toLowerCase().contains(lower))
+                    .limit(6)
+                    .toList();
+        }
     }
 
     @Override

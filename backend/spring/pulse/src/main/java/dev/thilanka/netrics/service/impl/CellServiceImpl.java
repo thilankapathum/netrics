@@ -335,13 +335,20 @@ public class CellServiceImpl implements CellService {
             String lower = cellName.toLowerCase();
             List<CellDto> filteredCells = this.allCells.stream()
                     .filter(c -> c.cellName().toLowerCase().contains(lower))
-                    .limit(20)
+                    .limit(15)
                     .toList();
 
             return filteredCells.stream()
                     .map(c -> cellDtoToCellNameDto(c, rats))
                     .collect(Collectors.toList());
         }
+    }
+
+    @Override
+    public List<CellNameDto> getCellsBySector(String sectorName, String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        Sector sector = sectorService.findBySectorName(sectorName);
+        return cellRepository.findCellsBySector(sector.getId(), rat.getId());
     }
 
     @Override

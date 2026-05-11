@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {UrlService} from '../url/url-service';
 import {Observable} from 'rxjs';
+import {SectorDto} from '../../models/pulse/SectorDto';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,14 @@ export class SectorService {
 
   constructor(private http: HttpClient, private urlService: UrlService) {
     this.baseUrl = `${this.urlService.getPulseUrl()}/sectors`;
+  }
+
+  getSectorByName(name:string) {
+    return this.http.get<SectorDto>(`${this.baseUrl}/${name}`);
+  }
+
+  searchSectorsByName(name:string) {
+    return this.http.get<SectorDto[]>(`${this.baseUrl}/search`, {params:{name:name}});
   }
 
   exportSectorsWithMissingInfo() {

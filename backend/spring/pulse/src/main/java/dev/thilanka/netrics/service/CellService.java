@@ -37,6 +37,8 @@ public interface CellService {
 
     List<CellNameDto> searchCell(String cellName);
 
+    List<CellNameDto> getCellsBySector(String sectorName, String ratName);
+
     List<CellDto> createLatestCells(String ratName, String granularityName);
 
     CompletableFuture<Integer> reloadCells();

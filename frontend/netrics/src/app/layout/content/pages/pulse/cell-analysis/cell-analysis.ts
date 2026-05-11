@@ -15,6 +15,10 @@ import {CellNameDto} from '../../../../../models/pulse/CellNameDto';
 import {CellNameService} from '../../../../../service/pulse/cell-name.service';
 import {KpiDataDto} from '../../../../../models/pulse/KpiDataDto';
 import {CellKpiSeries} from '../../../../../models/apexCharts/CellKpiSeries';
+import {SectorDto} from '../../../../../models/pulse/SectorDto';
+import {SectorService} from '../../../../../service/pulse/sector-service';
+import {CellService} from '../../../../../service/pulse/cell-service';
+import {HttpErrorResponse} from '@angular/common/http';
 
 @Component({
   selector: 'app-cell-analysis',
@@ -34,6 +38,7 @@ export class CellAnalysis implements OnInit {
   // selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
   selectedRat = signal<string>('ltefdd');
   rat = signal<RatDto | undefined>(undefined);
+  rats: RatDto[] = [];
   cellName = signal('');
   selectedStandardKpi = signal('');
   initialStandardKpi: string = '';
@@ -48,6 +53,7 @@ export class CellAnalysis implements OnInit {
 
   queryCell = signal('');
   filteredCells = signal<Array<CellNameDto>>([]);
+  filteredSectors = signal<Array<SectorDto>>([]);
 
   // loadingTrendData = signal<boolean>(false);
   private pendingRequests = signal<number>(0);
@@ -89,7 +95,9 @@ export class CellAnalysis implements OnInit {
               private chartService: ChartService,
               private ratService: RatService,
               private sharedService: SharedService,
-              private cellService: CellNameService) {
+              private cellService: CellService,
+              private cellNameService: CellNameService,
+              private sectorService: SectorService) {
 
     if (sharedService.selectedCell() === '' && sharedService.selectedStandardKpi() === '') {
       this.cellSelected.set(false);
@@ -104,6 +112,7 @@ export class CellAnalysis implements OnInit {
   }
 
   ngOnInit(): void {
+    this.getAllRats();
   }
 
   setSelectedGranularity(granularity: 'day-average' | 'busy-hour') {
@@ -113,26 +122,32 @@ export class CellAnalysis implements OnInit {
     }
   }
 
-  getRat(ratName: string) {
-    this.loadingRats.set(true);
-    this.ratService.findByName(ratName).subscribe({
+  getAllRats(): void {
+    this.ratService.getAllRats().subscribe({
       next: data => {
-        if (data.name != undefined) {   //-- Validate RAT
-          this.rat.set(data);
-          this.getAllStandardKpi(this.rat()?.name!);    // Get all standard KPI of the RAT
-          this.loadingRats.set(false);
-        } else {
-          console.error('RAT is unavailable');
-          this.alertService.error('RAT is unavailable');
-          this.loadingRats.set(false);
-        }
-      }, error: error => {
-        console.error('Error retrieving RAT');
-        console.error(error);
-        this.alertService.error('Error retrieving RAT');
-        this.loadingRats.set(false);
+        this.rats = data;
+      }, error: err => {
+        console.error(err);
+        this.alertService.error(`Retirieving RATs failed. ${err.statusCode} ${err.statusText}`);
       }
     })
+  }
+
+  getRat(ratName: string): RatDto | undefined {
+    const _rat = this.rats.find(rat => rat.name === ratName);
+    if (_rat) {
+      this.setRat(_rat);
+    } else {
+      console.error('RAT is unavailable');
+      this.alertService.error('RAT is unavailable');
+      this.loadingRats.set(false);
+    }
+    return _rat;
+  }
+
+  setRat(rat: RatDto) {
+    this.rat.set(rat);
+    this.getAllStandardKpi(this.rat()?.name!);
   }
 
   getAllStandardKpi(ratName: string) {
@@ -159,7 +174,6 @@ export class CellAnalysis implements OnInit {
           this.loadingStandardKpis.set(false);
         }
       }, error: error => {
-        console.log("Error getAllStandardKpi:");
         console.error(error);
         this.alertService.error("Standard KPI retrieval failed");
         this.loadingStandardKpis.set(false);
@@ -185,7 +199,7 @@ export class CellAnalysis implements OnInit {
   getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
     this.pendingRequests.update(n => n + 1);
 
-    const _granularity = this.resolveGranularity(period,granularityName);
+    const _granularity = this.resolveGranularity(period, granularityName);
 
     this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, _granularity).subscribe({
       next: data => {
@@ -256,9 +270,14 @@ export class CellAnalysis implements OnInit {
     this.queryCell.set(value);
 
     if (this.queryCell().length > 2) {
-      this.cellService.searchCell(value).subscribe({
+
+      //-- Querying cells
+      this.cellNameService.searchCell(value).subscribe({
         next: data => {
           const sortedData = [...data].sort((a, b) => {
+
+            this.searchSector(value);
+
             const ratA = a.ratName?.toLowerCase() ?? '';
             const ratB = b.ratName?.toLowerCase() ?? '';
             const ratCompare = ratA.localeCompare(ratB);
@@ -274,15 +293,33 @@ export class CellAnalysis implements OnInit {
           this.filteredCells.set(sortedData);
         }
       });
+
+
     } else {
       this.filteredCells.set([]);
+      this.filteredSectors.set([]);
     }
   }
 
+  searchSector(value: string) {
+    this.sectorService.searchSectorsByName(value).subscribe({
+      next: data => {
+        this.filteredSectors.set(data);
+      },
+      error: (error: HttpErrorResponse) => {
+        console.warn('Sector search unavailable:', error.status, error.statusText);
+        // this.filteredSectors.set([]);  // just clear sectors silently
+
+        // Only alert for unexpected errors, not 503/502/504 gateway issues
+        if (error.status !== 503 && error.status !== 502 && error.status !== 504) {
+          this.alertService.error(`Sector search failed. ${error.status} ${error.statusText}`);
+        }
+      }
+    });
+  }
+
   selectCell(cellNameDto: CellNameDto, selectByDropDown: boolean) {
-    console.log(this.chartCellName())
     if (selectByDropDown) {   //-- Check if the RAT of the selecting cell in frontend is different from current RAT
-      console.log(this.selectedRat())
       this.chartSeries.set([]);
     }
 
@@ -290,6 +327,57 @@ export class CellAnalysis implements OnInit {
     this.cellName.set(cellNameDto.cellName!);
     this.queryCell.set(cellNameDto.cellName!);
     this.getRat(cellNameDto.ratName!);
+  }
+
+  selectSector(sectorDto: SectorDto, rat: RatDto) {
+    this.chartSeries.set([]);
+    this.cellColorMap = {};
+
+    this.rat.set(rat);
+
+    this.cellService.getCellsBySector(sectorDto.name, rat.name!).subscribe({
+      next: cells => {
+        if (cells.length === 0) return;
+
+        // Load KPIs for this RAT first, then fetch trend data for all cells
+        this.loadingStandardKpis.set(true);
+        this.standardKpiService.getAllStandardKpi(rat.name!).subscribe({
+          next: kpis => {
+            this.standardKpis = kpis;
+            if (kpis.length === 0) {
+              this.alertService.error('KPI are unavailable for the RAT');
+              this.loadingStandardKpis.set(false);
+              return;
+            }
+
+            // Resolve which KPI to use (preserve previously selected if valid)
+            const kpiToUse = kpis.find(k => k.kpiName === this.selectedStandardKpi())?.kpiName
+              ?? kpis[0].kpiName!;
+            this.selectedStandardKpi.set(kpiToUse);
+            this.loadingStandardKpis.set(false);
+            this.cellSelected.set(true);
+
+            // Now fetch trend data for all cells with a known KPI
+            for (const cell of cells) {
+              this.getTrendDataByKpiAndCell(
+                kpiToUse,
+                cell.cellName!,
+                this.trendPeriod(),
+                rat.name!,
+                this.selectedGranularity()
+              );
+            }
+          },
+          error: err => {
+            this.alertService.error('Standard KPI retrieval failed');
+            this.loadingStandardKpis.set(false);
+          }
+        });
+      },
+      error: err => {
+        this.alertService.error(`Failed to get cells for sector. ${err.statusText}`);
+      }
+    });
   }
 
   setSelectedChartType(type: 's_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi') {
@@ -307,11 +395,11 @@ export class CellAnalysis implements OnInit {
 
   //---------- UTILITY METHODS -------------------
 
-  checkReturnPage(returnPage:string):boolean {
+  checkReturnPage(returnPage: string): boolean {
     const sharedCell: string = this.sharedService.selectedCell();
     const sharedStandardKpi: string = this.sharedService.selectedStandardKpi();
     const _returnPage: string = this.sharedService.returnPage;
-    return sharedCell !== '' && sharedStandardKpi !== '' && returnPage ===_returnPage;
+    return sharedCell !== '' && sharedStandardKpi !== '' && returnPage === _returnPage;
   }
 
   clearSharedServiceData(): void {
@@ -324,7 +412,7 @@ export class CellAnalysis implements OnInit {
     return selectedCellNames.includes(cellName);
   }
 
-  loadingAll(){
+  loadingAll() {
     return this.loadingTrendData() || this.loadingRats() || this.loadingStandardKpis();
   }
 
