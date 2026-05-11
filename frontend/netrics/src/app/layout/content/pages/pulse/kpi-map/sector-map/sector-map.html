@@ -1,0 +1,9 @@
+
+<div class="map-container">
+  <div id="map" class="rounded-md"></div>
+  @if (loadingCells || loadingAll) {
+    <div class="map-loading-overlay">
+      <span class="loading loading-spinner loading-md"></span>
+    </div>
+  }
+</div>

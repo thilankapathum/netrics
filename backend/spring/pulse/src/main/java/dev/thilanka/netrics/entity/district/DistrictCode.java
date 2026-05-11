@@ -2,6 +2,7 @@ package dev.thilanka.netrics.entity.district;
 
 import dev.thilanka.netrics.entity.AreaDistrictCodeMapping;
 import dev.thilanka.netrics.entity.KpiDay;
+import dev.thilanka.netrics.entity.KpiHour;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,6 +29,9 @@ public class DistrictCode {
 
     @OneToMany(mappedBy = "districtCode", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<KpiDay> kpiDays;
+
+    @OneToMany(mappedBy = "districtCode", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHours;
 
     @OneToMany(mappedBy = "districtCode", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<AreaDistrictCodeMapping> areaDistrictCodeMappings;

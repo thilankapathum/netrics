@@ -319,7 +319,64 @@ public class Mapper {
                 cell.getNodeName(),
                 cell.getRat() != null ? cell.getRat().getName() : null,
                 cell.getSite() != null ? cell.getSite().getSiteCode() : null,
-                cell.getBand() != null ? cell.getBand().getName() : null
+                cell.getBand() != null ? cell.getBand().getName() : null,
+                cell.getAzimuth(),
+                cell.getBeamwidth(),
+                cell.isMultiBeam(),
+                cell.getCarrier() != null ? cell.getCarrier().getName() : null,
+                cell.getSector() != null ? cell.getSector().getName() : null
         );
+    }
+
+    // ================= CARRIER ======================
+
+    public CarrierDto carrierToDto(Carrier carrier) {
+        return new CarrierDto(carrier.getName(), carrier.getRadius(), carrier.getRat().getName(), carrier.getBand().getName());
+    }
+
+    // ================= SITES ========================
+
+    public SiteDto siteToDto(Site site) {
+        return new SiteDto(site.getSiteCode(), site.getSiteName(), site.getLatitude(), site.getLongitude());
+    }
+
+    // ================ SECTOR ========================
+
+    public SectorDto sectorToDto(Sector sector) {
+        return new SectorDto(sector.getSectorIndex(), sector.getName(), sector.getAzimuth(), sector.getSite().getSiteCode());
+    }
+
+    //=================     MAP-CELL-THRESHOLD-SET ======================
+    public MapCellThrSetDto mapCellThrSetToDto(MapCellThrSet thrSet) {
+        return new MapCellThrSetDto(
+                thrSet.getStandardKpi().getKpiName(),
+                thrSet.getGranularity().getName(),
+                thrSet.getRat().getName(),
+                thrSet.getUserId(),
+                thrSet.isAdmin(),
+                thrSet.isActive(),
+                thrSet.isDeleted(),
+                thrSet.getCreatedAt(),
+                thrSet.getLastModifiedAt(),
+                thrSet.getCreatedBy(),
+                thrSet.getLastModifiedBy()
+        );
+    }
+
+    public MapCellThrSetResponseDto mapCellThrSetToResponseDto(MapCellThrSet thrSet) {
+        return new MapCellThrSetResponseDto(
+                thrSet.getId(),
+                thrSet.getStandardKpi().getKpiName(),
+                thrSet.getGranularity().getName(),
+                thrSet.getRat().getName(),
+                thrSet.isAdmin(),
+                thrSet.getUserId()
+        );
+    }
+
+    //=================     MAP-CELL-THRESHOLDS ======================
+
+    public MapCellThresholdDto mapCellThresholdToDto(MapCellThreshold thr) {
+        return new MapCellThresholdDto(thr.getMinValue(), thr.getMaxValue(), thr.getColor(), thr.getLabel(),thr.getPriority(),thr.getMapCellThrSet().getId());
     }
 }

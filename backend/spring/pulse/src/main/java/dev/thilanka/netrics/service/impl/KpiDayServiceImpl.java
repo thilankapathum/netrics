@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.DataQueryException;
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
@@ -39,6 +40,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final GranularityService granularityService;
     private final AreaService areaService;
     private final BandService bandService;
+    private final KpiHourService kpiHourService;
 
     @Override
     public boolean checkImproved(String worstOrder, Double difference) {
@@ -62,10 +64,10 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         if (standardKpi.getAggregation().equals("SUM")) {
             return kpiDayRepository.findLatestSumKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(), granularity.getId())
-                    .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
+                    .orElseThrow(() -> new DataQueryException("Cannot retrieve KPI values"));
         } else {
             return kpiDayRepository.findLatestAvgKpiSnapshotWithPre(standardKpi.getId(), timestamp, preTimestamp, dateService.getPeriod(period), rat.getId(), granularity.getId())
-                    .orElseThrow(() -> new RuntimeException("Cannot retrieve KPI values"));
+                    .orElseThrow(() -> new DataQueryException("Cannot retrieve KPI values"));
         }
     }
 
@@ -125,14 +127,14 @@ public class KpiDayServiceImpl implements KpiDayService {
                         district.getId(),
                         rat.getId(),
                         granularity.getId())
-                .orElseThrow(() -> new RuntimeException("KPI Snapshot Query failed!"));
+                .orElseThrow(() -> new DataQueryException("KPI Snapshot Query failed"));
     }
 
     private KpiSnapshotDto getLatestKpiSnapshotByArea(String kpiName, LocalDateTime currStart, LocalDateTime currEnd, LocalDateTime preStart, LocalDateTime preEnd, Area area, Rat rat, Granularity granularity) {
         StandardKpi standardKpi = standardKpiService.findByKpiNameAndRatId(kpiName, rat.getId());
 
         return kpiDayRepository.findKpiSnapshotByArea(standardKpi.getId(), currStart, currEnd, preStart, preEnd, area.getId(), rat.getId(), granularity.getId())
-                .orElseThrow(() -> new RuntimeException("KPI Snapshot Query failed!"));
+                .orElseThrow(() -> new DataQueryException("KPI Snapshot Query failed"));
     }
 
 
@@ -313,7 +315,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
         LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
 
-        return kpiDayRepository.findWorstCellsByArea(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit,area.getId(), rat.getId(), excludeZeroes, granularity.getId());
+        return kpiDayRepository.findWorstCellsByArea(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId());
     }
 
     @Override
@@ -331,7 +333,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
         LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
 
-        return kpiDayRepository.findWorstCellsByAreaAndBand(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit,area.getId(), rat.getId(), excludeZeroes, granularity.getId(),band.getId());
+        return kpiDayRepository.findWorstCellsByAreaAndBand(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId(), band.getId());
     }
 
     @Override
@@ -343,7 +345,7 @@ public class KpiDayServiceImpl implements KpiDayService {
 
     @Override
     public List<CellDto> getCellsByTimestamp(LocalDateTime timestamp, LocalDateTime preTimestamp, Rat rat, Granularity granularity) {
-        return kpiDayRepository.getCellsByTimestamp(timestamp,preTimestamp, rat.getId(), granularity.getId());
+        return kpiDayRepository.getCellsByTimestamp(timestamp, preTimestamp, rat.getId(), granularity.getId());
     }
 
 
@@ -369,11 +371,15 @@ public class KpiDayServiceImpl implements KpiDayService {
 
 //        Long periodValue = dateService.getPeriod(period);
 
-        List<KpiData> kpiData = kpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, startTimestamp, cellName, rat.getId(), granularity.getId());
 
-        return kpiData.stream()
-                .map(mapper::kpiDataToDto)
-                .collect(Collectors.toList());
+        if (granularity.getName().equals("hour")) {        //-- Query trend data hourly
+            return kpiHourService.getDataByKpiAndCell(standardKpi.getId(), cellName, timestamp, startTimestamp, rat.getId(), granularity.getId());
+        } else {
+            List<KpiData> kpiData = kpiDayRepository.findDataByKpiAndCell(standardKpi.getId(), timestamp, startTimestamp, cellName, rat.getId(), granularity.getId());
+            return kpiData.stream()
+                    .map(mapper::kpiDataToDto)
+                    .collect(Collectors.toList());
+        }
     }
 
 
@@ -424,7 +430,7 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period)
                 .toLocalDate().atStartOfDay();
-        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpiAndArea(standardKpi.getId(), timestamp,startTimestamp, area.getId(), rat.getId(), granularity.getId());
+        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpiAndArea(standardKpi.getId(), timestamp, startTimestamp, area.getId(), rat.getId(), granularity.getId());
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
 
@@ -444,7 +450,7 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period)
                 .toLocalDate().atStartOfDay();
-        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpiAreaAndBand(standardKpi.getId(), timestamp,startTimestamp, area.getId(), rat.getId(), granularity.getId(),band.getId());
+        List<KpiTrend> kpiTrends = kpiDayRepository.findTrendDataByKpiAreaAndBand(standardKpi.getId(), timestamp, startTimestamp, area.getId(), rat.getId(), granularity.getId(), band.getId());
         return kpiTrends.stream().map(mapper::kpiTrendToDto).collect(Collectors.toList());
     }
 

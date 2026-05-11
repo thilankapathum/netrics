@@ -1,10 +1,9 @@
 package dev.thilanka.netrics.controller;
 
+import dev.thilanka.netrics.dto.WorstCellCreationStatusDto;
 import dev.thilanka.netrics.dto.WorstCellSaveDto;
-import dev.thilanka.netrics.dto.WorstCellsDashboardDto;
 import dev.thilanka.netrics.dto.WorstCellsWithLatestDto;
 import dev.thilanka.netrics.service.DateService;
-import dev.thilanka.netrics.service.KpiDayService;
 import dev.thilanka.netrics.service.WorstCellDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -60,9 +59,12 @@ public class WorstCellDashboardController {
             @RequestParam String date,
             @RequestParam String ratName,
             @RequestParam String granularityName) {
-        LocalDateTime timestamp = dateService.extractDate(date);
-        Map<String, List<WorstCellSaveDto>> savedWorstCells = worstCellDashboardService.createWorstCellsByRatAndAreaType(period, areaType, timestamp, ratName, granularityName);
-        return new ResponseEntity<>(savedWorstCells, HttpStatus.CREATED);
+        if (!worstCellDashboardService.isCreatingWorstCells()) {     // Checking whether already creating Worst Cells in progress
+            LocalDateTime timestamp = dateService.extractDate(date);
+            Map<String, List<WorstCellSaveDto>> savedWorstCells = worstCellDashboardService.createWorstCellsByRatAndAreaType(period, areaType, timestamp, ratName, granularityName);
+            return new ResponseEntity<>(savedWorstCells, HttpStatus.CREATED);
+        } else return new ResponseEntity<>(null, HttpStatus.CONFLICT);
+
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
@@ -89,6 +91,12 @@ public class WorstCellDashboardController {
             @RequestParam String granularityName
     ) {
         return worstCellDashboardService.getTimestamps(kpiName, period, areaName, ratName, granularityName);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("create-status")
+    public ResponseEntity<WorstCellCreationStatusDto> getWorstCellCreationStatus() {
+        return ResponseEntity.ok(worstCellDashboardService.getWorstCellCreationStatus());
     }
 
 }

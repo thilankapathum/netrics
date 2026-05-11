@@ -1,4 +1,5 @@
 @import "tailwindcss";
+/*@import "leaflet/dist/leaflet.css";*/
 @plugin "daisyui" {
   themes: [netrics_light, netrics_dark]; /* use your themes only */
 }
@@ -142,6 +143,11 @@ span.tsize-48 {
 .tooltip-xs {
   --tooltip-padding: 0.15rem 0.35rem;
   --tooltip-text-size: 0.65rem;
+}
+
+.leaflet-tooltip {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px;
 }
 
 

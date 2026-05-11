@@ -1,0 +1,105 @@
+<dialog #createWorstCellModal id="create_worst_cell_modal" [class.modal-open]="open" class="modal w-auto">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold mb-6">Create Worst Cells for Dashboard</h3>
+    <!--    <div class="flex flex-col items-start gap-3">-->
+<!--    <div class="grid grid-cols-2 gap-2 items-start">-->
+    <div class="grid grid-cols-[120px_auto] gap-4 items-center">
+      <div class="w-32">
+        <p>RAT</p>
+      </div>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+        @for (_rat of rats; track $index) {
+          <input [disabled]="creatingWorstCells()" type="radio" name="rat_tabs_create_wcells" class="tab" [value]="_rat.name"
+                 aria-label="{{_rat.label}}"
+                 [checked]="rat() === _rat.name" (change)="selectRat($any($event.target).value)"/>
+        }
+      </div>
+      <div class="w-32">
+        <p>Area Type</p>
+      </div>
+      <select [disabled]="creatingWorstCells()" class="select select-sm border join-item w-fit" [(ngModel)]="areaType"
+              (change)="selectAreaType(areaType()!)">
+        @for (at of areaTypes; track at.name) {
+          <option [value]="at.name">{{ at.name }}</option>
+        }
+      </select>
+      <div class="w-32">
+        <p>Granularity</p>
+      </div>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+        @for (gran of granularities; track gran.name) {
+          <input [disabled]="creatingWorstCells()" type="radio" name="granularity_tabs_create_wcells" class="tab" [value]="gran.name"
+                 aria-label="{{gran.label}}"
+                 [checked]="granularity() === gran.name"
+                 (change)="selectGranularity($any($event.target).value)"/>
+        }
+      </div>
+      <div class="w-32">
+        <p>Select a date</p>
+      </div>
+      <div class="flex flex-row gap-2 items-center w-fit">
+        <button [disabled]="creatingWorstCells()" #selectedDateBtn
+                class="input input-bordered input-sm w-auto"
+                popovertarget="cally-popover-start" id="cally-start"
+                style="anchor-name:--cally-start">
+          <svg class="text-secondary" width="14" height="14" viewBox="0 0 24 24" fill="none"
+               xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M4 8H20M4 8V16.8002C4 17.9203 4 18.4801 4.21799 18.9079C4.40973 19.2842 4.71547 19.5905 5.0918 19.7822C5.5192 20 6.07899 20 7.19691 20H16.8031C17.921 20 18.48 20 18.9074 19.7822C19.2837 19.5905 19.5905 19.2842 19.7822 18.9079C20 18.4805 20 17.9215 20 16.8036V8M4 8V7.2002C4 6.08009 4 5.51962 4.21799 5.0918C4.40973 4.71547 4.71547 4.40973 5.0918 4.21799C5.51962 4 6.08009 4 7.2002 4H8M20 8V7.19691C20 6.07899 20 5.5192 19.7822 5.0918C19.5905 4.71547 19.2837 4.40973 18.9074 4.21799C18.4796 4 17.9203 4 16.8002 4H16M8 4H16M8 4V2M16 4V2M11.75 16C11.8881 16 12 15.8881 12 15.75V12.25C12 12.1119 11.8881 12 11.75 12H8.25C8.11193 12 8 12.1119 8 12.25V15.75C8 15.8881 8.11193 16 8.25 16H11.75Z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+
+          {{ selectedDate() || 'Pick a date' }}
+        </button>
+        <div popover
+             id="cally-popover-start" class="dropdown bg-base-100 rounded-box shadow-lg"
+             style="position-anchor:--cally-start">
+          <calendar-date class="cally bg-base-100 border border-base-300 shadow-lg rounded-box"
+                         (change)="onSelectedDateChange($event)">
+            <svg aria-label="Previous" class="fill-current w-4 h-4" slot="previous" xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 24 24">
+              <path d="M15.75 19.5 8.25 12l7.5-7.5"></path>
+            </svg>
+            <svg aria-label="Next" class="fill-current w-4 h-4" slot="next" xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 24 24">
+              <path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
+            </svg>
+            <calendar-month></calendar-month>
+          </calendar-date>
+        </div>
+      </div>
+      <!--      </div>-->
+
+
+    </div>
+    <div class="flex flex-row mt-12">
+      <div class="tooltip text-xs">
+        <button [disabled]="creatingWorstCells() || isInputsValid() || !hasAnyRole(['PULSE_CREATE',])" class="btn btn-primary btn-outline btn-sm" (click)="createWorstCells()">
+          <span [hidden]="!creatingWorstCells()" class="loading loading-spinner loading-xs"></span>
+          <span [hidden]="creatingWorstCells()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 21.0002L7 21M17 21.0002L17.8031 21C18.921 21 19.48 21 19.9074 20.7822C20.2837 20.5905 20.5905 20.2843 20.7822 19.908C21 19.4806 21 18.921 21 17.8031V9.21955C21 8.77072 21 8.54521 20.9521 8.33105C20.9095 8.14 20.8393 7.95652 20.7432 7.78595C20.6366 7.59674 20.487 7.43055 20.1929 7.10378L17.4377 4.04241C17.0969 3.66374 16.9242 3.47181 16.7168 3.33398C16.5303 3.21 16.3242 3.11858 16.1073 3.06287C15.8625 3 15.5998 3 15.075 3H6.2002C5.08009 3 4.51962 3 4.0918 3.21799C3.71547 3.40973 3.40973 3.71547 3.21799 4.0918C3 4.51962 3 5.08009 3 6.2002V17.8002C3 18.9203 3 19.4796 3.21799 19.9074C3.40973 20.2837 3.71547 20.5905 4.0918 20.7822C4.5192 21 5.07899 21 6.19691 21H7M17 21.0002V17.1969C17 16.079 17 15.5192 16.7822 15.0918C16.5905 14.7155 16.2837 14.4097 15.9074 14.218C15.4796 14 14.9203 14 13.8002 14H10.2002C9.08009 14 8.51962 14 8.0918 14.218C7.71547 14.4097 7.40973 14.7155 7.21799 15.0918C7 15.5196 7 16.0801 7 17.2002V21M15 7H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          </span>
+
+          Create Worst Cells
+        </button>
+      </div>
+      <div class="ml-auto">
+        <button class="btn btn-sm" type="button" (click)="onCancel()">
+          Close
+          <span class="text-secondary">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 21L12 12M12 12L3 3M12 12L21.0001 3M12 12L3 21.0001" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+    <div class="mt-4 p-4 border-base-300 rounded-xl bg-base-200" [hidden]="!creatingWorstCells()">
+      <p class="text-secondary text-xs">Worst cell creation is in progress...</p>
+      <progress class="progress w-full" value="{{executedItems()/totalItems()*100}}" max="100"></progress>
+    </div>
+  </div>
+</dialog>

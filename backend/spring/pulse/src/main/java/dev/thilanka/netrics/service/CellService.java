@@ -3,6 +3,7 @@ package dev.thilanka.netrics.service;
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.CellNameDto;
+import dev.thilanka.netrics.dto.CellUpdateResult;
 import dev.thilanka.netrics.entity.Cell;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public interface CellService {
 
     Cell updateCell(Cell cell);
 
-    CellDto updateCell(CellDto dto);
+    CellUpdateResult updateCell(CellDto dto);
 
     List<CellDto> updateCells(List<CellDto> dtos);
 
@@ -32,11 +33,16 @@ public interface CellService {
 
     List<CellDto> getAllCells();
 
+    List<CellDto> getAllCellInfo();
+
     List<CellNameDto> searchCell(String cellName);
+
+    List<CellNameDto> getCellsBySector(String sectorName, String ratName);
 
     List<CellDto> createLatestCells(String ratName, String granularityName);
 
     CompletableFuture<Integer> reloadCells();
+
     CompletableFuture<Integer> reloadCells(String ratName, String granularityName);
 
     List<Cell> findCellsWithMissingInfo();

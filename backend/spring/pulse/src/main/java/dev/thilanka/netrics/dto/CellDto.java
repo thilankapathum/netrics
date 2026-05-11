@@ -5,6 +5,11 @@ public record CellDto(
         String nodeName,
         String ratName,
         String siteCode,
-        String bandName
+        String bandName,
+        Integer azimuth,
+        Integer beamwidth,
+        Boolean isMultiBeam,
+        String carrierName,
+        String sectorName
 ) {
 }

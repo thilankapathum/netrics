@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, effect, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
 import {CommonModule, DecimalPipe} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {BasickpiService} from '../../../../service/pulse/ltefdd/basickpi.service';
@@ -11,12 +11,10 @@ import {StandardkpiService} from '../../../../service/pulse/ltefdd/standardkpi.s
 import {KpiTrendDto} from '../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../models/pulse/KpiDataDto';
 import {Linechart} from '../../../../components/charts/linechart/linechart/linechart';
-import {firstValueFrom, forkJoin, map, Observable, of} from 'rxjs';
+import {firstValueFrom, forkJoin, map, Observable} from 'rxjs';
 import {ChartService} from '../../../../service/components/chart/chart.service';
 import {WorstCells} from '../../../../models/pulse/WorstCells';
 import {AlertService} from '../../../../components/alert/alert.service';
-import {DistrictDto} from '../../../../models/pulse/DistrictDto';
-import {DistrictService} from '../../../../service/pulse/district/district.service';
 import {KpiSnapshot} from '../../../../models/pulse/KpiSnapshot';
 import {Router, RouterLink} from '@angular/router';
 import {SharedService} from '../../../../service/pulse/shared-service';
@@ -33,20 +31,22 @@ import {CellService} from '../../../../service/pulse/cell-service';
 import {BandService} from '../../../../service/pulse/band-service';
 import {BandDto} from '../../../../models/pulse/BandDto';
 import {BandWorstCellsKpiTrend} from '../../../../models/pulse/BandWorstCellsKpiTrend';
-import {ApexAxisChartSeries} from 'ng-apexcharts';
 import {BandKpiSeries} from '../../../../models/apexCharts/BandKpiSeries';
+import {PsCells} from './pulse-settings/ps-cells/ps-cells';
 
 @Component({
   selector: 'app-pulse',
   standalone: true,
-  imports: [CommonModule, LineChart, FormsModule, Linechart, DecimalPipe, DecimalPipe, DecimalPipe, RouterLink],
+  imports: [CommonModule, LineChart, FormsModule, Linechart, DecimalPipe, DecimalPipe, DecimalPipe, RouterLink, PsCells],
   templateUrl: './pulse.component.html',
   styleUrl: './pulse.component.css'
 })
 export class PulseComponent implements OnInit {
 
-  selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
-  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  // selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
+  // selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  selectedRat = signal<string>('ltefdd');
+  selectedGranularity = signal<string>('day-average');
   dateRanges = signal<{ [aggregation: string]: DateRangeDto | undefined }>({});
 
   areaTypes: AreaTypeDto[] = [];
@@ -67,6 +67,7 @@ export class PulseComponent implements OnInit {
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
   selectedKpiTrendPeriod = signal<'month' | 'week' | 'quarter'>('month')
+  selectedKpiTrendPeriodModal = signal<'month' | 'week' | 'quarter'>('month')
   kpiTrendData: KpiTrendDto[] = [];
   bandKpiTrend = signal<KpiTrendDto[]>([]);
   bandWorstCellsKpiTrends: BandWorstCellsKpiTrend[] = [];
@@ -92,7 +93,11 @@ export class PulseComponent implements OnInit {
   loadingWorstCells: boolean = false;
   loadingKpiTrend: boolean = false;
   loadingAnalysisModalChart: boolean = false;
-  loadingMissingCellInfoUpload: boolean = false;
+  loadingAreaTypes: boolean = false;
+  loadingAreas: boolean = false;
+  loadingDateRanges: boolean = false;
+
+  showMissingCellInfoModal: boolean = false;
 
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
   @ViewChild('cellMissingInfoModal') cellMissingInfoModal!: ElementRef<HTMLDialogElement>;
@@ -115,6 +120,10 @@ export class PulseComponent implements OnInit {
     this.queryDateRanges();
   }
 
+  loadingAll() {
+    return this.loadingBasicKpi || this.loadingWorstCells || this.loadingKpiTrend  || this.loadingAreaTypes || this.loadingAreas || this.loadingDateRanges;
+  }
+
   queryDateRanges() {
     for (let range of this.aggregationList) {
       this.getDateRanges(range, this.selectedRat(), this.selectedGranularity());
@@ -122,6 +131,7 @@ export class PulseComponent implements OnInit {
   }
 
   getDateRanges(aggregation: string, selectedRat: string, granularityName: string) {
+    this.loadingDateRanges = true;
     this.dateService.getLatestDateRange(aggregation, selectedRat, granularityName).subscribe(
       {
         next: data => {
@@ -129,10 +139,12 @@ export class PulseComponent implements OnInit {
             ...range,
             [aggregation]: data
           }));
+          this.loadingDateRanges = false;
         }, error: err => {
           console.log('Error getting date range');
           console.error(err);
-          this.alertService.error('Error getting date range');
+          this.alertService.error(`Error getting date range. ${err.status} ${err.statusText}`);
+          this.loadingDateRanges = false;
         }
       }
     )
@@ -158,7 +170,7 @@ export class PulseComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting AreaByUserId)`);
+        this.alertService.error(`Error getting Area. ${error.status} ${error.statusText}`);
       }
     })
   }
@@ -178,7 +190,7 @@ export class PulseComponent implements OnInit {
       this.selectedRat.set(this.sharedService.selectedRat())
     }
 
-    if (this.sharedService.bandWise != this.bandWise){
+    if (this.sharedService.bandWise != this.bandWise) {
       this.bandWise = this.sharedService.bandWise
     }
 
@@ -233,9 +245,9 @@ export class PulseComponent implements OnInit {
             this.setPage(this.sharedService.currentPage);  //-- To visit prev. worst-cell page by back-navigation from /cell page
             this.sharedService.currentPage = 0;
             this.loadingWorstCells = false;
-          }, error: err => {
-            console.error(err);
-            this.alertService.error('Error getting WorstCellsByKpiAreaAndBand');
+          }, error: error => {
+            console.error(error);
+            this.alertService.error(`Error getting Worst Cells. ${error.status} ${error.statusText}`);
             this.loadingWorstCells = false;
           }
         });
@@ -257,9 +269,9 @@ export class PulseComponent implements OnInit {
     this.selectedBand.set('');
     try {
       this.bands = await firstValueFrom(this.bandService.getByRatName(rat));
-    } catch (e) {
-      console.error('error retrieving bands', e);
-      this.alertService.error('Error retrieving Bands')
+    } catch (error) {
+      console.error('error retrieving bands', error);
+      this.alertService.error(`Error retrieving Bands.`)
     }
     this.getBasicKpi(rat);
     this.getAllStandardKpi(rat);
@@ -268,6 +280,7 @@ export class PulseComponent implements OnInit {
   //----------- GETTERS ----------------------------------
 
   getAreaTypes() {
+    this.loadingAreaTypes = true;
     this.areaTypeService.getAllAreaTypes().subscribe({
         next: data => {
           this.areaTypes = data;
@@ -280,9 +293,11 @@ export class PulseComponent implements OnInit {
             this.areaType.set(districtsAreaType?.name);
           }
           this.getAreasByAreaType(this.areaType()!);
+          this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.alertService.error(`Error getting Area-types. (${error.status}:${error.statusText})`);
+          this.loadingAreaTypes = false;
         }
       }
     )
@@ -290,6 +305,7 @@ export class PulseComponent implements OnInit {
 
 
   getAreasByAreaType(areaTypeName: string) {
+    this.loadingAreas = true;
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
@@ -305,9 +321,11 @@ export class PulseComponent implements OnInit {
         }
         this.getBasicKpi(this.selectedRat());
         this.getAllStandardKpi(this.selectedRat());
+        this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error(`Error getting Areas. (${error.status}:${error.statusText})`);
+        this.loadingAreas = false;
       }
     })
   }
@@ -329,14 +347,14 @@ export class PulseComponent implements OnInit {
           }, error: error => {
             console.log("Error getAllBasicKpiSnapshots");
             console.error(error);
-            this.alertService.error("Basic KPI Snapshot retrieval failed");
+            this.alertService.error(`Basic KPI Snapshot retrieval failed. ${error.status} ${error.statusText}`);
           }
         })
       }, error: error => {
         this.loadingBasicKpi = false;
         console.log("Error getAllBasicKpi");
         console.error(error);
-        this.alertService.error("Basic KPI retrieval failed");
+        this.alertService.error(`Basic KPI retrieval failed. ${error.status} ${error.statusText}`);
       }
     });
   }
@@ -369,7 +387,7 @@ export class PulseComponent implements OnInit {
           }
           this.selectKpi(this.selectedStandardKpi(), ratName, this.selectedGranularity());    // Getting Worst-cells and Trend-data
         } else {
-          this.alertService.error("KPI are unavailable for the RAT");
+          this.alertService.error(`KPI are unavailable for the RAT.`);
           this.kpiTrendData = [];
           this.allBandWorstCells = [];
           this.allWorstCells = [];
@@ -378,7 +396,7 @@ export class PulseComponent implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error("Standard KPI retrieval failed");
+        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
       }
     })
   }
@@ -394,9 +412,9 @@ export class PulseComponent implements OnInit {
     if (bandWise) {
       try {
         this.bands = await firstValueFrom(this.bandService.getByRatName(ratName));
-      } catch (e) {
-        console.error('error retrieving bands', e);
-        this.alertService.error('Error retrieving Bands')
+      } catch (error) {
+        console.error('error retrieving bands', error);
+        this.alertService.error(`Error retrieving Bands.`)
       }
 
       if (band != null && band != '' && band != undefined) {   // Checking whether any band is selected/filtered
@@ -416,38 +434,55 @@ export class PulseComponent implements OnInit {
 
   //----------- KPI TRENDS -----------------
 
-  getTrendDataByKpiForAllBands(kpiName: string, kpiTrendPeriod: string, areaName: string, ratName: string, granularityName: string) {
+
+  getTrendDataByKpiForAllBands(kpiName: string, kpiTrendPeriod: string, areaName: string, ratName: string, granularityName: string
+  ) {
     this.loadingKpiTrend = true;
     this.bandChartSeries.set([]);
-    for (let band of this.bands) {
-      this.loadingKpiTrend = true;
+
+    const observables = this.bands.map(band => {
       let index = this.bandWorstCellsKpiTrends.findIndex(b => b.band?.name === band.name);
       if (index === -1) {
-        this.bandWorstCellsKpiTrends.push({
-          band: band
-        });
+        this.bandWorstCellsKpiTrends.push({band});
         index = this.bandWorstCellsKpiTrends.findIndex(b => b.band?.name === band.name);
       }
 
-      this.kpiDayService.getDataByKpiAreaAndBand(kpiName, kpiTrendPeriod, areaName, ratName, granularityName, band.name!).subscribe({
-        next: data => {
+      return this.kpiDayService.getDataByKpiAreaAndBand(
+        kpiName,
+        kpiTrendPeriod,
+        areaName,
+        ratName,
+        granularityName,
+        band.name!
+      ).pipe(
+        map(data => ({data, band, index}))
+      );
+    });
+
+    forkJoin(observables).subscribe({
+      next: results => {
+        results.forEach(({data, band, index}) => {
           this.bandWorstCellsKpiTrends[index] = {
             ...this.bandWorstCellsKpiTrends[index],
             kpiTrend: data
-          }
-          const seriesForBand = this.chartService.buildSeriesForBand(this.bandWorstCellsKpiTrends[index].kpiTrend!, this.bandWorstCellsKpiTrends[index].band!);
-          this.bandChartSeries.update(existing => {
-            return [...existing, ...seriesForBand];
-          });
-          this.loadingKpiTrend = false;
-        }, error: err => {
-          console.log("Error getDataByKpiAndBand:");
-          console.error(err);
-          this.alertService.error("KPI Trend Data retrieval failed");
-          this.loadingKpiTrend = false;
-        }
-      });
-    }
+          };
+
+          const seriesForBand = this.chartService.buildSeriesForBand(
+            this.bandWorstCellsKpiTrends[index].kpiTrend!,
+            this.bandWorstCellsKpiTrends[index].band!
+          );
+
+          this.bandChartSeries.update(existing => [...existing, ...seriesForBand]);
+        });
+
+        this.loadingKpiTrend = false;
+      },
+      error: error => {
+        console.error('Error getting KPI Trend Data:', error);
+        this.alertService.error(`KPI Trend Data retrieval failed. ${error.status} ${error.statusText}`);
+        this.loadingKpiTrend = false;
+      }
+    });
   }
 
   getTrendDataByKpi(kpiName: string, period: string, ratName: string, granularityName: string) {
@@ -462,7 +497,7 @@ export class PulseComponent implements OnInit {
       error: error => {
         console.log("Error getDataByKpi:");
         console.error(error);
-        this.alertService.error("Trend data retrieval failed");
+        this.alertService.error(`Trend data retrieval failed. ${error.status} ${error.statusText}`);
         this.loadingKpiTrend = false;
       }
     })
@@ -486,7 +521,7 @@ export class PulseComponent implements OnInit {
       },
       error: error => {
         console.error("Error getWorstCellsByKpi:", error);
-        this.alertService.error("Worst cells retrieval failed");
+        this.alertService.error(`Worst cells retrieval failed. ${error.status} ${error.statusText}`);
         this.loadingWorstCells = false;
       }
     });
@@ -508,6 +543,10 @@ export class PulseComponent implements OnInit {
     } else {
       this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
     }
+  }
+
+  onPeriodChangeModal($event: Event) {
+    this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell,this.selectedKpiTrendPeriodModal(),this.selectedRat(), this.selectedGranularity());
   }
 
 
@@ -538,95 +577,62 @@ export class PulseComponent implements OnInit {
     this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
     this.analysisModal.nativeElement.showModal();
-    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', this.selectedRat(), this.selectedGranularity())
+    this.selectedKpiTrendPeriodModal.set('month');
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity())
       .subscribe({
         next: data => {
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
           this.loadingAnalysisModalChart = false;
-        }, error: err => {
+        }, error: error => {
           this.loadingAnalysisModalChart = false;
           console.log("Error getDataByKpiLabelAndCell:");
-          console.error(err);
-          this.alertService.error("KPI Data retrieval failed");
+          console.error(error);
+          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
         }
       })
   }
 
-  openMissingCellInfoModal() {
-    this.cellMissingInfoModal.nativeElement.showModal()
+  onNextCell(){
+    if (this.isNextCellAvailable(this.analysisModalCell, this.allWorstCells)) {
+      let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
+      this.analysisModalCell = this.allWorstCells[currentIndex + 1].cellName!;
+      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+    }
+  }
+
+  onPrevCell(){
+    if (this.isPrevCellAvailable(this.analysisModalCell, this.allWorstCells)) {
+      let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
+      this.analysisModalCell = this.allWorstCells[currentIndex - 1].cellName!;
+      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+    }
   }
 
 
   //============ MODAL KPI TREND CHART =================
 
+  queryModalTrendDataByKpiNameAndCell(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
+    this.chartSeries = [];
+    const resolvedGranularity = this.resolveGranularity(trendPeriod, granularityName);
+    this.loadingAnalysisModalChart = true;
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, trendPeriod, ratName, resolvedGranularity)
+      .subscribe({
+        next: data => {
+          this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
+          this.loadingAnalysisModalChart = false;
+        }, error: error => {
+          this.loadingAnalysisModalChart = false;
+          console.log("Error getDataByKpiLabelAndCell:");
+          console.error(error);
+          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+        }
+      });
+  }
+
   getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
     return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
   }
 
-  //============ CELL INFO EXPORT & IMPORT =============
-
-  exportCellsWithMissingInfo() {
-    this.cellService.exportCellsWithMissingInfo().subscribe({
-      next: (blob) => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = 'missing_cell_info.csv';
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-      },
-      error: error => {
-        console.log("Error exporting missing cell information:");
-        console.error(error);
-        this.alertService.error("Error exporting missing cell information!");
-      }
-    })
-  }
-
-  importCellsWithCorrectedInfo(fileInput: HTMLInputElement) {
-
-    this.loadingMissingCellInfoUpload = true;
-
-    const files = fileInput.files;
-
-    if (!files || files.length === 0) {
-      // alert('Please select a CSV file to upload.');
-      this.alertService.warning('Please select a CSV file to upload.')
-      this.loadingMissingCellInfoUpload = false;
-      return;
-    }
-
-    const file: File = files[0];
-
-    // Optional: validate file type
-    if (!file.name.endsWith('.csv')) {
-      this.alertService.warning('Please upload a CSV file.')
-      // alert('Please upload a CSV file.');
-      this.loadingMissingCellInfoUpload = false;
-      return;
-    }
-
-    this.cellService.importCellsWithCorrectedInfo(file).subscribe({
-      next: (blob) => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = 'missing_cell_info.csv';
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-
-        fileInput.value = '';
-        this.loadingMissingCellInfoUpload = false;
-      },
-      error: error => {
-        console.log("Error exporting missing cell information:");
-        console.error(error);
-        this.loadingMissingCellInfoUpload = false;
-        this.alertService.error("Error exporting missing cell information!");
-        fileInput.value = '';
-      }
-    })
-  }
 
   getCellCountWithMissingInfo() {
     this.cellService.getCellCountWithMissingInfo().subscribe({
@@ -639,7 +645,7 @@ export class PulseComponent implements OnInit {
       error: error => {
         console.log("Error getCellCountWithMissingInfo:");
         console.error(error);
-        this.alertService.error("Error retrieving Cell count with missing information");
+        this.alertService.error(`Error retrieving Cell count with missing information. ${error.status} ${error.statusText}`);
       }
     })
   }
@@ -662,13 +668,13 @@ export class PulseComponent implements OnInit {
     this.sharedService.selectedStandardKpi.set(this.selectedStandardKpi());
     this.sharedService.selectedCell.set(this.analysisModalCell);
     this.sharedService.aggregation.set(this.aggregation());
-    // this.sharedService.district = this.district;
     this.sharedService.area.set(this.area());
     this.sharedService.areaType.set(this.areaType());
     this.sharedService.excludeZeroes = this.excludeZeroes;
     this.sharedService.currentPage = this.currentPage;
     this.sharedService.bandWise = this.bandWise;
     this.sharedService.selectedBand.set(this.selectedBand());
+    this.sharedService.returnPage = 'pulse';
   }
 
   clearSharedServiceData(): void {
@@ -703,5 +709,32 @@ export class PulseComponent implements OnInit {
       return item.value! > standardKpi.threshold;
     }
     return false;
+  }
+
+  private resolveGranularity(period: string, selectedGranularity: string): string {
+    return period === 'week' ? 'hour' : selectedGranularity;
+  }
+
+   isNextCellAvailable(cellName:string, worstCellList: WorstCells[]){
+    const currentIndex = this.extractCurrentCellIndex(cellName, worstCellList);
+    return currentIndex + 1 < worstCellList.length;
+  }
+
+   isPrevCellAvailable(cellName:string, worstCellList: WorstCells[]){
+    const currentIndex = this.extractCurrentCellIndex(cellName, worstCellList);
+    return currentIndex > 0;
+  }
+
+   extractCurrentCellIndex(cellName:string, worstCellList: WorstCells[]){
+    return worstCellList.findIndex(cN => cN.cellName === cellName);
+  }
+
+  //----------------- MODALS -------------------------------
+  openMissingCellInfoModal() {
+    this.showMissingCellInfoModal = true;
+  }
+
+  closeMissingCellInfoModal() {
+    this.showMissingCellInfoModal = false;
   }
 }

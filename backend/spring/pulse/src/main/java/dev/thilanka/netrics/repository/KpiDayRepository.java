@@ -97,9 +97,6 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     Optional<KpiSnapshotCurrentPre> findLatestSumKpiSnapshotWithPre(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("PreTimestamp") LocalDateTime preTimestamp, @Param("period") Long period, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
 
-
-
-
     @Query(value = """
             SELECT
                 curr.kpi_label,
@@ -259,15 +256,15 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             WITH agg AS (
                 SELECT
                     cell_name,
-
+            
                     SUM(numerator_kpi_value)    FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_num,
                     SUM(denominator_kpi_value)  FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_den,
                     AVG(kpi_value)              FILTER (WHERE timestamp BETWEEN :currStart AND :timestamp)     AS curr_avg,
-
+            
                     SUM(numerator_kpi_value)    FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_num,
                     SUM(denominator_kpi_value)  FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_den,
                     AVG(kpi_value)              FILTER (WHERE timestamp BETWEEN :preStart AND :preTimestamp)   AS pre_avg
-    
+            
                 FROM kpi_values
                 WHERE standard_kpi_id = :standardKpiId
                   AND rat_id = :ratId
@@ -275,7 +272,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                   AND granularity_id = :granularityId
                 GROUP BY cell_name
             ),
-    
+            
             calc AS (
                 SELECT
                     a.cell_name,
@@ -283,21 +280,21 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     sk.label AS kpi_label,
                     sk.unit,
                     sk.worst_order,
-
+            
                     CASE
                         WHEN sk.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den,0)) * 100, a.curr_avg)
                         ELSE COALESCE((a.curr_num / NULLIF(a.curr_den,0)), a.curr_avg)
                     END AS curr_value,
-
+            
                     CASE
                         WHEN sk.unit = '%' THEN COALESCE((a.pre_num / NULLIF(a.pre_den,0)) * 100, a.pre_avg)
                         ELSE COALESCE((a.pre_num / NULLIF(a.pre_den,0)), a.pre_avg)
                     END AS prev_value
-    
+            
                 FROM agg a
                 JOIN standard_kpi sk ON sk.id = :standardKpiId
             )
-    
+            
             SELECT
                 cell_name,
                 kpi_name,
@@ -306,29 +303,29 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                 curr_value AS value,
                 prev_value AS previous_value,
                 (curr_value - prev_value) AS difference,
-    
+            
                 CASE
                     WHEN worst_order = 'ASC'  AND (curr_value > prev_value) THEN 1
                     WHEN worst_order = 'DESC' AND (curr_value < prev_value) THEN 1
                     ELSE 0
                 END AS improved
-    
+            
             FROM calc
-
+            
             WHERE curr_value IS NOT NULL
             AND (
                    :excludeZeroes = FALSE
                    OR curr_value != 0
                 )
-    
+            
             ORDER BY
                 CASE WHEN worst_order = 'ASC'  THEN curr_value END ASC  NULLS LAST,
                 CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
-    
+            
             LIMIT 25;
             """,
             nativeQuery = true)
-    List<WorstCellsDto> findWorstCells(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
+    List<WorstCellsDto> findWorstCells(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
 
 
     @Query(value = """
@@ -560,7 +557,6 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     );
 
 
-
     @Query(value = """
             WITH area_cells AS (
                 SELECT l.*
@@ -574,7 +570,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                   AND l.timestamp BETWEEN :preStart AND :timestamp -- full range for both periods
                   AND l.granularity_id = :granularityId
                 ),
-
+            
                 -- Step 2: Aggregate current period
                 agg_curr AS (
                     SELECT
@@ -587,7 +583,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     FROM area_cells
                     GROUP BY cell_name, rat_id
                 ),
-
+            
                 -- Step 3: Aggregate previous period
                 agg_prev AS (
                     SELECT
@@ -598,7 +594,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     FROM area_cells
                     GROUP BY cell_name
                 ),
-
+            
                 -- Step 4: Combine with KPI metadata and calculate values
                 calc AS (
                     SELECT
@@ -620,7 +616,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     LEFT JOIN agg_prev p ON c.cell_name = p.pre_cell_name
                     JOIN standard_kpi sk ON sk.id = :standardKpiId
                 )
-
+            
                 -- Step 5: Final selection with NULL-safe ordering
                 SELECT
                     date_trunc('day', timestamps) AS timestamps,
@@ -649,7 +645,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                     CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
                 LIMIT 10
             """, nativeQuery = true)
-    List<WorstCellSaveDto> findWorstCellsForDashboardByArea(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart , @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("areaId") Long areaId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
+    List<WorstCellSaveDto> findWorstCellsForDashboardByArea(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("areaId") Long areaId, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
 
 
     // ----------------------------- KPI DATA BY CELL AND KPI ----------------------------------------------------------
@@ -674,47 +670,46 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     List<KpiData> findDataByKpiAndCell(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("cellName") String cellName, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
 
-
     // ----------------------------- KPI TREND DATA BY KPI ----------------------------------------------------------
 
 
     @Query(value = """
-            SELECT
-                date_trunc('day', d."timestamp") AS "timestamp",
-                skpi.label AS kpi_label,
-                CASE
-                    WHEN skpi.unit = '%' THEN
-                        COALESCE(
-                            (SUM(d.numerator_kpi_value) / NULLIF(SUM(d.denominator_kpi_value), 0)) * 100,
-                            CASE
-                                WHEN skpi.aggregation = 'SUM' THEN SUM(d.kpi_value)
-                                ELSE AVG(d.kpi_value)
-                            END
-                        )
-                    ELSE
-                        COALESCE(
-                            (SUM(d.numerator_kpi_value) / NULLIF(SUM(d.denominator_kpi_value), 0)),
-                            CASE
-                                WHEN skpi.aggregation = 'SUM' THEN SUM(d.kpi_value)
-                                ELSE AVG(d.kpi_value)
-                            END
-                        )
-                END AS kpi_value
-            FROM kpi_values d
-            JOIN standard_kpi skpi
-                 ON skpi.id = d.standard_kpi_id
-            WHERE d.standard_kpi_id = :standardKpiId
-              AND d.rat_id = :ratId
-              AND d.granularity_id = :granularityId
-              AND d."timestamp" >= :startTimestamp
-              AND d."timestamp" <=  :timestamp
-            GROUP BY
-                date_trunc('day', d."timestamp"),
-                skpi.label,
-                skpi.unit,
-                skpi.aggregation
-            ORDER BY "timestamp"
-           """, nativeQuery = true)
+             SELECT
+                 date_trunc('day', d."timestamp") AS "timestamp",
+                 skpi.label AS kpi_label,
+                 CASE
+                     WHEN skpi.unit = '%' THEN
+                         COALESCE(
+                             (SUM(d.numerator_kpi_value) / NULLIF(SUM(d.denominator_kpi_value), 0)) * 100,
+                             CASE
+                                 WHEN skpi.aggregation = 'SUM' THEN SUM(d.kpi_value)
+                                 ELSE AVG(d.kpi_value)
+                             END
+                         )
+                     ELSE
+                         COALESCE(
+                             (SUM(d.numerator_kpi_value) / NULLIF(SUM(d.denominator_kpi_value), 0)),
+                             CASE
+                                 WHEN skpi.aggregation = 'SUM' THEN SUM(d.kpi_value)
+                                 ELSE AVG(d.kpi_value)
+                             END
+                         )
+                 END AS kpi_value
+             FROM kpi_values d
+             JOIN standard_kpi skpi
+                  ON skpi.id = d.standard_kpi_id
+             WHERE d.standard_kpi_id = :standardKpiId
+               AND d.rat_id = :ratId
+               AND d.granularity_id = :granularityId
+               AND d."timestamp" >= :startTimestamp
+               AND d."timestamp" <=  :timestamp
+             GROUP BY
+                 date_trunc('day', d."timestamp"),
+                 skpi.label,
+                 skpi.unit,
+                 skpi.aggregation
+             ORDER BY "timestamp"
+            """, nativeQuery = true)
     List<KpiTrend> findTrendDataByKpi(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
 
@@ -822,7 +817,6 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     List<KpiDay> findKpiWithoutDistrict(@Param("ratId") Long ratId);
 
 
-
     //============= Cell Name  =======================
 
     @Query(value = """
@@ -847,7 +841,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             	AND l.granularity_id = :granularityId
             GROUP BY l.cell_name, r.name, r.label
             """, nativeQuery = true)
-    List<CellNameDto> getCellNamesByTimestamps(@Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("ratId")Long ratId, @Param("granularityId")Long granularityId);
+    List<CellNameDto> getCellNamesByTimestamps(@Param("timestamp") LocalDateTime timestamp, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
 
     @Query(value = """
@@ -855,22 +849,29 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             		null AS node_name,
             	   r.name  AS rat_name,
             	   s.site_code As site_code,
-            	   b.name AS band_name
+            	   b.name AS band_name,
+            	   c.azimuth AS azimuth,
+            	   c.beamwidth AS beamwidth,
+            	   COALESCE(c.is_multi_beam, false) AS is_multi_beam,
+            	   car.name AS carrier_name,
+            	   sec.name AS sector_name
             FROM kpi_values l
             JOIN rat r ON r.id = l.rat_id
             LEFT JOIN cells c ON l.cell_name = c.cell_name
             LEFT JOIN bands b ON c.band_id = b.id
             LEFT JOIN sites s ON c.site_id = s.id
+            LEFT JOIN carriers car ON car.id = c.carrier_id
+            LEFT JOIN sectors sec ON sec.id = c.sector_id
             WHERE l.timestamp BETWEEN :preTimestamp AND :timestamp
                 AND l.rat_id = :ratId
             	AND l.granularity_id = :granularityId
-            GROUP BY l.cell_name, r.name, r.label,s.site_code, b.name
+            GROUP BY l.cell_name, r.name, r.label,s.site_code, b.name,c.azimuth, c.beamwidth, c.is_multi_beam, car.name,sec.name;
             """, nativeQuery = true)
     List<CellDto> getCellsByTimestamp(
             @Param("timestamp") LocalDateTime timestamp,
             @Param("preTimestamp") LocalDateTime preTimestamp,
-            @Param("ratId")Long ratId,
-            @Param("granularityId")Long granularityId
+            @Param("ratId") Long ratId,
+            @Param("granularityId") Long granularityId
     );
 
 

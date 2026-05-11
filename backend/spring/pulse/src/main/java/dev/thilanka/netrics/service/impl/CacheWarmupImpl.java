@@ -5,6 +5,7 @@ import dev.thilanka.netrics.dto.DistrictDto;
 import dev.thilanka.netrics.dto.StandardKpiDto;
 import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
@@ -91,6 +92,11 @@ public class CacheWarmupImpl implements CacheWarmup {
 
         CompletableFuture.allOf(reloadCellsFuture, basicKpiSnapshotFuture, kpiTrendFuture, worstCellFuture).join();
         System.out.println("[" + ratName + " - " + granularityName + "] CACHE WARM-UP COMPLETE!");
+    }
+
+    @Override
+    @CacheEvict(value = "cellKpiTrend", allEntries = true)
+    public void evictCellKpiTrends() {
     }
 
     private void warmupDateRangeCache(String ratName, String granularityName) {

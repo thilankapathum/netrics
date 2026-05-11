@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.GranularityDto;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.repository.GranularityRepository;
@@ -44,7 +45,7 @@ public class GranularityServiceImpl implements GranularityService {
     @Override
     public Granularity findGranularityByName(String name) {
         return granularityRepository.findByName(name)
-                .orElseThrow(()-> new RuntimeException("Granularity not found by: " + name));
+                .orElseThrow(()-> new ResourceNotFoundException("Granularity", "Name", name));
     }
 
     @Override
@@ -56,7 +57,7 @@ public class GranularityServiceImpl implements GranularityService {
     @Override
     public Granularity findGranularityById(Long id) {
         return granularityRepository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Granularity not found by: " + id));
+                .orElseThrow(()-> new ResourceNotFoundException("Granularity", "ID", id));
     }
 
     @Override

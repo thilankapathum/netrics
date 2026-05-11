@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.BandDto;
 import dev.thilanka.netrics.entity.Band;
 import dev.thilanka.netrics.entity.Rat;
@@ -74,7 +75,7 @@ public class BandServiceImpl implements BandService {
     public Band findByName(String name) {
 
         return bandRepository.findByName(name)
-                .orElseThrow(()-> new RuntimeException("Band not found by " + name));
+                .orElseThrow(()-> new ResourceNotFoundException("Band", "Name", name));
     }
 
     @Override

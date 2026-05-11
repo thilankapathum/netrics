@@ -1,7 +1,10 @@
 package dev.thilanka.netrics.entity;
 
+import dev.thilanka.netrics.entity.common.AuditEntity;
+import dev.thilanka.netrics.entity.common.AuditLog;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
@@ -9,10 +12,11 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @Entity
 @Table(name = "standard_kpi")
-public class StandardKpi {
+@SuperBuilder
+@AuditLog
+public class StandardKpi extends AuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,6 +44,15 @@ public class StandardKpi {
     @OneToMany(mappedBy = "denominatorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<KpiDay> kpiDaysDenominator;
 
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHours;
+
+    @OneToMany(mappedBy = "numeratorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHoursNumerator;
+
+    @OneToMany(mappedBy = "denominatorKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<KpiHour> kpiHoursDenominator;
+
 
     @OneToOne(mappedBy = "standardKpi",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private StandardRawKpiMapping standardKpi;
@@ -49,6 +62,9 @@ public class StandardKpi {
 
     @OneToOne(mappedBy = "denominator", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private StandardRawKpiMapping denominator;
+
+    @OneToMany(mappedBy = "standardKpi", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<MapCellThrSet> mapCellThrSets;
 
     @ManyToOne
     @JoinColumn(name = "basic_kpi_id")

@@ -1,6 +1,8 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.DataQueryException;
 import dev.thilanka.netrics.dto.AreaDto;
+import dev.thilanka.netrics.dto.WorstCellCreationStatusDto;
 import dev.thilanka.netrics.dto.WorstCellSaveDto;
 import dev.thilanka.netrics.dto.WorstCellsWithLatestDto;
 import dev.thilanka.netrics.entity.*;
@@ -9,6 +11,7 @@ import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.repository.WorstCellRepository;
 import dev.thilanka.netrics.service.*;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -38,6 +41,11 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     @Value("${app.worst-cell-dashboard.refresh-day}")
     private String refreshDay;
 
+    private int totalItems = 0;
+    private int executedItems = 0;
+
+    private boolean creatingWorstCells = false;
+
     @Override
     public WorstCellSaveDto createWorstCell(WorstCellSaveDto worstCellSaveDto, String period, String areaName, LocalDateTime timestamp) {
         WorstCell worstCell = mapper.worstCellSaveDtoToWorstCell(worstCellSaveDto, period, areaName, timestamp);
@@ -56,7 +64,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
                     worstCell.getArea().getId(),
                     worstCell.isExcludeZeroes(),
                     worstCell.getGranularity().getId()
-            ).orElseThrow(() -> new RuntimeException("Worst cell query error!"));
+            ).orElseThrow(() -> new DataQueryException("Worst cell query error"));
 
             return mapper.toWorstCellSaveDto(existingWorstCell);
         }
@@ -102,6 +110,8 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
 
     @Override
     public Map<String, List<WorstCellSaveDto>> createWorstCellsByRatAndAreaType(String period, String areaType, LocalDateTime timestamp, String ratName, String granularityName) {
+        this.creatingWorstCells = true;
+
         boolean[] excludeZero = {false, true};
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
@@ -121,6 +131,9 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
 
         Map<String, List<WorstCellSaveDto>> savedWorstCellsMap = new HashMap<>();
 
+        this.totalItems = excludeZero.length * areas.size() * standardKpis.size();
+        this.executedItems = 0;
+
         for (boolean eZ : excludeZero) {
             for (Area area : areas) {
                 for (StandardKpi kpi : standardKpis) {
@@ -137,11 +150,15 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
                     );
                     List<WorstCellSaveDto> savedWorstCells = dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, area.getName(), timestamp)).toList();  //-- Saving worst-cells to database (worst_cells table) [timestamp is used as the argument to save the worstCell with the querying timestamp (not busy-hour timestamp)]
                     savedWorstCellsMap.put(area.getName() + " - " + kpi.getKpiName(), savedWorstCells);
+
+                    this.executedItems++;
                 }
                 System.out.println("[" + rat.getLabel() + " - " + granularity.getLabel() + "] Exclude Zeroes: " + eZ + " | Area: (" + areaType + ") " + area.getName());
-
             }
         }
+        this.creatingWorstCells = false;
+        this.totalItems = 0;
+        this.executedItems = 0;
         return savedWorstCellsMap;
     }
 
@@ -169,6 +186,16 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
         Area area = areaService.findAreaByName(areaName);
 
         return worstCellRepository.findTimestamps(period, rat.getId(), standardKpi.getId(), area.getId(), granularity.getId());
+    }
+
+    @Override
+    public WorstCellCreationStatusDto getWorstCellCreationStatus() {
+        return new WorstCellCreationStatusDto(this.creatingWorstCells, this.totalItems, this.executedItems);
+    }
+
+    @Override
+    public boolean isCreatingWorstCells() {
+        return this.creatingWorstCells;
     }
 
 }

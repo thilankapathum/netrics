@@ -22,6 +22,7 @@ export type ChartOptions = {
   legend: ApexLegend;
   theme: ApexTheme;
   grid: ApexGrid;
+  tooltip: ApexTooltip;
 };
 
 @Component({
@@ -60,22 +61,30 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  // ngOnChanges(changes: SimpleChanges): void {
+  //   const series = this.chartSeries;
+  //
+  //   if (this.chart) {
+  //     this.chart.updateSeries(series, true);
+  //   } else {
+  //     this.chartOptions = {
+  //       ...this.chartOptions,
+  //       series: series
+  //     };
+  //
+  //     // Force re-render when data changes
+  //     this.showChart = false;
+  //     setTimeout(() => {
+  //       this.showChart = true;
+  //     }, 0);
+  //   }
+  // }
+
   ngOnChanges(changes: SimpleChanges): void {
-    const series = this.chartSeries;
+    if (!changes['chartSeries']) return;
 
     if (this.chart) {
-      this.chart.updateSeries(series, true);
-    } else {
-      this.chartOptions = {
-        ...this.chartOptions,
-        series: series
-      };
-
-      // Force re-render when data changes
-      this.showChart = false;
-      setTimeout(() => {
-        this.showChart = true;
-      }, 0);
+      this.chart.updateSeries(this.chartSeries ?? [], true);
     }
   }
 
@@ -117,10 +126,17 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
       xaxis: {
         type: 'datetime',
         labels: {
-          datetimeUTC: false,
+          datetimeUTC: true,
           style: {
             colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
           }
+        }
+      },
+      tooltip: {
+        x: {
+          format: 'yyyy-MM-dd HH:mm'
+        }, fixed: {
+          enabled: false
         }
       },
       yaxis: {

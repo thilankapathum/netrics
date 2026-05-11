@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.StandardKpiDto;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.entity.BasicKpi;
@@ -66,21 +67,21 @@ public class StandardKpiServiceImpl implements StandardKpiService {
 
         return standardKpiRepository
                 .findByKpiNameAndRatId(kpiName, rat.getId())
-                .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
+                .orElseThrow(() -> new ResourceNotFoundException("Standard KPI", "Name", kpiName));
     }
 
     @Override
     public StandardKpi findByKpiName(String kpiName, Rat rat) {
         return standardKpiRepository
                 .findByKpiNameAndRatId(kpiName, rat.getId())
-                .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
+                .orElseThrow(() -> new ResourceNotFoundException("Standard KPI", "Name", kpiName));
     }
 
     @Override
     public StandardKpi findByKpiNameAndRatId(String kpiName, Long ratId) {
         return standardKpiRepository
                 .findByKpiNameAndRatId(kpiName, ratId)
-                .orElseThrow(() -> new RuntimeException("Standard KPI not found by: " + kpiName));
+                .orElseThrow(() -> new ResourceNotFoundException("Standard KPI", "Name", kpiName));
     }
 
     @Override
@@ -88,7 +89,7 @@ public class StandardKpiServiceImpl implements StandardKpiService {
         Rat rat = ratService.findRatByName(ratName);
         return standardKpiRepository
                 .findByLabelAndRat(kpiLabel, rat)
-                .orElseThrow(()-> new RuntimeException("Standard KPI not found by: " + kpiLabel));
+                .orElseThrow(()-> new ResourceNotFoundException("Standard KPI", "Label", kpiLabel));
     }
 
     @Override

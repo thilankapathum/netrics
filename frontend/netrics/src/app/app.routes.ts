@@ -11,6 +11,7 @@ import {HomeComponent} from './layout/content/pages/home/home-component/home-com
 import {DashboardComponent} from './layout/content/pages/pulse/dashboard/dashboard-component';
 import {KpiReports} from './layout/content/pages/pulse/kpi-reports/kpi-reports';
 import {PulseSettings} from './layout/content/pages/pulse/pulse-settings/pulse-settings';
+import {KpiMap} from './layout/content/pages/pulse/kpi-map/kpi-map';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -54,6 +55,11 @@ export const routes: Routes = [
             path: 'kpi-reports',
             canActivate: [authGuard, roleGuard(['PULSE_UPDATE'])],
             component: KpiReports
+          },
+          {
+            path: 'map',
+            canActivate: [authGuard, roleGuard(['PULSE_READ'])],
+            component: KpiMap
           },
           {
             path: 'settings',

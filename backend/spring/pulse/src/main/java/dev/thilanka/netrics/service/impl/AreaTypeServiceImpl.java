@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.AreaTypeDto;
 import dev.thilanka.netrics.entity.AreaType;
 import dev.thilanka.netrics.repository.AreaTypeRepository;
@@ -39,7 +40,7 @@ public class AreaTypeServiceImpl implements AreaTypeService {
     @Override
     public AreaType findAreaTypeByName(String name) {
         return areaTypeRepository.findByName(name)
-                .orElseThrow(()-> new RuntimeException("Area type not found by: " + name));
+                .orElseThrow(()-> new ResourceNotFoundException("AreaType", "Name", name));
     }
 
     @Override

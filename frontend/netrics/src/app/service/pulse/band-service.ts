@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {UrlService} from '../url/url-service';
 import {BandDto} from '../../models/pulse/BandDto';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -19,5 +20,13 @@ export class BandService {
 
   getByRatName(ratName: string) {
     return this.http.get<Array<BandDto>>(`${this.baseUrl}/rat`, {params: {ratName}});
+  }
+
+  getAllBands(): Observable<BandDto[]> {
+    return this.http.get<Array<BandDto>>(`${this.baseUrl}`);
+  }
+
+  getBandsByRatName(ratName: string) {
+    return this.http.get<BandDto[]>(`${this.baseUrl}/rat`,{params: {ratName}});
   }
 }

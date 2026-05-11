@@ -22,6 +22,8 @@ import {WorstCellCommentService} from '../../../../../service/pulse/dashboard/wo
 import {WorstCellsAndCommentsDto} from '../../../../../models/pulse/WorstCellsAndCommentsDto';
 import {AuthService} from '../../../../../auth/service/auth-service';
 import {KeycloakProfile} from 'keycloak-js';
+import {PdbCreateCells} from './pdb-create-cells/pdb-create-cells';
+import {PsStandardKpi} from '../pulse-settings/ps-standard-kpi/ps-standard-kpi';
 
 @Component({
   selector: 'app-dashboard-component',
@@ -30,7 +32,9 @@ import {KeycloakProfile} from 'keycloak-js';
     FormsModule,
     DatePipe,
     DecimalPipe,
-    Linechart
+    Linechart,
+    PdbCreateCells,
+    PsStandardKpi
   ],
   providers: [DatePipe],
   templateUrl: './dashboard-component.html',
@@ -55,7 +59,7 @@ export class DashboardComponent implements OnInit {
 
   selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
 
-  selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
+  selectedGranularity = signal<'day-average' | 'busy-hour'>('busy-hour');
 
   selectedCell = signal('');
 
@@ -76,11 +80,13 @@ export class DashboardComponent implements OnInit {
 
   isEditingComment: boolean = false;
   isAddingComment: boolean = false;
-  isDeletingComment:boolean = false;    //TODO: Add deleting confirmation function
+  isDeletingComment: boolean = false;    //TODO: Add deleting confirmation function
 
   editingCommentId: number | null = null;
 
-  userProfile:KeycloakProfile = {};
+  userProfile: KeycloakProfile = {};
+
+  showCreateWorstCellsModal: boolean = false;
 
   constructor(private router: Router,
               private areaTypeService: AreaTypeService,
@@ -92,7 +98,7 @@ export class DashboardComponent implements OnInit {
               private kpiDayService: KpidayService,
               private chartService: ChartService,
               private worstCellCommentService: WorstCellCommentService,
-              private authService:AuthService
+              private authService: AuthService
   ) {
   }
 
@@ -101,11 +107,13 @@ export class DashboardComponent implements OnInit {
     this.getUserProfile();
   }
 
+  loadingAll(){
+    return this.loadingWorstCells || this.loadingKpiTrend;
+  }
+
   // ----------- GETTERS ---------------------------
 
-  async getUserProfile(){
-    this.userProfile = await this.authService.getUserProfile();
-  }
+
 
   getAllStandardKpi(ratName: string) {
     this.standardKpis = [];
@@ -154,7 +162,7 @@ export class DashboardComponent implements OnInit {
     })
   }
 
-  getTimestamps(kpiName: string, period: string, areaName: string, ratName: string, granularityName:string) {
+  getTimestamps(kpiName: string, period: string, areaName: string, ratName: string, granularityName: string) {
     this.dashboardService.getTimestamps(kpiName, period, areaName, ratName, granularityName).subscribe({
       next: data => {
         this.timestamps = data;
@@ -175,7 +183,7 @@ export class DashboardComponent implements OnInit {
 
   //---------- SELECT FILTERS -------------
 
-  setSelectedGranularity(granularity: 'day-average' | 'busy-hour'){
+  setSelectedGranularity(granularity: 'day-average' | 'busy-hour') {
     this.selectedGranularity.set(granularity);
     this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
   }
@@ -361,7 +369,7 @@ export class DashboardComponent implements OnInit {
     this._comment.set(comment);
   }
 
-  addingComment(){
+  addingComment() {
     this.isAddingComment = true;
   }
 
@@ -396,10 +404,10 @@ export class DashboardComponent implements OnInit {
   //----------- KPI TREND CHART ----------------------
 
   onPeriodChange(event: Event) {
-    this.getTrendDataByKpi(this.selectedStandardKpi(),this.selectedCell(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
+    this.getTrendDataByKpi(this.selectedStandardKpi(), this.selectedCell(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
   }
 
-  getTrendDataByKpi(kpiName: string, cellName: string, period: string, ratName: string, granularityName:string) {
+  getTrendDataByKpi(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
     this.selectedCell.set(cellName);
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
@@ -417,7 +425,7 @@ export class DashboardComponent implements OnInit {
       })
   }
 
-  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName:string): Observable<KpiDataDto[]> {
+  getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
     return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
   }
 
@@ -450,12 +458,35 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  isAuthorized(comment: WorstCellCommentDto):boolean{
+  isAuthorized(comment: WorstCellCommentDto): boolean {
     return comment.createdBy === this.userProfile.id;
   }
 
-  isTrendDataAvailable(){
+  isTrendDataAvailable() {
     return !(this.chartSeries == null);
   }
+
+  //---------- OPEN MODALS ------------------------
+
+  openCreateWorstCellsModal() {
+    this.showCreateWorstCellsModal = true;
+  }
+
+  //---------- CLOSE MODALS -----------------------
+
+  closeCreateWorstCellsModal() {
+    this.showCreateWorstCellsModal = false;
+  }
+
+  //============== USER VALIDATION =============================
+
+  async getUserProfile() {
+    this.userProfile = await this.authService.getUserProfile();
+  }
+
+  hasAnyRole(roles:string[]){
+    return this.authService.hasAnyRole(roles);
+  }
+
 
 }

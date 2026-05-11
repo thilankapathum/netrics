@@ -1,0 +1,13 @@
+{
+    "database": {
+        "host": "postgres",
+        "port": 5432,
+        "database": "pulse_db",
+        "user": "pguser",
+        "password": "password"
+    },
+    "base_folders": {
+        "hour": "/app/hour"
+    },
+    "clear_redis_cache_url": "http://localhost:8012/api/v1/pulse/cache/evict-and-warmup"
+}

@@ -1,16 +1,22 @@
 package dev.thilanka.netrics.entity;
 
+import dev.thilanka.netrics.entity.common.AuditEntity;
+import dev.thilanka.netrics.entity.common.AuditLog;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name = "cells")
-public class Cell {
+@AuditLog
+public class Cell extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +26,16 @@ public class Cell {
     private String cellName;
     @Column(nullable = true)
     private String nodeName;
+
+    @Max(360)
+    @Min(0)
+    private Integer azimuth;
+
+    @Max(360)
+    @Min(0)
+    private Integer beamwidth;
+
+    private boolean isMultiBeam;
 
     @ManyToOne
     @JoinColumn(name = "rat_id", nullable = true)
@@ -32,4 +48,12 @@ public class Cell {
     @ManyToOne
     @JoinColumn(name = "band_id", nullable = true)
     private Band band;
+
+    @ManyToOne
+    @JoinColumn(name = "carrier_id", nullable = true)
+    private Carrier carrier;
+
+    @ManyToOne
+    @JoinColumn(name = "sector_id", nullable = true)
+    private Sector sector;
 }

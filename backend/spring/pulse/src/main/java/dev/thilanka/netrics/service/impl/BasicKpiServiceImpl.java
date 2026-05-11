@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.BasicKpiDto;
 import dev.thilanka.netrics.dto.BasicKpiWithStandardKpiDto;
 import dev.thilanka.netrics.entity.Rat;
@@ -43,7 +44,7 @@ public class BasicKpiServiceImpl implements BasicKpiService {
     @Override
     public List<BasicKpiDto> createBasicKpiList(List<BasicKpiDto> dtos) {
         List<BasicKpiDto> basicKpiDtos = new ArrayList<>();
-        for (BasicKpiDto dto : dtos){
+        for (BasicKpiDto dto : dtos) {
             BasicKpiDto basicKpiDto = createBasicKpi(dto);
             basicKpiDtos.add(basicKpiDto);
         }
@@ -54,13 +55,13 @@ public class BasicKpiServiceImpl implements BasicKpiService {
     public BasicKpi findByKpiName(String kpiName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         return basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
-                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));
+                .orElseThrow(() -> new ResourceNotFoundException("Basic KPI", "Basic KPI Name & RAT", kpiName + " & " + ratName));
     }
 
     @Override
     public BasicKpi findByKpiName(String kpiName, Rat rat) {
         return basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
-                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));
+                .orElseThrow(() -> new ResourceNotFoundException("Basic KPI", "Basic KPI name & RAT",  kpiName + " & " + rat.getName()));
     }
 
     @Override
@@ -68,7 +69,7 @@ public class BasicKpiServiceImpl implements BasicKpiService {
     public BasicKpiWithStandardKpiDto getByKpiNameAndRat(String kpiName, String ratName) {
         Rat rat = ratService.findRatByName(ratName);
         BasicKpi basicKpi = basicKpiRepository.findByKpiNameAndRat(kpiName, rat)
-                .orElseThrow(() -> new RuntimeException("Basic KPI not found by: " + kpiName));
+                .orElseThrow(() -> new ResourceNotFoundException("Basic KPI with Standard KPIs", "Basic KPI name & RAT",  kpiName + " & " + rat.getName()));
 
         return mapper.basicKpiToBasicKpiWithStandardKpiDto(basicKpi);
     }

@@ -1,0 +1,41 @@
+----- DOCUMENTING CURRENT STATE -----
+
+-- Run on prod, save the output
+SELECT version();
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
+WHERE installed_version IS NOT NULL;
+
+-- List ALL databases in the container
+SELECT datname FROM pg_database WHERE datistemplate = false;
+
+-- Flyway history (run per app database)
+SELECT version, description, installed_on, success
+FROM flyway_schema_history
+ORDER BY installed_rank;
+
+-- Hypertable inventory
+SELECT hypertable_name, num_chunks, total_bytes
+FROM timescaledb_information.hypertables;
+
+-- Row counts for validation later
+SELECT COUNT(*) FROM kpi_measurements;
+SELECT MAX(time)  FROM kpi_measurements;
+
+=============================================================
+
+----- DUMPING ALL DATABASES -----
+
+# Full cluster dump (captures ALL databases, roles, tablespaces)
+docker exec postgres pg_dumpall \
+  -U pguser \
+  > backup_$(date +%Y%m%d_%H%M%S)_full_cluster.sql
+
+# ALSO individual per-database dumps as insurance
+for DB in pulse_db keycloak; do
+  docker exec postgres pg_dump \
+    -U pguser -Fc $DB \
+    > backup_$(date +%Y%m%d_%H%M%S)_${DB}.dump
+done
+
+=============================================================

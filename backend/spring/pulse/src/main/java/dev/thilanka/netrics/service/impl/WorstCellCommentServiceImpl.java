@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.WorstCellCommentDto;
 import dev.thilanka.netrics.entity.WorstCell;
 import dev.thilanka.netrics.entity.WorstCellComment;
@@ -32,7 +33,7 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
     public WorstCellCommentDto createWorstCellComment(String comment, Long worstCellId) {
 
         WorstCell worstCell = worstCellRepository.findById(worstCellId)
-                .orElseThrow(() -> new RuntimeException("Worst cell not found by ID: " + worstCellId));
+                .orElseThrow(() -> new ResourceNotFoundException("Worst Cell",  "Worst Cell ID", worstCellId));
 
         WorstCellComment worstCellComment = WorstCellComment
                 .builder()
@@ -47,7 +48,7 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
     @Override
     public List<WorstCellCommentDto> getCommentsByWorstCell(Long worstCellId) {
         WorstCell worstCell = worstCellRepository.findById(worstCellId)
-                .orElseThrow(() -> new RuntimeException("Worst cell not found by ID: " + worstCellId));
+                .orElseThrow(() -> new ResourceNotFoundException("Worst Cell",  "Worst Cell ID", worstCellId));
 
         List<WorstCellComment> worstCellComments = worstCellCommentRepository.findByWorstCell(worstCell);
 
@@ -58,14 +59,14 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
     public WorstCellCommentDto updateCommentByWorstCell(String comment, Long commentId) {
 
         WorstCellComment worstCellComment = worstCellCommentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found by ID: " + commentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "Comment ID", commentId));
 
         if (auditorAware.getCurrentAuditor().get().equals(worstCellComment.getCreatedBy())) {
             worstCellComment.setComment(comment);
             WorstCellComment savedComment = worstCellCommentRepository.save(worstCellComment);
             return mapper.worstCellCommentToDto(savedComment);
         } else {
-            System.out.println("Unauthorized to delete comment");
+            System.out.println("Unauthorized to update comment");
             return null;
         }
 
@@ -79,7 +80,7 @@ public class WorstCellCommentServiceImpl implements WorstCellCommentService {
     @Override
     public WorstCellCommentDto deleteCommentById(Long commentId) {
         WorstCellComment worstCellComment = worstCellCommentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Worst-cell comment not found by ID: " + commentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "Comment ID", commentId));
 
         if (auditorAware.getCurrentAuditor().get().equals(worstCellComment.getCreatedBy())) {
             worstCellCommentRepository.delete(worstCellComment);
