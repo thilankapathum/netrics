@@ -1,14 +1,12 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
-import dev.thilanka.netrics.dto.CellDto;
-import dev.thilanka.netrics.dto.SiteCsvImportResultDto;
-import dev.thilanka.netrics.dto.SiteDto;
-import dev.thilanka.netrics.dto.SiteUpdateResult;
+import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.Site;
 import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.SiteRepository;
+import dev.thilanka.netrics.service.PulseEventPublisher;
 import dev.thilanka.netrics.service.SiteService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +23,7 @@ import java.util.stream.Collectors;
 public class SiteServiceImpl implements SiteService {
     private final SiteRepository siteRepository;
     private final Mapper mapper;
+    private final PulseEventPublisher eventPublisher;
 
     private Integer siteCountWithMissingInfo = 0;
 
@@ -40,7 +39,9 @@ public class SiteServiceImpl implements SiteService {
     @CacheEvict(value = "mapCellTiles", allEntries = true)
     public Site createSite(Site site) {
         reloadSites();
-        return siteRepository.save(site);
+        Site savedSite = siteRepository.save(site);
+        eventPublisher.publishSiteEvent(buildSiteEvent("CREATE", savedSite));   // KAFKA EVENT PUBLISH
+        return savedSite;
     }
 
     @Override
@@ -134,8 +135,9 @@ public class SiteServiceImpl implements SiteService {
             }
 
             reloadSites();
-            return siteRepository.save(updatingSite);
-
+            Site savedSite = siteRepository.save(updatingSite);
+            eventPublisher.publishSiteEvent(buildSiteEvent("UPDATED", savedSite));  // KAFKA EVENT PUBLISH
+            return savedSite;
         } else throw new ResourceNotFoundException("Site", "Site ID", site.getSiteCode());
     }
 
@@ -167,6 +169,7 @@ public class SiteServiceImpl implements SiteService {
         }
 
         Site updatedSite = siteRepository.save(site);
+        eventPublisher.publishSiteEvent(buildSiteEvent("UPDATED", updatedSite));
         reloadSites();
         return new SiteUpdateResult(mapper.siteToDto(updatedSite), warnings);
     }
@@ -249,10 +252,19 @@ public class SiteServiceImpl implements SiteService {
             String lower = siteCode.toLowerCase();
 
             return cachedSites.stream()
-                    .filter(s-> s.siteCode().toLowerCase().contains(lower))
+                    .filter(s -> s.siteCode().toLowerCase().contains(lower))
                     .limit(10)
                     .toList();
         }
 
+    }
+
+    private SiteEvent buildSiteEvent(String type, Site site) {
+        return new SiteEvent(type,
+                site.getId(),
+                site.getSiteCode(),
+                site.getSiteName(),
+                site.getLatitude(),
+                site.getLongitude());
     }
 }

@@ -37,6 +37,17 @@ spring:
     baseline-on-migrate: true
     enable: true
 
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false  # keeps messages clean
+    topic:
+      site-events: pulse.site.events
+      sector-events: pulse.sector.events
+
 keycloak:
   realm-name: ${REALM_NAME:netrics}
   domain-ip: ${DOMAIN_IP:netrics.local}
