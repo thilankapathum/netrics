@@ -1,14 +1,14 @@
-package dev.thilanka.netrics.dto;
+package dev.thilanka.beam.dto;
 
 import java.time.LocalDateTime;
 
-public record SectorEvent(
+//-- DO NOT MODIFY WITHOUT PULSE'S BAND-EVENT
+public record BandEvent(
         String eventType,   // "CREATED", "UPDATED", "DELETED"
         Long id,
-        Integer sectorIndex,
         String name,
-        Integer azimuth,
-        Long siteId,
+        int number,
+        String unit,
         LocalDateTime createdAt,
         String createdBy
 ) {

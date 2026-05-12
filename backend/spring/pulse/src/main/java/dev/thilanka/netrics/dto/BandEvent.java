@@ -1,14 +1,15 @@
 package dev.thilanka.netrics.dto;
 
+import jakarta.persistence.Column;
+
 import java.time.LocalDateTime;
 
-public record SectorEvent(
+public record BandEvent(
         String eventType,   // "CREATED", "UPDATED", "DELETED"
         Long id,
-        Integer sectorIndex,
         String name,
-        Integer azimuth,
-        Long siteId,
+        int number,
+        String unit,
         LocalDateTime createdAt,
         String createdBy
 ) {

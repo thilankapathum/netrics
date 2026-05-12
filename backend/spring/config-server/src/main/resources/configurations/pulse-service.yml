@@ -38,7 +38,8 @@ spring:
     enable: true
 
   kafka:
-    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+#    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9093}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -47,6 +48,7 @@ spring:
     topic:
       site-events: pulse.site.events
       sector-events: pulse.sector.events
+      band-events: pulse.band.events
 
 keycloak:
   realm-name: ${REALM_NAME:netrics}

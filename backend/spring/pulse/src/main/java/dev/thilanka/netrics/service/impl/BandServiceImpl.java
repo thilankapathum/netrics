@@ -2,10 +2,12 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.BandDto;
+import dev.thilanka.netrics.dto.BandEvent;
 import dev.thilanka.netrics.entity.Band;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.repository.BandRepository;
 import dev.thilanka.netrics.service.BandService;
+import dev.thilanka.netrics.service.PulseEventPublisher;
 import dev.thilanka.netrics.service.RatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,10 +21,14 @@ import java.util.stream.Collectors;
 public class BandServiceImpl implements BandService {
     private final BandRepository bandRepository;
     private final RatService ratService;
+    private final PulseEventPublisher eventPublisher;
+    //TODO: Kafka Event Publisher
 
     @Override
     public Band createBand(Band band) {
-        return bandRepository.save(band);
+        Band savedBand = bandRepository.save(band);
+        eventPublisher.publishBandEvent(buildBandEvent("CREATED", savedBand));
+        return savedBand;
     }
 
     @Override
@@ -98,5 +104,17 @@ public class BandServiceImpl implements BandService {
 
         return bands.stream().map(b -> new BandDto(b.getName(),b.getNumber(),b.getUnit()))
                 .collect(Collectors.toList());
+    }
+
+    private BandEvent buildBandEvent(String type, Band band) {
+        return new BandEvent(
+                type,
+                band.getId(),
+                band.getName(),
+                band.getNumber(),
+                band.getUnit(),
+                band.getCreatedAt(),
+                band.getCreatedBy()
+        );
     }
 }

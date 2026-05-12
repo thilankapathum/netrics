@@ -58,7 +58,8 @@ public class OperationLogListener {
                 }
                 clazz = clazz.getSuperclass();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return stringId;
     }
 
@@ -149,9 +150,9 @@ public class OperationLogListener {
     }
 
     private boolean shouldSkip(Field field) {
-        if (field.isAnnotationPresent(AuditLogIgnore.class))        return true;
-        if (field.isAnnotationPresent(OneToMany.class))             return true;
-        if (field.isAnnotationPresent(ManyToMany.class))            return true;
+        if (field.isAnnotationPresent(AuditLogIgnore.class)) return true;
+        if (field.isAnnotationPresent(OneToMany.class)) return true;
+        if (field.isAnnotationPresent(ManyToMany.class)) return true;
         // For @ManyToOne / @OneToOne we only store the FK id, not the whole object.
         // We capture them below in sanitize(), so we don't skip them here.
         return false;
@@ -183,7 +184,8 @@ public class OperationLogListener {
                 }
                 clazz = clazz.getSuperclass();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return relatedEntity.toString();
     }
 
@@ -226,7 +228,7 @@ public class OperationLogListener {
                          Map<String, Map<String, Object>> changes) {
         try {
             ApplicationContext ctx = SpringContextHolder.getContext();
-            OperationLogRepository repo     = ctx.getBean(OperationLogRepository.class);
+            OperationLogRepository repo = ctx.getBean(OperationLogRepository.class);
             SecurityUtils secUtils = ctx.getBean(SecurityUtils.class);
 
             String actor;

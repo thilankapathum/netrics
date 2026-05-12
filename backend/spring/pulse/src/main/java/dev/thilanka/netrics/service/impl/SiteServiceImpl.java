@@ -136,6 +136,7 @@ public class SiteServiceImpl implements SiteService {
 
             reloadSites();
             Site savedSite = siteRepository.save(updatingSite);
+            log.info("Publishing event UPDATED for {}", savedSite.getSiteCode());
             eventPublisher.publishSiteEvent(buildSiteEvent("UPDATED", savedSite));  // KAFKA EVENT PUBLISH
             return savedSite;
         } else throw new ResourceNotFoundException("Site", "Site ID", site.getSiteCode());
@@ -169,6 +170,7 @@ public class SiteServiceImpl implements SiteService {
         }
 
         Site updatedSite = siteRepository.save(site);
+        log.info("Publishing event UPDATED-2 for {}", updatedSite.getSiteCode());
         eventPublisher.publishSiteEvent(buildSiteEvent("UPDATED", updatedSite));
         reloadSites();
         return new SiteUpdateResult(mapper.siteToDto(updatedSite), warnings);
@@ -265,6 +267,8 @@ public class SiteServiceImpl implements SiteService {
                 site.getSiteCode(),
                 site.getSiteName(),
                 site.getLatitude(),
-                site.getLongitude());
+                site.getLongitude(),
+                site.getCreatedAt(),
+                site.getCreatedBy());
     }
 }

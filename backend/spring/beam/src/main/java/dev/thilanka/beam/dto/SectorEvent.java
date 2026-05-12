@@ -1,7 +1,8 @@
-package dev.thilanka.netrics.dto;
+package dev.thilanka.beam.dto;
 
 import java.time.LocalDateTime;
 
+//-- DO NOT MODIFY WITHOUT PULSE'S SECTOR-EVENT
 public record SectorEvent(
         String eventType,   // "CREATED", "UPDATED", "DELETED"
         Long id,

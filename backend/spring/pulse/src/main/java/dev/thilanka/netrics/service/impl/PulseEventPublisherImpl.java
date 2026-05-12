@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.dto.BandEvent;
 import dev.thilanka.netrics.dto.SectorEvent;
 import dev.thilanka.netrics.dto.SiteEvent;
 import dev.thilanka.netrics.service.PulseEventPublisher;
@@ -20,6 +21,9 @@ public class PulseEventPublisherImpl implements PulseEventPublisher {
 
     @Value("${spring.kafka.topic.sector-events}")
     private String sectorEventsTopic;
+
+    @Value("${spring.kafka.topic.band-events}")
+    private String bandEventsTopic;
 
 
     @Override
@@ -48,5 +52,18 @@ public class PulseEventPublisherImpl implements PulseEventPublisher {
                     }
                 });
 
+    }
+
+    @Override
+    public void publishBandEvent(BandEvent event) {
+        kafkaTemplate.send(bandEventsTopic, event.id().toString(), event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to publish BandEvent id={}", event.id(), ex);
+                    } else {
+                        log.debug("Published BandEvent id={} offset={}",
+                                event.id(), result.getRecordMetadata().offset());
+                    }
+                });
     }
 }

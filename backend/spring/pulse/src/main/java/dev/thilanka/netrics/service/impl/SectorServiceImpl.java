@@ -1,15 +1,13 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
-import dev.thilanka.netrics.dto.SectorCsvImportResultDto;
-import dev.thilanka.netrics.dto.SectorDto;
-import dev.thilanka.netrics.dto.SectorUpdateResult;
-import dev.thilanka.netrics.dto.SiteDto;
+import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.Sector;
 import dev.thilanka.netrics.entity.Site;
 import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.SectorRepository;
+import dev.thilanka.netrics.service.PulseEventPublisher;
 import dev.thilanka.netrics.service.SectorService;
 import dev.thilanka.netrics.service.SiteService;
 import dev.thilanka.netrics.util.DataTypeUtilService;
@@ -32,6 +30,8 @@ public class SectorServiceImpl implements SectorService {
     private final SiteService siteService;
     private final GeoUtilService geoUtilService;
     private final Mapper mapper;
+    private final PulseEventPublisher eventPublisher;
+    //TODO: Kafka Event Publisher
 
     private volatile List<SectorDto> cachedSectors = Collections.emptyList();
 
@@ -39,7 +39,10 @@ public class SectorServiceImpl implements SectorService {
 
     @Override
     public Sector createSector(Sector sector) {
-        return sectorRepository.save(sector);
+
+        Sector savedSector = sectorRepository.save(sector);
+        eventPublisher.publishSectorEvent(buildSectorEvent("CREATED", savedSector));
+        return savedSector;
     }
 
     @Override
@@ -82,7 +85,9 @@ public class SectorServiceImpl implements SectorService {
         existingSector.setAzimuth(sector.getAzimuth());
         existingSector.setSite(sector.getSite());
 
-        return sectorRepository.save(existingSector);
+        Sector updatedSector = sectorRepository.save(existingSector);
+        eventPublisher.publishSectorEvent(buildSectorEvent("UPDATED", updatedSector));
+        return updatedSector;
     }
 
     @Override
@@ -124,6 +129,7 @@ public class SectorServiceImpl implements SectorService {
         }
 
         Sector savedSector = sectorRepository.save(sector);
+        eventPublisher.publishSectorEvent(buildSectorEvent("UPDATED", savedSector));
 
         return new SectorUpdateResult(mapper.sectorToDto(savedSector), warnings);
     }
@@ -242,5 +248,18 @@ public class SectorServiceImpl implements SectorService {
     @Override
     public Integer getSectorCountWithMissingInfo() {
         return this.sectorCountWithMissingInfo;
+    }
+
+    private SectorEvent buildSectorEvent(String type, Sector sector) {
+        return new SectorEvent(
+                type,
+                sector.getId(),
+                sector.getSectorIndex(),
+                sector.getName(),
+                sector.getAzimuth(),
+                sector.getSite().getId(),
+                sector.getCreatedAt(),
+                sector.getCreatedBy()
+        );
     }
 }

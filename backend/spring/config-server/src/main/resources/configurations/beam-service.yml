@@ -13,6 +13,8 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      repositories:
+        enabled: false
 
   security:
     oauth2:
@@ -38,18 +40,19 @@ spring:
     enable: true
 
   kafka:
-    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9093}
     consumer:
       group-id: beam-service
-      auto-offset-reset: earliest   # read from start if no committed offset
+      auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "dev.thilanka.netrics"
-        spring.json.value.default.type: "java.util.Map"  # safe fallback
+        spring.json.trusted.packages: "dev.thilanka.netrics,dev.thilanka.beam"
+        # Remove spring.json.value.default.type — KafkaConsumerConfig handles this per listener
     topic:
       site-events: pulse.site.events
       sector-events: pulse.sector.events
+      band-events: pulse.band.events
 
 keycloak:
   realm-name: ${REALM_NAME:netrics}
