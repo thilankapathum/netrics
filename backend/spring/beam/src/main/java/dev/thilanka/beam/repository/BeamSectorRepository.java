@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface BeamSectorRepository extends JpaRepository<BeamSector, Long> {
 
@@ -35,5 +36,7 @@ public interface BeamSectorRepository extends JpaRepository<BeamSector, Long> {
             @Param("createdAt") LocalDateTime createdAt,
             @Param("createdBy") String createdBy
     );
+
+    Optional<BeamSector> findByName(String name);
 
 }

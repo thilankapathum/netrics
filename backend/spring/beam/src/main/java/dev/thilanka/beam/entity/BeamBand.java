@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @AuditLog
 public class BeamBand extends AuditEntity {
-    //-- TODO: Implement Kafka Producer and Consumer
+    //-- TODO: Implement Kafka Consumer
     @Id
     private Long id;
 

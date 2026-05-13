@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface BeamBandRepository extends JpaRepository<BeamBand, Long> {
     @Modifying
@@ -30,4 +31,6 @@ public interface BeamBandRepository extends JpaRepository<BeamBand, Long> {
             @Param("createdAt") LocalDateTime createdAt,
             @Param("createdBy") String createdBy
     );
+
+    Optional<BeamBand> findByName(String name);
 }
