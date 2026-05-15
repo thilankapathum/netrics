@@ -30,135 +30,135 @@ public class SectorServiceImpl implements SectorService {
     private final SiteService siteService;
     private final GeoUtilService geoUtilService;
     private final Mapper mapper;
-    private final PulseEventPublisher eventPublisher;
-    //TODO: Kafka Event Publisher
+//    private final PulseEventPublisher eventPublisher;
+    //TODO: Make Create and Update only through Kafka
 
     private volatile List<SectorDto> cachedSectors = Collections.emptyList();
 
     Integer sectorCountWithMissingInfo = 0;
 
-    @Override
-    public Sector createSector(Sector sector) {
+//    @Override
+//    public Sector createSector(Sector sector) {
+//
+//        Sector savedSector = sectorRepository.save(sector);
+////        eventPublisher.publishSectorEvent(buildSectorEvent("CREATED", savedSector));
+//        return savedSector;
+//    }
 
-        Sector savedSector = sectorRepository.save(sector);
-        eventPublisher.publishSectorEvent(buildSectorEvent("CREATED", savedSector));
-        return savedSector;
-    }
+//    @Override
+//    public SectorDto createSector(SectorDto dto) {
+//        Site site = siteService.findBySiteCode(dto.siteCode());
+//        Sector sector = Sector.builder()
+//                .sectorIndex(dto.sectorIndex())
+//                .name(dto.name())
+//                .azimuth(dto.azimuth())
+//                .site(site)
+//                .build();
+//
+//        Sector savedSector = createSector(sector);
+//        return new SectorDto(savedSector.getSectorIndex(), savedSector.getName(), savedSector.getAzimuth(), savedSector.getSite().getSiteCode());
+//    }
 
-    @Override
-    public SectorDto createSector(SectorDto dto) {
-        Site site = siteService.findBySiteCode(dto.siteCode());
-        Sector sector = Sector.builder()
-                .sectorIndex(dto.sectorIndex())
-                .name(dto.name())
-                .azimuth(dto.azimuth())
-                .site(site)
-                .build();
+//    @Override
+//    public List<SectorDto> createSectors(List<SectorDto> dtos) {
+//
+//        List<SectorDto> sectorDtos = new ArrayList<>();
+//
+//        for (SectorDto dto : dtos) {
+//            try {
+//                sectorDtos.add(createSector(dto));
+//            } catch (Exception e) {
+//                System.out.println(e.getMessage());
+//            }
+//        }
+//
+//        return sectorDtos;
+//    }
 
-        Sector savedSector = createSector(sector);
-        return new SectorDto(savedSector.getSectorIndex(), savedSector.getName(), savedSector.getAzimuth(), savedSector.getSite().getSiteCode());
-    }
+//    @Override
+//    public Sector updateSector(Sector sector) {
+//        Sector existingSector = sectorRepository.findByName(sector.getName())
+//                .orElseThrow(() -> new ResourceNotFoundException("Sector", "Name", sector.getName()));
+//
+//        existingSector.setSectorIndex(sector.getSectorIndex());
+//        existingSector.setName(sector.getName());
+//        existingSector.setAzimuth(sector.getAzimuth());
+//        existingSector.setSite(sector.getSite());
+//
+//        Sector updatedSector = sectorRepository.save(existingSector);
+////        eventPublisher.publishSectorEvent(buildSectorEvent("UPDATED", updatedSector));
+//        return updatedSector;
+//    }
 
-    @Override
-    public List<SectorDto> createSectors(List<SectorDto> dtos) {
+//    @Override
+//    public SectorUpdateResult updateSector(SectorDto dto) {
+//        List<String> warnings = new ArrayList<>();
+//
+//        Sector sector = sectorRepository.findByName(dto.name())
+//                .orElseThrow(() -> new ResourceNotFoundException("Sector", "Name", dto.name()));
+//
+//        if (dto.sectorIndex() != null) {
+//            sector.setSectorIndex(dto.sectorIndex());
+//        } else {
+//            warnings.add("Sector Index not specified");
+//        }
+//
+//        if (dto.name() != null && !dto.name().isEmpty()) {
+//            sector.setName(dto.name());
+//        } else {
+//            warnings.add("Sector Name not specified");
+//        }
+//
+//        if (dto.azimuth() != null) {
+//            if (geoUtilService.isValidAzimuth(dto.azimuth())) {
+//                sector.setAzimuth(dto.azimuth());
+//            } else {
+//                warnings.add("Invalid azimuth");
+//            }
+//        } else {
+//            warnings.add("Azimuth not specified");
+//        }
+//
+//        if (dto.siteCode() != null) {
+//            try {
+//                Site site = siteService.findBySiteCode(dto.siteCode());
+//                sector.setSite(site);
+//            } catch (ResourceNotFoundException e) {
+//                log.warn(e.getMessage());
+//            }
+//        }
+//
+//        Sector savedSector = sectorRepository.save(sector);
+////        eventPublisher.publishSectorEvent(buildSectorEvent("UPDATED", savedSector));
+//
+//        return new SectorUpdateResult(mapper.sectorToDto(savedSector), warnings);
+//    }
 
-        List<SectorDto> sectorDtos = new ArrayList<>();
-
-        for (SectorDto dto : dtos) {
-            try {
-                sectorDtos.add(createSector(dto));
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        }
-
-        return sectorDtos;
-    }
-
-    @Override
-    public Sector updateSector(Sector sector) {
-        Sector existingSector = sectorRepository.findByName(sector.getName())
-                .orElseThrow(() -> new ResourceNotFoundException("Sector", "Name", sector.getName()));
-
-        existingSector.setSectorIndex(sector.getSectorIndex());
-        existingSector.setName(sector.getName());
-        existingSector.setAzimuth(sector.getAzimuth());
-        existingSector.setSite(sector.getSite());
-
-        Sector updatedSector = sectorRepository.save(existingSector);
-        eventPublisher.publishSectorEvent(buildSectorEvent("UPDATED", updatedSector));
-        return updatedSector;
-    }
-
-    @Override
-    public SectorUpdateResult updateSector(SectorDto dto) {
-        List<String> warnings = new ArrayList<>();
-
-        Sector sector = sectorRepository.findByName(dto.name())
-                .orElseThrow(() -> new ResourceNotFoundException("Sector", "Name", dto.name()));
-
-        if (dto.sectorIndex() != null) {
-            sector.setSectorIndex(dto.sectorIndex());
-        } else {
-            warnings.add("Sector Index not specified");
-        }
-
-        if (dto.name() != null && !dto.name().isEmpty()) {
-            sector.setName(dto.name());
-        } else {
-            warnings.add("Sector Name not specified");
-        }
-
-        if (dto.azimuth() != null) {
-            if (geoUtilService.isValidAzimuth(dto.azimuth())) {
-                sector.setAzimuth(dto.azimuth());
-            } else {
-                warnings.add("Invalid azimuth");
-            }
-        } else {
-            warnings.add("Azimuth not specified");
-        }
-
-        if (dto.siteCode() != null) {
-            try {
-                Site site = siteService.findBySiteCode(dto.siteCode());
-                sector.setSite(site);
-            } catch (ResourceNotFoundException e) {
-                log.warn(e.getMessage());
-            }
-        }
-
-        Sector savedSector = sectorRepository.save(sector);
-        eventPublisher.publishSectorEvent(buildSectorEvent("UPDATED", savedSector));
-
-        return new SectorUpdateResult(mapper.sectorToDto(savedSector), warnings);
-    }
-
-    @Override
-    public List<SectorCsvImportResultDto> updateSectorsWithResults(List<SectorDto> dtos) {
-        List<SectorCsvImportResultDto> importResultDtos = new ArrayList<>();
-
-        for (SectorDto dto : dtos) {
-            try {
-                SectorUpdateResult result = updateSector(dto);
-                String errorMessage = String.join(", ", result.warnings());
-
-                if (result.warnings().isEmpty()) {
-                    importResultDtos.add(new SectorCsvImportResultDto(result.sectorDto(), CsvImportStatus.SUCCESS, ""));
-                } else {
-                    importResultDtos.add(new SectorCsvImportResultDto(result.sectorDto(), CsvImportStatus.PARTIAL_SUCCESS, errorMessage));
-                }
-            } catch (ResourceNotFoundException e) {
-                log.warn(e.getMessage());
-                SectorDto newSector = createSector(dto);
-                importResultDtos.add(new SectorCsvImportResultDto(newSector, CsvImportStatus.SUCCESS, "Created new sector"));
-            } catch (Exception e) {
-                log.warn("Error updating sector {} | {}", dto.name(), e.getMessage());
-                importResultDtos.add(new SectorCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
-            }
-        }
-        return importResultDtos;
-    }
+//    @Override
+//    public List<SectorCsvImportResultDto> updateSectorsWithResults(List<SectorDto> dtos) {
+//        List<SectorCsvImportResultDto> importResultDtos = new ArrayList<>();
+//
+//        for (SectorDto dto : dtos) {
+//            try {
+//                SectorUpdateResult result = updateSector(dto);
+//                String errorMessage = String.join(", ", result.warnings());
+//
+//                if (result.warnings().isEmpty()) {
+//                    importResultDtos.add(new SectorCsvImportResultDto(result.sectorDto(), CsvImportStatus.SUCCESS, ""));
+//                } else {
+//                    importResultDtos.add(new SectorCsvImportResultDto(result.sectorDto(), CsvImportStatus.PARTIAL_SUCCESS, errorMessage));
+//                }
+//            } catch (ResourceNotFoundException e) {
+//                log.warn(e.getMessage());
+//                SectorDto newSector = createSector(dto);
+//                importResultDtos.add(new SectorCsvImportResultDto(newSector, CsvImportStatus.SUCCESS, "Created new sector"));
+//            } catch (Exception e) {
+//                log.warn("Error updating sector {} | {}", dto.name(), e.getMessage());
+//                importResultDtos.add(new SectorCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
+//            }
+//        }
+//        return importResultDtos;
+//    }
 
     @Override
     public Sector findBySectorName(String name) {
@@ -250,16 +250,5 @@ public class SectorServiceImpl implements SectorService {
         return this.sectorCountWithMissingInfo;
     }
 
-    private SectorEvent buildSectorEvent(String type, Sector sector) {
-        return new SectorEvent(
-                type,
-                sector.getId(),
-                sector.getSectorIndex(),
-                sector.getName(),
-                sector.getAzimuth(),
-                sector.getSite().getId(),
-                sector.getCreatedAt(),
-                sector.getCreatedBy()
-        );
-    }
+
 }

@@ -25,17 +25,17 @@ public class SectorController {
     private final SectorService sectorService;
     private final CsvService csvService;
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @PostMapping
-    public ResponseEntity<SectorDto> createSector(@RequestBody @Valid SectorDto sectorDto) {
-        return ResponseEntity.ok(sectorService.createSector(sectorDto));
-    }
-
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @PostMapping("list")
-    public ResponseEntity<List<SectorDto>> createSector(@RequestBody @Valid List<SectorDto> sectorDtos) {
-        return ResponseEntity.ok(sectorService.createSectors(sectorDtos));
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @PostMapping
+//    public ResponseEntity<SectorDto> createSector(@RequestBody @Valid SectorDto sectorDto) {
+//        return ResponseEntity.ok(sectorService.createSector(sectorDto));
+//    }
+//
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @PostMapping("list")
+//    public ResponseEntity<List<SectorDto>> createSector(@RequestBody @Valid List<SectorDto> sectorDtos) {
+//        return ResponseEntity.ok(sectorService.createSectors(sectorDtos));
+//    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("{name}")
@@ -66,29 +66,29 @@ public class SectorController {
         sectorService.reloadSectorCountWithMissingInfo();
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("all/export")
-    public void exportAllSectors(HttpServletResponse response) throws IOException {
-        response.setContentType("text/csv");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=all_sectors_info.csv");
-
-        List<SectorDto> sectorDtos = sectorService.getAllSectors();
-        csvService.writeSectorsToCsv(sectorDtos, response.getWriter());
-        sectorService.reloadSectorCountWithMissingInfo();
-    }
-
-    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
-    @PostMapping(value = "missing/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity importSitesWithCorrectedInfo(@RequestParam("file") MultipartFile file, HttpServletResponse response) throws IOException {
-        List<SectorDto> importedSectorDtos = csvService.readSectorsFromCsv(file.getInputStream());
-        List<SectorCsvImportResultDto> results = sectorService.updateSectorsWithResults(importedSectorDtos);
-
-        response.setContentType("text/csv");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = sector_import_result.csv");
-        csvService.writeSectorImportResultToCsv(results, response.getWriter());
-        sectorService.reloadSectorCountWithMissingInfo();
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @GetMapping("all/export")
+//    public void exportAllSectors(HttpServletResponse response) throws IOException {
+//        response.setContentType("text/csv");
+//        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=all_sectors_info.csv");
+//
+//        List<SectorDto> sectorDtos = sectorService.getAllSectors();
+//        csvService.writeSectorsToCsv(sectorDtos, response.getWriter());
+//        sectorService.reloadSectorCountWithMissingInfo();
+//    }
+//
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
+//    @PostMapping(value = "missing/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity importSitesWithCorrectedInfo(@RequestParam("file") MultipartFile file, HttpServletResponse response) throws IOException {
+//        List<SectorDto> importedSectorDtos = csvService.readSectorsFromCsv(file.getInputStream());
+//        List<SectorCsvImportResultDto> results = sectorService.updateSectorsWithResults(importedSectorDtos);
+//
+//        response.setContentType("text/csv");
+//        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = sector_import_result.csv");
+//        csvService.writeSectorImportResultToCsv(results, response.getWriter());
+//        sectorService.reloadSectorCountWithMissingInfo();
+//        return new ResponseEntity<>(HttpStatus.CREATED);
+//    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("missing/count")

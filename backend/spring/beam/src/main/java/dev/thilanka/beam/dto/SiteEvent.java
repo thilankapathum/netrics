@@ -5,12 +5,14 @@ import java.time.LocalDateTime;
 //-- DO NOT MODIFY WITHOUT PULSE'S SITE-EVENT
 public record SiteEvent(
         String eventType,   // "CREATED", "UPDATED", "DELETED"
-        Long id,
+//        Long id,
         String siteCode,
         String siteName,
         Double latitude,
         Double longitude,
         LocalDateTime createdAt,
-        String createdBy
+        LocalDateTime modifiedAt,
+        String createdBy,
+        String modifiedBy
 ) {
 }

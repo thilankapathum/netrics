@@ -1,5 +1,6 @@
 package dev.thilanka.beam.service.impl;
 
+import dev.thilanka.beam.common.exception.BusinessValidationException;
 import dev.thilanka.beam.common.exception.DataNotChangedException;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.InfraTypeDto;
@@ -82,7 +83,7 @@ public class InfraTypeServiceImpl implements InfraTypeService {
     @Override
     public InfraType findById(Long id) {
         return infraTypeRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException("Infra-Type", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Infra-Type", "id", id));
     }
 
     @Override
@@ -99,6 +100,17 @@ public class InfraTypeServiceImpl implements InfraTypeService {
     public List<InfraTypeDto> getAllInfraTypes() {
         List<InfraType> infraTypes = findAllInfraTypes();
         return infraTypes.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public InfraType extractInfraType(String infraType) {
+        String[] infraTypes = infraType.split(" - ");
+        if (infraTypes.length != 2) {
+            throw new BusinessValidationException("Incorrect Infra-Type");
+        } else {
+            return infraTypeRepository.findByInfraAndLeg(infraTypes[0], infraTypes[1])
+                    .orElseThrow(() -> new ResourceNotFoundException("Infra-Type", "infraType", infraTypes[0] + " - " + infraTypes[1]));
+        }
     }
 
     private InfraTypeDto toDto(InfraType infraType) {

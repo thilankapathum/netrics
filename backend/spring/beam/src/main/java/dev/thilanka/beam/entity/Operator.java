@@ -27,5 +27,5 @@ public class Operator extends AuditEntity {
     private String name;
 
     @OneToMany(mappedBy = "operator", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<BeamSite> sites;
+    private List<Site> sites;
 }

@@ -25,26 +25,26 @@ public class SiteController {
     private final CsvService csvService;
 
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
-    @PostMapping
-    public ResponseEntity<SiteDto> createSite(@RequestBody @Valid SiteDto dto){
-        SiteDto savedDto = siteService.createSite(dto);
-        return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
-    }
-
-    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
-    @PostMapping("list")
-    public ResponseEntity<List<SiteDto>> createSiteList(@RequestBody @Valid List<SiteDto> dtos){
-        List<SiteDto> savedDtos = siteService.createSites(dtos);
-        return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
-    }
-
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
-    @PutMapping
-    public ResponseEntity<SiteDto> updateSite(@RequestBody @Valid SiteDto dto){
-        SiteUpdateResult result = siteService.updateSite(dto);
-        return  new ResponseEntity<>(result.siteDto(), HttpStatus.OK);
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
+//    @PostMapping
+//    public ResponseEntity<SiteDto> createSite(@RequestBody @Valid SiteDto dto){
+//        SiteDto savedDto = siteService.createSite(dto);
+//        return new ResponseEntity<>(savedDto, HttpStatus.CREATED);
+//    }
+//
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
+//    @PostMapping("list")
+//    public ResponseEntity<List<SiteDto>> createSiteList(@RequestBody @Valid List<SiteDto> dtos){
+//        List<SiteDto> savedDtos = siteService.createSites(dtos);
+//        return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
+//    }
+//
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+//    @PutMapping
+//    public ResponseEntity<SiteDto> updateSite(@RequestBody @Valid SiteDto dto){
+//        SiteUpdateResult result = siteService.updateSite(dto);
+//        return  new ResponseEntity<>(result.siteDto(), HttpStatus.OK);
+//    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
@@ -76,19 +76,19 @@ public class SiteController {
         siteService.reloadSiteCountWithMissingInfo();
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
-    @PostMapping(value = "missing/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity importSitesWithCorrectedInfo(@RequestParam("file") MultipartFile file, HttpServletResponse response) throws IOException {
-        List<SiteDto> importedSiteDtos = csvService.readSitesFromCsv(file.getInputStream());
-        List<SiteCsvImportResultDto> results = siteService.updateSitesWithResults(importedSiteDtos);
-//        cellService.reloadCellCountWithMissingInfo();
-
-        response.setContentType("text/csv");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = site_import_result.csv");
-        csvService.writeSiteImportResultToCsv(results, response.getWriter());
-        siteService.reloadSiteCountWithMissingInfo();
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
+//    @PostMapping(value = "missing/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity importSitesWithCorrectedInfo(@RequestParam("file") MultipartFile file, HttpServletResponse response) throws IOException {
+//        List<SiteDto> importedSiteDtos = csvService.readSitesFromCsv(file.getInputStream());
+//        List<SiteCsvImportResultDto> results = siteService.updateSitesWithResults(importedSiteDtos);
+////        cellService.reloadCellCountWithMissingInfo();
+//
+//        response.setContentType("text/csv");
+//        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename = site_import_result.csv");
+//        csvService.writeSiteImportResultToCsv(results, response.getWriter());
+//        siteService.reloadSiteCountWithMissingInfo();
+//        return new ResponseEntity<>(HttpStatus.CREATED);
+//    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("missing/count")

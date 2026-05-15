@@ -21,8 +21,9 @@ import java.util.List;
 @Table(name = "sites")
 @SuperBuilder
 @AuditLog
-public class BeamSite extends AuditEntity {
+public class Site extends AuditEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -51,5 +52,5 @@ public class BeamSite extends AuditEntity {
     private InfraType infraType;
 
     @OneToMany(mappedBy = "site", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<BeamSector> sectors;
+    private List<Sector> sectors;
 }

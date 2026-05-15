@@ -10,30 +10,9 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaTopicConfig {
 
 
-    @Value("${spring.kafka.topic.site-events}")
-    private String siteEventsTopic;
-
-    @Value("${spring.kafka.topic.sector-events}")
-    private String sectorEventsTopic;
-
     @Value("${spring.kafka.topic.band-events}")
     private String bandEventsTopic;
 
-    @Bean
-    public NewTopic siteEventsTopic() {
-        return TopicBuilder.name(siteEventsTopic)
-                .partitions(3)
-                .replicas(1)
-                .build();
-    }
-
-    @Bean
-    public NewTopic sectorEventsTopic() {
-        return TopicBuilder.name(sectorEventsTopic)
-                .partitions(3)
-                .replicas(1)
-                .build();
-    }
 
     @Bean
     public NewTopic bandEventsTopic() {

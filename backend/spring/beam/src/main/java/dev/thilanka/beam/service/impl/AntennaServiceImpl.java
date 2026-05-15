@@ -5,12 +5,12 @@ import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.AntennaDto;
 import dev.thilanka.beam.entity.Antenna;
 import dev.thilanka.beam.entity.AntennaType;
-import dev.thilanka.beam.entity.BeamSector;
+import dev.thilanka.beam.entity.Sector;
 import dev.thilanka.beam.entity.Manufacturer;
 import dev.thilanka.beam.repository.AntennaRepository;
 import dev.thilanka.beam.service.AntennaService;
 import dev.thilanka.beam.service.AntennaTypeService;
-import dev.thilanka.beam.service.BeamSectorService;
+import dev.thilanka.beam.service.SectorService;
 import dev.thilanka.beam.service.ManufacturerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
 public class AntennaServiceImpl implements AntennaService {
     private final AntennaRepository antennaRepository;
     private final AntennaTypeService antennaTypeService;
-    private final BeamSectorService beamSectorService;
+    private final SectorService sectorService;
     private final ManufacturerService manufacturerService;
     private final Mapper mapper;
 
@@ -119,20 +118,20 @@ public class AntennaServiceImpl implements AntennaService {
     }
 
     @Override
-    public List<Antenna> findBySectorName(BeamSector sector) {
+    public List<Antenna> findBySectorName(Sector sector) {
         return antennaRepository.findBySectorId(sector.getId());
     }
 
     @Override
     public List<AntennaDto> getBySectorName(String sectorName) {
-        BeamSector sector = beamSectorService.findByName(sectorName);
+        Sector sector = sectorService.findByName(sectorName);
         List<Antenna> antennas = findBySectorName(sector);
         return antennas.stream().map(mapper::toAntennaDto).collect(Collectors.toList());
     }
 
     private Antenna dtoToAntenna(AntennaDto dto) {
         AntennaType antennaType = antennaTypeService.findByName(dto.antennaTypeName());
-        BeamSector beamSector = beamSectorService.findByName(dto.sectorName());
+        Sector sector = sectorService.findByName(dto.sectorName());
         Manufacturer manufacturer = manufacturerService.findByName(dto.manufacturerName());
 
         return Antenna.builder()
@@ -142,7 +141,7 @@ public class AntennaServiceImpl implements AntennaService {
                 .mechanicalTilt(dto.mechanicalTilt())
                 .antennaHeight(dto.antennaHeight())
                 .antennaType(antennaType)
-                .sector(beamSector)
+                .sector(sector)
                 .manufacturer(manufacturer)
                 .build();
     }

@@ -223,23 +223,24 @@ public class CellServiceImpl implements CellService {
             } catch (ResourceNotFoundException e) {
                 log.warn("Sector name not found by: {}", dto.sectorName());
 
-                String[] splitSector = dataTypeUtilService.splitSectorName(dto.sectorName());
-                String siteCode = splitSector[0];
-                Integer sectorIndex = Integer.parseInt(splitSector[1]);
-
-                if (Objects.equals(siteCode, cell.getSite().getSiteCode())) {
-                    Sector sector = Sector.builder()
-                            .sectorIndex(sectorIndex)
-                            .name(dto.sectorName())
-                            .site(cell.getSite())
-                            .azimuth(cell.getAzimuth())
-                            .build();
-                    Sector newSector = sectorService.createSector(sector);
-                    cell.setSector(newSector);
-                    warnings.add("New sector created " + dto.sectorName());
-                } else {
-                    warnings.add("Site ID - Sector name mismatch");
-                }
+                // TODO: IMPLEMENT AUTOMATIC SECTOR CREATION
+//                String[] splitSector = dataTypeUtilService.splitSectorName(dto.sectorName());
+//                String siteCode = splitSector[0];
+//                Integer sectorIndex = Integer.parseInt(splitSector[1]);
+//
+//                if (Objects.equals(siteCode, cell.getSite().getSiteCode())) {
+//                    Sector sector = Sector.builder()
+//                            .sectorIndex(sectorIndex)
+//                            .name(dto.sectorName())
+//                            .site(cell.getSite())
+//                            .azimuth(cell.getAzimuth())
+//                            .build();
+//                    Sector newSector = sectorService.createSector(sector);
+//                    cell.setSector(newSector);
+//                    warnings.add("New sector created " + dto.sectorName());
+//                } else {
+//                    warnings.add("Site ID - Sector name mismatch");
+//                }
             } catch (Exception e) {
                 log.warn("Sector modification failed: {}", dto.sectorName());
             }

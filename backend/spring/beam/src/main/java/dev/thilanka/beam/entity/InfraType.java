@@ -27,5 +27,5 @@ public class InfraType extends AuditEntity {
     private String legType;
 
     @OneToMany(mappedBy = "infraType", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
-    private List<BeamSite> sites;
+    private List<Site> sites;
 }

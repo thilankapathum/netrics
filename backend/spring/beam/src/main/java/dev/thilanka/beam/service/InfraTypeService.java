@@ -27,5 +27,7 @@ public interface InfraTypeService {
 
     List<InfraTypeDto> getAllInfraTypes();
 
+    InfraType extractInfraType(String infraType);
+
 
 }

@@ -1,6 +1,6 @@
 package dev.thilanka.beam.dto;
 
-public record BeamSiteDto(
+public record SiteDto(
         String siteCode,
         String siteName,
         Double latitude,

@@ -33,6 +33,6 @@ public class ElectricalTilt extends AuditEntity {
     private Antenna antenna;
 
     @ManyToOne
-    @JoinColumn(name = "supported_band_id")
+    @JoinColumn(name = "band_id")
     private BeamBand band;
 }

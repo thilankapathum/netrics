@@ -50,7 +50,7 @@ public class Antenna extends AuditEntity {
 
     @ManyToOne
     @JoinColumn(name = "sector_id")
-    private BeamSector sector;
+    private Sector sector;
 
     @ManyToOne
     @JoinColumn(name = "manufacturer_id")

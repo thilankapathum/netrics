@@ -38,17 +38,6 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
-    // One container factory per event type
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, SiteEvent> siteEventListenerContainerFactory() {
-        return buildFactory(SiteEvent.class);
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, SectorEvent> sectorEventListenerContainerFactory() {
-        return buildFactory(SectorEvent.class);
-    }
-
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, BandEvent> bandEventListenerContainerFactory() {
         return buildFactory(BandEvent.class);

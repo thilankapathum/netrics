@@ -2,7 +2,7 @@ package dev.thilanka.beam.service;
 
 import dev.thilanka.beam.dto.AntennaDto;
 import dev.thilanka.beam.entity.Antenna;
-import dev.thilanka.beam.entity.BeamSector;
+import dev.thilanka.beam.entity.Sector;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ public interface AntennaService {
 
     AntennaDto getById(Long id);
 
-    List<Antenna> findBySectorName(BeamSector sector);
+    List<Antenna> findBySectorName(Sector sector);
 
     List<AntennaDto> getBySectorName(String sectorName);
 }

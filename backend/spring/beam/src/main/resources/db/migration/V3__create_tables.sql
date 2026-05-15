@@ -125,7 +125,7 @@ CREATE INDEX idx_antenna_types_height_width
 -- SITES --
 CREATE TABLE sites
 (
-    id               BIGINT       NOT NULL,
+    id               BIGSERIAL       NOT NULL,
     site_code        VARCHAR(255) NOT NULL,
     site_name        VARCHAR(255) NOT NULL,
     latitude         DECIMAL(9, 6),
@@ -166,7 +166,7 @@ CREATE INDEX idx_sites_infra_type_id
 -- SECTORS --
 CREATE TABLE sectors
 (
-    id               BIGINT       NOT NULL,
+    id               BIGSERIAL       NOT NULL,
     sector_index     INTEGER      NOT NULL,
     name             VARCHAR(255) NOT NULL,
     azimuth          INTEGER,
@@ -255,7 +255,7 @@ CREATE TABLE electrical_tilts
     id                BIGSERIAL    NOT NULL,
     electrical_tilt   SMALLINT,
     antenna_id        BIGINT,
-    supported_band_id BIGINT,
+    band_id BIGINT,
 
     created_at        TIMESTAMP    NOT NULL,
     created_by        VARCHAR(255) NOT NULL,
@@ -267,14 +267,14 @@ CREATE TABLE electrical_tilts
     CONSTRAINT fk_electrical_tilts_antenna
         FOREIGN KEY (antenna_id) REFERENCES antennas (id),
     CONSTRAINT fk_electrical_tilts_band
-        FOREIGN KEY (supported_band_id) REFERENCES bands (id)
+        FOREIGN KEY (band_id) REFERENCES bands (id)
 );
 
 CREATE INDEX idx_electrical_tilts_antenna_id
     ON electrical_tilts (antenna_id);
 
-CREATE INDEX idx_electrical_tilts_supported_band_id
-    ON electrical_tilts (supported_band_id);
+CREATE INDEX idx_electrical_tilts_band_id
+    ON electrical_tilts (band_id);
 
 CREATE INDEX idx_electrical_tilts_electrical_tilt
     ON electrical_tilts (electrical_tilt);

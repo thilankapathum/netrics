@@ -21,8 +21,9 @@ import java.util.List;
 @Table(name = "sectors")
 @SuperBuilder
 @AuditLog
-public class BeamSector extends AuditEntity {
+public class Sector extends AuditEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Min(1)
@@ -39,7 +40,7 @@ public class BeamSector extends AuditEntity {
 
     @ManyToOne
     @JoinColumn(name = "site_id")
-    private BeamSite site;
+    private Site site;
 
     @OneToMany(mappedBy = "sector",fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     private List<Antenna> antenna;

@@ -45,9 +45,16 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: false  # keeps messages clean
+    consumer:
+      group-id: beam-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "dev.thilanka.netrics,dev.thilanka.beam"
     topic:
-      site-events: pulse.site.events
-      sector-events: pulse.sector.events
+      site-events: beam.site.events
+      sector-events: beam.sector.events
       band-events: pulse.band.events
 
 keycloak:
