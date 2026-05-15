@@ -16,9 +16,21 @@ public interface SectorService {
 
     List<SectorDto> createSectors(List<SectorDto> dtos);
 
+    List<Sector> findAllSectors();
+
+    List<SectorDto> getAllSectors();
+
+    List<Sector> findSectorsWithMissingInfo();
+
+    List<SectorDto> getSectorsWithMissingInfo();
+
     Sector updateSector(Sector sector);
 
     SectorUpdateResult updateSector(SectorDto dto);
 
     List<SectorCsvImportResultDto> updateSectorsWithResults(List<SectorDto> dtos);
+
+    Integer reloadSectorCountWithMissingInfo();
+
+    Integer getSectorCountWithMissingInfo();
 }

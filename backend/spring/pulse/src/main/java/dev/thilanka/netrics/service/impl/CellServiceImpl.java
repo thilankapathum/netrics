@@ -220,8 +220,9 @@ public class CellServiceImpl implements CellService {
             try {
                 Sector sector = sectorService.findBySectorName(dto.sectorName());
                 cell.setSector(sector);
-            } catch (ResourceNotFoundException e) {
-                log.warn("Sector name not found by: {}", dto.sectorName());
+            } catch (Exception e) {
+                warnings.add("Sector unavailable by " + dto.sectorName());
+                log.warn("Sector-name not found by: {}", dto.sectorName());
 
                 // TODO: IMPLEMENT AUTOMATIC SECTOR CREATION
 //                String[] splitSector = dataTypeUtilService.splitSectorName(dto.sectorName());
@@ -241,8 +242,6 @@ public class CellServiceImpl implements CellService {
 //                } else {
 //                    warnings.add("Site ID - Sector name mismatch");
 //                }
-            } catch (Exception e) {
-                log.warn("Sector modification failed: {}", dto.sectorName());
             }
         } else {
             warnings.add("Sector not specified");

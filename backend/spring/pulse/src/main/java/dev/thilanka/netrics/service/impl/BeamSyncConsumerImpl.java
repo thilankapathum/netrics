@@ -5,6 +5,8 @@ import dev.thilanka.netrics.dto.SiteEvent;
 import dev.thilanka.netrics.repository.SectorRepository;
 import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.service.BeamSyncConsumer;
+import dev.thilanka.netrics.service.SectorService;
+import dev.thilanka.netrics.service.SiteService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +18,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BeamSyncConsumerImpl implements BeamSyncConsumer {
     private final SiteRepository siteRepository;
+    private final SiteService siteService;
     private final SectorRepository sectorRepository;
+    private final SectorService sectorService;
 
 
     @Override
@@ -68,6 +72,7 @@ public class BeamSyncConsumerImpl implements BeamSyncConsumer {
                 event.siteCode(), event.siteName(), event.latitude(), event.longitude(),
                 event.createdAt(), event.modifiedAt(),event.createdBy(), event.modifiedBy()
         );
+        siteService.reloadSites();
         log.info("Upserted site {} - {}", event.siteCode(), event.siteName());
     }
 
@@ -75,6 +80,7 @@ public class BeamSyncConsumerImpl implements BeamSyncConsumer {
         //TODO: Create Producer
         sectorRepository.upsert(event.sectorIndex(), event.name(), event.azimuth(),
                 event.siteId(), event.createdAt(), event.modifiedAt(), event.createdBy(), event.modifiedBy());
+        sectorService.reloadSectors();
         log.info("Upserted sector {} - {}", event.sectorIndex(), event.name());
     }
 }

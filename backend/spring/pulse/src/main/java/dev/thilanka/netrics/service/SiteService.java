@@ -1,8 +1,6 @@
 package dev.thilanka.netrics.service;
 
-import dev.thilanka.netrics.dto.SiteCsvImportResultDto;
 import dev.thilanka.netrics.dto.SiteDto;
-import dev.thilanka.netrics.dto.SiteUpdateResult;
 import dev.thilanka.netrics.entity.Site;
 
 import java.util.List;
@@ -35,11 +33,11 @@ public interface SiteService {
 
 //    List<SiteCsvImportResultDto> updateSitesWithResults(List<SiteDto> dtos);
 
-    Integer reloadSiteCountWithMissingInfo();
+//    Integer reloadSiteCountWithMissingInfo();
+//
+//    Integer getSiteCountWithMissingInfo();
 
-    Integer getSiteCountWithMissingInfo();
-
-    List<SiteDto> reloadSites();
+    void reloadSites();
 
     List<SiteDto> searchSites(String siteCode);
 

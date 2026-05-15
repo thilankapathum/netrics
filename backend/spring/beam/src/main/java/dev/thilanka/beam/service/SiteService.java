@@ -17,6 +17,18 @@ public interface SiteService {
 
     Site findBySiteCode(String siteCode);
 
+    List<Site> findAllSites();
+
+    List<SiteDto> getAllSites();
+
+    List<Site> findSitesWithMissingInfo();
+
+    List<SiteDto> getSitesWithMissingInfo();
+
+    Integer reloadSiteCountWithMissingInfo();
+
+    Integer getSiteCountWithMissingInfo();
+
     Site updateSite(Site site);
 
     SiteUpdateResult updateSite(SiteDto siteDto);

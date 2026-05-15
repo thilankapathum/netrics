@@ -55,16 +55,16 @@ public class SectorController {
         return ResponseEntity.ok(sectorService.getBySiteAndIndex(siteCode, sectorIndex));
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
-    @GetMapping("missing/export")
-    public void exportCellsWithMissingInfo(HttpServletResponse response) throws IOException {
-        response.setContentType("text/csv");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sectors_missing_info.csv");
-
-        List<SectorDto> sectorDtos = sectorService.getSectorsWithMissingInfo();
-        csvService.writeSectorsToCsv(sectorDtos, response.getWriter());
-        sectorService.reloadSectorCountWithMissingInfo();
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+//    @GetMapping("missing/export")
+//    public void exportCellsWithMissingInfo(HttpServletResponse response) throws IOException {
+//        response.setContentType("text/csv");
+//        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sectors_missing_info.csv");
+//
+//        List<SectorDto> sectorDtos = sectorService.getSectorsWithMissingInfo();
+//        csvService.writeSectorsToCsv(sectorDtos, response.getWriter());
+//        sectorService.reloadSectorCountWithMissingInfo();
+//    }
 
 //    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
 //    @GetMapping("all/export")
@@ -90,17 +90,17 @@ public class SectorController {
 //        return new ResponseEntity<>(HttpStatus.CREATED);
 //    }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("missing/count")
-    public ResponseEntity<Integer> getSectorCountWithMissingInfo(){
-        Integer count = sectorService.getSectorCountWithMissingInfo();
-        return ResponseEntity.ok(count);
-    }
-
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("missing/reload-count")
-    public ResponseEntity<Integer> reloadSectorCountWithMissingInfo(){
-        Integer count = sectorService.reloadSectorCountWithMissingInfo();
-        return ResponseEntity.ok(count);
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @GetMapping("missing/count")
+//    public ResponseEntity<Integer> getSectorCountWithMissingInfo(){
+//        Integer count = sectorService.getSectorCountWithMissingInfo();
+//        return ResponseEntity.ok(count);
+//    }
+//
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @GetMapping("missing/reload-count")
+//    public ResponseEntity<Integer> reloadSectorCountWithMissingInfo(){
+//        Integer count = sectorService.reloadSectorCountWithMissingInfo();
+//        return ResponseEntity.ok(count);
+//    }
 }

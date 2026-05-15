@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -28,6 +29,8 @@ public class SectorServiceImpl implements SectorService {
     private final BeamEventPublisher eventPublisher;
     private final SiteService siteService;
     private final GeoUtils geoUtils;
+
+    Integer sectorCountWithMissingInfo = 0;
 
     @Override
     public Sector findByName(String name) {
@@ -60,6 +63,26 @@ public class SectorServiceImpl implements SectorService {
             }
         }
         return sectorDtos;
+    }
+
+    @Override
+    public List<Sector> findAllSectors() {
+        return sectorRepository.findAllByOrderByNameAsc();
+    }
+
+    @Override
+    public List<SectorDto> getAllSectors() {
+        return findAllSectors().stream().map(this::toSectorDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Sector> findSectorsWithMissingInfo() {
+        return sectorRepository.findSectorsWithMissingInfo();
+    }
+
+    @Override
+    public List<SectorDto> getSectorsWithMissingInfo() {
+        return findSectorsWithMissingInfo().stream().map(this::toSectorDto).collect(Collectors.toList());
     }
 
     @Override
@@ -131,6 +154,17 @@ public class SectorServiceImpl implements SectorService {
             }
         }
         return importResultDtos;
+    }
+
+    @Override
+    public Integer reloadSectorCountWithMissingInfo() {
+        this.sectorCountWithMissingInfo = sectorRepository.findSectorCountWithMissingInfo();
+        return this.sectorCountWithMissingInfo;
+    }
+
+    @Override
+    public Integer getSectorCountWithMissingInfo() {
+        return this.sectorCountWithMissingInfo;
     }
 
     private SectorEvent buildSectorEvent(String type, Sector sector) {

@@ -20,16 +20,18 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SiteServiceImpl implements SiteService {
-    //TODO MOVE ALL SITE CREATE AND UPDATE LOGIC HERE
     private final SiteRepository siteRepository;
     private final BeamEventPublisher eventPublisher;
     private final OperatorService operatorService;
     private final InfraTypeService infraTypeService;
+
+    private Integer siteCountWithMissingInfo = 0;
 
     @Override
     public Site createSite(Site site) {
@@ -60,6 +62,37 @@ public class SiteServiceImpl implements SiteService {
     public Site findBySiteCode(String siteCode) {
         return siteRepository.findBySiteCode(siteCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Site", "siteCode", siteCode));
+    }
+
+    @Override
+    public List<Site> findAllSites() {
+        return siteRepository.findAllByOrderBySiteCodeAsc();
+    }
+
+    @Override
+    public List<SiteDto> getAllSites() {
+        return findAllSites().stream().map(this::toSiteDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Site> findSitesWithMissingInfo() {
+        return siteRepository.findSitesWithMissingInfo();
+    }
+
+    @Override
+    public List<SiteDto> getSitesWithMissingInfo() {
+        return findSitesWithMissingInfo().stream().map(this::toSiteDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public Integer reloadSiteCountWithMissingInfo() {
+        this.siteCountWithMissingInfo = siteRepository.findSiteCountWithMissingInfo();
+        return siteCountWithMissingInfo;
+    }
+
+    @Override
+    public Integer getSiteCountWithMissingInfo() {
+        return this.siteCountWithMissingInfo;
     }
 
     @Override
@@ -119,13 +152,14 @@ public class SiteServiceImpl implements SiteService {
             site.setOperator(operator);
         } catch (Exception e) {
             log.warn("Operator not found by {}", dto.operatorName(), e);
-            warnings.add("Operator not found by '" + dto.operatorName()+"'");
+            warnings.add("Operator not found by '" + dto.operatorName() + "'");
         }
         try {
             InfraType infraType = infraTypeService.extractInfraType(dto.infraType());
+            site.setInfraType(infraType);
         } catch (Exception e) {
             log.warn("InfraType not found by {}", dto.infraType(), e);
-            warnings.add("InfraType not found by '" + dto.infraType() +"'");
+            warnings.add("InfraType not found by '" + dto.infraType() + "'");
         }
 
         Site updatedSite = siteRepository.save(site);
@@ -185,15 +219,37 @@ public class SiteServiceImpl implements SiteService {
     }
 
     private SiteDto toSiteDto(Site site) {
+        String operatorName = "";
+        String infraTypeName = "";
+
+        if (site.getOperator() != null) {
+            operatorName = site.getOperator().getName();
+        }
+        if (site.getInfraType() != null) {
+            infraTypeName = site.getInfraType().getInfraType() + "-" + site.getInfraType().getLegType();
+        }
+
         return new SiteDto(site.getSiteCode(), site.getSiteName(), site.getLatitude(), site.getLongitude(),
-                site.getBuildingHeight(), site.getTowerHeight(), site.getOperator().getName(),
-                site.getInfraType().getInfraType() + "-" + site.getInfraType().getLegType());
+                site.getBuildingHeight(), site.getTowerHeight(), operatorName, infraTypeName);
     }
 
     private Site toSite(SiteDto dto) {
+        Operator operator;
+        InfraType infraType;
 
-        Operator operator = operatorService.findByName(dto.operatorName());
-        InfraType infraType = infraTypeService.extractInfraType(dto.infraType());
+        try {
+            operator = operatorService.findByName(dto.operatorName());
+        } catch (ResourceNotFoundException e) {
+            log.warn("Operator not found by {}", dto.operatorName(), e);
+            operator = null;
+        }
+
+        try {
+            infraType = infraTypeService.extractInfraType(dto.infraType());
+        } catch (ResourceNotFoundException e) {
+            log.warn("InfraType not found by {}", dto.infraType(), e);
+            infraType = null;
+        }
 
         return Site.builder()
                 .siteCode(dto.siteCode())

@@ -53,28 +53,28 @@ public class SiteController {
         return ResponseEntity.ok(dto);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
-    @GetMapping("missing/export")
-    public void exportSitesWithMissingInfo(HttpServletResponse response) throws IOException {
-        response.setContentType("text/csv");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sites_missing_info.csv");
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+//    @GetMapping("missing/export")
+//    public void exportSitesWithMissingInfo(HttpServletResponse response) throws IOException {
+//        response.setContentType("text/csv");
+//        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sites_missing_info.csv");
+//
+//        List<SiteDto> siteDtos = siteService.getSitesWithMissingInfo();
+//        csvService.writeSitesToCsv(siteDtos, response.getWriter());
+//        siteService.reloadSiteCountWithMissingInfo();
+//    }
 
-        List<SiteDto> siteDtos = siteService.getSitesWithMissingInfo();
-        csvService.writeSitesToCsv(siteDtos, response.getWriter());
-        siteService.reloadSiteCountWithMissingInfo();
-    }
-
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("all/export")
-    public void exportAllCells(HttpServletResponse response) throws IOException {
-        response.setContentType("text/csv");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=all_sites_info.csv");
-
-        List<SiteDto> siteDtos = siteService.getAllSites();
-
-        csvService.writeSitesToCsv(siteDtos, response.getWriter());
-        siteService.reloadSiteCountWithMissingInfo();
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @GetMapping("all/export")
+//    public void exportAllCells(HttpServletResponse response) throws IOException {
+//        response.setContentType("text/csv");
+//        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=all_sites_info.csv");
+//
+//        List<SiteDto> siteDtos = siteService.getAllSites();
+//
+//        csvService.writeSitesToCsv(siteDtos, response.getWriter());
+//        siteService.reloadSiteCountWithMissingInfo();
+//    }
 
 //    @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
 //    @PostMapping(value = "missing/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -90,19 +90,19 @@ public class SiteController {
 //        return new ResponseEntity<>(HttpStatus.CREATED);
 //    }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("missing/count")
-    public ResponseEntity<Integer> getSiteCountWithMissingInfo(){
-        Integer count = siteService.getSiteCountWithMissingInfo();
-        return ResponseEntity.ok(count);
-    }
-
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
-    @GetMapping("missing/reload-count")
-    public ResponseEntity<Integer> reloadSiteCountWithMissingInfo(){
-        Integer count = siteService.reloadSiteCountWithMissingInfo();
-        return ResponseEntity.ok(count);
-    }
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @GetMapping("missing/count")
+//    public ResponseEntity<Integer> getSiteCountWithMissingInfo(){
+//        Integer count = siteService.getSiteCountWithMissingInfo();
+//        return ResponseEntity.ok(count);
+//    }
+//
+//    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+//    @GetMapping("missing/reload-count")
+//    public ResponseEntity<Integer> reloadSiteCountWithMissingInfo(){
+//        Integer count = siteService.reloadSiteCountWithMissingInfo();
+//        return ResponseEntity.ok(count);
+//    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("search")

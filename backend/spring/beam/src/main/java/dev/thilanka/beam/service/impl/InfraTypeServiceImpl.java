@@ -104,6 +104,8 @@ public class InfraTypeServiceImpl implements InfraTypeService {
 
     @Override
     public InfraType extractInfraType(String infraType) {
+        if (infraType == null) {return null;}
+
         String[] infraTypes = infraType.split(" - ");
         if (infraTypes.length != 2) {
             throw new BusinessValidationException("Incorrect Infra-Type");

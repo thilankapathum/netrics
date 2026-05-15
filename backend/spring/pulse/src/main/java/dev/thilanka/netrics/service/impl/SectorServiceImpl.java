@@ -217,38 +217,38 @@ public class SectorServiceImpl implements SectorService {
         }
     }
 
-    @Override
-    public List<Sector> findSectorsWithMissingInfo() {
-        return sectorRepository.findSectorsWithMissingInfo();
-    }
-
-    @Override
-    public List<SectorDto> getSectorsWithMissingInfo() {
-        List<Sector> sectors = findSectorsWithMissingInfo();
-        return sectors.stream().map(mapper::sectorToDto).collect(Collectors.toList());
-    }
+//    @Override
+//    public List<Sector> findSectorsWithMissingInfo() {
+//        return sectorRepository.findSectorsWithMissingInfo();
+//    }
+//
+//    @Override
+//    public List<SectorDto> getSectorsWithMissingInfo() {
+//        List<Sector> sectors = findSectorsWithMissingInfo();
+//        return sectors.stream().map(mapper::sectorToDto).collect(Collectors.toList());
+//    }
 
     @Override
     public List<Sector> findAllSectors() {
         return sectorRepository.findAll();
     }
+//
+//    @Override
+//    public List<SectorDto> getAllSectors() {
+//        List<Sector> sectors = findAllSectors();
+//        return sectors.stream().map(mapper::sectorToDto).collect(Collectors.toList());
+//    }
 
-    @Override
-    public List<SectorDto> getAllSectors() {
-        List<Sector> sectors = findAllSectors();
-        return sectors.stream().map(mapper::sectorToDto).collect(Collectors.toList());
-    }
-
-    @Override
-    public Integer reloadSectorCountWithMissingInfo() {
-        this.sectorCountWithMissingInfo = sectorRepository.findSectorCountWithMissingInfo();
-        return this.sectorCountWithMissingInfo;
-    }
-
-    @Override
-    public Integer getSectorCountWithMissingInfo() {
-        return this.sectorCountWithMissingInfo;
-    }
+//    @Override
+//    public Integer reloadSectorCountWithMissingInfo() {
+//        this.sectorCountWithMissingInfo = sectorRepository.findSectorCountWithMissingInfo();
+//        return this.sectorCountWithMissingInfo;
+//    }
+//
+//    @Override
+//    public Integer getSectorCountWithMissingInfo() {
+//        return this.sectorCountWithMissingInfo;
+//    }
 
 
 }

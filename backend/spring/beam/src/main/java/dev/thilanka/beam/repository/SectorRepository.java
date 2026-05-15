@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface SectorRepository extends JpaRepository<Sector, Long> {
@@ -38,5 +39,26 @@ public interface SectorRepository extends JpaRepository<Sector, Long> {
 //    );
 
     Optional<Sector> findByName(String name);
+
+    @Query(value = """
+                SELECT * FROM public.sectors
+                WHERE sector_index IS NULL
+                	OR name IS NULL
+                	OR azimuth IS NULL
+                	OR site_id IS NULL
+                ORDER BY name;
+            """, nativeQuery = true)
+    List<Sector> findSectorsWithMissingInfo();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM sectors
+            WHERE
+                azimuth IS NULL
+                OR site_id IS NULL;
+            """, nativeQuery = true)
+    Integer findSectorCountWithMissingInfo();
+
+    List<Sector> findAllByOrderByNameAsc();
 
 }

@@ -3,15 +3,12 @@ package dev.thilanka.netrics.service.impl;
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.Site;
-import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.SiteRepository;
-import dev.thilanka.netrics.service.PulseEventPublisher;
 import dev.thilanka.netrics.service.SiteService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -25,7 +22,7 @@ public class SiteServiceImpl implements SiteService {
     private final Mapper mapper;
 //    private final PulseEventPublisher eventPublisher;
 
-    private Integer siteCountWithMissingInfo = 0;
+//    private Integer siteCountWithMissingInfo = 0;
 
     private volatile List<SiteDto> cachedSites = Collections.emptyList();
 
@@ -171,7 +168,7 @@ public class SiteServiceImpl implements SiteService {
 //
 //        Site updatedSite = siteRepository.save(site);
 //        log.info("Publishing event UPDATED-2 for {}", updatedSite.getSiteCode());
-////        eventPublisher.publishSiteEvent(buildSiteEvent("UPDATED", updatedSite));
+/// /        eventPublisher.publishSiteEvent(buildSiteEvent("UPDATED", updatedSite));
 //        reloadSites();
 //        return new SiteUpdateResult(mapper.siteToDto(updatedSite), warnings);
 //    }
@@ -217,19 +214,19 @@ public class SiteServiceImpl implements SiteService {
 //        return importResultDtos;
 //    }
 
-    @Override
-    public Integer reloadSiteCountWithMissingInfo() {
-        this.siteCountWithMissingInfo = siteRepository.findSiteCountWithMissingInfo();
-        return this.siteCountWithMissingInfo;
-    }
+//    @Override
+//    public Integer reloadSiteCountWithMissingInfo() {
+//        this.siteCountWithMissingInfo = siteRepository.findSiteCountWithMissingInfo();
+//        return this.siteCountWithMissingInfo;
+//    }
+//
+//    @Override
+//    public Integer getSiteCountWithMissingInfo() {
+//        return this.siteCountWithMissingInfo;
+//    }
 
     @Override
-    public Integer getSiteCountWithMissingInfo() {
-        return this.siteCountWithMissingInfo;
-    }
-
-    @Override
-    public List<SiteDto> reloadSites() {
+    public void reloadSites() {
 
         List<SiteDto> loaded = siteRepository.findAll()
                 .stream()
@@ -238,7 +235,6 @@ public class SiteServiceImpl implements SiteService {
                 .collect(Collectors.toList());
 
         this.cachedSites = Collections.unmodifiableList(loaded); // immutable snapshot
-        return this.cachedSites;
     }
 
     @Override

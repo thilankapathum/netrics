@@ -33,15 +33,15 @@ public interface SectorService {
 
     List<SectorDto> searchSectors(String searchString);
 
-    List<Sector> findSectorsWithMissingInfo();
-
-    List<SectorDto> getSectorsWithMissingInfo();
+//    List<Sector> findSectorsWithMissingInfo();
+//
+//    List<SectorDto> getSectorsWithMissingInfo();
 
     List<Sector> findAllSectors();
+//
+//    List<SectorDto> getAllSectors();
 
-    List<SectorDto> getAllSectors();
-
-    Integer reloadSectorCountWithMissingInfo();
-
-    Integer getSectorCountWithMissingInfo();
+//    Integer reloadSectorCountWithMissingInfo();
+//
+//    Integer getSectorCountWithMissingInfo();
 }

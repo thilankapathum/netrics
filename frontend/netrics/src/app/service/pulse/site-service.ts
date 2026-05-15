@@ -8,19 +8,22 @@ import {Observable} from 'rxjs';
   providedIn: 'root'
 })
 export class SiteService {
-  private readonly baseUrl: string;
+  private readonly getUrl: string;
+  private readonly postUrl: string;
 
   constructor(private http: HttpClient, private urlService: UrlService) {
-    this.baseUrl = `${this.urlService.getPulseUrl()}/sites`;
+    this.getUrl = `${this.urlService.getPulseUrl()}/sites`;
+    this.postUrl = `${this.urlService.getBeamUrl()}/sites`;
+
   }
 
   createSite(site: SiteDto): Observable<SiteDto> {
-    return this.http.post<SiteDto>(`${this.baseUrl}`, site);
+    return this.http.post<SiteDto>(`${this.postUrl}`, site);
   }
 
   createSiteList(json: string) {
     const body = JSON.parse(json);
-    return this.http.post<Array<SiteDto>>(`${this.baseUrl}/list`,
+    return this.http.post<Array<SiteDto>>(`${this.postUrl}/list`,
       body,
       {
         headers: {
@@ -31,35 +34,35 @@ export class SiteService {
   }
 
   getSiteBySiteCode(siteCode: string): Observable<SiteDto> {
-    return this.http.get<SiteDto>(`${this.baseUrl}`, {params: {siteCode: siteCode}});
+    return this.http.get<SiteDto>(`${this.getUrl}`, {params: {siteCode: siteCode}});
   }
 
   updateSite(site: SiteDto): Observable<SiteDto> {
-    return this.http.put<SiteDto>(`${this.baseUrl}`, site);
+    return this.http.put<SiteDto>(`${this.postUrl}`, site);
   }
 
   searchSites(search: string): Observable<SiteDto[]> {
     const params = new HttpParams().set('search', search);
-    return this.http.get<SiteDto[]>(`${this.baseUrl}/search`, {params});
+    return this.http.get<SiteDto[]>(`${this.getUrl}/search`, {params});
   }
 
   exportSitesWithMissingInfo() {
-    return this.http.get(`${this.baseUrl}/missing/export`, {responseType: 'blob'});
+    return this.http.get(`${this.postUrl}/missing/export`, {responseType: 'blob'});
   }
 
   exportAllSites() {
-    return this.http.get(`${this.baseUrl}/all/export`, {responseType: 'blob'});
+    return this.http.get(`${this.postUrl}/all/export`, {responseType: 'blob'});
   }
 
   importSitesWithCorrectedInfo(file: File): Observable<Blob> {
-    const url = `${this.baseUrl}/missing/import`;
+    const url = `${this.postUrl}/missing/import`;
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post(url, formData, {responseType: 'blob'});
   }
 
   getSiteCountWithMissingInfo() {
-    return this.http.get<number>(`${this.baseUrl}/missing/count`);
+    return this.http.get<number>(`${this.postUrl}/missing/count`);
   }
 
 }
