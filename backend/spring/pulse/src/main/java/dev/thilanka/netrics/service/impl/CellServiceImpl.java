@@ -82,7 +82,7 @@ public class CellServiceImpl implements CellService {
             cell.beamwidth(dto.beamwidth());
         }
 
-        if (dto.isMultiBeam() != null) {
+        if (dto.isMultiBeam() == true) {
             cell.isMultiBeam(true);
         } else {
             cell.isMultiBeam(false);
@@ -141,7 +141,7 @@ public class CellServiceImpl implements CellService {
     @Override
     @CacheEvict(value = "mapCellTiles", allEntries = true)
     public CellUpdateResult updateCell(CellDto dto) {       //-- RAT is not updatable
-        log.warn("UPDATE CELL" + dto.cellName());
+//        log.info("UPDATE CELL" + dto.cellName());
 
         List<String> warnings = new ArrayList<>();
 

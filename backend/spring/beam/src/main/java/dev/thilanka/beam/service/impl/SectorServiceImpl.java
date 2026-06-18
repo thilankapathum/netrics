@@ -35,7 +35,7 @@ public class SectorServiceImpl implements SectorService {
     @Override
     public Sector findByName(String name) {
         return sectorRepository.findByName(name)
-                .orElseThrow(() -> new ResourceNotFoundException("Beam", "name", name));
+                .orElseThrow(() -> new ResourceNotFoundException("Sector", "name", name));
     }
 
     @Override
@@ -173,7 +173,7 @@ public class SectorServiceImpl implements SectorService {
                 sector.getSectorIndex(),
                 sector.getName(),
                 sector.getAzimuth(),
-                sector.getSite().getId(),
+                sector.getSite().getSiteCode(),
                 sector.getCreatedAt(),
                 sector.getLastModifiedAt(),
                 sector.getCreatedBy(),

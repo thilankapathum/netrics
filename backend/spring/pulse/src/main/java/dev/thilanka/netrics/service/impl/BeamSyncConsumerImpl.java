@@ -2,6 +2,7 @@ package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.SectorEvent;
 import dev.thilanka.netrics.dto.SiteEvent;
+import dev.thilanka.netrics.entity.Site;
 import dev.thilanka.netrics.repository.SectorRepository;
 import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.service.BeamSyncConsumer;
@@ -78,8 +79,10 @@ public class BeamSyncConsumerImpl implements BeamSyncConsumer {
 
     private void upsertSector(SectorEvent event) {
         //TODO: Create Producer
+        Site site = siteService.findBySiteCode(event.siteCode());
+
         sectorRepository.upsert(event.sectorIndex(), event.name(), event.azimuth(),
-                event.siteId(), event.createdAt(), event.modifiedAt(), event.createdBy(), event.modifiedBy());
+                site.getId(), event.createdAt(), event.modifiedAt(), event.createdBy(), event.modifiedBy());
         sectorService.reloadSectors();
         log.info("Upserted sector {} - {}", event.sectorIndex(), event.name());
     }

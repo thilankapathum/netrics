@@ -1,12 +1,12 @@
 <dialog #sectorMissingInfoModal id="sector_missing_info_modal" [class.modal-open]="open" class="modal w-full">
   <div class="modal-box max-w-2xl">
-    <h3 class="text-lg font-bold mb-2">Update Missing Cell Information</h3>
-    <p class="mb-4">There are <span class="text-error">{{ missingSectorInfoCount() }}</span> cells with missing
+    <h3 class="text-lg font-bold mb-2">Update Missing Sector Information</h3>
+    <p class="mb-4">There are <span class="text-error">{{ missingSectorInfoCount() }}</span> Sectors with missing
       information</p>
     <div class="flex flex-row justify-around flex-wrap p-4">
       <div class="flex flex-col gap-6">
         <div class="flex flex-col gap-3">
-          <p>Download Cells with missing information</p>
+          <p>Download Sectors with missing information</p>
           <button [disabled]="loadingMissingSectorInfoDownload" class="btn btn-sm self-start" (click)="exportSectorsWithMissingInfo()">
             <span [hidden]="!loadingMissingSectorInfoDownload" class="loading loading-spinner loading-xs"></span>
             <span [hidden]="loadingMissingSectorInfoDownload">
@@ -21,7 +21,7 @@
           </button>
         </div>
         <div class="flex flex-col gap-3">
-          <p>Download all Cells</p>
+          <p>Download all Sectors</p>
           <button [disabled]="loadingAllSectorDownload" class="btn btn-sm self-start" (click)="exportAllSectors()">
             <span [hidden]="!loadingAllSectorDownload" class="loading loading-spinner loading-xs"></span>
             <span [hidden]="loadingAllSectorDownload">
@@ -38,7 +38,7 @@
       </div>
       <div class="divider divider-horizontal">OR</div>
       <div class="flex flex-col gap-3">
-        <p>Upload Cell Information</p>
+        <p>Upload Sector Information</p>
         <input [disabled]="loadingMissingSectorInfoUpload" #sectorMissingInfoFileInput type="file"
                class="file-input input-sm"/>
         <button [disabled]="loadingMissingSectorInfoUpload" class="btn btn-sm self-start"

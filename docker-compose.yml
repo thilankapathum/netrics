@@ -13,7 +13,7 @@ volumes:
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: timescale/timescaledb-ha:pg17
     container_name: postgres
     restart: unless-stopped
     environment:
@@ -21,13 +21,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB_PULSE}
       PGDATA: /var/lib/postgresql/data
-#    ports:
-#      - "8032:5432"
     expose:
       - "${POSTGRES_PORT}"
     networks:
       - private_net
-#      - public_net
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -36,6 +33,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    command: ["postgres", "-c", "shared_preload_libraries=timescaledb,pg_stat_statements"]
 
   pgadmin:
     image: dpage/pgadmin4
@@ -46,15 +44,15 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_CONFIG_SERVER_MODE: 'True'
 
-      PGADMIN_CONFIG_FORCE_SCRIPT_NAME: "'/pgadmin'"
-      PGADMIN_CONFIG_PROXY_X_HOST: "'${DOMAIN_IP}'"
-      PGADMIN_CONFIG_PROXY_X_PORT: "'${FRONTEND_PORT}'"
-#    ports:
-#      - "8033:80"
+      # PGADMIN_CONFIG_FORCE_SCRIPT_NAME: "'/pgadmin'"
+      # PGADMIN_CONFIG_PROXY_X_HOST: "'${DOMAIN_IP}'"
+      # PGADMIN_CONFIG_PROXY_X_PORT: "'${FRONTEND_PORT}'"
+    ports:
+      - "8033:80"
     expose:
       - "80"
     networks:
-#      - public_net
+      - public_net
       - private_net
     volumes:
       - pgadmin:/var/lib/pgadmin
@@ -71,13 +69,10 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-#    ports:
-#      - "6379:6379"
     expose:
       - "6379"
     networks:
       - private_net
-#      - public_net
     volumes:
       - redis-data:/data
     healthcheck:
@@ -155,12 +150,13 @@ services:
 
 
   config-server:
-    image: thilankaw/netrics/config-server:0.0.5
+    image: thilankaw/netrics/config-server:0.0.6
     environment:
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
       - KEYCLOAK_HOST=${KEYCLOAK_HOST}
       - KEYCLOAK_PORT=${KEYCLOAK_PORT}
+      - REALM_NAME=${REALM_NAME}
     expose:
       - "8003"
     networks:
@@ -196,7 +192,7 @@ services:
         condition: service_healthy
 
   gateway:
-    image: thilankaw/netrics/gateway:0.0.2
+    image: thilankaw/netrics/gateway:0.0.3
     environment:
       - GATEWAY_HOST=${GATEWAY_HOST}
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
@@ -208,14 +204,11 @@ services:
       - GATEWAY_CLIENT_ID=${GATEWAY_CLIENT_ID}
       - GATEWAY_CLIENT_SECRET=${GATEWAY_CLIENT_SECRET}
       - REALM_NAME=${REALM_NAME}
-    ports:
-      - "8001:8001"
     expose:
       - "9001"
-#      - "8001"
+      - "8001"
     networks:
       - private_net
-      - public_net
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:9001/actuator/health" ]
       interval: 10s
@@ -226,13 +219,16 @@ services:
         condition: service_healthy
       pulse:
         condition: service_healthy
+      beam:
+        condition: service_healthy
       nginx:
         condition: service_healthy
     extra_hosts:
-      - "${DOMAIN_IP}:host-gateway"
+      - "host-gateway:${DOMAIN_IP}"
+      - "keycloak.local:${DOMAIN_IP}"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.1.4
+    image: thilankaw/netrics/pulse:0.2.0
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -255,6 +251,8 @@ services:
       - MAX_POOL_SIZE=${MAX_POOL_SIZE}
       - QUEUE_CAPACITY=${QUEUE_CAPACITY}
       - REFRESH_DAY=${REFRESH_DAY}
+      - KAFKA_HOST=${KAFKA_HOST}
+      - KAFKA_PORT=${KAFKA_PORT}
     expose:
       - "8012"
       - "9012"
@@ -273,6 +271,51 @@ services:
       discovery:
         condition: service_healthy
 
+  beam:
+    image: thilankaw/netrics/beam:0.0.1
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB_BEAM=${POSTGRES_DB_BEAM}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PULSE_HOST=${PULSE_HOST}
+      - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
+      - DISCOVERY_HOST=${DISCOVERY_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - KEYCLOAK_HOST=${KEYCLOAK_HOST}
+      - KEYCLOAK_PORT=${KEYCLOAK_PORT}
+      - DOMAIN_IP=${DOMAIN_IP}
+      - FRONTEND_PORT=${FRONTEND_PORT}
+      - BEAM_CLIENT_ID=${BEAM_CLIENT_ID}
+      - BEAM_CLIENT_SECRET=${BEAM_CLIENT_SECRET}
+      - REALM_NAME=${REALM_NAME}
+      - CORE_POOL_SIZE=${CORE_POOL_SIZE}
+      - MAX_POOL_SIZE=${MAX_POOL_SIZE}
+      - QUEUE_CAPACITY=${QUEUE_CAPACITY}
+      - KAFKA_HOST=${KAFKA_HOST}
+      - KAFKA_PORT=${KAFKA_PORT}
+    expose:
+      - "8013"
+      - "9013"
+    networks:
+      - private_net
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:9013/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      discovery:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
   kpip-day:
     image: thilankaw/netrics/kpip-day:0.0.8
     container_name: kpip-day
@@ -283,8 +326,8 @@ services:
     networks:
       - private_net
     volumes:
-#      - ./backend/python/pulse/files/day-average:/app/day-average
-      - /home/ftpuser/THILANKAW/netrics/backend/python/pulse/files/day-average:/app/day-average
+      - /home/ftpuser/apps/netrics/files/day-average:/app/day-average
+      - /home/ftpuser/apps/netrics/files/busy-hour:/app/busy-hour
     depends_on:
       postgres:
         condition: service_healthy
@@ -294,14 +337,13 @@ services:
   kpip-hour:
     image: thilankaw/netrics/kpip-hour:0.0.1
     container_name: kpip-hour
-    tty: true          # REQUIRED for single-line updates
-    stdin_open: true   # REQUIRED for single-line updates
+    tty: true
+    stdin_open: true
     env_file:
       - .env
     networks:
       - private_net
     volumes:
-#      - ./backend/python/pulse/files/hour:/app/day-average
       - /home/ftpuser/apps/netrics/files/hour:/app/hour
     depends_on:
       postgres:
@@ -310,7 +352,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: thilankaw/netrics/frontend:0.0.10
+    image: thilankaw/netrics/frontend:0.1.1
     container_name: frontend
     expose:
       - "80"
@@ -350,3 +392,39 @@ services:
         condition: service_healthy
       pgadmin:
         condition: service_healthy
+
+  kafka:
+    image: apache/kafka:4.0.0
+    container_name: kafka
+    restart: unless-stopped
+    expose:
+      - "9092"
+      - "9094"
+    networks:
+      - private_net
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      # Two listeners — one for Docker internal, one for external/local dev
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    healthcheck:
+      test: [ "CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - kafka_data:/var/lib/kafka/data
