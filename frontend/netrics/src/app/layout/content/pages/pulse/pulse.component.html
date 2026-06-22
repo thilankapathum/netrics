@@ -88,7 +88,7 @@
           <!--          <input type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD" checked="checked"/>-->
           <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" value="ltefdd" aria-label="LTE-FDD"
                  [checked]="selectedRat() === 'ltefdd'" (change)="setSelectedRat($any($event.target).value)"/>
-          <input disabled type="radio" name="rat_tabs" class="tab" value="ltetdd" aria-label="LTE-TDD"
+          <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" value="ltetdd" aria-label="LTE-TDD"
                  [checked]="selectedRat() === 'ltetdd'" (change)="setSelectedRat($any($event.target).value)"/>
           <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" value="nr" aria-label="NR"
                  [checked]="selectedRat() === 'nr'"

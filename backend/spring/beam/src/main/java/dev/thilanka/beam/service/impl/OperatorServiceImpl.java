@@ -104,6 +104,17 @@ public class OperatorServiceImpl implements OperatorService {
         return mapper.toOperatorDto(operator);
     }
 
+    @Override
+    public List<Operator> findAll() {
+        return operatorRepository.findAll();
+    }
+
+    @Override
+    public List<OperatorDto> getAll() {
+        List<Operator> operators = findAll();
+        return operators.stream().map(mapper::toOperatorDto).toList();
+    }
+
     private Operator dtoToOperator(OperatorDto dto) {
         return Operator.builder()
                 .name(dto.name())

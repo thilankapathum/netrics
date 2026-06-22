@@ -27,6 +27,10 @@ public interface OperatorService {
 
     OperatorDto findByOperatorName(String name);
 
+    List<Operator> findAll();
+
+    List<OperatorDto> getAll();
+
 
 
 }

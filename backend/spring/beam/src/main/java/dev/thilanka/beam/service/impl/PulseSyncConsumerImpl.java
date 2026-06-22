@@ -14,50 +14,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class PulseSyncConsumerImpl implements PulseSyncConsumer {
 
-//    private final BeamSiteRepository beamSiteRepository;
-//    private final BeamSectorRepository beamSectorRepository;
     private final BeamBandRepository beamBandRepository;
-
-//    @Override
-//    @Transactional
-//    @KafkaListener(
-//            topics = "${spring.kafka.topic.site-events}",
-//            groupId = "beam-service",
-//            containerFactory = "siteEventListenerContainerFactory"
-//    )
-//    public void handleSiteEvent(SiteEvent event) {
-//        log.info("Received SiteEvent type={} id={} siteCode={}", event.eventType(), event.id(), event.siteCode());
-//        try {
-//            switch (event.eventType()) {
-//                case "CREATED", "UPDATED" -> upsertSite(event);
-//                case "DELETED" -> beamSiteRepository.deleteById(event.id());
-//                default -> log.warn("Unknown Site event type: {}", event.eventType());
-//            }
-//        } catch (Exception e) {
-//            log.error("Error processing SiteEvent id={}", event.id(), e);
-//            throw e;
-//        }
-//    }
-
-//    @Override
-//    @KafkaListener(
-//            topics = "${spring.kafka.topic.sector-events}",
-//            groupId = "beam-service",
-//            containerFactory = "sectorEventListenerContainerFactory"
-//    )
-//    public void handleSectorEvent(SectorEvent event) {
-//        log.info("Received SectorEvent type={} id={} sectorName={}", event.eventType(), event.id(), event.name());
-//        try {
-//            switch (event.eventType()) {
-//                case "CREATED", "UPDATED" -> upsertSector(event);
-//                case "DELETED" -> beamSectorRepository.deleteById(event.id());
-//                default -> log.warn("Unknown Sector event type: {}", event.eventType());
-//            }
-//        } catch (Exception e) {
-//            log.error("Error processing SectorEvent id={}", event.id(), e);
-//            throw e;
-//        }
-//    }
 
     @Override
     @KafkaListener(
@@ -78,22 +35,6 @@ public class PulseSyncConsumerImpl implements PulseSyncConsumer {
             throw e;
         }
     }
-
-//    private void upsertSite(SiteEvent event) {
-//        //-- Not using repository.save() to avoid duplicating with OperationLogListener PostPersist
-//        beamSiteRepository.upsert(
-//                event.id(), event.siteCode(), event.siteName(), event.latitude(), event.longitude(),
-//                event.createdAt(), event.createdBy()
-//        );
-//        log.info("Upserted site {} - {}", event.siteCode(), event.siteName());
-//    }
-//
-//    private void upsertSector(SectorEvent event) {
-//        //TODO: Create Producer
-//        beamSectorRepository.upsert(event.id(), event.sectorIndex(), event.name(), event.azimuth(),
-//                event.siteId(), event.createdAt(), event.createdBy());
-//        log.info("Upserted sector {} - {}", event.sectorIndex(), event.name());
-//    }
 
     private void upsertBand(BandEvent event) {
         //TODO: Create Producer
