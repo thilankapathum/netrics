@@ -14,4 +14,6 @@ public interface DistrictCodeService {
     List<DistrictCodeDto> createDistrictCodeList(List<DistrictCodeDto> dtos);
 
     DistrictCode findByDistrictCode(String districtCode);
+
+    void updateKpiDayWithoutDistrict();
 }
