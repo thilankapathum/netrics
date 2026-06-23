@@ -40,9 +40,6 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
 
   public showChart:boolean = true;
 
-  // currentTheme: string = '';
-  // isDark: boolean = false;
-
   private themeSub!: Subscription;
 
   constructor(
@@ -51,8 +48,6 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
-    // this.currentTheme = this.themeService.getCurrentTheme();
-    // this.isDark = this.currentTheme === 'netrics_dark';
     this.initializeChart();
 
     // Subscribe to theme changes
@@ -60,25 +55,6 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
       this.updateChartTheme(theme);
     });
   }
-
-  // ngOnChanges(changes: SimpleChanges): void {
-  //   const series = this.chartSeries;
-  //
-  //   if (this.chart) {
-  //     this.chart.updateSeries(series, true);
-  //   } else {
-  //     this.chartOptions = {
-  //       ...this.chartOptions,
-  //       series: series
-  //     };
-  //
-  //     // Force re-render when data changes
-  //     this.showChart = false;
-  //     setTimeout(() => {
-  //       this.showChart = true;
-  //     }, 0);
-  //   }
-  // }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['chartSeries']) return;
