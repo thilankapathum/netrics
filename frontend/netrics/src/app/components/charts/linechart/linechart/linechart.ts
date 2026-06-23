@@ -1,4 +1,14 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  SimpleChanges,
+  ViewChild,
+  ChangeDetectorRef,
+  ElementRef, signal, Injector, effect
+} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {
   ApexAxisChartSeries,
@@ -36,38 +46,68 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
   @ViewChild("chart") chart!: ChartComponent;
   @Input() chartSeries: any;
   @Input() chartHeight: number = 300;
+  @Input() showLegend: boolean = true;
+  @Input() annotationDate: string = '';
   public chartOptions: Partial<ChartOptions> = {};
 
   public showChart:boolean = true;
 
   private themeSub!: Subscription;
+  private resizeObserver!: ResizeObserver;
+  private lastWidth: number = 0;
+  private annotationDateSignal = signal<string>('');
 
   constructor(
-    private themeService: DaisyUiThemeService
+    private themeService: DaisyUiThemeService,
+    private el: ElementRef,
+    private injector: Injector
   ) {
   }
 
   ngOnInit(): void {
     this.initializeChart();
 
-    // Subscribe to theme changes
     this.themeSub = this.themeService.theme$.subscribe(theme => {
       this.updateChartTheme(theme);
     });
+
+    this.resizeObserver = new ResizeObserver(entries => {
+      const newWidth = entries[0]?.contentRect.width ?? 0;
+      if (newWidth > 0 && Math.abs(newWidth - this.lastWidth) > 1) {
+        this.lastWidth = newWidth;
+        this.reflow();
+      }
+    });
+    this.resizeObserver.observe(this.el.nativeElement);
+
+    // ── Reactively apply annotation whenever the date signal changes ──
+    effect(() => {
+      const date = this.annotationDateSignal();
+      // Run outside the reactive context so ApexCharts DOM ops don't
+      // get tracked by Angular's signal graph
+      setTimeout(() => this.applyAnnotation(date), 50);
+    }, { injector: this.injector });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['chartSeries']) return;
-
-    if (this.chart) {
-      this.chart.updateSeries(this.chartSeries ?? [], true);
+    if (changes['chartSeries']) {
+      if (this.chart) {
+        this.chart.updateSeries(this.chartSeries ?? [], true);
+      }
+    }
+    if (changes['annotationDate']) {
+      this.annotationDateSignal.set(this.annotationDate);
     }
   }
 
-
   ngOnDestroy(): void {
-    if (this.themeSub) {
-      this.themeSub.unsubscribe();
+    if (this.themeSub) this.themeSub.unsubscribe();
+    if (this.resizeObserver) this.resizeObserver.disconnect();  // ← ADD
+  }
+
+  public reflow(): void {
+    if (this.chart) {
+      this.chart.updateOptions({ chart: { width: '100%' } }, false, false);
     }
   }
 
@@ -129,7 +169,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
         }
       },
       legend: {
-        show: true,
+        show: this.showLegend,
         showForSingleSeries: true,
         position: 'top',
         labels: {
@@ -157,8 +197,13 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
     };
 
     // Show chart again in next tick to force re-render
+    // setTimeout(() => {
+    //   this.showChart = true;
+    // }, 10);
+
     setTimeout(() => {
       this.showChart = true;
+      setTimeout(() => this.applyAnnotation(this.annotationDate), 50);
     }, 10);
   }
 
@@ -198,6 +243,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
       },
       legend: {
         ...this.chartOptions.legend,
+        show: this.showLegend,
         labels: {
           colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
         }
@@ -238,6 +284,44 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
     setTimeout(() => {
       this.showChart = true;
     }, 10);
+  }
+
+  private applyAnnotation(date?: string): void {
+    if (!this.chart) return;
+
+    const targetDate = date ?? this.annotationDate;
+
+    if (!targetDate) {
+      this.chart.updateOptions({ annotations: { xaxis: [] } }, false, false);
+      return;
+    }
+
+    const ts = new Date(targetDate).getTime();
+
+    this.chart.updateOptions({
+      annotations: {
+        xaxis: [
+          {
+            x: ts,
+            strokeDashArray: 4,
+            borderColor: '#FF4560',
+            borderWidth: 2,
+            label: {
+              text: `Upgrade: ${targetDate}`,
+              position: 'top',
+              orientation: 'horizontal',
+              borderColor: '#FF4560',
+              style: {
+                color: '#fff',
+                background: '#FF4560',
+                fontSize: '10px',
+                padding: { left: 6, right: 6, top: 2, bottom: 2 }
+              }
+            }
+          }
+        ]
+      }
+    }, false, false);
   }
 
 }

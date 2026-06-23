@@ -1,4 +1,4 @@
-import {Component, computed, OnInit, signal} from '@angular/core';
+import {Component, computed, OnInit, QueryList, signal, ViewChildren} from '@angular/core';
 import {CellKpiSeries} from '../../../../../models/apexCharts/CellKpiSeries';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Linechart} from '../../../../../components/charts/linechart/linechart/linechart';
@@ -34,12 +34,15 @@ export interface KpiTile {
 })
 export class UpgradeReview implements OnInit{
 
+  @ViewChildren(Linechart) lineCharts!: QueryList<Linechart>;
+
   // ── Grid layout ──────────────────────────────────────────────────────────
   selectedCols = signal<1 | 2 | 3>(2);
 
   // ── Global filters ────────────────────────────────────────────────────────
   selectedGranularity = signal<string>('day-average');
   trendPeriod = signal<'week' | 'month' | 'quarter'>('month');
+  upgradeDate = signal<string>('');
 
   // ── RAT ──────────────────────────────────────────────────────────────────
   rat = signal<RatDto | undefined>(undefined);
@@ -75,6 +78,11 @@ export class UpgradeReview implements OnInit{
     '#00ff0c', '#e9006b', '#4ab5e7', '#9c2b08', '#caff00'
   ];
 
+  getCellColor(cellName: string): string {
+    // cellColorMap is populated during series fetch for m_cell mode
+    return this.cellColorMap[cellName] ?? '#008FFB';
+  }
+
   // ── Derived ───────────────────────────────────────────────────────────────
   loadingAny = computed(() =>
     this.loadingRats() || this.loadingStandardKpis() ||
@@ -103,6 +111,14 @@ export class UpgradeReview implements OnInit{
 
   ngOnInit(): void {
     this.getAllRats();
+  }
+
+  setSelectedCols(cols: 1 | 2 | 3): void {
+    this.selectedCols.set(cols);
+  }
+
+  clearUpgradeDate(): void {
+    this.upgradeDate.set('');
   }
 
   // ── RAT ──────────────────────────────────────────────────────────────────

@@ -71,12 +71,12 @@
 
     <!-- Grid-column selector -->
     <div class="tabs tabs-box tabs-xs border border-base-300">
-      <input type="radio" name="ur_cols" class="tab" aria-label="1 col"
-             [checked]="selectedCols() === 1" (change)="selectedCols.set(1)"/>
-      <input type="radio" name="ur_cols" class="tab" aria-label="2 cols"
-             [checked]="selectedCols() === 2" (change)="selectedCols.set(2)"/>
-      <input type="radio" name="ur_cols" class="tab" aria-label="3 cols"
-             [checked]="selectedCols() === 3" (change)="selectedCols.set(3)"/>
+      <input disabled type="radio" name="ur_cols" class="tab" aria-label="1"
+             [checked]="selectedCols() === 1" (change)="setSelectedCols(1)"/>
+      <input disabled type="radio" name="ur_cols" class="tab" aria-label="2"
+             [checked]="selectedCols() === 2" (change)="setSelectedCols(2)"/>
+      <input disabled type="radio" name="ur_cols" class="tab" aria-label="3"
+             [checked]="selectedCols() === 3" (change)="setSelectedCols(3)"/>
     </div>
 
     <!-- Cell search dropdown -->
@@ -154,6 +154,26 @@
         }
       }
     </div>
+
+    <!-- Upgrade date marker -->
+    <div class="flex items-center gap-1">
+      <input type="date"
+             class="input input-sm text-xs"
+             [ngModel]="upgradeDate()"
+             (ngModelChange)="upgradeDate.set($event)"
+             title="Set upgrade date marker"/>
+      @if (upgradeDate()) {
+        <button class="btn btn-sm btn-ghost text-error px-1"
+                (click)="clearUpgradeDate()"
+                title="Clear upgrade date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18"
+                  stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      }
+    </div>
   </nav>
 
   <!-- ── Main content area ──────────────────────────────────────────── -->
@@ -172,6 +192,7 @@
             No Cell Selected
           </h2>
           <p>Search and select a cell above to begin the upgrade review analysis.</p>
+          <p>Set a date to plot the upgraded date.</p>
         </div>
       </div>
     </div>
@@ -187,9 +208,11 @@
         @if (selectedChartType() === 'm_cell_s_kpi') {
           <div class="flex flex-row flex-wrap gap-2">
             @for (cell of selectedCells(); track cell.cellName) {
-              <button [disabled]="loadingAny()" class="btn btn-xs"
+              <button [disabled]="loadingAny()"
+                      class="btn btn-xs bg-base-100"
+                      [style.color]="getCellColor(cell.cellName!)"
                       (click)="removeCellFromChart(cell.cellName!)">
-                {{ cell.cellName }} ✕
+                ● {{ cell.cellName }} &nbsp; ✕
               </button>
             }
           </div>
@@ -231,7 +254,9 @@
               <!-- Chart -->
               <app-linechart [hidden]="tile.loading"
                              [chartSeries]="tile.series"
-                             [chartHeight]="220">
+                             [chartHeight]="220"
+                             [showLegend]="false"
+                             [annotationDate]="upgradeDate()">
               </app-linechart>
             </div>
           }
@@ -239,7 +264,7 @@
       </div>
 
       <!-- ── Right: KPI checkbox panel ──────────────────────────────── -->
-      <div class="border border-base-300 p-3 rounded-md flex flex-col gap-1 self-start sticky top-4">
+      <div class="join flex flex-col gap-0 border border-base-300 p-3 rounded-md">
         <p class="text-xs text-secondary font-medium mb-1">Standard KPIs</p>
 
         @if (loadingStandardKpis()) {
