@@ -82,7 +82,7 @@ public class CellServiceImpl implements CellService {
             cell.beamwidth(dto.beamwidth());
         }
 
-        if (dto.isMultiBeam() != null) {
+        if (dto.isMultiBeam() == true) {
             cell.isMultiBeam(true);
         } else {
             cell.isMultiBeam(false);
@@ -141,7 +141,7 @@ public class CellServiceImpl implements CellService {
     @Override
     @CacheEvict(value = "mapCellTiles", allEntries = true)
     public CellUpdateResult updateCell(CellDto dto) {       //-- RAT is not updatable
-        log.warn("UPDATE CELL" + dto.cellName());
+//        log.info("UPDATE CELL" + dto.cellName());
 
         List<String> warnings = new ArrayList<>();
 
@@ -220,28 +220,28 @@ public class CellServiceImpl implements CellService {
             try {
                 Sector sector = sectorService.findBySectorName(dto.sectorName());
                 cell.setSector(sector);
-            } catch (ResourceNotFoundException e) {
-                log.warn("Sector name not found by: {}", dto.sectorName());
-
-                String[] splitSector = dataTypeUtilService.splitSectorName(dto.sectorName());
-                String siteCode = splitSector[0];
-                Integer sectorIndex = Integer.parseInt(splitSector[1]);
-
-                if (Objects.equals(siteCode, cell.getSite().getSiteCode())) {
-                    Sector sector = Sector.builder()
-                            .sectorIndex(sectorIndex)
-                            .name(dto.sectorName())
-                            .site(cell.getSite())
-                            .azimuth(cell.getAzimuth())
-                            .build();
-                    Sector newSector = sectorService.createSector(sector);
-                    cell.setSector(newSector);
-                    warnings.add("New sector created " + dto.sectorName());
-                } else {
-                    warnings.add("Site ID - Sector name mismatch");
-                }
             } catch (Exception e) {
-                log.warn("Sector modification failed: {}", dto.sectorName());
+                warnings.add("Sector unavailable by " + dto.sectorName());
+                log.warn("Sector-name not found by: {}", dto.sectorName());
+
+                // TODO: IMPLEMENT AUTOMATIC SECTOR CREATION
+//                String[] splitSector = dataTypeUtilService.splitSectorName(dto.sectorName());
+//                String siteCode = splitSector[0];
+//                Integer sectorIndex = Integer.parseInt(splitSector[1]);
+//
+//                if (Objects.equals(siteCode, cell.getSite().getSiteCode())) {
+//                    Sector sector = Sector.builder()
+//                            .sectorIndex(sectorIndex)
+//                            .name(dto.sectorName())
+//                            .site(cell.getSite())
+//                            .azimuth(cell.getAzimuth())
+//                            .build();
+//                    Sector newSector = sectorService.createSector(sector);
+//                    cell.setSector(newSector);
+//                    warnings.add("New sector created " + dto.sectorName());
+//                } else {
+//                    warnings.add("Site ID - Sector name mismatch");
+//                }
             }
         } else {
             warnings.add("Sector not specified");

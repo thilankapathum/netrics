@@ -11,6 +11,10 @@ spring:
               uri: lb:http://PULSE-SERVICE
               predicates:
                 - Path=/api/v1/pulse/**
+            - id: beam-service
+              uri: lb:http://BEAM-SERVICE
+              predicates:
+                - Path=/api/v1/beam/**
           globalcors:
             cors-configurations:
               '[/**]':

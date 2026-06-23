@@ -9,6 +9,7 @@ export class UrlService {
   baseUrl:string = environment.baseUrl;
   authUrl:string = environment.authUrl;
   pulseUrl: string = `${this.baseUrl}/api/v1/pulse`;
+  beamUrl: string = `${this.baseUrl}/api/v1/beam`;
 
   getPulseUrl(){
     return this.pulseUrl;
@@ -20,6 +21,10 @@ export class UrlService {
 
   getAuthUrl(){
     return this.authUrl;
+  }
+
+  getBeamUrl(){
+    return this.beamUrl;
   }
 
 }

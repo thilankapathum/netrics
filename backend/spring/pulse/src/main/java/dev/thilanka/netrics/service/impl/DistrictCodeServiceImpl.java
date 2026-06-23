@@ -13,6 +13,7 @@ import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.DistrictCodeRepository;
 import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DistrictCodeServiceImpl implements DistrictCodeService {
     private final DistrictCodeRepository districtCodeRepository;
     private final DistrictService districtService;
@@ -43,6 +45,7 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
         districtCode.setDistrict(district);
 
         DistrictCode savedDistrictCode = districtCodeRepository.save(districtCode);
+        log.info("DistrictCode {} - {} saved successfully", savedDistrictCode.getCode(), savedDistrictCode.getDistrict().getName());
 
         //-- Assign any newly created District Code for 'All Districts' area.
 //        try {
@@ -58,9 +61,11 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
 //            System.out.println("Error mapping 'All Districts' to " + savedDistrictCode.getCode());
 //        }
 
-        for (Rat rat : rats) {
-            updateKpiDayWithoutDistrict(rat.getName());
-        }
+
+//          --- MANUALLY UPDATE KPI'S DISTRICT CODES ---
+//        for (Rat rat : rats) {
+//            updateKpiDayWithoutDistrict(rat.getName());
+//        }
 
         return mapper.districtCodeToDto(savedDistrictCode);
 
@@ -70,9 +75,12 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     public List<DistrictCodeDto> createDistrictCodeList(List<DistrictCodeDto> dtos) {
 
         List<DistrictCodeDto> districtCodeDtos = new ArrayList<>();
+        log.info("Creating District Codes");
 
         for (DistrictCodeDto dto : dtos) {
+            log.info("Creating District Code {} - {}", dto.code(), dto.districtName());
             districtCodeDtos.add(createDistrictCode(dto));
+            log.info("Created District Code {} - {}", dto.code(), dto.districtName());
         }
 
         return districtCodeDtos;
@@ -84,6 +92,14 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
                 .orElseThrow(() -> new ResourceNotFoundException("District Code", "Code", districtCode));
     }
 
+    @Override
+    public void updateKpiDayWithoutDistrict() {
+        List<Rat> rats = ratService.findAll();
+        for (Rat rat : rats) {
+            updateKpiDayWithoutDistrict(rat.getName());
+        }
+    }
+
     private void updateKpiDayWithoutDistrict(String ratName) {
         List<KpiDay> kpiList = kpiDayService.getKpiWithoutDistrict(ratName);
         List<KpiDataDto> kpiDayDtos = new ArrayList<>();
@@ -91,7 +107,7 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
             kpi.setDistrictCode(getDistrictCodeByCellName(kpi.getCellName()));
             kpiDayDtos.add(kpiDayService.createLteFddKpiDay(kpi));
         }
-
+        log.info("Updated KPI Day without District Code {}", ratName);
         //todo: Check for cells which match with new district_code only
     }
 

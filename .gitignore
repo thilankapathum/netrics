@@ -35,3 +35,7 @@ frontend/netrics/src/resources/fonts
 frontend/netrics/src/fonts.css
 frontend/netrics/src/assets/fonts
 .idea
+.idea/compiler.xml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/netrics.iml

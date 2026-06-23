@@ -9,17 +9,17 @@ import java.util.List;
 
 public interface SectorService {
 
-    Sector createSector(Sector sector);
+//    Sector createSector(Sector sector);
 
-    SectorDto createSector(SectorDto dto);
+//    SectorDto createSector(SectorDto dto);
 
-    List<SectorDto> createSectors(List<SectorDto> dtos);
+//    List<SectorDto> createSectors(List<SectorDto> dtos);
 
-    Sector updateSector(Sector sector);
+//    Sector updateSector(Sector sector);
 
-    SectorUpdateResult updateSector(SectorDto dto);
+//    SectorUpdateResult updateSector(SectorDto dto);
 
-    List<SectorCsvImportResultDto> updateSectorsWithResults(List<SectorDto> dtos);
+//    List<SectorCsvImportResultDto> updateSectorsWithResults(List<SectorDto> dtos);
 
     Sector findBySectorName(String name);
 
@@ -33,15 +33,15 @@ public interface SectorService {
 
     List<SectorDto> searchSectors(String searchString);
 
-    List<Sector> findSectorsWithMissingInfo();
-
-    List<SectorDto> getSectorsWithMissingInfo();
+//    List<Sector> findSectorsWithMissingInfo();
+//
+//    List<SectorDto> getSectorsWithMissingInfo();
 
     List<Sector> findAllSectors();
+//
+//    List<SectorDto> getAllSectors();
 
-    List<SectorDto> getAllSectors();
-
-    Integer reloadSectorCountWithMissingInfo();
-
-    Integer getSectorCountWithMissingInfo();
+//    Integer reloadSectorCountWithMissingInfo();
+//
+//    Integer getSectorCountWithMissingInfo();
 }

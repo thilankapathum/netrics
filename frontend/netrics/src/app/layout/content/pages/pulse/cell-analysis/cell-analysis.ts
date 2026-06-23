@@ -107,7 +107,7 @@ export class CellAnalysis implements OnInit {
       this.selectedRat.set(sharedService.selectedRat());
       this.cellName.set(sharedService.selectedCell());
       this.initialStandardKpi = sharedService.selectedStandardKpi();
-      this.getRat(this.selectedRat());
+      // this.getRat(this.selectedRat());
     }
   }
 
@@ -123,9 +123,14 @@ export class CellAnalysis implements OnInit {
   }
 
   getAllRats(): void {
+    this.loadingRats.set(true);
     this.ratService.getAllRats().subscribe({
       next: data => {
         this.rats = data;
+        this.loadingRats.set(false);
+        if (this.cellSelected()) {
+          this.getRat(this.selectedRat());
+        }
       }, error: err => {
         console.error(err);
         this.alertService.error(`Retirieving RATs failed. ${err.statusCode} ${err.statusText}`);
