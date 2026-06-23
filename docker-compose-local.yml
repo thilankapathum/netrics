@@ -44,7 +44,7 @@ services:
 #      postgres -c shared_preload_libraries=timescaledb
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:9.15.0
     container_name: pgadmin
     restart: unless-stopped
     environment:
