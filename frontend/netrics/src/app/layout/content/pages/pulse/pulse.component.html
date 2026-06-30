@@ -267,6 +267,7 @@
               <th class="font-semibold">Cell Name</th>
               <th class="font-semibold">KPI</th>
               <th class="font-semibold">Value</th>
+              <th class="font-semibold">Streak</th>
             </tr>
             </thead>
             <tbody>
@@ -286,6 +287,13 @@
                     }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
                     </span>
                   </td>
+                  <td>
+                    @if (cell.consecutiveBadDays! < 31) {
+                      {{cell.consecutiveBadDays}}
+                    } @else {
+                      30+
+                    }
+                    </td>
                 </tr>
               }
             </tbody>

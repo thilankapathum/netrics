@@ -1,6 +1,6 @@
 package dev.thilanka.netrics.dto;
 
-public record WorstCellsDto(
+public record WorstCellsProjection(
         String cellName,
         String kpiName,
         String kpiLabel,
@@ -8,7 +8,6 @@ public record WorstCellsDto(
         Double value,
         Double previousValue,
         Double difference,
-        Integer improved,
-        Integer consecutiveBadDays
+        Integer improved
 ) {
 }

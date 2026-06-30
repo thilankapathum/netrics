@@ -328,105 +328,227 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     List<WorstCellsDto> findWorstCells(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("currStart") LocalDateTime currentStart, @Param("preTimestamp") LocalDateTime preTimestamp, @Param("preStart") LocalDateTime previousStart, @Param("ratId") Long ratId, @Param("excludeZeroes") boolean excludeZeroes, @Param("granularityId") Long granularityId);
 
 
+//    @Query(value = """
+//            WITH params AS (
+//                 SELECT
+//                    :currStart ::timestamp AS curr_start,
+//                    :currEnd  ::timestamp AS curr_end,
+//                    :prevStart ::timestamp AS prev_start,
+//                    :prevEnd ::timestamp AS prev_end,
+//                    :standardKpiId  ::bigint AS kpi_id,
+//                    :areaId ::bigint AS area_id,
+//                    :ratId  ::bigint AS rat_id,
+//                    :granularityId  ::bigint AS granularity_id,
+//                    :excludeZeroes ::boolean AS exclude_zeroes
+//                ),
+//                -- Step 1: Filter KPI rows once
+//                district_cells AS (
+//                    SELECT l.*
+//                    FROM kpi_values l
+//                    JOIN district_codes dc ON l.district_code_id = dc.id
+//                    JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
+//                    JOIN areas ar ON adcm.area_id = ar.id
+//                    CROSS JOIN params p
+//                    WHERE ar.id = p.area_id
+//                        AND l.standard_kpi_id = p.kpi_id
+//                        AND l.rat_id = p.rat_id
+//                        AND l.granularity_id = p.granularity_id
+//                        AND l.timestamp BETWEEN p.prev_start AND p.curr_end
+//                    ),
+//                -- Step 2: Aggregate current period
+//                agg_curr AS (
+//                    SELECT
+//                        cell_name,
+//                        SUM(numerator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
+//                        SUM(denominator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_den,
+//                        AVG(kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_avg
+//                    FROM district_cells
+//                    CROSS JOIN params p
+//                    GROUP BY cell_name
+//                ),
+//                -- Step 3: Aggregate previous period
+//                agg_prev AS (
+//                    SELECT
+//                        cell_name AS pre_cell_name,
+//                        SUM(numerator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_num,
+//                        SUM(denominator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_den,
+//                        AVG(kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_avg
+//                    FROM district_cells
+//                    CROSS JOIN params p
+//                    GROUP BY cell_name
+//                ),
+//                -- Step 4: Combine with KPI metadata
+//                calc AS (
+//                 SELECT
+//                     c.cell_name,
+//                     sk.kpi_name,
+//                     sk.label AS kpi_label,
+//                     sk.unit,
+//                     sk.worst_order,
+//                     CASE
+//                         WHEN sk.unit = '%' THEN COALESCE((c.curr_num / NULLIF(c.curr_den,0)) * 100, c.curr_avg)
+//                         ELSE COALESCE((c.curr_num / NULLIF(c.curr_den,0)), c.curr_avg)
+//                     END AS curr_value,
+//                     CASE
+//                         WHEN sk.unit = '%' THEN COALESCE((p.pre_num / NULLIF(p.pre_den,0)) * 100, p.pre_avg)
+//                         ELSE COALESCE((p.pre_num / NULLIF(p.pre_den,0)), p.pre_avg)
+//                     END AS prev_value
+//                 FROM agg_curr c
+//                 LEFT JOIN agg_prev p ON c.cell_name = p.pre_cell_name
+//                 JOIN standard_kpi sk
+//                    ON sk.id = (SELECT kpi_id FROM params)  -- Correctly reference params
+//                )
+//                SELECT
+//                    cell_name,
+//                    kpi_name,
+//                    kpi_label,
+//                    unit,
+//                    curr_value AS value,
+//                    prev_value AS previous_value,
+//                    (curr_value - prev_value) AS difference,
+//                        CASE
+//                            WHEN worst_order = 'ASC'  AND (curr_value - prev_value) > 0 THEN 1
+//                            WHEN worst_order = 'DESC' AND (curr_value - prev_value) < 0 THEN 1
+//                            ELSE 0
+//                        END AS improved
+//                    FROM calc
+//                    CROSS JOIN params p
+//                    WHERE curr_value IS NOT NULL
+//                        AND (p.exclude_zeroes = FALSE OR curr_value <> 0)
+//                    ORDER BY
+//                        CASE WHEN worst_order = 'ASC'  THEN curr_value END ASC NULLS LAST,
+//                        CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
+//                    LIMIT :limit;
+//            """, nativeQuery = true)
+//    List<WorstCellsDto> findWorstCellsByArea(
+//            @Param("standardKpiId") Long standardKpiId,
+//            @Param("currStart") LocalDateTime currStart,
+//            @Param("currEnd") LocalDateTime currEnd,
+//            @Param("prevStart") LocalDateTime prevStart,
+//            @Param("prevEnd") LocalDateTime prevEnd,
+//            @Param("limit") int limit,
+//            @Param("areaId") Long areaId,
+//            @Param("ratId") Long ratId,
+//            @Param("excludeZeroes") boolean excludeZeroes,
+//            @Param("granularityId") Long granularityId
+//    );
+
+
     @Query(value = """
-            WITH params AS (
-                 SELECT
-                    :currStart ::timestamp AS curr_start,
-                    :currEnd  ::timestamp AS curr_end,
-                    :prevStart ::timestamp AS prev_start,
-                    :prevEnd ::timestamp AS prev_end,
-                    :standardKpiId  ::bigint AS kpi_id,
-                    :areaId ::bigint AS area_id,
-                    :ratId  ::bigint AS rat_id,
-                    :granularityId  ::bigint AS granularity_id,
-                    :excludeZeroes ::boolean AS exclude_zeroes
-                ),
-                -- Step 1: Filter KPI rows once
-                district_cells AS (
-                    SELECT l.*
-                    FROM kpi_values l
-                    JOIN district_codes dc ON l.district_code_id = dc.id
-                    JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
-                    JOIN areas ar ON adcm.area_id = ar.id
-                    CROSS JOIN params p
-                    WHERE ar.id = p.area_id
-                        AND l.standard_kpi_id = p.kpi_id
-                        AND l.rat_id = p.rat_id
-                        AND l.granularity_id = p.granularity_id
-                        AND l.timestamp BETWEEN p.prev_start AND p.curr_end
-                    ),
-                -- Step 2: Aggregate current period
-                agg_curr AS (
-                    SELECT
-                        cell_name,
-                        SUM(numerator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
-                        SUM(denominator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_den,
-                        AVG(kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_avg
-                    FROM district_cells
-                    CROSS JOIN params p
-                    GROUP BY cell_name
-                ),
-                -- Step 3: Aggregate previous period
-                agg_prev AS (
-                    SELECT
-                        cell_name AS pre_cell_name,
-                        SUM(numerator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_num,
-                        SUM(denominator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_den,
-                        AVG(kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_avg
-                    FROM district_cells
-                    CROSS JOIN params p
-                    GROUP BY cell_name
-                ),
-                -- Step 4: Combine with KPI metadata
-                calc AS (
-                 SELECT
-                     c.cell_name,
-                     sk.kpi_name,
-                     sk.label AS kpi_label,
-                     sk.unit,
-                     sk.worst_order,
-                     CASE
-                         WHEN sk.unit = '%' THEN COALESCE((c.curr_num / NULLIF(c.curr_den,0)) * 100, c.curr_avg)
-                         ELSE COALESCE((c.curr_num / NULLIF(c.curr_den,0)), c.curr_avg)
-                     END AS curr_value,
-                     CASE
-                         WHEN sk.unit = '%' THEN COALESCE((p.pre_num / NULLIF(p.pre_den,0)) * 100, p.pre_avg)
-                         ELSE COALESCE((p.pre_num / NULLIF(p.pre_den,0)), p.pre_avg)
-                     END AS prev_value
-                 FROM agg_curr c
-                 LEFT JOIN agg_prev p ON c.cell_name = p.pre_cell_name
-                 JOIN standard_kpi sk
-                    ON sk.id = (SELECT kpi_id FROM params)  -- Correctly reference params
-                )
-                SELECT
-                    cell_name,
-                    kpi_name,
-                    kpi_label,
-                    unit,
-                    curr_value AS value,
-                    prev_value AS previous_value,
-                    (curr_value - prev_value) AS difference,
-                        CASE
-                            WHEN worst_order = 'ASC'  AND (curr_value - prev_value) > 0 THEN 1
-                            WHEN worst_order = 'DESC' AND (curr_value - prev_value) < 0 THEN 1
-                            ELSE 0
-                        END AS improved
-                    FROM calc
-                    CROSS JOIN params p
-                    WHERE curr_value IS NOT NULL
-                        AND (p.exclude_zeroes = FALSE OR curr_value <> 0)
-                    ORDER BY
-                        CASE WHEN worst_order = 'ASC'  THEN curr_value END ASC NULLS LAST,
-                        CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
-                    LIMIT :limit;
-            """, nativeQuery = true)
-    List<WorstCellsDto> findWorstCellsByArea(
+        WITH params AS (
+            SELECT
+                :currStart     ::timestamp AS curr_start,
+                :currEnd       ::timestamp AS curr_end,
+                :prevStart     ::timestamp AS prev_start,
+                :prevEnd       ::timestamp AS prev_end,
+                :standardKpiId ::bigint    AS kpi_id,
+                :areaId        ::bigint    AS area_id,
+                :ratId         ::bigint    AS rat_id,
+                :granularityId ::bigint    AS granularity_id,
+                :excludeZeroes ::boolean   AS exclude_zeroes
+        ),
+        area_codes AS MATERIALIZED (
+            SELECT ARRAY_AGG(district_code_id) AS ids
+            FROM area_district_code_mapping
+            WHERE area_id = (SELECT area_id FROM params)
+        ),
+        kpi_meta AS MATERIALIZED (
+            SELECT kpi_name, label, unit, worst_order, threshold
+            FROM standard_kpi
+            WHERE id = (SELECT kpi_id FROM params)
+        ),
+        agg AS MATERIALIZED (
+            SELECT
+                l.cell_name,
+                SUM(l.numerator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
+                SUM(l.denominator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_den,
+                AVG(l.kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_avg,
+                SUM(l.numerator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.prev_start AND p.prev_end) AS prev_num,
+                SUM(l.denominator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.prev_start AND p.prev_end) AS prev_den,
+                AVG(l.kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.prev_start AND p.prev_end) AS prev_avg
+            FROM kpi_values l, area_codes ac, params p
+            WHERE l.district_code_id = ANY(ac.ids)
+                AND l.standard_kpi_id = p.kpi_id
+                AND l.rat_id          = p.rat_id
+                AND l.granularity_id  = p.granularity_id
+                AND l.timestamp BETWEEN p.prev_start AND p.curr_end
+            GROUP BY l.cell_name
+        )
+        SELECT
+            a.cell_name     AS cell_name,
+            km.kpi_name     AS kpi_name,
+            km.label        AS kpi_label,
+            km.unit         AS unit,
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+            END             AS value,
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                ELSE                    COALESCE((a.prev_num / NULLIF(a.prev_den, 0)),        a.prev_avg)
+            END             AS previous_value,
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+            END -
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                ELSE                    COALESCE((a.prev_num / NULLIF(a.prev_den, 0)),        a.prev_avg)
+            END             AS difference,
+            CASE
+                WHEN km.worst_order = 'ASC'  AND (
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                         ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+                    -
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                         ELSE COALESCE((a.prev_num / NULLIF(a.prev_den, 0)), a.prev_avg) END
+                ) > 0 THEN 1
+                WHEN km.worst_order = 'DESC' AND (
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                         ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+                    -
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                         ELSE COALESCE((a.prev_num / NULLIF(a.prev_den, 0)), a.prev_avg) END
+                ) < 0 THEN 1
+                ELSE 0
+            END             AS improved
+        FROM agg a
+        CROSS JOIN kpi_meta km
+        CROSS JOIN params p
+        WHERE
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+            END IS NOT NULL
+            AND (p.exclude_zeroes = FALSE OR
+                CASE
+                    WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                    ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+                END <> 0)
+        ORDER BY
+            CASE WHEN km.worst_order = 'ASC'  THEN
+                CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                     ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+            END ASC  NULLS LAST,
+            CASE WHEN km.worst_order = 'DESC' THEN
+                CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                     ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+            END DESC NULLS LAST
+        LIMIT :limit;
+        """, nativeQuery = true)
+    List<WorstCellsProjection> findWorstCellsByArea(
             @Param("standardKpiId") Long standardKpiId,
             @Param("currStart") LocalDateTime currStart,
             @Param("currEnd") LocalDateTime currEnd,
@@ -441,108 +563,169 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
 
 
     @Query(value = """
-            WITH params AS (
-                 SELECT
-                    :currStart ::timestamp AS curr_start,
-                    :currEnd  ::timestamp AS curr_end,
-                    :prevStart ::timestamp AS prev_start,
-                    :prevEnd ::timestamp AS prev_end,
-                    :standardKpiId  ::bigint AS kpi_id,
-                    :areaId ::bigint AS area_id,
-                    :ratId  ::bigint AS rat_id,
-                    :granularityId  ::bigint AS granularity_id,
-                    :excludeZeroes ::boolean AS exclude_zeroes,
-                    :bandId ::bigint AS band_id
-                ),
-                -- Step 1: Filter KPI rows once
-                district_cells AS (
-                    SELECT l.*
-                    FROM kpi_values l
-                    JOIN district_codes dc ON l.district_code_id = dc.id
-                    JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
-                    JOIN areas ar ON adcm.area_id = ar.id
-                    JOIN cells c ON l.cell_name = c.cell_name
-                    JOIN bands b ON b.id = c.band_id
-                    CROSS JOIN params p
-                    WHERE ar.id = p.area_id
-                        AND l.standard_kpi_id = p.kpi_id
-                        AND l.rat_id = p.rat_id
-                        AND l.granularity_id = p.granularity_id
-                        AND l.timestamp BETWEEN p.prev_start AND p.curr_end
-                        AND b.id = p.band_id
-                    ),
-                -- Step 2: Aggregate current period
-                agg_curr AS (
-                    SELECT
-                        cell_name,
-                        SUM(numerator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
-                        SUM(denominator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_den,
-                        AVG(kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_avg
-                    FROM district_cells
-                    CROSS JOIN params p
-                    GROUP BY cell_name
-                ),
-                -- Step 3: Aggregate previous period
-                agg_prev AS (
-                    SELECT
-                        cell_name AS pre_cell_name,
-                        SUM(numerator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_num,
-                        SUM(denominator_kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_den,
-                        AVG(kpi_value)
-                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_avg
-                    FROM district_cells
-                    CROSS JOIN params p
-                    GROUP BY cell_name
-                ),
-                -- Step 4: Combine with KPI metadata
-                calc AS (
-                 SELECT
-                     c.cell_name,
-                     sk.kpi_name,
-                     sk.label AS kpi_label,
-                     sk.unit,
-                     sk.worst_order,
-                     CASE
-                         WHEN sk.unit = '%' THEN COALESCE((c.curr_num / NULLIF(c.curr_den,0)) * 100, c.curr_avg)
-                         ELSE COALESCE((c.curr_num / NULLIF(c.curr_den,0)), c.curr_avg)
-                     END AS curr_value,
-                     CASE
-                         WHEN sk.unit = '%' THEN COALESCE((p.pre_num / NULLIF(p.pre_den,0)) * 100, p.pre_avg)
-                         ELSE COALESCE((p.pre_num / NULLIF(p.pre_den,0)), p.pre_avg)
-                     END AS prev_value
-                 FROM agg_curr c
-                 LEFT JOIN agg_prev p ON c.cell_name = p.pre_cell_name
-                 JOIN standard_kpi sk
-                    ON sk.id = (SELECT kpi_id FROM params)  -- Correctly reference params
-                )
-                SELECT
-                    cell_name,
-                    kpi_name,
-                    kpi_label,
-                    unit,
-                    curr_value AS value,
-                    prev_value AS previous_value,
-                    (curr_value - prev_value) AS difference,
-                        CASE
-                            WHEN worst_order = 'ASC'  AND (curr_value - prev_value) > 0 THEN 1
-                            WHEN worst_order = 'DESC' AND (curr_value - prev_value) < 0 THEN 1
-                            ELSE 0
-                        END AS improved
-                    FROM calc
-                    CROSS JOIN params p
-                    WHERE curr_value IS NOT NULL
-                        AND (p.exclude_zeroes = FALSE OR curr_value <> 0)
-                    ORDER BY
-                        CASE WHEN worst_order = 'ASC'  THEN curr_value END ASC NULLS LAST,
-                        CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
-                    LIMIT :limit;
-            """, nativeQuery = true)
-    List<WorstCellsDto> findWorstCellsByAreaAndBand(
+        WITH kpi_meta AS MATERIALIZED (
+            SELECT unit, worst_order, threshold
+            FROM standard_kpi
+            WHERE id = :standardKpiId
+        ),
+        streak_raw AS (
+            SELECT
+                l.cell_name,
+                ROW_NUMBER() OVER (PARTITION BY l.cell_name ORDER BY l.timestamp DESC) AS rn,
+                CASE
+                    WHEN km.worst_order = 'ASC'  AND
+                         COALESCE(l.numerator_kpi_value / NULLIF(l.denominator_kpi_value, 0)
+                             * CASE WHEN km.unit = '%' THEN 100 ELSE 1 END,
+                             l.kpi_value) < km.threshold THEN 1
+                    WHEN km.worst_order = 'DESC' AND
+                         COALESCE(l.numerator_kpi_value / NULLIF(l.denominator_kpi_value, 0)
+                             * CASE WHEN km.unit = '%' THEN 100 ELSE 1 END,
+                             l.kpi_value) > km.threshold THEN 1
+                    ELSE 0
+                END AS is_bad
+            FROM kpi_values l
+            CROSS JOIN kpi_meta km
+            WHERE l.cell_name      = ANY(:cellNames ::varchar[])
+                AND l.standard_kpi_id = :standardKpiId
+                AND l.rat_id          = :ratId
+                AND l.granularity_id  = :granularityId
+                AND l.timestamp BETWEEN :streakStart AND :currEnd
+        )
+        SELECT
+            cell_name                                            AS cell_name,
+            LEAST(
+                COALESCE(MIN(rn) FILTER (WHERE is_bad = 0) - 1, COUNT(*)),
+                31
+            )::int AS consecutive_bad_days
+        FROM streak_raw
+        GROUP BY cell_name;
+        """, nativeQuery = true)
+    List<CellStreakProjection> findStreaksForCells(
+            @Param("standardKpiId") Long standardKpiId,
+            @Param("streakStart") LocalDateTime streakStart,
+            @Param("currEnd") LocalDateTime currEnd,
+            @Param("cellNames") String[] cellNames,
+            @Param("ratId") Long ratId,
+            @Param("granularityId") Long granularityId
+    );
+
+
+    @Query(value = """
+        WITH params AS (
+            SELECT
+                :currStart     ::timestamp AS curr_start,
+                :currEnd       ::timestamp AS curr_end,
+                :prevStart     ::timestamp AS prev_start,
+                :prevEnd       ::timestamp AS prev_end,
+                :standardKpiId ::bigint    AS kpi_id,
+                :areaId        ::bigint    AS area_id,
+                :ratId         ::bigint    AS rat_id,
+                :granularityId ::bigint    AS granularity_id,
+                :excludeZeroes ::boolean   AS exclude_zeroes,
+                :bandId        ::bigint    AS band_id
+        ),
+        area_codes AS MATERIALIZED (
+            SELECT ARRAY_AGG(adcm.district_code_id) AS ids
+            FROM area_district_code_mapping adcm
+            WHERE adcm.area_id = (SELECT area_id FROM params)
+        ),
+        band_cells AS MATERIALIZED (
+            SELECT c.cell_name
+            FROM cells c
+            WHERE c.band_id = (SELECT band_id FROM params)
+        ),
+        kpi_meta AS MATERIALIZED (
+            SELECT kpi_name, label, unit, worst_order, threshold
+            FROM standard_kpi
+            WHERE id = (SELECT kpi_id FROM params)
+        ),
+        agg AS MATERIALIZED (
+            SELECT
+                l.cell_name,
+                SUM(l.numerator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
+                SUM(l.denominator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_den,
+                AVG(l.kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_avg,
+                SUM(l.numerator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.prev_start AND p.prev_end) AS prev_num,
+                SUM(l.denominator_kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.prev_start AND p.prev_end) AS prev_den,
+                AVG(l.kpi_value)
+                    FILTER (WHERE l.timestamp BETWEEN p.prev_start AND p.prev_end) AS prev_avg
+            FROM kpi_values l, area_codes ac, band_cells bc, params p
+            WHERE l.district_code_id  = ANY(ac.ids)
+                AND l.cell_name       = bc.cell_name
+                AND l.standard_kpi_id = p.kpi_id
+                AND l.rat_id          = p.rat_id
+                AND l.granularity_id  = p.granularity_id
+                AND l.timestamp BETWEEN p.prev_start AND p.curr_end
+            GROUP BY l.cell_name
+        )
+        SELECT
+            a.cell_name                                                         AS cell_name,
+            km.kpi_name                                                         AS kpi_name,
+            km.label                                                            AS kpi_label,
+            km.unit                                                             AS unit,
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+            END                                                                 AS value,
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                ELSE                    COALESCE((a.prev_num / NULLIF(a.prev_den, 0)),        a.prev_avg)
+            END                                                                 AS previous_value,
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+            END -
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                ELSE                    COALESCE((a.prev_num / NULLIF(a.prev_den, 0)),        a.prev_avg)
+            END                                                                 AS difference,
+            CASE
+                WHEN km.worst_order = 'ASC'  AND (
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                         ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+                    -
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                         ELSE COALESCE((a.prev_num / NULLIF(a.prev_den, 0)), a.prev_avg) END
+                ) > 0 THEN 1
+                WHEN km.worst_order = 'DESC' AND (
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                         ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+                    -
+                    CASE WHEN km.unit = '%' THEN COALESCE((a.prev_num / NULLIF(a.prev_den, 0)) * 100, a.prev_avg)
+                         ELSE COALESCE((a.prev_num / NULLIF(a.prev_den, 0)), a.prev_avg) END
+                ) < 0 THEN 1
+                ELSE 0
+            END                                                                 AS improved
+        FROM agg a
+        CROSS JOIN kpi_meta km
+        CROSS JOIN params p
+        WHERE
+            CASE
+                WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+            END IS NOT NULL
+            AND (p.exclude_zeroes = FALSE OR
+                CASE
+                    WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                    ELSE                    COALESCE((a.curr_num / NULLIF(a.curr_den, 0)),        a.curr_avg)
+                END <> 0)
+        ORDER BY
+            CASE WHEN km.worst_order = 'ASC'  THEN
+                CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                     ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+            END ASC  NULLS LAST,
+            CASE WHEN km.worst_order = 'DESC' THEN
+                CASE WHEN km.unit = '%' THEN COALESCE((a.curr_num / NULLIF(a.curr_den, 0)) * 100, a.curr_avg)
+                     ELSE COALESCE((a.curr_num / NULLIF(a.curr_den, 0)), a.curr_avg) END
+            END DESC NULLS LAST
+        LIMIT :limit;
+        """, nativeQuery = true)
+    List<WorstCellsProjection> findWorstCellsByAreaAndBand(
             @Param("standardKpiId") Long standardKpiId,
             @Param("currStart") LocalDateTime currStart,
             @Param("currEnd") LocalDateTime currEnd,
@@ -555,6 +738,123 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             @Param("granularityId") Long granularityId,
             @Param("bandId") Long bandId
     );
+
+
+//    @Query(value = """
+//            WITH params AS (
+//                 SELECT
+//                    :currStart ::timestamp AS curr_start,
+//                    :currEnd  ::timestamp AS curr_end,
+//                    :prevStart ::timestamp AS prev_start,
+//                    :prevEnd ::timestamp AS prev_end,
+//                    :standardKpiId  ::bigint AS kpi_id,
+//                    :areaId ::bigint AS area_id,
+//                    :ratId  ::bigint AS rat_id,
+//                    :granularityId  ::bigint AS granularity_id,
+//                    :excludeZeroes ::boolean AS exclude_zeroes,
+//                    :bandId ::bigint AS band_id
+//                ),
+//                -- Step 1: Filter KPI rows once
+//                district_cells AS (
+//                    SELECT l.*
+//                    FROM kpi_values l
+//                    JOIN district_codes dc ON l.district_code_id = dc.id
+//                    JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
+//                    JOIN areas ar ON adcm.area_id = ar.id
+//                    JOIN cells c ON l.cell_name = c.cell_name
+//                    JOIN bands b ON b.id = c.band_id
+//                    CROSS JOIN params p
+//                    WHERE ar.id = p.area_id
+//                        AND l.standard_kpi_id = p.kpi_id
+//                        AND l.rat_id = p.rat_id
+//                        AND l.granularity_id = p.granularity_id
+//                        AND l.timestamp BETWEEN p.prev_start AND p.curr_end
+//                        AND b.id = p.band_id
+//                    ),
+//                -- Step 2: Aggregate current period
+//                agg_curr AS (
+//                    SELECT
+//                        cell_name,
+//                        SUM(numerator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
+//                        SUM(denominator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_den,
+//                        AVG(kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_avg
+//                    FROM district_cells
+//                    CROSS JOIN params p
+//                    GROUP BY cell_name
+//                ),
+//                -- Step 3: Aggregate previous period
+//                agg_prev AS (
+//                    SELECT
+//                        cell_name AS pre_cell_name,
+//                        SUM(numerator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_num,
+//                        SUM(denominator_kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_den,
+//                        AVG(kpi_value)
+//                            FILTER (WHERE timestamp BETWEEN p.prev_start AND p.prev_end) AS pre_avg
+//                    FROM district_cells
+//                    CROSS JOIN params p
+//                    GROUP BY cell_name
+//                ),
+//                -- Step 4: Combine with KPI metadata
+//                calc AS (
+//                 SELECT
+//                     c.cell_name,
+//                     sk.kpi_name,
+//                     sk.label AS kpi_label,
+//                     sk.unit,
+//                     sk.worst_order,
+//                     CASE
+//                         WHEN sk.unit = '%' THEN COALESCE((c.curr_num / NULLIF(c.curr_den,0)) * 100, c.curr_avg)
+//                         ELSE COALESCE((c.curr_num / NULLIF(c.curr_den,0)), c.curr_avg)
+//                     END AS curr_value,
+//                     CASE
+//                         WHEN sk.unit = '%' THEN COALESCE((p.pre_num / NULLIF(p.pre_den,0)) * 100, p.pre_avg)
+//                         ELSE COALESCE((p.pre_num / NULLIF(p.pre_den,0)), p.pre_avg)
+//                     END AS prev_value
+//                 FROM agg_curr c
+//                 LEFT JOIN agg_prev p ON c.cell_name = p.pre_cell_name
+//                 JOIN standard_kpi sk
+//                    ON sk.id = (SELECT kpi_id FROM params)  -- Correctly reference params
+//                )
+//                SELECT
+//                    cell_name,
+//                    kpi_name,
+//                    kpi_label,
+//                    unit,
+//                    curr_value AS value,
+//                    prev_value AS previous_value,
+//                    (curr_value - prev_value) AS difference,
+//                        CASE
+//                            WHEN worst_order = 'ASC'  AND (curr_value - prev_value) > 0 THEN 1
+//                            WHEN worst_order = 'DESC' AND (curr_value - prev_value) < 0 THEN 1
+//                            ELSE 0
+//                        END AS improved
+//                    FROM calc
+//                    CROSS JOIN params p
+//                    WHERE curr_value IS NOT NULL
+//                        AND (p.exclude_zeroes = FALSE OR curr_value <> 0)
+//                    ORDER BY
+//                        CASE WHEN worst_order = 'ASC'  THEN curr_value END ASC NULLS LAST,
+//                        CASE WHEN worst_order = 'DESC' THEN curr_value END DESC NULLS LAST
+//                    LIMIT :limit;
+//            """, nativeQuery = true)
+//    List<WorstCellsDto> findWorstCellsByAreaAndBand(
+//            @Param("standardKpiId") Long standardKpiId,
+//            @Param("currStart") LocalDateTime currStart,
+//            @Param("currEnd") LocalDateTime currEnd,
+//            @Param("prevStart") LocalDateTime prevStart,
+//            @Param("prevEnd") LocalDateTime prevEnd,
+//            @Param("limit") int limit,
+//            @Param("areaId") Long areaId,
+//            @Param("ratId") Long ratId,
+//            @Param("excludeZeroes") boolean excludeZeroes,
+//            @Param("granularityId") Long granularityId,
+//            @Param("bandId") Long bandId
+//    );
 
 
     @Query(value = """

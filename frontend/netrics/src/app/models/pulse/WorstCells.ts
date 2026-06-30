@@ -7,4 +7,5 @@ export interface WorstCells{
   previousValue?:number;
   difference?:number;
   improved?:number;
+  consecutiveBadDays?: number;
 }
