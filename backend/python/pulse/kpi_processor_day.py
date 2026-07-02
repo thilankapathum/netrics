@@ -452,7 +452,7 @@ class KPIProcessor:
     def standardize_identifier_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize cell and site identifier columns"""
         cell_columns = ['Cell Name', 'Cell_Name', 'CellName', 'cell_name', 'E-UTRAN FDD Cell Name',
-                        'E-UTRAN\xa0FDD\xa0Cell Name', 'BTS NAME', 'CU cell configuration Name']
+                        'E-UTRAN\xa0FDD\xa0Cell Name', 'BTS NAME', 'CU cell configuration Name','E-UTRAN TDD Cell Name']
         enodeb_columns = ['eNodeB name', 'eNodeB_name', 'eNodeBName', 'enodeb_name', 'Managed Element',
                           'ManagedElement Name', 'Managed\xa0Element', 'SITE Name', 'Site Name', 'eNodeB Name']
 
