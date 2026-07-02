@@ -36,19 +36,21 @@ public class AnomalyDetectionServiceImpl implements AnomalyDetectionService {
     public void runForRatAndGranularity(Rat rat, Granularity granularity) {
         kpiAnomalyRepository.setWorkMem64();
 
-        LocalDateTime timestamp = kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
-        log.info("Latest timestamp: {} - RAT {} | Granularity {}", timestamp, rat.getName(), granularity.getName());
-        if (timestamp == null) {
+        LocalDateTime latestDate = kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
+        if (latestDate == null) {
             log.warn("No data found: rat={}, granularity={}", rat.getName(), granularity.getName());
             return;
         }
 
+        LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
+        LocalDateTime currEnd = currStart.plusSeconds(granularity.getPlusSeconds());
+
         List<BreachingCellProjection> breaches =
-                kpiAnomalyRepository.findBreachingCells(timestamp, rat.getId(), granularity.getId());
+                kpiAnomalyRepository.findBreachingCells(currStart, currEnd, rat.getId(), granularity.getId());
 
         if (breaches.isEmpty()) {
-            log.info("No breaching cells: rat={}, granularity={}, timestamp={}",
-                    rat.getName(), granularity.getName(), timestamp);
+            log.info("No breaching cells: rat={}, granularity={}, date={}",
+                    rat.getName(), granularity.getName(), currStart.toLocalDate());
             return;
         }
 
@@ -61,11 +63,11 @@ public class AnomalyDetectionServiceImpl implements AnomalyDetectionService {
             Long[] kpiIds = batch.stream().map(BreachingCellProjection::getStandardKpiId).toArray(Long[]::new);
 
             totalInserted += kpiAnomalyRepository.detectAndInsertAnomalies(
-                    cellNames, kpiIds, rat.getId(), granularity.getId(), timestamp,
+                    cellNames, kpiIds, rat.getId(), granularity.getId(), currStart, currEnd,
                     BASELINE_DAYS, MIN_HISTORY, Z_THRESHOLD);
         }
 
-        log.info("Anomaly detection complete: rat={}, granularity={}, timestamp={}, breaching={}, flagged={}",
-                rat.getName(), granularity.getName(), timestamp, breaches.size(), totalInserted);
+        log.info("Anomaly detection complete: rat={}, granularity={}, date={}, breaching={}, flagged={}",
+                rat.getName(), granularity.getName(), currStart.toLocalDate(), breaches.size(), totalInserted);
     }
 }

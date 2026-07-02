@@ -5,6 +5,7 @@ import dev.thilanka.netrics.dto.KpiAnomalyProjection;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.repository.KpiAnomalyRepository;
+import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.GranularityService;
 import dev.thilanka.netrics.service.KpiAnomalyService;
 import dev.thilanka.netrics.service.RatService;
@@ -23,6 +24,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
     private final KpiAnomalyRepository kpiAnomalyRepository;
     private final RatService ratService;
     private final GranularityService granularityService;
+    private final KpiDayRepository kpiDayRepository;
 
     private static final Map<String, Integer> SEVERITY_RANK = Map.of(
             "moderate", 1, "high", 2, "critical", 3
@@ -33,13 +35,15 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
 
-        LocalDateTime timestamp = kpiAnomalyRepository.getLatestAnomalyTimestamp(rat.getId(), granularity.getId());
-        if (timestamp == null) {
+        LocalDateTime latestDate = kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
+        if (latestDate == null) {
             return List.of();
         }
+        LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
+        LocalDateTime currEnd = currStart.plusSeconds(granularity.getPlusSeconds());
 
         List<KpiAnomalyProjection> anomalies =
-                kpiAnomalyRepository.findAnomaliesByTimestamp(timestamp, rat.getId(), granularity.getId());
+                kpiAnomalyRepository.findAnomaliesByDateRange(currStart, currEnd, rat.getId(), granularity.getId());
 
         int minRank = minSeverity != null
                 ? SEVERITY_RANK.getOrDefault(minSeverity.toLowerCase(), 1)

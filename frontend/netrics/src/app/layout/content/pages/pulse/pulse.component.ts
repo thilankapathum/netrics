@@ -737,4 +737,32 @@ export class PulseComponent implements OnInit {
   closeMissingCellInfoModal() {
     this.showMissingCellInfoModal = false;
   }
+
+  //----------------- SEVERITY INDICATIONS -----------------
+  severityDotClass(severity: string | null | undefined): string {
+    switch (severity) {
+      case 'critical': return 'bg-error';
+      case 'high':      return 'bg-warning';
+      case 'moderate':  return 'bg-warning opacity-50';
+      default:          return '';
+    }
+  }
+
+  severityBorderClass(severity: string | null | undefined): string {
+    switch (severity) {
+      case 'critical': return 'border-l-error';
+      case 'high':      return 'border-l-warning';
+      case 'moderate':  return 'border-l-warning/40';
+      default:          return 'border-l-transparent';
+    }
+  }
+
+  severityLabel(severity: string | null | undefined): string {
+    switch (severity) {
+      case 'critical': return 'Critical anomaly — statistically extreme deviation';
+      case 'high':      return 'High anomaly — significant deviation from baseline';
+      case 'moderate':  return 'Moderate anomaly — notable deviation from baseline';
+      default:          return '';
+    }
+  }
 }

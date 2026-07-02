@@ -6,9 +6,11 @@ import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
+import dev.thilanka.netrics.repository.KpiAnomalyRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class KpiDayServiceImpl implements KpiDayService {
 
     //-- Snapshot: Single whole KPI value considering the KPI and Period
@@ -42,6 +45,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final AreaService areaService;
     private final BandService bandService;
     private final KpiHourService kpiHourService;
+    private final KpiAnomalyRepository kpiAnomalyRepository;
 
     @Override
     public boolean checkImproved(String worstOrder, Double difference) {
@@ -361,7 +365,22 @@ public class KpiDayServiceImpl implements KpiDayService {
                         CellStreakProjection::consecutiveBadDays
                 ));
 
-        // Merge
+        // Anomaly severities — timestamp must match the raw value AnomalyDetectionServiceImpl wrote,
+        // not currEnd (which has the busy-hour plus_seconds offset applied)
+//        LocalDateTime anomalyTimestamp = kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
+
+        Map<String, String> severities = kpiAnomalyRepository.findSeveritiesForCells(
+                        standardKpi.getId(), currStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellSeverityProjection::cellName,
+                        CellSeverityProjection::severity
+                ));
+
+
         return worstCells.stream()
                 .map(wc -> new WorstCellsDto(
                         wc.cellName(),
@@ -372,7 +391,8 @@ public class KpiDayServiceImpl implements KpiDayService {
                         wc.previousValue(),
                         wc.difference(),
                         wc.improved(),
-                        streaks.getOrDefault(wc.cellName(), 0)
+                        streaks.getOrDefault(wc.cellName(), 0),
+                        severities.get(wc.cellName())
                 ))
                 .collect(Collectors.toList());
     }
@@ -435,6 +455,18 @@ public class KpiDayServiceImpl implements KpiDayService {
                         CellStreakProjection::consecutiveBadDays
                 ));
 
+
+        Map<String, String> severities = kpiAnomalyRepository.findSeveritiesForCells(
+                        standardKpi.getId(), currStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellSeverityProjection::cellName,
+                        CellSeverityProjection::severity
+                ));
+
         // Merge
         return worstCells.stream()
                 .map(wc -> new WorstCellsDto(
@@ -446,7 +478,8 @@ public class KpiDayServiceImpl implements KpiDayService {
                         wc.previousValue(),
                         wc.difference(),
                         wc.improved(),
-                        streaks.getOrDefault(wc.cellName(), 0)
+                        streaks.getOrDefault(wc.cellName(), 0),
+                        severities.get(wc.cellName())
                 ))
                 .collect(Collectors.toList());
     }

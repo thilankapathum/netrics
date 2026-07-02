@@ -1,6 +1,6 @@
 CREATE TABLE kpi_anomalies
 (
-    id              BIGSERIAL PRIMARY KEY,
+    id              BIGSERIAL        NOT NULL,
     cell_name       VARCHAR(255)     NOT NULL,
     standard_kpi_id BIGINT           NOT NULL,
     rat_id          BIGINT           NOT NULL,
@@ -13,6 +13,12 @@ CREATE TABLE kpi_anomalies
     severity        VARCHAR(20)      NOT NULL,
     detected_at     TIMESTAMP        NOT NULL DEFAULT NOW()
 );
+
+SELECT create_hypertable('kpi_anomalies', 'timestamp', chunk_time_interval => INTERVAL '1 month');
+
+CREATE UNIQUE INDEX uq_kpi_anomalies_id ON kpi_anomalies (timestamp, id);
+
+SELECT add_retention_policy('kpi_anomalies', INTERVAL '90 days');
 
 ALTER TABLE kpi_anomalies
     ADD CONSTRAINT fk_anomalies_standard_kpi FOREIGN KEY (standard_kpi_id) REFERENCES standard_kpi (id);

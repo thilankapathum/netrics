@@ -260,7 +260,6 @@
             </div>
           }
           <table [hidden]="loadingWorstCells" class="table table-sm">
-            <!-- head -->
             <thead>
             <tr>
               <th class="font-semibold">#</th>
@@ -271,29 +270,42 @@
             </tr>
             </thead>
             <tbody>
-            <!-- row -->
               @for (cell of worstCells; track cell.cellName; let i = $index) {
-                <tr class="hover:bg-base-200 cursor-pointer" (click)="openAnalysisModal(cell.kpiName!, cell.cellName!)">
+                <tr
+                  class="hover:bg-base-200 cursor-pointer border-l-4"
+                  [class]="severityBorderClass(cell.severity)"
+                  (click)="openAnalysisModal(cell.kpiName!, cell.cellName!)">
                   <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
-                  <td>{{ cell.cellName }}</td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span>{{ cell.cellName }}</span>
+                      @if (cell.severity) {
+                        <span
+                          class="tooltip shrink-0 w-2 h-2 rounded-full"
+                          [attr.data-tip]="severityLabel(cell.severity)"
+                          [class]="severityDotClass(cell.severity)">
+                        </span>
+                      }
+                    </div>
+                  </td>
                   <td>{{ cell.kpiLabel }}</td>
                   <td>
-                    <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
-                      {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
-                    </span> &nbsp;
+          <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
+            {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
+          </span> &nbsp;
                     <span class="badge badge-soft badge-sm"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0) {
                       +
                     }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
-                    </span>
+          </span>
                   </td>
                   <td>
                     @if (cell.consecutiveBadDays! < 31) {
-                      {{cell.consecutiveBadDays}}
+                      {{ cell.consecutiveBadDays }}
                     } @else {
                       30+
                     }
-                    </td>
+                  </td>
                 </tr>
               }
             </tbody>
