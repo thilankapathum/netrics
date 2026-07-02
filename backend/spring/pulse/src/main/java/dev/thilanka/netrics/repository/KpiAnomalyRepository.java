@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.dto.BreachingCellProjection;
+import dev.thilanka.netrics.dto.KpiAnomalyProjection;
 import dev.thilanka.netrics.entity.KpiAnomaly;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -116,4 +117,35 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
                                  @Param("baselineDays") int baselineDays,
                                  @Param("minHistory") int minHistory,
                                  @Param("zThreshold") double zThreshold);
+
+
+    @Query(value = """
+        SELECT MAX(timestamp) FROM kpi_anomalies
+        WHERE rat_id = :ratId AND granularity_id = :granularityId
+        """, nativeQuery = true)
+    LocalDateTime getLatestAnomalyTimestamp(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
+
+    @Query(value = """
+        SELECT ka.cell_name AS cellName,
+               sk.kpi_name AS kpiName,
+               sk.label AS kpiLabel,
+               sk.unit AS unit,
+               ka.timestamp AS timestamp,
+               ka.observed_value AS observedValue,
+               ka.baseline_median AS baselineMedian,
+               ka.mad AS mad,
+               ka.robust_z_score AS robustZScore,
+               ka.severity AS severity
+        FROM kpi_anomalies ka
+        JOIN standard_kpi sk ON sk.id = ka.standard_kpi_id
+        WHERE ka.rat_id = :ratId
+          AND ka.granularity_id = :granularityId
+          AND ka.timestamp = :timestamp
+        ORDER BY
+            CASE ka.severity WHEN 'critical' THEN 3 WHEN 'high' THEN 2 ELSE 1 END DESC,
+            ABS(ka.robust_z_score) DESC
+        """, nativeQuery = true)
+    List<KpiAnomalyProjection> findAnomaliesByTimestamp(@Param("timestamp") LocalDateTime timestamp,
+                                                        @Param("ratId") Long ratId,
+                                                        @Param("granularityId") Long granularityId);
 }
