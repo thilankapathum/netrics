@@ -8,8 +8,8 @@ CREATE TABLE kpi_anomalies
     timestamp       TIMESTAMP        NOT NULL,
     observed_value  DOUBLE PRECISION NOT NULL,
     baseline_median DOUBLE PRECISION NOT NULL,
-    mad             DOUBLE PRECISION NOT NULL,
-    robust_z_score  DOUBLE PRECISION NOT NULL,
+    mad             DOUBLE PRECISION,
+    robust_z_score  DOUBLE PRECISION,
     severity        VARCHAR(20)      NOT NULL,
     detected_at     TIMESTAMP        NOT NULL DEFAULT NOW()
 );

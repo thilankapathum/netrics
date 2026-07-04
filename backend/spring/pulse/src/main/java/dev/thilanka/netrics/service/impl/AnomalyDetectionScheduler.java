@@ -22,7 +22,7 @@ public class AnomalyDetectionScheduler {
 
     private static final List<String> TARGET_GRANULARITIES = List.of("day-average", "busy-hour");
 
-    @Scheduled(cron = "0 30 1 * * *")
+    @Scheduled(cron = "0 0 3 * * *")
     public void runAnomalyDetection() {
         for (String granName : TARGET_GRANULARITIES) {
             Granularity granularity = granularityService.findGranularityByName(granName);
@@ -34,6 +34,18 @@ public class AnomalyDetectionScheduler {
                             rat.getName(), granularity.getName(), e);
                 }
             }
+        }
+    }
+
+    public void runAnomalyDetection(String granularityName, String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity =  granularityService.findGranularityByName(granularityName);
+
+        try {
+            anomalyDetectionService.runForRatAndGranularity(rat, granularity);
+        } catch (Exception e) {
+            log.error("Anomaly detection failed: rat={}, granularity={}",
+                    rat.getName(), granularity.getName(), e);
         }
     }
 }

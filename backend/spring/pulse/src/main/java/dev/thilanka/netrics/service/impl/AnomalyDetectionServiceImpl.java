@@ -34,6 +34,7 @@ public class AnomalyDetectionServiceImpl implements AnomalyDetectionService {
     @Override
     @Transactional
     public void runForRatAndGranularity(Rat rat, Granularity granularity) {
+        log.info("Running anomaly detection for {} - {}", granularity.getLabel(), rat.getLabel());
         kpiAnomalyRepository.setWorkMem64();
 
         LocalDateTime latestDate = kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
@@ -45,6 +46,8 @@ public class AnomalyDetectionServiceImpl implements AnomalyDetectionService {
         LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
         LocalDateTime currEnd = currStart.plusSeconds(granularity.getPlusSeconds());
 
+        log.info("Start date: {} | End date: {}", currStart, currEnd);
+        log.info("Generating breaching cells for {} - {}",  granularity.getLabel(), rat.getLabel());
         List<BreachingCellProjection> breaches =
                 kpiAnomalyRepository.findBreachingCells(currStart, currEnd, rat.getId(), granularity.getId());
 
@@ -55,16 +58,23 @@ public class AnomalyDetectionServiceImpl implements AnomalyDetectionService {
         }
 
         int totalInserted = 0;
+        log.info("Inserting into database init...");
         for (int i = 0; i < breaches.size(); i += BATCH_SIZE) {
             List<BreachingCellProjection> batch =
                     breaches.subList(i, Math.min(i + BATCH_SIZE, breaches.size()));
 
+            log.info("Inserting {} breaching cells", batch.size());
+
             String[] cellNames = batch.stream().map(BreachingCellProjection::getCellName).toArray(String[]::new);
             Long[] kpiIds = batch.stream().map(BreachingCellProjection::getStandardKpiId).toArray(Long[]::new);
+
+            log.info("Inserting {} KPIs into DB...", cellNames.length);
 
             totalInserted += kpiAnomalyRepository.detectAndInsertAnomalies(
                     cellNames, kpiIds, rat.getId(), granularity.getId(), currStart, currEnd,
                     BASELINE_DAYS, MIN_HISTORY, Z_THRESHOLD);
+
+            log.info("Inserted {} cells", totalInserted);
         }
 
         log.info("Anomaly detection complete: rat={}, granularity={}, date={}, breaching={}, flagged={}",

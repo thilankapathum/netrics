@@ -38,10 +38,10 @@ public class KpiAnomaly {
     @Column(name = "baseline_median", nullable = false)
     private Double baselineMedian;
 
-    @Column(name = "mad", nullable = false)
+    @Column(name = "mad")
     private Double mad;
 
-    @Column(name = "robust_z_score", nullable = false)
+    @Column(name = "robust_z_score")
     private Double robustZScore;
 
     @Column(name = "severity", nullable = false, length = 20)

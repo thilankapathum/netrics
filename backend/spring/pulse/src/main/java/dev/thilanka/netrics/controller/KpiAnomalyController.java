@@ -38,4 +38,12 @@ public class KpiAnomalyController {
         anomalyDetectionScheduler.runAnomalyDetection();
         return ResponseEntity.ok("Ran Anomaly detection");
     }
+
+    @GetMapping("run/custom")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_DELETE')")
+    public ResponseEntity<String> runAnomalyDetection(@RequestParam String granularityName,
+                                                      @RequestParam String ratName) {
+        anomalyDetectionScheduler.runAnomalyDetection(granularityName, ratName);
+        return ResponseEntity.ok("Ran Anomaly detection");
+    }
 }

@@ -750,9 +750,9 @@ export class PulseComponent implements OnInit {
 
   severityBorderClass(severity: string | null | undefined): string {
     switch (severity) {
-      case 'critical': return 'border-l-error';
-      case 'high':      return 'border-l-warning';
-      case 'moderate':  return 'border-l-warning/40';
+      case 'critical': return 'border-l-error bg-error-content/50';
+      case 'high':      return 'border-l-warning bg-warning-content/50';
+      case 'moderate':  return 'border-l-warning/40 bg-warning-content/20';
       default:          return 'border-l-transparent';
     }
   }

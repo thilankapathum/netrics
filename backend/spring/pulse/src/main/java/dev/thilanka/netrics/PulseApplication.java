@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")    // 'auditorAwareRef' is the bean name of 'ApplicationAuditAware' class at 'BeansConfig' - Used to add user details for Auditing (Otherwise will record only created & modified dates at auditing)
 @EnableCaching
 @EnableAsync
-//@EnableScheduling
+@EnableScheduling
 public class PulseApplication {
 
 	public static void main(String[] args) {

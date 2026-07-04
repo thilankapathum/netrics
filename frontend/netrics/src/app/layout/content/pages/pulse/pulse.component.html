@@ -279,13 +279,13 @@
                   <td>
                     <div class="flex items-center gap-2">
                       <span>{{ cell.cellName }}</span>
-                      @if (cell.severity) {
-                        <span
-                          class="tooltip shrink-0 w-2 h-2 rounded-full"
-                          [attr.data-tip]="severityLabel(cell.severity)"
-                          [class]="severityDotClass(cell.severity)">
-                        </span>
-                      }
+<!--                      @if (cell.severity) {-->
+<!--                        <span-->
+<!--                          class="tooltip shrink-0 w-2 h-2 rounded-full"-->
+<!--                          [attr.data-tip]="severityLabel(cell.severity)"-->
+<!--                          [class]="severityDotClass(cell.severity)">-->
+<!--                        </span>-->
+<!--                      }-->
                     </div>
                   </td>
                   <td>{{ cell.kpiLabel }}</td>

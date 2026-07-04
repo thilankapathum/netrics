@@ -49,71 +49,110 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
 
     @Modifying
     @Query(value = """
-        WITH pairs AS (
-            SELECT * FROM unnest(:cellNames ::varchar[], :kpiIds ::bigint[])
-                AS p(cell_name, standard_kpi_id)
-        ),
-        current_point AS (
+            WITH pairs AS (
+                SELECT * FROM unnest(:cellNames ::varchar[], :kpiIds ::bigint[])
+                    AS p(cell_name, standard_kpi_id)
+            ),
+            current_point AS MATERIALIZED (
+                SELECT
+                    pairs.cell_name, pairs.standard_kpi_id, sk.worst_order,
+                    kv.timestamp AS observed_timestamp,
+                    COALESCE(
+                        CASE WHEN sk.unit = '%' THEN (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) * 100
+                             ELSE (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) END,
+                        kv.kpi_value) AS observed_value
+                FROM pairs
+                JOIN kpi_values kv
+                    ON kv.cell_name = pairs.cell_name AND kv.standard_kpi_id = pairs.standard_kpi_id
+                   AND kv.rat_id = :ratId AND kv.granularity_id = :granularityId
+                   AND kv.timestamp BETWEEN :currStart ::timestamp AND :currEnd ::timestamp
+                JOIN standard_kpi sk ON sk.id = pairs.standard_kpi_id
+            ),
+            history AS MATERIALIZED (
+                -- Carry observed_value/observed_timestamp through — constant per (cell_name, standard_kpi_id) group
+                SELECT
+                    cp.cell_name, cp.standard_kpi_id, cp.observed_value, cp.observed_timestamp,
+                    COALESCE(
+                        CASE WHEN sk.unit = '%' THEN (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) * 100
+                             ELSE (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) END,
+                        kv.kpi_value) AS hist_value
+                FROM current_point cp
+                JOIN kpi_values kv
+                    ON kv.cell_name = cp.cell_name AND kv.standard_kpi_id = cp.standard_kpi_id
+                   AND kv.rat_id = :ratId AND kv.granularity_id = :granularityId
+                   AND kv.timestamp < :currStart ::timestamp
+                   AND kv.timestamp >= :currStart ::timestamp - (:baselineDays * INTERVAL '1 day')
+                JOIN standard_kpi sk ON sk.id = cp.standard_kpi_id
+            ),
+            median_calc AS MATERIALIZED (
+                SELECT cell_name, standard_kpi_id,
+                       MAX(observed_value) AS observed_value,        -- constant per group, MAX just extracts it
+                       MAX(observed_timestamp) AS observed_timestamp,
+                       COUNT(*) AS n,
+                       array_agg(hist_value ORDER BY hist_value) AS sorted_values
+                FROM history
+                GROUP BY cell_name, standard_kpi_id
+            ),
+            median_final AS MATERIALIZED (
+                SELECT cell_name, standard_kpi_id, observed_value, observed_timestamp, n, sorted_values,
+                    CASE WHEN n % 2 = 1 THEN sorted_values[(n + 1) / 2]
+                         ELSE (sorted_values[n / 2] + sorted_values[n / 2 + 1]) / 2.0
+                    END AS median_value
+                FROM median_calc
+            ),
+            deviations AS MATERIALIZED (
+                SELECT mf.cell_name, mf.standard_kpi_id, mf.observed_value, mf.observed_timestamp,
+                       mf.n, mf.median_value,
+                       ABS(hv.hist_value - mf.median_value) AS abs_dev
+                FROM median_final mf
+                CROSS JOIN LATERAL unnest(mf.sorted_values) AS hv(hist_value)
+            ),
+            mad_calc AS MATERIALIZED (
+                SELECT cell_name, standard_kpi_id, observed_value, observed_timestamp, n, median_value,
+                       array_agg(abs_dev ORDER BY abs_dev) AS sorted_devs,
+                       AVG(abs_dev) AS mean_ad
+                FROM deviations
+                GROUP BY cell_name, standard_kpi_id, observed_value, observed_timestamp, n, median_value
+            ),
+            mad_final AS MATERIALIZED (
+                SELECT cell_name, standard_kpi_id, observed_value, observed_timestamp, n, median_value, mean_ad,
+                    CASE WHEN n % 2 = 1 THEN sorted_devs[(n + 1) / 2]
+                         ELSE (sorted_devs[n / 2] + sorted_devs[n / 2 + 1]) / 2.0
+                    END AS mad
+                FROM mad_calc
+            ),
+            -- No join needed at all now — everything scored needs is already in mad_final
+            scored AS MATERIALIZED (
+                SELECT
+                    cell_name, standard_kpi_id, observed_timestamp, observed_value, median_value, n,
+                    CASE WHEN mad > 0 THEN mad WHEN mean_ad > 0 THEN mean_ad ELSE NULL END AS effective_mad,
+                    CASE
+                        WHEN mad > 0     THEN 0.6745 * (observed_value - median_value) / mad
+                        WHEN mean_ad > 0 THEN 0.7979 * (observed_value - median_value) / mean_ad
+                        ELSE NULL
+                    END AS robust_z_score,
+                    (mad = 0 AND mean_ad = 0 AND observed_value <> median_value) AS is_constant_break
+                FROM mad_final
+                WHERE n >= :minHistory
+            )
+            INSERT INTO kpi_anomalies
+                (cell_name, standard_kpi_id, rat_id, granularity_id, timestamp,
+                 observed_value, baseline_median, mad, robust_z_score, severity, detected_at)
             SELECT
-                pairs.cell_name, pairs.standard_kpi_id, sk.worst_order,
-                kv.timestamp AS observed_timestamp,
-                COALESCE(
-                    CASE WHEN sk.unit = '%' THEN (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) * 100
-                         ELSE (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) END,
-                    kv.kpi_value) AS observed_value
-            FROM pairs
-            JOIN kpi_values kv
-                ON kv.cell_name = pairs.cell_name AND kv.standard_kpi_id = pairs.standard_kpi_id
-               AND kv.rat_id = :ratId AND kv.granularity_id = :granularityId
-               AND kv.timestamp BETWEEN :currStart ::timestamp AND :currEnd ::timestamp
-            JOIN standard_kpi sk ON sk.id = pairs.standard_kpi_id
-        ),
-        history AS (
-            SELECT
-                cp.cell_name, cp.standard_kpi_id,
-                COALESCE(
-                    CASE WHEN sk.unit = '%' THEN (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) * 100
-                         ELSE (kv.numerator_kpi_value / NULLIF(kv.denominator_kpi_value,0)) END,
-                    kv.kpi_value) AS hist_value
-            FROM current_point cp
-            JOIN kpi_values kv
-                ON kv.cell_name = cp.cell_name AND kv.standard_kpi_id = cp.standard_kpi_id
-               AND kv.rat_id = :ratId AND kv.granularity_id = :granularityId
-               AND kv.timestamp < :currStart ::timestamp
-               AND kv.timestamp >= :currStart ::timestamp - (:baselineDays * INTERVAL '1 day')
-            JOIN standard_kpi sk ON sk.id = cp.standard_kpi_id
-        ),
-        stats AS (
-            SELECT cell_name, standard_kpi_id,
-                   COUNT(*) AS n,
-                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY hist_value) AS median_value
-            FROM history GROUP BY cell_name, standard_kpi_id
-        ),
-        mad_calc AS (
-            SELECT h.cell_name, h.standard_kpi_id, s.n, s.median_value,
-                   PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ABS(h.hist_value - s.median_value)) AS mad
-            FROM history h JOIN stats s ON h.cell_name = s.cell_name AND h.standard_kpi_id = s.standard_kpi_id
-            GROUP BY h.cell_name, h.standard_kpi_id, s.n, s.median_value
-        )
-        INSERT INTO kpi_anomalies
-            (cell_name, standard_kpi_id, rat_id, granularity_id, timestamp,
-             observed_value, baseline_median, mad, robust_z_score, severity, detected_at)
-        SELECT
-            cp.cell_name, cp.standard_kpi_id, :ratId, :granularityId, cp.observed_timestamp,
-            cp.observed_value, m.median_value, m.mad,
-            0.6745 * (cp.observed_value - m.median_value) / m.mad,
-            CASE
-                WHEN ABS(0.6745 * (cp.observed_value - m.median_value) / m.mad) >= 6 THEN 'critical'
-                WHEN ABS(0.6745 * (cp.observed_value - m.median_value) / m.mad) >= 4 THEN 'high'
-                ELSE 'moderate'
-            END,
-            NOW()
-        FROM current_point cp
-        JOIN mad_calc m ON cp.cell_name = m.cell_name AND cp.standard_kpi_id = m.standard_kpi_id
-        WHERE m.n >= :minHistory AND m.mad > 0
-          AND ABS(0.6745 * (cp.observed_value - m.median_value) / m.mad) >= :zThreshold
-        ON CONFLICT (cell_name, standard_kpi_id, rat_id, granularity_id, timestamp) DO NOTHING
-        """, nativeQuery = true)
+                cell_name, standard_kpi_id, :ratId, :granularityId, observed_timestamp,
+                observed_value, median_value, effective_mad, robust_z_score,
+                CASE
+                    WHEN is_constant_break THEN 'high'
+                    WHEN ABS(robust_z_score) >= 6 THEN 'critical'
+                    WHEN ABS(robust_z_score) >= 4 THEN 'high'
+                    ELSE 'moderate'
+                END,
+                NOW()
+            FROM scored
+            WHERE is_constant_break
+               OR (effective_mad IS NOT NULL AND ABS(robust_z_score) >= :zThreshold)
+            ON CONFLICT (cell_name, standard_kpi_id, rat_id, granularity_id, timestamp) DO NOTHING
+            """, nativeQuery = true)
     int detectAndInsertAnomalies(@Param("cellNames") String[] cellNames,
                                  @Param("kpiIds") Long[] kpiIds,
                                  @Param("ratId") Long ratId,
