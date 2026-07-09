@@ -542,6 +542,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     }
 
     @Override
+    @Cacheable(value = "cellKpiTrendWithOperands", key = "#standardKpiName +'_' + #cellName + '_' + #period + '_' + #granularityName + '_' + #ratName")
     public List<KpiDataWithOperandsDto> getDataByKpiAndCellWithOperands(String standardKpiName, String cellName, String period, String ratName, String granularityName) {
         StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
         Rat rat = ratService.findRatByName(ratName);

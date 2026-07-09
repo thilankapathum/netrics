@@ -44,7 +44,7 @@
           </svg>
         </button>
 
-        <label class="label ml-6">
+        <label [hidden]="!standardRawKpiMappingAvailable()" class="label ml-6">
           <input type="checkbox" class="checkbox" [(ngModel)]="showOperands" (ngModelChange)="onShowOperandsChangeModal($event)" />
           Show Operands
         </label>

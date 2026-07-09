@@ -110,7 +110,7 @@ export class ChartService {
       .sort((a, b) => a.x.getTime() - b.x.getTime());
 
     return [
-      { name: 'KPI Value', data: kpiSeries },
+      { name: kpiLabel, data: kpiSeries },
       { name: 'Numerator', data: numeratorSeries },
       { name: 'Denominator', data: denominatorSeries }
     ];

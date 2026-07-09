@@ -33,6 +33,7 @@ import {BandDto} from '../../../../models/pulse/BandDto';
 import {BandWorstCellsKpiTrend} from '../../../../models/pulse/BandWorstCellsKpiTrend';
 import {BandKpiSeries} from '../../../../models/apexCharts/BandKpiSeries';
 import {PsCells} from './pulse-settings/ps-cells/ps-cells';
+import {StandardRawKpiMappingService} from '../../../../service/pulse/standard-raw-kpi-mapping-service';
 
 @Component({
   selector: 'app-pulse',
@@ -84,6 +85,7 @@ export class PulseComponent implements OnInit {
   worstCells: WorstCells[] = [];  // 5 Worst cells displayed in the page
   excludeZeroes: boolean = false;
   showOperands:boolean = false;
+  standardRawKpiMappingAvailable = signal<boolean>(false);
 
   bandWise: boolean = false;
   selectedBand = signal('');
@@ -117,7 +119,8 @@ export class PulseComponent implements OnInit {
               private userAreaService: UserAreaService,
               private authService: AuthService,
               private cellService: CellService,
-              private bandService: BandService) {
+              private bandService: BandService,
+              private standardRawKpiMappingService: StandardRawKpiMappingService) {
     this.queryDateRanges();
   }
 
@@ -528,6 +531,17 @@ export class PulseComponent implements OnInit {
     });
   }
 
+  getStandardRawKpiMappingAvailable(ratName:string, standardKpiName:string) {
+    this.standardRawKpiMappingService.isMappingAvailable(ratName, standardKpiName).subscribe({
+      next: data => {
+        this.standardRawKpiMappingAvailable.set(data);
+      }, error: error => {
+        console.error("Error getting standardRawKpiMappingAvailable:", error);
+        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed :"${error.status} ${error.statusText}`);
+      }
+    })
+  }
+
   //------------------ CHANGE SWITCHES ----------------------------------
 
   onExcludeZeroesChange(event: Event) {
@@ -576,32 +590,14 @@ export class PulseComponent implements OnInit {
 
   //---------- OPEN ANALYSIS MODAL (DIALOG) ----------------
 
-  // openAnalysisModal(kpiName: string, cellName: string) {
-  //   this.analysisModalCell = cellName;
-  //   this.analysisModalKpiLabel = kpiName;
-  //   this.loadingAnalysisModalChart = true;
-  //   this.analysisModal.nativeElement.showModal();
-  //   this.selectedKpiTrendPeriodModal.set('month');
-  //   this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity())
-  //     .subscribe({
-  //       next: data => {
-  //         this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
-  //         this.loadingAnalysisModalChart = false;
-  //       }, error: error => {
-  //         this.loadingAnalysisModalChart = false;
-  //         console.log("Error getDataByKpiLabelAndCell:");
-  //         console.error(error);
-  //         this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
-  //       }
-  //     })
-  // }
-
   openAnalysisModal(kpiName: string, cellName: string) {
     this.analysisModalCell = cellName;
     this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
     this.analysisModal.nativeElement.showModal();
     this.selectedKpiTrendPeriodModal.set('month');
+    this.getStandardRawKpiMappingAvailable(this.selectedRat(), this.selectedStandardKpi());
+    this.showOperands = false;
     this.queryModalTrendData(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity());
   }
 
@@ -814,32 +810,10 @@ export class PulseComponent implements OnInit {
   get modalYAxis(): ApexYAxis[] | undefined {
     if (!this.showOperands) return undefined;
     return [
-      { seriesName: 'KPI Value', title: { text: this.analysisModalKpiLabel || 'KPI Value' } },
+      { seriesName: 'KPI Value', title: { text: 'KPI Value' } },
       { seriesName: 'Numerator', opposite: true, title: { text: 'Count' } },
       { seriesName: 'Denominator', opposite: true, show: false }
     ];
   }
 
-  // get modalYAxis(): ApexYAxis[] | undefined {
-  //   if (!this.showOperands) return undefined;
-  //
-  //   return [
-  //     {
-  //       seriesName: this.selectedStandardKpi(),
-  //       title: { text: this.analysisModalKpiLabel || 'KPI Value' },
-  //       labels: { formatter: (val: number) => val.toFixed(2) }
-  //     },
-  //     {
-  //       seriesName: 'Numerator',
-  //       opposite: true,
-  //       title: { text: 'Count' },
-  //       labels: { formatter: (val: number) => val.toFixed(0) }
-  //     },
-  //     {
-  //       seriesName: 'Denominator',
-  //       opposite: true,
-  //       show: false // shares the Numerator axis, hide the duplicate labels/line
-  //     }
-  //   ];
-  // }
 }
