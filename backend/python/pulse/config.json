@@ -10,5 +10,6 @@
     "day-average": "/app/day-average",
     "busy-hour": "/app/busy-hour"
   },
-  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-rat-granularity"
+  "clear_redis_cache_url": "http://pulse:8012/api/v1/pulse/cache/evict-rat-granularity",
+  "dedup_latest_oss_url": "http://pulse:8012/api/v1/pulse/kpi-day/dedup-oss"
 }

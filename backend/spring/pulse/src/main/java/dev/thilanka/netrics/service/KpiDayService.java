@@ -49,4 +49,6 @@ public interface KpiDayService {
     List<CellNameDto> getCellNamesByTimestamps(LocalDateTime timestamp, LocalDateTime preTimestamp, String ratName, String granularityName);
 
     List<CellDto> getCellsByTimestamp(LocalDateTime timestamp, LocalDateTime preTimestamp, Rat rat, Granularity granularity);
+
+    int deduplicateLatestByOss();
 }

@@ -496,6 +496,17 @@ public class KpiDayServiceImpl implements KpiDayService {
         return kpiDayRepository.getCellsByTimestamp(timestamp, preTimestamp, rat.getId(), granularity.getId());
     }
 
+    @Override
+    public int deduplicateLatestByOss() {
+        LocalDateTime startTimestamp = dateService.getLatestDate().toLocalDate().atStartOfDay();
+        LocalDateTime endTimestamp = startTimestamp.plusDays(1);
+
+        log.info("Starting deduplication (KPI-day) for {} - {} ...", startTimestamp, endTimestamp);
+        int deleted = kpiDayRepository.deduplicateOssByPeriod(startTimestamp, endTimestamp);
+        log.info("Deduplication complete (KPI-day) for {} - {}: {} rows removed", startTimestamp, endTimestamp, deleted);
+        return deleted;
+    }
+
 
     // ------------------------------ WORST-CELLS END ------------------------------------------------------------------
 

@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class KPIProcessor:
-    def __init__(self, config_file='config.json'):
+    def __init__(self, config_file='config-dev.json'):
         """Initialize KPI Processor with configuration"""
         self.config = self.load_config(config_file)
 
@@ -51,6 +51,7 @@ class KPIProcessor:
         }
 
         self.clear_redis_cache_url = self.config['clear_redis_cache_url']
+        self.dedup_latest_oss_url = self.config['dedup_latest_oss_url']
 
         # Support both old and new config format
         if 'base_folders' in self.config:
@@ -101,7 +102,8 @@ class KPIProcessor:
                 "day-average": "/app/day-average",
                 "busy-hour": "/app/busy-hour"
             },
-            "clear_redis_cache_url": "http://localhost:8012/api/v1/pulse/cache/evict-and-warmup"
+            "clear_redis_cache_url": "http://localhost:8012/api/v1/pulse/cache/evict-rat-granularity",
+            "dedup_latest_oss_url": "http://localhost:8012/api/v1/pulse/kpiday/dedup-oss"
         }
 
         with open(config_file, 'w') as f:
@@ -135,6 +137,20 @@ class KPIProcessor:
                     f"Failed to clear redis cache for RAT {rat_name}: {response.status_code}, body: {response.text}\n")
         except Exception as e:
             logger.error(f"Failed to clear redis cache for RAT {rat_name}: {e}\n")
+
+    def deduplicate_latest_oss(self):
+        try:
+            url = self.dedup_latest_oss_url
+            logger.info(f"Calling Deduplication (OSS) URL: {url}")
+            response = requests.delete(url, timeout=30)
+            if response.status_code == 200:
+                logger.info(f"Dedup complete!\n")
+            else:
+                logger.error(
+                    f"Failed to Deduplicate!, body: {response.text}\n")
+        except Exception as e:
+            logger.error(f"Failed to Deduplicate: {e}\n")
+
 
     def load_database_configuration(self):
         """Load configuration from database tables"""
@@ -1072,6 +1088,7 @@ class KPIProcessor:
                     logger.error(f"Traceback: {traceback.format_exc()}")
 
         # logger.info(f"{'#' * 80}")
+        # self.deduplicate_latest_oss()
         logger.info(f"{'=' * 3} COMPLETED KPI PROCESSING CYCLE AT {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {'=' * 3}\n")
         # logger.info(f"{'#' * 80}\n")
 

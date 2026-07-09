@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 public interface DateService {
 
+    LocalDateTime getLatestDate();
     LocalDateTime getLatestDate(Rat rat, Granularity granularity);
     LocalDateTime getLatestDateStart(Rat rat, String period, Granularity granularity);
 

@@ -4,8 +4,10 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.KpiDay;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +18,11 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     @Query(value = "SELECT DISTINCT timestamp FROM kpi_values WHERE kpi_values.rat_id = :ratId AND kpi_values.granularity_id = :granularityId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     LocalDateTime getLatestDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
+    @Query(value = """
+            SELECT DISTINCT timestamp FROM kpi_values
+            ORDER BY timestamp DESC LIMIT 1;
+            """, nativeQuery = true)
+    LocalDateTime getLatestDate();
 
     @Query(value = """
             SELECT curr.label, curr.unit, curr.worst_order, curr.kpi_value, curr.calculated_kpi_value,
@@ -1224,4 +1231,45 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             	skpi.kpi_name;
             """, nativeQuery = true)
     List<SiteKpiReportDto> getSiteWiseReportByKpiAndDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId, @Param("standardKpiId") Long standardKpiId, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp, @Param("areaId") Long areaId);
+
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+            WITH scored AS (
+                SELECT
+                    id, timestamp, cell_name, standard_kpi_id, rat_id, granularity_id, oss_id,
+                    CASE
+                        WHEN numerator_kpi_value IS NOT NULL
+                             AND denominator_kpi_value IS NOT NULL
+                             AND NOT (numerator_kpi_value = 0 AND denominator_kpi_value = 0)
+                        THEN 0
+                        WHEN kpi_value IS NOT NULL
+                             AND NOT (
+                                 COALESCE(numerator_kpi_value, 0) = 0
+                                 AND COALESCE(denominator_kpi_value, 0) = 0
+                                 AND kpi_value = 100
+                             )
+                        THEN 1
+                        ELSE 2
+                    END AS tier
+                FROM kpi_values
+                WHERE timestamp >= :startTimestamp AND timestamp < :endTimestamp
+            ),
+            ranked AS (
+                SELECT s.*,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY cell_name, standard_kpi_id, rat_id, granularity_id, timestamp
+                           ORDER BY tier, id
+                       ) AS rn
+                FROM scored s
+            )
+            DELETE FROM kpi_values kv
+            USING ranked r
+            WHERE kv.id = r.id
+              AND kv.timestamp = r.timestamp
+              AND kv.timestamp >= :startTimestamp AND kv.timestamp < :endTimestamp
+              AND r.rn > 1;
+            """, nativeQuery = true)
+    int deduplicateOssByPeriod(@Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp);
 }
