@@ -94,7 +94,7 @@ export class SiteWiseReportByKpiAndDate {
         this.loadingRats = false;
       }, error: err => {
         console.error(err);
-        this.alertService.error('Error retrieving RATs');
+        this.alertService.error(`Error retrieving RATs. ${err.status} ${err.statusText}`);
         this.loadingRats = false;
       }
     })
@@ -115,7 +115,7 @@ export class SiteWiseReportByKpiAndDate {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error("Standard KPI retrieval failed");
+        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
         this.loadingStandardKpis = false;
       }
     })
@@ -130,7 +130,7 @@ export class SiteWiseReportByKpiAndDate {
         this.loadingGranularities = false;
       }, error: err => {
         console.error(err);
-        this.alertService.error("Error retrieving Granularities");
+        this.alertService.error(`Error retrieving Granularities. ${err.status} ${err.statusText}`);
         this.loadingGranularities = false;
       }
     })
@@ -241,7 +241,7 @@ export class SiteWiseReportByKpiAndDate {
         this.downloadingCsv = false;
         console.log("Error exporting KPI report");
         console.error(error);
-        this.alertService.error("Error exporting KPI report!");
+        this.alertService.error(`Error exporting KPI report! ${error.status} ${error.statusText}`);
       }
     })
   }

@@ -230,9 +230,7 @@ export class DashboardComponent implements OnInit {
         }, error: error => {
           console.log(error);
           this.loadingWorstCells = false;
-          // this.alertService.error('Error getting Worst cells');
           this.alertService.error(`Error getting Worst cells! (${error.status}:${error.statusText})`);
-
         }
       });
   }
@@ -277,7 +275,7 @@ export class DashboardComponent implements OnInit {
         })
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel} (${error.status}:${error.statusText})`);
+        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}. (${error.status}:${error.statusText})`);
       }
     })
   }

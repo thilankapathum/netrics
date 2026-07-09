@@ -180,7 +180,7 @@ export class CellAnalysis implements OnInit {
         }
       }, error: error => {
         console.error(error);
-        this.alertService.error("Standard KPI retrieval failed");
+        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
         this.loadingStandardKpis.set(false);
       }
     })
@@ -244,7 +244,7 @@ export class CellAnalysis implements OnInit {
         this.pendingRequests.update(n => Math.max(0, n - 1));
         console.error('Error retrieving KPI Trend data');
         console.error(error);
-        this.alertService.error('KPI Trend data retrieval failed');
+        this.alertService.error(`KPI Trend data retrieval failed. ${error.status} ${error.statusText}`);
       }
     })
   }
@@ -374,13 +374,13 @@ export class CellAnalysis implements OnInit {
             }
           },
           error: err => {
-            this.alertService.error('Standard KPI retrieval failed');
+            this.alertService.error(`Standard KPI retrieval failed. ${err.status} ${err.statusText}`);
             this.loadingStandardKpis.set(false);
           }
         });
       },
       error: err => {
-        this.alertService.error(`Failed to get cells for sector. ${err.statusText}`);
+        this.alertService.error(`Failed to get cells for sector. ${err.status} ${err.statusText}`);
       }
     });
   }
