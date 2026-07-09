@@ -23,6 +23,8 @@ public interface KpiDayService {
 
     List<KpiDataDto> getDataByKpiAndCell(String standardKpiName, String cellName, String period, String ratName, String granularityName);
 
+    List<KpiDataWithOperandsDto> getDataByKpiAndCellWithOperands(String standardKpiName, String cellName, String period, String ratName, String granularityName);
+
     List<KpiDataDto> getDataByKpiLabelAndCell(String kpiLabel, String cellName, String period, String ratName, String granularityName);
 
     List<KpiTrendDto> getTrendByKpi(String standardKpiName, String period, String ratName, String granularityName);

@@ -11,4 +11,6 @@ public interface StandardRawKpiMappingService {
     StandardRawKpiMappingDto createMapping(StandardRawKpiMappingDto dto);
 
     List<StandardRawKpiMappingDto> createMappingList(@Valid List<StandardRawKpiMappingDto> dtos);
+
+    boolean isKpiMappingAvailable(String ratName, String standardKpiName);
 }

@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service.impl;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiDataWithOperandsDto;
 import dev.thilanka.netrics.entity.KpiData;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.KpiHourRepository;
@@ -30,5 +31,10 @@ public class KpiHourServiceImpl implements KpiHourService {
         return kpiData.stream()
                 .map(mapper::kpiDataToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<KpiDataWithOperandsDto> getDataByKpiAndCellWithOperands(Long standardKpiId, String cellName, LocalDateTime timestamp, LocalDateTime startTimestamp, Long ratId, Long granularityId) {
+        return kpiHourRepository.findDataByKpiAndCellWithOperands(standardKpiId, timestamp, startTimestamp, cellName, ratId, granularityId);
     }
 }

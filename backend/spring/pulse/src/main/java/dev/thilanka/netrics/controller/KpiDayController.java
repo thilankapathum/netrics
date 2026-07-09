@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiDataWithOperandsDto;
 import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.BasicKpiSnapshot;
@@ -69,6 +70,13 @@ public class KpiDayController {
     public ResponseEntity<List<KpiDataDto>> getDataByKpiAndCell(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName) {
         List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
         return ResponseEntity.ok(kpiDataDtos);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("cell-operands")
+    public ResponseEntity<List<KpiDataWithOperandsDto>> getDataByKpiAndCellWithOperands(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName){
+        List<KpiDataWithOperandsDto> kpiData = kpiDayService.getDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, granularityName);
+        return ResponseEntity.ok(kpiData);
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")

@@ -6,6 +6,7 @@ import {WorstCell} from '../../../models/pulse/WorstCell';
 import {KpiDataDto} from '../../../models/pulse/KpiDataDto';
 import {KpiTrendDto} from '../../../models/pulse/KpiTrendDto';
 import {Observable} from 'rxjs';
+import {KpiDataWithOperandsDto} from '../../../models/pulse/KpiDataWithOperandsDto';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +46,12 @@ export class KpidayService {
   getDataByKpiAndCell(kpiName:string, cellName:string, period: string, ratName:string, granularityName:string): Observable<any> {
     // const ratName: string = this.ratName;
     return this.http.get<Array<KpiDataDto>>(`${this.baseUrl}/cell`,
+      { params : {kpiName, cellName, period, ratName, granularityName} });
+  }
+
+  getDataByKpiAndCellWithOperands(kpiName:string, cellName:string, period: string, ratName:string, granularityName:string): Observable<any> {
+    // const ratName: string = this.ratName;
+    return this.http.get<Array<KpiDataWithOperandsDto>>(`${this.baseUrl}/cell-operands`,
       { params : {kpiName, cellName, period, ratName, granularityName} });
   }
 

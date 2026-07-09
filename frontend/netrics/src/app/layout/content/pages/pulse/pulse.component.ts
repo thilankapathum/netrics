@@ -83,6 +83,7 @@ export class PulseComponent implements OnInit {
   allBandWorstCells: WorstCells[] = [];
   worstCells: WorstCells[] = [];  // 5 Worst cells displayed in the page
   excludeZeroes: boolean = false;
+  showOperands:boolean = false;
 
   bandWise: boolean = false;
   selectedBand = signal('');
@@ -546,9 +547,12 @@ export class PulseComponent implements OnInit {
   }
 
   onPeriodChangeModal($event: Event) {
-    this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell,this.selectedKpiTrendPeriodModal(),this.selectedRat(), this.selectedGranularity());
+    this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
   }
 
+  onShowOperandsChangeModal($event: Event) {
+    this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
+  }
 
   //------------------- WORST-CELL PAGINATION -----------------------------
 
@@ -572,31 +576,40 @@ export class PulseComponent implements OnInit {
 
   //---------- OPEN ANALYSIS MODAL (DIALOG) ----------------
 
+  // openAnalysisModal(kpiName: string, cellName: string) {
+  //   this.analysisModalCell = cellName;
+  //   this.analysisModalKpiLabel = kpiName;
+  //   this.loadingAnalysisModalChart = true;
+  //   this.analysisModal.nativeElement.showModal();
+  //   this.selectedKpiTrendPeriodModal.set('month');
+  //   this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity())
+  //     .subscribe({
+  //       next: data => {
+  //         this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
+  //         this.loadingAnalysisModalChart = false;
+  //       }, error: error => {
+  //         this.loadingAnalysisModalChart = false;
+  //         console.log("Error getDataByKpiLabelAndCell:");
+  //         console.error(error);
+  //         this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+  //       }
+  //     })
+  // }
+
   openAnalysisModal(kpiName: string, cellName: string) {
     this.analysisModalCell = cellName;
     this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
     this.analysisModal.nativeElement.showModal();
     this.selectedKpiTrendPeriodModal.set('month');
-    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity())
-      .subscribe({
-        next: data => {
-          this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
-          this.loadingAnalysisModalChart = false;
-        }, error: error => {
-          this.loadingAnalysisModalChart = false;
-          console.log("Error getDataByKpiLabelAndCell:");
-          console.error(error);
-          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
-        }
-      })
+    this.queryModalTrendData(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity());
   }
 
   onNextCell(){
     if (this.isNextCellAvailable(this.analysisModalCell, this.allWorstCells)) {
       let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
       this.analysisModalCell = this.allWorstCells[currentIndex + 1].cellName!;
-      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+      this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
     }
   }
 
@@ -604,12 +617,20 @@ export class PulseComponent implements OnInit {
     if (this.isPrevCellAvailable(this.analysisModalCell, this.allWorstCells)) {
       let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
       this.analysisModalCell = this.allWorstCells[currentIndex - 1].cellName!;
-      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+      this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
     }
   }
 
 
   //============ MODAL KPI TREND CHART =================
+
+  private queryModalTrendData(kpiName: string, cellName: string, trendPeriod: string, ratName: string, granularityName: string) {
+    if (this.showOperands) {
+      this.queryModalTrendDataByKpiNameAndCellWithOperands(kpiName, cellName, trendPeriod, ratName, granularityName);
+    } else {
+      this.queryModalTrendDataByKpiNameAndCell(kpiName, cellName, trendPeriod, ratName, granularityName);
+    }
+  }
 
   queryModalTrendDataByKpiNameAndCell(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
     this.chartSeries = [];
@@ -629,9 +650,33 @@ export class PulseComponent implements OnInit {
       });
   }
 
+  queryModalTrendDataByKpiNameAndCellWithOperands(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
+    this.chartSeries = [];
+    const resolvedGranularity = this.resolveGranularity(trendPeriod, granularityName);
+    this.loadingAnalysisModalChart = true;
+    this.getTrendDataByKpiNameAndCellWithOperands(kpiName, cellName, trendPeriod, ratName, resolvedGranularity)
+      .subscribe({
+        next: data => {
+          this.chartSeries = this.chartService.buildSeriesKpiDataWithOperandsDto(data);
+          this.loadingAnalysisModalChart = false;
+        },
+        error: error => {
+          this.loadingAnalysisModalChart = false;
+          console.log("Error getTrendDataByKpiNameAndCellWithOperands:");
+          console.error(error);
+          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+        }
+      });
+  }
+
   getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
     return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
   }
+
+  getTrendDataByKpiNameAndCellWithOperands(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
+    return this.kpiDayService.getDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, granularityName);
+  }
+
 
 
   getCellCountWithMissingInfo() {
@@ -765,4 +810,36 @@ export class PulseComponent implements OnInit {
       default:          return '';
     }
   }
+
+  get modalYAxis(): ApexYAxis[] | undefined {
+    if (!this.showOperands) return undefined;
+    return [
+      { seriesName: 'KPI Value', title: { text: this.analysisModalKpiLabel || 'KPI Value' } },
+      { seriesName: 'Numerator', opposite: true, title: { text: 'Count' } },
+      { seriesName: 'Denominator', opposite: true, show: false }
+    ];
+  }
+
+  // get modalYAxis(): ApexYAxis[] | undefined {
+  //   if (!this.showOperands) return undefined;
+  //
+  //   return [
+  //     {
+  //       seriesName: this.selectedStandardKpi(),
+  //       title: { text: this.analysisModalKpiLabel || 'KPI Value' },
+  //       labels: { formatter: (val: number) => val.toFixed(2) }
+  //     },
+  //     {
+  //       seriesName: 'Numerator',
+  //       opposite: true,
+  //       title: { text: 'Count' },
+  //       labels: { formatter: (val: number) => val.toFixed(0) }
+  //     },
+  //     {
+  //       seriesName: 'Denominator',
+  //       opposite: true,
+  //       show: false // shares the Numerator axis, hide the duplicate labels/line
+  //     }
+  //   ];
+  // }
 }

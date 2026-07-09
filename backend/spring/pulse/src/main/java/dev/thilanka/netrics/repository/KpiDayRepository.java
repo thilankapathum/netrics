@@ -976,6 +976,25 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             """, nativeQuery = true)
     List<KpiData> findDataByKpiAndCell(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("cellName") String cellName, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
+    @Query(value = """
+            SELECT
+                "timestamp",
+                cell_name,
+                standard_kpi.label AS label,
+                kpi_value,
+                numerator_kpi_value,
+                denominator_kpi_value
+            FROM kpi_values
+            LEFT JOIN standard_kpi
+                ON standard_kpi.id = kpi_values.standard_kpi_id
+            WHERE standard_kpi_id = :standardKpiId
+              AND cell_name = :cellName
+              AND "timestamp" BETWEEN :startTimestamp AND :timestamp
+              AND kpi_values.rat_id = :ratId
+              AND kpi_values.granularity_id = :granularityId
+            ORDER BY timestamp ASC
+            """, nativeQuery = true)
+    List<KpiDataWithOperandsDto> findDataByKpiAndCellWithOperands(@Param("standardKpiId") Long standardKpiId, @Param("timestamp") LocalDateTime timestamp, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("cellName") String cellName, @Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
     // ----------------------------- KPI TREND DATA BY KPI ----------------------------------------------------------
 

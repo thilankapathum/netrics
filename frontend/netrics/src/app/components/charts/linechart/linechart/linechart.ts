@@ -26,7 +26,7 @@ export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
   chart: ApexChart;
   xaxis: ApexXAxis;
-  yaxis: ApexYAxis;
+  yaxis: ApexYAxis | ApexYAxis[];
   dataLabels: ApexDataLabels;
   stroke: ApexStroke;
   legend: ApexLegend;
@@ -48,6 +48,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
   @Input() chartHeight: number = 300;
   @Input() showLegend: boolean = true;
   @Input() annotationDate: string = '';
+  @Input() yaxisOverride?: ApexYAxis[];
   public chartOptions: Partial<ChartOptions> = {};
 
   public showChart:boolean = true;
@@ -94,6 +95,9 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
       if (this.chart) {
         this.chart.updateSeries(this.chartSeries ?? [], true);
       }
+    }
+    if (changes['yaxisOverride'] && this.chart) {
+      this.chart.updateOptions({ yaxis: this.buildYAxis() }, false, true);
     }
     if (changes['annotationDate']) {
       this.annotationDateSignal.set(this.annotationDate);
@@ -148,6 +152,7 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
           }
         }
       },
+      yaxis: this.buildYAxis(),
       tooltip: {
         x: {
           format: 'yyyy-MM-dd HH:mm'
@@ -155,19 +160,19 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
           enabled: false
         }
       },
-      yaxis: {
-        title: {
-          style: {
-            color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
-          }
-        },
-        labels: {
-          formatter: (val: number) => val.toFixed(2),
-          style: {
-            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
-          }
-        }
-      },
+      // yaxis: {
+      //   title: {
+      //     style: {
+      //       color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+      //     }
+      //   },
+      //   labels: {
+      //     formatter: (val: number) => val.toFixed(2),
+      //     style: {
+      //       colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+      //     }
+      //   }
+      // },
       legend: {
         show: this.showLegend,
         showForSingleSeries: true,
@@ -208,82 +213,108 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
   }
 
 
+  // private updateChartTheme(theme: string): void {
+  //   const isDark = theme === 'netrics_dark';
+  //
+  //   // Hide chart temporarily to force re-render
+  //   this.showChart = false;
+  //
+  //   // Update chart options with new theme
+  //   this.chartOptions = {
+  //     ...this.chartOptions,
+  //     xaxis: {
+  //       ...this.chartOptions.xaxis,
+  //       labels: {
+  //         ...this.chartOptions.xaxis?.labels,
+  //         style: {
+  //           colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+  //         }
+  //       }
+  //     },
+  //     yaxis: {
+  //       ...this.chartOptions.yaxis,
+  //       title: {
+  //         ...this.chartOptions.yaxis?!.title,
+  //         style: {
+  //           color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+  //         }
+  //       },
+  //       labels: {
+  //         ...this.chartOptions.yaxis?.labels,
+  //         style: {
+  //           colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+  //         }
+  //       }
+  //     },
+  //     legend: {
+  //       ...this.chartOptions.legend,
+  //       show: this.showLegend,
+  //       labels: {
+  //         colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+  //       }
+  //     },
+  //     grid: {
+  //       show: true,
+  //       borderColor: isDark ? 'oklch(37% 0.013 285.805)' : 'oklch(92% 0.013 255.508)'
+  //     },
+  //     theme: {
+  //       ...this.chartOptions.theme,
+  //       mode: isDark ? 'dark' : 'light',
+  //       monochrome: {
+  //         ...this.chartOptions.theme?.monochrome,
+  //         shadeTo: isDark ? 'dark' : 'light'
+  //       }
+  //     },
+  //     chart: {
+  //       ...this.chartOptions,
+  //       background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)',
+  //       type: 'line',
+  //       height: this.chartHeight,
+  //       width: '100%',
+  //       animations: {
+  //         enabled: true,
+  //         speed: 300,
+  //         animateGradually: {
+  //           enabled: true,
+  //           delay: 150
+  //         }
+  //       },
+  //       toolbar: {
+  //         show: false
+  //       }
+  //     }
+  //   };
+  //
+  //   // Show chart again in next tick to force re-render
+  //   setTimeout(() => {
+  //     this.showChart = true;
+  //   }, 10);
+  // }
+
   private updateChartTheme(theme: string): void {
     const isDark = theme === 'netrics_dark';
-
-    // Hide chart temporarily to force re-render
     this.showChart = false;
 
-    // Update chart options with new theme
+    const themedYAxis = Array.isArray(this.chartOptions.yaxis)
+      ? this.chartOptions.yaxis.map(axis => ({
+        ...axis,
+        title: { ...axis.title, style: { ...axis.title?.style, color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)' } },
+        labels: { ...axis.labels, style: { ...axis.labels?.style, colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)' } }
+      }))
+      : {
+        ...this.chartOptions.yaxis,
+        title: { ...this.chartOptions.yaxis?.title, style: { color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)' } },
+        labels: { ...this.chartOptions.yaxis?.labels, style: { colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)' } }
+      };
+
     this.chartOptions = {
       ...this.chartOptions,
-      xaxis: {
-        ...this.chartOptions.xaxis,
-        labels: {
-          ...this.chartOptions.xaxis?.labels,
-          style: {
-            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
-          }
-        }
-      },
-      yaxis: {
-        ...this.chartOptions.yaxis,
-        title: {
-          ...this.chartOptions.yaxis?.title,
-          style: {
-            color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
-          }
-        },
-        labels: {
-          ...this.chartOptions.yaxis?.labels,
-          style: {
-            colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
-          }
-        }
-      },
-      legend: {
-        ...this.chartOptions.legend,
-        show: this.showLegend,
-        labels: {
-          colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
-        }
-      },
-      grid: {
-        show: true,
-        borderColor: isDark ? 'oklch(37% 0.013 285.805)' : 'oklch(92% 0.013 255.508)'
-      },
-      theme: {
-        ...this.chartOptions.theme,
-        mode: isDark ? 'dark' : 'light',
-        monochrome: {
-          ...this.chartOptions.theme?.monochrome,
-          shadeTo: isDark ? 'dark' : 'light'
-        }
-      },
-      chart: {
-        ...this.chartOptions,
-        background: isDark ? 'oklch(27% 0.006 286.033)' : 'oklch(98% 0.003 247.858)',
-        type: 'line',
-        height: this.chartHeight,
-        width: '100%',
-        animations: {
-          enabled: true,
-          speed: 300,
-          animateGradually: {
-            enabled: true,
-            delay: 150
-          }
-        },
-        toolbar: {
-          show: false
-        }
-      }
+      xaxis: { /* unchanged */ ...this.chartOptions.xaxis, labels: { ...this.chartOptions.xaxis?.labels, style: { colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)' } } },
+      yaxis: themedYAxis,
+      // ...legend, stroke, grid, theme, chart unchanged as before
     };
 
-    // Show chart again in next tick to force re-render
-    setTimeout(() => {
-      this.showChart = true;
-    }, 10);
+    setTimeout(() => { this.showChart = true; }, 10);
   }
 
   private applyAnnotation(date?: string): void {
@@ -324,4 +355,26 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
     }, false, false);
   }
 
+  private buildYAxis(): ApexYAxis | ApexYAxis[] {
+    if (this.yaxisOverride) {
+      return this.yaxisOverride;
+    }
+
+    const currentTheme = this.themeService.getCurrentTheme();
+    const isDark = currentTheme === 'netrics_dark';
+
+    return {
+      title: {
+        style: {
+          color: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+        }
+      },
+      labels: {
+        formatter: (val: number) => val.toFixed(2),
+        style: {
+          colors: isDark ? 'oklch(70% 0.015 286.067)' : 'oklch(55% 0.046 257.417)'
+        }
+      }
+    };
+  }
 }

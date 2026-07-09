@@ -541,6 +541,26 @@ public class KpiDayServiceImpl implements KpiDayService {
         }
     }
 
+    @Override
+    public List<KpiDataWithOperandsDto> getDataByKpiAndCellWithOperands(String standardKpiName, String cellName, String period, String ratName, String granularityName) {
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+
+        LocalDateTime timestamp = dateService.getLatestDate(rat, granularity)
+                .toLocalDate()
+                .atStartOfDay()
+                .plusSeconds(granularity.getPlusSeconds());
+
+        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period).toLocalDate().atStartOfDay();
+
+        if (granularity.getName().equals("hour")) {
+            return kpiHourService.getDataByKpiAndCellWithOperands(standardKpi.getId(), cellName, timestamp, startTimestamp, rat.getId(), granularity.getId());
+        } else {
+            return kpiDayRepository.findDataByKpiAndCellWithOperands(standardKpi.getId(),timestamp, startTimestamp, cellName, rat.getId(), granularity.getId());
+        }
+    }
+
 
     @Override
     @Cacheable(value = "cellKpiTrend", key = "#kpiLabel +'_' + #cellName + '_' + #period + '_' + #granularityName + '_' + #ratName")
