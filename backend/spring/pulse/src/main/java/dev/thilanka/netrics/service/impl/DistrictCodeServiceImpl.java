@@ -12,12 +12,15 @@ import dev.thilanka.netrics.entity.KpiDay;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.DistrictCodeRepository;
 import dev.thilanka.netrics.service.*;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,14 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
     private final KpiDayService kpiDayService;
     private final RatService ratService;
     private final Mapper mapper;
+    private volatile List<DistrictCode> sortedCodes = List.of();
+
+    @PostConstruct
+    public void init() {
+        reload();
+    }
+
+
 
     @Override
     public List<DistrictCodeDto> getAll() {
@@ -98,6 +109,30 @@ public class DistrictCodeServiceImpl implements DistrictCodeService {
         for (Rat rat : rats) {
             updateKpiDayWithoutDistrict(rat.getName());
         }
+    }
+
+    @Override
+    public void reload() {
+        List<DistrictCode> codes = districtCodeRepository.findAll();
+        codes.sort(Comparator.comparingInt((DistrictCode d) -> d.getCode().length()).reversed());
+        this.sortedCodes = codes;
+        log.info("Loaded {} district codes", sortedCodes.size());
+    }
+
+    @Override
+    public Optional<DistrictCode> resolveByCellName(String cellName) {
+
+        if (sortedCodes.isEmpty()) {
+            reload();
+        }
+
+        if (cellName == null || cellName.isBlank()) {
+            return Optional.empty();
+        }
+        String trimmed = cellName.trim();
+        return sortedCodes.stream()
+                .filter(dc -> trimmed.startsWith(dc.getCode()))
+                .findFirst();
     }
 
     private void updateKpiDayWithoutDistrict(String ratName) {
