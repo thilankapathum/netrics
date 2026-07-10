@@ -1,6 +1,8 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiAnomalyDto;
+import dev.thilanka.netrics.dto.PagedResponse;
+import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.service.AnomalyDetectionService;
 import dev.thilanka.netrics.service.KpiAnomalyService;
 import dev.thilanka.netrics.service.impl.AnomalyDetectionScheduler;
@@ -45,5 +47,31 @@ public class KpiAnomalyController {
                                                       @RequestParam String ratName) {
         anomalyDetectionScheduler.runAnomalyDetection(granularityName, ratName);
         return ResponseEntity.ok("Ran Anomaly detection");
+    }
+
+    @GetMapping("by-area")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    public ResponseEntity<List<WorstCellsDto>> getAllAnomalyCells(
+            @RequestParam String period,
+            @RequestParam String areaName,
+            @RequestParam String ratName,
+            @RequestParam String granularityName) {
+        return ResponseEntity.ok(kpiAnomalyService.getAllAnomalyCellsByArea(period, areaName, ratName, granularityName));
+    }
+
+    @GetMapping("cells")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    public ResponseEntity<PagedResponse<WorstCellsDto>> getAllAnomalyCells(
+            @RequestParam String period,
+            @RequestParam String areaName,
+            @RequestParam String ratName,
+            @RequestParam String granularityName,
+            @RequestParam(required = false) String severity,
+            @RequestParam(defaultValue = "severity") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        return ResponseEntity.ok(kpiAnomalyService.getAllAnomalyCellsByArea(
+                period, areaName, ratName, granularityName, severity, sortBy, sortDir, page, pageSize));
     }
 }

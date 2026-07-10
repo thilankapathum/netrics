@@ -305,24 +305,6 @@ public class KpiDayServiceImpl implements KpiDayService {
         return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, rat.getId(), excludeZeroes, granularity.getId());
     }
 
-//    @Override
-//    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
-//    public List<WorstCellsDto> getWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, int limit, String areaName, String ratName, String granularityName) {
-//
-//        Rat rat = ratService.findRatByName(ratName);
-//        Granularity granularity = granularityService.findGranularityByName(granularityName);
-//        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
-//        Area area = areaService.findAreaByName(areaName);
-//
-//        LocalDateTime currEnd = dateService.getLatestDate(rat, granularity).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
-//        LocalDateTime currStart = dateService.getStartDate(currEnd, period).toLocalDate().atStartOfDay();
-//
-//        LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
-//        LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
-//
-//        return kpiDayRepository.findWorstCellsByArea(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId());
-//    }
-
 
     @Override
     @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
@@ -397,23 +379,6 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .collect(Collectors.toList());
     }
 
-//    @Override
-//    @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")
-//    public List<WorstCellsDto> getWorstCellsByKpiAreaAndBand(String kpiName, String period, boolean excludeZeroes, int limit, String ratName, String areaName, String granularityName, String bandName) {
-//        Rat rat = ratService.findRatByName(ratName);
-//        Granularity granularity = granularityService.findGranularityByName(granularityName);
-//        StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
-//        Area area = areaService.findAreaByName(areaName);
-//        Band band = bandService.findByName(bandName);
-//
-//        LocalDateTime currEnd = dateService.getLatestDate(rat, granularity).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
-//        LocalDateTime currStart = dateService.getStartDate(currEnd, period).toLocalDate().atStartOfDay();
-//
-//        LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
-//        LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
-//
-//        return kpiDayRepository.findWorstCellsByAreaAndBand(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId(), band.getId());
-//    }
 
     @Override
     @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")

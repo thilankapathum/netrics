@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.repository;
 
+import dev.thilanka.netrics.dto.AnomalyCellsProjection;
 import dev.thilanka.netrics.dto.BreachingCellProjection;
 import dev.thilanka.netrics.dto.CellSeverityProjection;
 import dev.thilanka.netrics.dto.KpiAnomalyProjection;
@@ -13,6 +14,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
+
+    @Query(value = "SELECT DISTINCT timestamp FROM kpi_anomalies WHERE kpi_anomalies.rat_id = :ratId AND kpi_anomalies.granularity_id = :granularityId ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
+    LocalDateTime getLatestDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
 
     @Modifying
     @Query(value = "SET LOCAL work_mem = :workMem", nativeQuery = true)
@@ -237,4 +241,209 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
                                                         @Param("currEnd") LocalDateTime currEnd,
                                                         @Param("ratId") Long ratId,
                                                         @Param("granularityId") Long granularityId);
+
+
+    @Query(value = """
+        WITH params AS (
+            SELECT
+                :prevPeriodDays ::int       AS prev_period_days,
+                :areaId        ::bigint    AS area_id,
+                :ratId         ::bigint    AS rat_id,
+                :granularityId ::bigint    AS granularity_id,
+                :currStart     ::timestamp AS curr_start,
+                :currEnd       ::timestamp AS curr_end
+        ),
+        area_cells AS MATERIALIZED (
+            SELECT c.cell_name
+            FROM cells c
+            JOIN district_codes dc ON dc.id = c.district_code_id
+            JOIN area_district_code_mapping adcm ON adcm.district_code_id = dc.id
+            WHERE adcm.area_id = (SELECT area_id FROM params)
+        ),
+        anomalies AS MATERIALIZED (
+            SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity
+            FROM kpi_anomalies ka
+            JOIN area_cells ac ON ac.cell_name = ka.cell_name
+            CROSS JOIN params p
+            WHERE ka.rat_id = p.rat_id
+              AND ka.granularity_id = p.granularity_id
+              AND ka.timestamp >= p.curr_start
+              AND ka.timestamp <  p.curr_end
+        ),
+        kpi_meta AS MATERIALIZED (
+            SELECT id, kpi_name, label, unit, worst_order
+            FROM standard_kpi
+            WHERE id IN (SELECT DISTINCT standard_kpi_id FROM anomalies)
+        ),
+        prev_agg AS MATERIALIZED (
+            SELECT kv.cell_name, kv.standard_kpi_id,
+                   SUM(kv.numerator_kpi_value) AS prev_num,
+                   SUM(kv.denominator_kpi_value) AS prev_den,
+                   AVG(kv.kpi_value) AS prev_avg
+            FROM kpi_values kv
+            JOIN anomalies a ON a.cell_name = kv.cell_name AND a.standard_kpi_id = kv.standard_kpi_id
+            CROSS JOIN params p
+            WHERE kv.rat_id = p.rat_id
+              AND kv.granularity_id = p.granularity_id
+              AND kv.timestamp >= p.curr_start - (p.prev_period_days * INTERVAL '1 day')
+              AND kv.timestamp <  p.curr_start
+            GROUP BY kv.cell_name, kv.standard_kpi_id
+        ),
+        calc AS MATERIALIZED (
+            SELECT
+                a.cell_name, a.observed_value, a.severity,
+                km.kpi_name, km.label, km.unit, km.worst_order,
+                CASE
+                    WHEN km.unit = '%' THEN COALESCE((pa.prev_num / NULLIF(pa.prev_den, 0)) * 100, pa.prev_avg)
+                    ELSE                    COALESCE((pa.prev_num / NULLIF(pa.prev_den, 0)),        pa.prev_avg)
+                END AS previous_value
+            FROM anomalies a
+            JOIN kpi_meta km ON km.id = a.standard_kpi_id
+            LEFT JOIN prev_agg pa ON pa.cell_name = a.cell_name AND pa.standard_kpi_id = a.standard_kpi_id
+        )
+        SELECT
+            cell_name    AS cellName,
+            kpi_name     AS kpiName,
+            label        AS kpiLabel,
+            unit         AS unit,
+            observed_value AS value,
+            previous_value AS previousValue,
+            (observed_value - previous_value) AS difference,
+            CASE
+                WHEN worst_order = 'ASC'  AND observed_value > previous_value THEN 1
+                WHEN worst_order = 'DESC' AND observed_value < previous_value THEN 1
+                ELSE 0
+            END AS improved,
+            severity AS severity
+        FROM calc
+        """, nativeQuery = true)
+    List<AnomalyCellsProjection> findAllAnomalyCellsByArea(
+            @Param("currStart") LocalDateTime currStart,
+            @Param("currEnd") LocalDateTime currEnd,
+            @Param("prevPeriodDays") int prevPeriodDays,
+            @Param("areaId") Long areaId,
+            @Param("ratId") Long ratId,
+            @Param("granularityId") Long granularityId);
+
+
+    //--------- PAGED ------------------
+
+    @Query(value = """
+        WITH params AS (
+            SELECT
+                :prevPeriodDays ::int       AS prev_period_days,
+                :areaId        ::bigint    AS area_id,
+                :ratId         ::bigint    AS rat_id,
+                :granularityId ::bigint    AS granularity_id,
+                :currStart     ::timestamp AS curr_start,
+                :currEnd       ::timestamp AS curr_end
+        ),
+        area_cells AS MATERIALIZED (
+            SELECT c.cell_name
+            FROM cells c
+            JOIN district_codes dc ON dc.id = c.district_code_id
+            JOIN area_district_code_mapping adcm ON adcm.district_code_id = dc.id
+            WHERE adcm.area_id = (SELECT area_id FROM params)
+        ),
+        anomalies AS MATERIALIZED (
+            SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity
+            FROM kpi_anomalies ka
+            JOIN area_cells ac ON ac.cell_name = ka.cell_name
+            CROSS JOIN params p
+            WHERE ka.rat_id = p.rat_id
+              AND ka.granularity_id = p.granularity_id
+              AND ka.timestamp >= p.curr_start
+              AND ka.timestamp <  p.curr_end
+              AND (:severityFilter IS NULL OR ka.severity = :severityFilter)
+        ),
+        kpi_meta AS MATERIALIZED (
+            SELECT id, kpi_name, label, unit, worst_order
+            FROM standard_kpi
+            WHERE id IN (SELECT DISTINCT standard_kpi_id FROM anomalies)
+        ),
+        prev_agg AS MATERIALIZED (
+            SELECT kv.cell_name, kv.standard_kpi_id,
+                   SUM(kv.numerator_kpi_value) AS prev_num,
+                   SUM(kv.denominator_kpi_value) AS prev_den,
+                   AVG(kv.kpi_value) AS prev_avg
+            FROM kpi_values kv
+            JOIN anomalies a ON a.cell_name = kv.cell_name AND a.standard_kpi_id = kv.standard_kpi_id
+            CROSS JOIN params p
+            WHERE kv.rat_id = p.rat_id
+              AND kv.granularity_id = p.granularity_id
+              AND kv.timestamp >= p.curr_start - (p.prev_period_days * INTERVAL '1 day')
+              AND kv.timestamp <  p.curr_start
+            GROUP BY kv.cell_name, kv.standard_kpi_id
+        ),
+        calc AS MATERIALIZED (
+            SELECT
+                a.cell_name, a.observed_value, a.severity,
+                km.kpi_name, km.label, km.unit, km.worst_order,
+                CASE
+                    WHEN km.unit = '%' THEN COALESCE((pa.prev_num / NULLIF(pa.prev_den, 0)) * 100, pa.prev_avg)
+                    ELSE                    COALESCE((pa.prev_num / NULLIF(pa.prev_den, 0)),        pa.prev_avg)
+                END AS previous_value
+            FROM anomalies a
+            JOIN kpi_meta km ON km.id = a.standard_kpi_id
+            LEFT JOIN prev_agg pa ON pa.cell_name = a.cell_name AND pa.standard_kpi_id = a.standard_kpi_id
+        )
+        SELECT
+            cell_name    AS cellName,
+            kpi_name     AS kpiName,
+            label        AS kpiLabel,
+            unit         AS unit,
+            observed_value AS value,
+            previous_value AS previousValue,
+            (observed_value - previous_value) AS difference,
+            CASE
+                WHEN worst_order = 'ASC'  AND observed_value > previous_value THEN 1
+                WHEN worst_order = 'DESC' AND observed_value < previous_value THEN 1
+                ELSE 0
+            END AS improved,
+            severity AS severity
+        FROM calc
+        ORDER BY
+            CASE WHEN :sortBy = 'severity' AND :sortDir = 'desc'
+                 THEN CASE severity WHEN 'critical' THEN 3 WHEN 'high' THEN 2 ELSE 1 END END DESC,
+            CASE WHEN :sortBy = 'severity' AND :sortDir = 'asc'
+                 THEN CASE severity WHEN 'critical' THEN 3 WHEN 'high' THEN 2 ELSE 1 END END ASC,
+            CASE WHEN :sortBy = 'difference' AND :sortDir = 'desc' THEN ABS(observed_value - previous_value) END DESC,
+            CASE WHEN :sortBy = 'difference' AND :sortDir = 'asc'  THEN ABS(observed_value - previous_value) END ASC,
+            CASE WHEN :sortBy = 'cellName' AND :sortDir = 'desc' THEN cell_name END DESC,
+            CASE WHEN :sortBy = 'cellName' AND :sortDir = 'asc'  THEN cell_name END ASC
+        LIMIT :pageSize OFFSET :offset
+        """, nativeQuery = true)
+    List<AnomalyCellsProjection> findAllAnomalyCellsByAreaPaged(
+            @Param("currStart") LocalDateTime currStart,
+            @Param("currEnd") LocalDateTime currEnd,
+            @Param("prevPeriodDays") int prevPeriodDays,
+            @Param("areaId") Long areaId,
+            @Param("ratId") Long ratId,
+            @Param("granularityId") Long granularityId,
+            @Param("severityFilter") String severityFilter,
+            @Param("sortBy") String sortBy,
+            @Param("sortDir") String sortDir,
+            @Param("pageSize") int pageSize,
+            @Param("offset") int offset);
+
+    @Query(value = """
+        SELECT COUNT(*)
+        FROM kpi_anomalies ka
+        JOIN cells c ON c.cell_name = ka.cell_name
+        JOIN district_codes dc ON dc.id = c.district_code_id
+        JOIN area_district_code_mapping adcm ON adcm.district_code_id = dc.id
+        WHERE adcm.area_id = :areaId
+          AND ka.rat_id = :ratId
+          AND ka.granularity_id = :granularityId
+          AND ka.timestamp >= :currStart
+          AND ka.timestamp <  :currEnd
+          AND (:severityFilter IS NULL OR ka.severity = :severityFilter)
+        """, nativeQuery = true)
+    long countAnomalyCellsByArea(
+            @Param("currStart") LocalDateTime currStart,
+            @Param("currEnd") LocalDateTime currEnd,
+            @Param("areaId") Long areaId,
+            @Param("ratId") Long ratId,
+            @Param("granularityId") Long granularityId,
+            @Param("severityFilter") String severityFilter);
 }
