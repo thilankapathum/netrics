@@ -674,7 +674,6 @@ export class PulseComponent implements OnInit {
   }
 
 
-
   getCellCountWithMissingInfo() {
     this.cellService.getCellCountWithMissingInfo().subscribe({
       next: data => {
