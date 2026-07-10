@@ -11,6 +11,9 @@ import lombok.*;
 @Entity
 @Table(name = "cell_names")
 public class CellName {
+
+    /* DEPRECATED */
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

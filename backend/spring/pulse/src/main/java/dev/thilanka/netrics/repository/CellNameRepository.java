@@ -7,5 +7,7 @@ import java.util.Optional;
 
 public interface CellNameRepository extends JpaRepository<CellName, Long> {
 
+    /* DEPRECATED */
+
     Optional<CellName> findByCellName(String cellName);
 }

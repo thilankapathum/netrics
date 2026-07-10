@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CellNameServiceImpl implements CellNameService {
 
+    /* DEPRECATED */
+
     private final KpiDayRepository kpiDayRepository;
     private final KpiDayService kpiDayService;
     private final CellNameRepository cellNameRepository;
