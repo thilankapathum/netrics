@@ -9,6 +9,8 @@ import java.util.concurrent.CompletableFuture;
 
 public interface CellNameService {
 
+    /* DEPRECATED */
+
     List<CellName> findAllCellNames();
 
     Optional<CellName> findCellNameByName(String cellName);

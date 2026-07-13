@@ -8,6 +8,8 @@ public record WorstCellsDto(
         Double value,
         Double previousValue,
         Double difference,
-        Integer improved
+        Integer improved,
+        Integer consecutiveBadDays,
+        String severity
 ) {
 }

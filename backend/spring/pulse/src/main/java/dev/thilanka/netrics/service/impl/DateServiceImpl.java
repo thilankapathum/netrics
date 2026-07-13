@@ -28,6 +28,12 @@ public class DateServiceImpl implements DateService {
     private final GranularityService granularityService;
 
     @Override
+    public LocalDateTime getLatestDate() {
+        //TODO: implement for KPI-HOUR
+        return kpiDayRepository.getLatestDate();
+    }
+
+    @Override
     public LocalDateTime getLatestDate(Rat rat, Granularity granularity) {
 
         if (granularity.getName().equals("hour")) {     //-- Hourly granularity should be taken from hourly KPI table

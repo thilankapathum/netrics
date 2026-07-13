@@ -2,6 +2,7 @@ package dev.thilanka.netrics.entity;
 
 import dev.thilanka.netrics.entity.common.AuditEntity;
 import dev.thilanka.netrics.entity.common.AuditLog;
+import dev.thilanka.netrics.entity.district.DistrictCode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -56,4 +57,8 @@ public class Cell extends AuditEntity {
     @ManyToOne
     @JoinColumn(name = "sector_id", nullable = true)
     private Sector sector;
+
+    @ManyToOne
+    @JoinColumn(name = "district_code_id", nullable = true)
+    private DistrictCode districtCode;
 }

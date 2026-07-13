@@ -37,4 +37,11 @@ public class StandardRawKpiMappingController {
         List<StandardRawKpiMappingDto> savedDtos = standardRawKpiMappingService.createMappingList(dtos);
         return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
     }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("is-available")
+    ResponseEntity<Boolean> isMappingAvailable(@RequestParam("ratName") String ratName, @RequestParam("standardKpiName") String standardKpiName){
+        boolean availability = standardRawKpiMappingService.isKpiMappingAvailable(ratName, standardKpiName);
+        return ResponseEntity.ok(availability);
+    }
 }

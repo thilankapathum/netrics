@@ -1,17 +1,16 @@
 package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.KpiDataDto;
+import dev.thilanka.netrics.dto.KpiDataWithOperandsDto;
 import dev.thilanka.netrics.dto.KpiTrendDto;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.entity.BasicKpiSnapshot;
 import dev.thilanka.netrics.service.KpiDayService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +19,7 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/api/v1/pulse/kpiday")
 @RequiredArgsConstructor
+@Slf4j
 public class KpiDayController {
     private final KpiDayService kpiDayService;
 
@@ -73,6 +73,13 @@ public class KpiDayController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("cell-operands")
+    public ResponseEntity<List<KpiDataWithOperandsDto>> getDataByKpiAndCellWithOperands(@RequestParam String kpiName, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName){
+        List<KpiDataWithOperandsDto> kpiData = kpiDayService.getDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, granularityName);
+        return ResponseEntity.ok(kpiData);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("cell-label")
     public ResponseEntity<List<KpiDataDto>> getDataByKpiLabelAndCell(@RequestParam String kpiLabel, @RequestParam String cellName, @RequestParam String period, @RequestParam String ratName, @RequestParam String granularityName) {
         List<KpiDataDto> kpiDataDtos = kpiDayService.getDataByKpiLabelAndCell(kpiLabel, cellName, period, ratName, granularityName);
@@ -102,5 +109,16 @@ public class KpiDayController {
             @RequestParam String bandName) {
         List<KpiTrendDto> kpiTrendDtos = kpiDayService.getTrendByKpiAreaAndBand(kpiName,period,areaName,ratName,granularityName,bandName);
         return ResponseEntity.ok(kpiTrendDtos);
+    }
+
+    @DeleteMapping("dedup-oss")
+    public ResponseEntity<String> deduplicateLatestByOss(){
+        try {
+            int deleted = kpiDayService.deduplicateLatestByOss();
+            return ResponseEntity.ok("Deduplication finished! " + deleted + " duplicate rows removed.");
+        } catch (Exception ex) {
+            log.error("Deduplication failed", ex);
+            return ResponseEntity.internalServerError().body("Deduplication failed: " + ex.getMessage());
+        }
     }
 }

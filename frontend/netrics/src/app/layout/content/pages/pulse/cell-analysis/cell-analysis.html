@@ -139,7 +139,15 @@
     <div [hidden]="!cellSelected()"
          class="grid sm:grid-cols-[1fr_240px] gap-4 p-4 border border-base-300 rounded-xl bg-base-100 ">
       <div>
-        <div class="flex flex-row gap-2">
+        <div class="flex flex-row gap-2 items-center">
+          @if (standardRawKpiMappingAvailable() && selectedChartType() === 's_cell_s_kpi'){
+            <label class="label mr-auto">
+              <input [disabled]="loadingAll()" type="checkbox" class="checkbox checkbox-sm"
+                     [ngModel]="showOperands()" (ngModelChange)="showOperands.set($event); onShowOperandsChange()"/>
+              Show Operands
+            </label>
+          }
+
           <div class="tabs tabs-box tabs-xs ml-auto">
             <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Week (hourly)"
                    checked="checked"
@@ -151,6 +159,7 @@
                    [(ngModel)]="trendPeriod"
                    [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
+
         </div>
         <div>
 
@@ -159,7 +168,7 @@
               <div class="skeleton h-84 w-full"></div>
             </div>
           }
-          <app-linechart [hidden]="loadingAll()" [chartSeries]="chartSeries()"></app-linechart>
+          <app-linechart [hidden]="loadingAll()" [chartSeries]="chartSeries()" [yaxisOverride]="modalYAxis"></app-linechart>
           <div class="flex flex-row flex-wrap gap-2">
             @for (cell of chartCellName(); track cell) {
               <button [disabled]="loadingAll()" class="btn btn-xs" (click)="removeChartCell(cell!)">

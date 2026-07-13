@@ -66,4 +66,12 @@ public class StandardRawKpiMappingServiceImpl implements StandardRawKpiMappingSe
 
         return savedDtos;
     }
+
+    @Override
+    public boolean isKpiMappingAvailable(String ratName, String standardKpiName) {
+        Rat rat =  ratService.findRatByName(ratName);
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, rat);
+        List<StandardRawKpiMapping> mappings = standardRawKpiMappingRepository.findByRatAndKpi(rat.getId(), standardKpi.getId());
+        return !mappings.isEmpty();
+    }
 }

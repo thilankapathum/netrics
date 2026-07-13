@@ -6,20 +6,24 @@ import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
+import dev.thilanka.netrics.repository.KpiAnomalyRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class KpiDayServiceImpl implements KpiDayService {
 
     //-- Snapshot: Single whole KPI value considering the KPI and Period
@@ -41,6 +45,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final AreaService areaService;
     private final BandService bandService;
     private final KpiHourService kpiHourService;
+    private final KpiAnomalyRepository kpiAnomalyRepository;
 
     @Override
     public boolean checkImproved(String worstOrder, Double difference) {
@@ -300,6 +305,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, rat.getId(), excludeZeroes, granularity.getId());
     }
 
+
     @Override
     @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
     public List<WorstCellsDto> getWorstCellsByKpiAndArea(String kpiName, String period, boolean excludeZeroes, int limit, String areaName, String ratName, String granularityName) {
@@ -314,9 +320,65 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
         LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
+        LocalDateTime streakStart = currEnd.toLocalDate().minusDays(30).atStartOfDay();
 
-        return kpiDayRepository.findWorstCellsByArea(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId());
+        // Query 1: worst cells only — tight 2-day window, fast
+        List<WorstCellsProjection> worstCells = kpiDayRepository.findWorstCellsByArea(
+                standardKpi.getId(), currStart, currEnd, prevStart, prevEnd,
+                limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId()
+        );
+
+        if (worstCells.isEmpty()) return List.of();
+
+        // Query 2: streaks only for the specific cells returned above — 30-day window
+        //          but filtered to just N cell names instead of the whole area
+        List<String> cellNames = worstCells.stream()
+                .map(WorstCellsProjection::cellName)
+                .toList();
+
+        Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
+                        standardKpi.getId(), streakStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellStreakProjection::cellName,
+                        CellStreakProjection::consecutiveBadDays
+                ));
+
+        // Anomaly severities — timestamp must match the raw value AnomalyDetectionServiceImpl wrote,
+        // not currEnd (which has the busy-hour plus_seconds offset applied)
+//        LocalDateTime anomalyTimestamp = kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
+
+        Map<String, String> severities = kpiAnomalyRepository.findSeveritiesForCells(
+                        standardKpi.getId(), currStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellSeverityProjection::cellName,
+                        CellSeverityProjection::severity
+                ));
+
+
+        return worstCells.stream()
+                .map(wc -> new WorstCellsDto(
+                        wc.cellName(),
+                        wc.kpiName(),
+                        wc.kpiLabel(),
+                        wc.unit(),
+                        wc.value(),
+                        wc.previousValue(),
+                        wc.difference(),
+                        wc.improved(),
+                        streaks.getOrDefault(wc.cellName(), 0),
+                        severities.get(wc.cellName())
+                ))
+                .collect(Collectors.toList());
     }
+
 
     @Override
     @Cacheable(value = "worstCells", key = "#kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #limit + '_' + #areaName + '_' + #bandName + '_' + #granularityName + '_' + #ratName")
@@ -332,8 +394,59 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
         LocalDateTime prevStart = dateService.getStartDate(prevEnd, period).toLocalDate().atStartOfDay();
+        LocalDateTime streakStart = currEnd.toLocalDate().minusDays(30).atStartOfDay();
 
-        return kpiDayRepository.findWorstCellsByAreaAndBand(standardKpi.getId(), currStart, currEnd, prevStart, prevEnd, limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId(), band.getId());
+        // Query 1: worst cells for this area + band — tight window
+        List<WorstCellsProjection> worstCells = kpiDayRepository.findWorstCellsByAreaAndBand(
+                standardKpi.getId(), currStart, currEnd, prevStart, prevEnd,
+                limit, area.getId(), rat.getId(), excludeZeroes, granularity.getId(), band.getId()
+        );
+
+        if (worstCells.isEmpty()) return List.of();
+
+        // Query 2: streaks for the returned cells only — reuses findStreaksForCells unchanged
+        List<String> cellNames = worstCells.stream()
+                .map(WorstCellsProjection::cellName)
+                .toList();
+
+        Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
+                        standardKpi.getId(), streakStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellStreakProjection::cellName,
+                        CellStreakProjection::consecutiveBadDays
+                ));
+
+
+        Map<String, String> severities = kpiAnomalyRepository.findSeveritiesForCells(
+                        standardKpi.getId(), currStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellSeverityProjection::cellName,
+                        CellSeverityProjection::severity
+                ));
+
+        // Merge
+        return worstCells.stream()
+                .map(wc -> new WorstCellsDto(
+                        wc.cellName(),
+                        wc.kpiName(),
+                        wc.kpiLabel(),
+                        wc.unit(),
+                        wc.value(),
+                        wc.previousValue(),
+                        wc.difference(),
+                        wc.improved(),
+                        streaks.getOrDefault(wc.cellName(), 0),
+                        severities.get(wc.cellName())
+                ))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -346,6 +459,17 @@ public class KpiDayServiceImpl implements KpiDayService {
     @Override
     public List<CellDto> getCellsByTimestamp(LocalDateTime timestamp, LocalDateTime preTimestamp, Rat rat, Granularity granularity) {
         return kpiDayRepository.getCellsByTimestamp(timestamp, preTimestamp, rat.getId(), granularity.getId());
+    }
+
+    @Override
+    public int deduplicateLatestByOss() {
+        LocalDateTime startTimestamp = dateService.getLatestDate().toLocalDate().atStartOfDay();
+        LocalDateTime endTimestamp = startTimestamp.plusDays(1);
+
+        log.info("Starting deduplication (KPI-day) for {} - {} ...", startTimestamp, endTimestamp);
+        int deleted = kpiDayRepository.deduplicateOssByPeriod(startTimestamp, endTimestamp);
+        log.info("Deduplication complete (KPI-day) for {} - {}: {} rows removed", startTimestamp, endTimestamp, deleted);
+        return deleted;
     }
 
 
@@ -379,6 +503,27 @@ public class KpiDayServiceImpl implements KpiDayService {
             return kpiData.stream()
                     .map(mapper::kpiDataToDto)
                     .collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    @Cacheable(value = "cellKpiTrendWithOperands", key = "#standardKpiName +'_' + #cellName + '_' + #period + '_' + #granularityName + '_' + #ratName")
+    public List<KpiDataWithOperandsDto> getDataByKpiAndCellWithOperands(String standardKpiName, String cellName, String period, String ratName, String granularityName) {
+        StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, ratName);
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+
+        LocalDateTime timestamp = dateService.getLatestDate(rat, granularity)
+                .toLocalDate()
+                .atStartOfDay()
+                .plusSeconds(granularity.getPlusSeconds());
+
+        LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period).toLocalDate().atStartOfDay();
+
+        if (granularity.getName().equals("hour")) {
+            return kpiHourService.getDataByKpiAndCellWithOperands(standardKpi.getId(), cellName, timestamp, startTimestamp, rat.getId(), granularity.getId());
+        } else {
+            return kpiDayRepository.findDataByKpiAndCellWithOperands(standardKpi.getId(),timestamp, startTimestamp, cellName, rat.getId(), granularity.getId());
         }
     }
 

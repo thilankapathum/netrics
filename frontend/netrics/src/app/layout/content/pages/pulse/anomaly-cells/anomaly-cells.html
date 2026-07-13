@@ -1,0 +1,233 @@
+<!-- anomaly-cells-table.component.html -->
+<div class="flex flex-col gap-3">
+  <nav class="flex flex-row flex-wrap gap-2  items-center">
+    <div class="breadcrumbs text-xs text-secondary grow-1">
+      <ul>
+        <li><a routerLink="/">
+          <svg class="text-base-300" width="14" height="14" viewBox="0 0 24 24" fill="none"
+               xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M20 17.0002V11.4522C20 10.9179 19.9995 10.6506 19.9346 10.4019C19.877 10.1816 19.7825 9.97307 19.6546 9.78464C19.5102 9.57201 19.3096 9.39569 18.9074 9.04383L14.1074 4.84383C13.3608 4.19054 12.9875 3.86406 12.5674 3.73982C12.1972 3.63035 11.8026 3.63035 11.4324 3.73982C11.0126 3.86397 10.6398 4.19014 9.89436 4.84244L5.09277 9.04383C4.69064 9.39569 4.49004 9.57201 4.3457 9.78464C4.21779 9.97307 4.12255 10.1816 4.06497 10.4019C4 10.6506 4 10.9179 4 11.4522V17.0002C4 17.932 4 18.3978 4.15224 18.7654C4.35523 19.2554 4.74432 19.6452 5.23438 19.8482C5.60192 20.0005 6.06786 20.0005 6.99974 20.0005C7.93163 20.0005 8.39808 20.0005 8.76562 19.8482C9.25568 19.6452 9.64467 19.2555 9.84766 18.7654C9.9999 18.3979 10 17.932 10 17.0001V16.0001C10 14.8955 10.8954 14.0001 12 14.0001C13.1046 14.0001 14 14.8955 14 16.0001V17.0001C14 17.932 14 18.3979 14.1522 18.7654C14.3552 19.2555 14.7443 19.6452 15.2344 19.8482C15.6019 20.0005 16.0679 20.0005 16.9997 20.0005C17.9316 20.0005 18.3981 20.0005 18.7656 19.8482C19.2557 19.6452 19.6447 19.2554 19.8477 18.7654C19.9999 18.3978 20 17.932 20 17.0002Z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Home
+        </a></li>
+        <!--        <li><a routerLink="/pulse">Worst Cell Analysis</a></li>-->
+        <li class=" font-bold">Anomaly Cells</li>
+      </ul>
+    </div>
+    <div>
+      <div class="tabs tabs-box tabs-xs border border-base-300">
+        @for (r of rats; track r.name) {
+          <input [disabled]="loadingAll()" type="radio" name="rat_tabs" class="tab" [attr.value]="r.name"
+                 [attr.aria-label]="r.label"
+                 [checked]="rat() === r.name" (change)="setRat($any($event.target).value)"/>
+        }
+      </div>
+    </div>
+
+    <div class="flex flex-row join">
+      <select [disabled]="loadingAll() " class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
+              (change)="selectAreaType(areaType()!)">
+        @for (at of areaTypes; track at.name) {
+          <option [value]="at.name">{{ at.name }}</option>
+        }
+      </select>
+      <select [disabled]="loadingAll() " class="select select-sm border join-item w-auto" [(ngModel)]="area"
+              (change)="selectArea(area()!)">
+        @for (ar of areas; track ar.name) {
+          <option [value]="ar.name">{{ ar.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="tabs tabs-box tabs-xs border border-base-300">
+      <input [disabled]="loadingAll()" type="radio" name="granularity_tabs"
+             class="tab text-primary hover:text-primary/80" value="day-average"
+             aria-label="Day Average"
+             [checked]="granularity() === 'day-average'"
+             (change)="setGranularity($any($event.target).value)"/>
+      <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70"
+             value="busy-hour"
+             aria-label="Busy Hour"
+             [checked]="granularity() === 'busy-hour'"
+             (change)="setGranularity($any($event.target).value)"/>
+    </div>
+    <div class="flex items-center gap-2 ml-2">
+      <select
+        [disabled]="loadingAll()"
+        class="select select-sm select-bordered"
+        (change)="onKpiFilterChange($any($event.target).value)">
+        <option value="all">All KPIs</option>
+        @for (kpi of standardKpis; track kpi.kpiName) {
+          <option [value]="kpi.kpiName">{{ kpi.label }}</option>
+        }
+      </select>
+
+      <select [disabled]="loadingAll()"
+        class="select select-sm select-bordered"
+        (change)="onSeverityFilterChange($any($event.target).value)">
+        <option value="all">All Severities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="moderate">Moderate</option>
+      </select>
+    </div>
+    <button class="btn btn-sm" (click)="openSummaryModal()">
+      <svg class="text-base-content/50" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 17H19M9 12H19M9 7H19M5.00195 17V17.002L5 17.002V17H5.00195ZM5.00195 12V12.002L5 12.002V12H5.00195ZM5.00195 7V7.002L5 7.00195V7H5.00195Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+
+      Summary</button>
+
+
+  </nav>
+
+
+  <div class="p-4 border border-base-300 rounded-xl bg-base-100">
+    <div class="overflow-x-auto overflow-y-auto max-h-[28rem]">
+      <table class="table table-sm">
+        <thead class="sticky top-0 bg-base-100 z-10">
+        <tr>
+          <th class="font-semibold">#</th>
+          <th class="font-semibold cursor-pointer select-none" (click)="onSort('cellName')">
+  <span class="inline-flex items-center gap-1">
+    Cell Name
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('cellName')" [class.font-bold]="isActiveSortField('cellName')">
+      {{ sortIconChar('cellName') }}
+    </span>
+  </span>
+          </th>
+          <th class="font-semibold">KPI</th>
+          <th class="font-semibold cursor-pointer select-none" (click)="onSort('value')">
+  <span class="inline-flex items-center gap-1">
+    Value
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('value')" [class.font-bold]="isActiveSortField('value')">
+      {{ sortIconChar('value') }}
+    </span>
+  </span>
+          </th>
+          <th class="font-semibold cursor-pointer select-none" (click)="onSort('difference')">
+  <span class="inline-flex items-center gap-1">
+    Change
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('difference')" [class.font-bold]="isActiveSortField('difference')">
+      {{ sortIconChar('difference') }}
+    </span>
+  </span>
+          </th>
+          <th class="font-semibold">Streak</th>
+          <th class="font-semibold cursor-pointer select-none" (click)="onSort('severity')">
+  <span class="inline-flex items-center gap-1">
+    Severity
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('severity')" [class.font-bold]="isActiveSortField('severity')">
+      {{ sortIconChar('severity') }}
+    </span>
+  </span>
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+          @if (loadingAnomalyCells()) {
+            <tr>
+              <td colspan="7" class="text-center py-8 text-base-content/50">
+                <span class="loading loading-spinner loading-sm"></span>
+                Loading...</td>
+            </tr>
+          } @else if (cells().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-8 text-base-content/50">No anomalies found</td>
+            </tr>
+          } @else {
+            @for (cell of cells(); track cell.cellName + cell.kpiName; let i = $index) {
+              <tr (click)="openCellAnalysisModal(cell.cellName, cell.kpiName)" class="hover:bg-base-200 cursor-pointer border-l-4" [class]="severityBorderClass(cell.severity)">
+                <td>{{ (page() * pageSize()) + i + 1 }}</td>
+                <td>{{ cell.cellName }}</td>
+                <td>{{ cell.kpiLabel }}</td>
+                <td>{{ cell.value | number: '1.2-2' }}{{ cell.unit }}</td>
+                <td>
+                <span class="badge badge-soft badge-sm"
+                      [class]="cell.improved ? 'badge-success' : 'badge-error'">
+                  @if (cell.difference > 0) {
+                    +
+                  }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
+                </span>
+                </td>
+                <td>
+                  @if (cell.consecutiveBadDays < 31) {
+                    {{ cell.consecutiveBadDays }}
+                  } @else {
+                    30+
+                  }
+                </td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    @if (cell.severity) {
+                      <span
+                        class="tooltip w-2 h-2 rounded-full shrink-0"
+                        [attr.data-tip]="severityLabel(cell.severity)"
+                        [class]="severityDotClass(cell.severity)">
+                    </span>
+                      <span class="capitalize text-sm">{{ cell.severity }}</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex flex-row items-center justify-between mt-3">
+      <div class="flex flex-row items-center gap-4">
+        <div class="flex flex-row items-center">
+          <span class="text-xs text-neutral/50">Rows per page:</span>
+          <select [disabled]="loadingAll()"
+            class="select select-sm select-bordered"
+            [value]="pageSize()"
+            (change)="onPageSizeChange($any($event.target).value)">
+            @for (size of pageSizeOptions; track size) {
+              <option [value]="size">{{ size }}</option>
+            }
+          </select>
+        </div>
+        <div class="text-xs text-neutral/50">
+          {{ totalElements() }} anomal{{ totalElements() === 1 ? 'y' : 'ies' }} found
+        </div>
+
+      </div>
+
+      <div class="join">
+        <button [disabled]="loadingAll()" class="join-item btn btn-sm" [disabled]="page() === 0" (click)="goToPage(page() - 1)">«</button>
+        @for (p of pageNumbers(); track p) {
+          <button [disabled]="loadingAll()"
+            class="join-item btn btn-sm"
+            [class.btn-active]="p === page()"
+            (click)="goToPage(p)">
+            {{ p + 1 }}
+          </button>
+        }
+        <button [disabled]="loadingAll()" class="join-item btn btn-sm" [disabled]="page() === totalPages() - 1" (click)="goToPage(page() + 1)">»
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<app-cell-analysis-modal
+  [open]="showCellAnalysisModal"
+  (closed)="closeCellAnalysisModal()"
+  [standardKpiName]="standardKpi"
+  [ratName]="rat"
+  [granularityName]="granularity"
+  [cellName]="selectedCellName()"
+></app-cell-analysis-modal>
+
+<app-anomaly-summary-modal
+  [open]="showSummaryModal"
+  (closed)="closeSummaryModal()"
+  [areaName]="area"
+  [ratName]="rat"
+  [granularityName]="granularity"
+  [kpiName]="kpiFilter"
+></app-anomaly-summary-modal>

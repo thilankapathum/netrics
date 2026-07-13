@@ -33,6 +33,7 @@ import {BandDto} from '../../../../models/pulse/BandDto';
 import {BandWorstCellsKpiTrend} from '../../../../models/pulse/BandWorstCellsKpiTrend';
 import {BandKpiSeries} from '../../../../models/apexCharts/BandKpiSeries';
 import {PsCells} from './pulse-settings/ps-cells/ps-cells';
+import {StandardRawKpiMappingService} from '../../../../service/pulse/standard-raw-kpi-mapping-service';
 
 @Component({
   selector: 'app-pulse',
@@ -83,6 +84,8 @@ export class PulseComponent implements OnInit {
   allBandWorstCells: WorstCells[] = [];
   worstCells: WorstCells[] = [];  // 5 Worst cells displayed in the page
   excludeZeroes: boolean = false;
+  showOperands:boolean = false;
+  standardRawKpiMappingAvailable = signal<boolean>(false);
 
   bandWise: boolean = false;
   selectedBand = signal('');
@@ -116,7 +119,8 @@ export class PulseComponent implements OnInit {
               private userAreaService: UserAreaService,
               private authService: AuthService,
               private cellService: CellService,
-              private bandService: BandService) {
+              private bandService: BandService,
+              private standardRawKpiMappingService: StandardRawKpiMappingService) {
     this.queryDateRanges();
   }
 
@@ -527,6 +531,17 @@ export class PulseComponent implements OnInit {
     });
   }
 
+  getStandardRawKpiMappingAvailable(ratName:string, standardKpiName:string) {
+    this.standardRawKpiMappingService.isMappingAvailable(ratName, standardKpiName).subscribe({
+      next: data => {
+        this.standardRawKpiMappingAvailable.set(data);
+      }, error: error => {
+        console.error("Error getting standardRawKpiMappingAvailable:", error);
+        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed :"${error.status} ${error.statusText}`);
+      }
+    })
+  }
+
   //------------------ CHANGE SWITCHES ----------------------------------
 
   onExcludeZeroesChange(event: Event) {
@@ -546,9 +561,12 @@ export class PulseComponent implements OnInit {
   }
 
   onPeriodChangeModal($event: Event) {
-    this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell,this.selectedKpiTrendPeriodModal(),this.selectedRat(), this.selectedGranularity());
+    this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
   }
 
+  onShowOperandsChangeModal($event: Event) {
+    this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
+  }
 
   //------------------- WORST-CELL PAGINATION -----------------------------
 
@@ -578,25 +596,16 @@ export class PulseComponent implements OnInit {
     this.loadingAnalysisModalChart = true;
     this.analysisModal.nativeElement.showModal();
     this.selectedKpiTrendPeriodModal.set('month');
-    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity())
-      .subscribe({
-        next: data => {
-          this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
-          this.loadingAnalysisModalChart = false;
-        }, error: error => {
-          this.loadingAnalysisModalChart = false;
-          console.log("Error getDataByKpiLabelAndCell:");
-          console.error(error);
-          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
-        }
-      })
+    this.getStandardRawKpiMappingAvailable(this.selectedRat(), this.selectedStandardKpi());
+    this.showOperands = false;
+    this.queryModalTrendData(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity());
   }
 
   onNextCell(){
     if (this.isNextCellAvailable(this.analysisModalCell, this.allWorstCells)) {
       let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
       this.analysisModalCell = this.allWorstCells[currentIndex + 1].cellName!;
-      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+      this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
     }
   }
 
@@ -604,12 +613,20 @@ export class PulseComponent implements OnInit {
     if (this.isPrevCellAvailable(this.analysisModalCell, this.allWorstCells)) {
       let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
       this.analysisModalCell = this.allWorstCells[currentIndex - 1].cellName!;
-      this.queryModalTrendDataByKpiNameAndCell(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(),this.selectedRat(),this.selectedGranularity());
+      this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
     }
   }
 
 
   //============ MODAL KPI TREND CHART =================
+
+  private queryModalTrendData(kpiName: string, cellName: string, trendPeriod: string, ratName: string, granularityName: string) {
+    if (this.showOperands) {
+      this.queryModalTrendDataByKpiNameAndCellWithOperands(kpiName, cellName, trendPeriod, ratName, granularityName);
+    } else {
+      this.queryModalTrendDataByKpiNameAndCell(kpiName, cellName, trendPeriod, ratName, granularityName);
+    }
+  }
 
   queryModalTrendDataByKpiNameAndCell(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
     this.chartSeries = [];
@@ -629,8 +646,31 @@ export class PulseComponent implements OnInit {
       });
   }
 
+  queryModalTrendDataByKpiNameAndCellWithOperands(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
+    this.chartSeries = [];
+    const resolvedGranularity = this.resolveGranularity(trendPeriod, granularityName);
+    this.loadingAnalysisModalChart = true;
+    this.getTrendDataByKpiNameAndCellWithOperands(kpiName, cellName, trendPeriod, ratName, resolvedGranularity)
+      .subscribe({
+        next: data => {
+          this.chartSeries = this.chartService.buildSeriesKpiDataWithOperandsDto(data);
+          this.loadingAnalysisModalChart = false;
+        },
+        error: error => {
+          this.loadingAnalysisModalChart = false;
+          console.log("Error getTrendDataByKpiNameAndCellWithOperands:");
+          console.error(error);
+          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+        }
+      });
+  }
+
   getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
     return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
+  }
+
+  getTrendDataByKpiNameAndCellWithOperands(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
+    return this.kpiDayService.getDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, granularityName);
   }
 
 
@@ -737,4 +777,42 @@ export class PulseComponent implements OnInit {
   closeMissingCellInfoModal() {
     this.showMissingCellInfoModal = false;
   }
+
+  //----------------- SEVERITY INDICATIONS -----------------
+  severityDotClass(severity: string | null | undefined): string {
+    switch (severity) {
+      case 'critical': return 'bg-error';
+      case 'high':      return 'bg-warning';
+      case 'moderate':  return 'bg-warning opacity-50';
+      default:          return '';
+    }
+  }
+
+  severityBorderClass(severity: string | null | undefined): string {
+    switch (severity) {
+      case 'critical': return 'border-l-error bg-error-content/50';
+      case 'high':      return 'border-l-warning bg-warning-content/50';
+      case 'moderate':  return 'border-l-warning/40 bg-warning-content/20';
+      default:          return 'border-l-transparent';
+    }
+  }
+
+  severityLabel(severity: string | null | undefined): string {
+    switch (severity) {
+      case 'critical': return 'Critical anomaly — statistically extreme deviation';
+      case 'high':      return 'High anomaly — significant deviation from baseline';
+      case 'moderate':  return 'Moderate anomaly — notable deviation from baseline';
+      default:          return '';
+    }
+  }
+
+  get modalYAxis(): ApexYAxis[] | undefined {
+    if (!this.showOperands) return undefined;
+    return [
+      { seriesName: 'KPI Value', title: { text: 'KPI Value' } },
+      { seriesName: 'Numerator', opposite: true, title: { text: 'Count' } },
+      { seriesName: 'Denominator', opposite: true, show: false }
+    ];
+  }
+
 }

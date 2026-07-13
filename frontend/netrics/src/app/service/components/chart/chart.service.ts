@@ -4,6 +4,7 @@ import {ApexAxisChartSeries} from 'ng-apexcharts';
 import {CellKpiSeries} from '../../../models/apexCharts/CellKpiSeries';
 import {BandDto} from '../../../models/pulse/BandDto';
 import {BandKpiSeries} from '../../../models/apexCharts/BandKpiSeries';
+import {KpiDataWithOperandsDto} from '../../../models/pulse/KpiDataWithOperandsDto';
 
 @Injectable({
   providedIn: 'root'
@@ -93,7 +94,49 @@ export class ChartService {
     }));
   }
 
+  public buildSeriesKpiDataWithOperandsDto(kpiDataDto: KpiDataWithOperandsDto[]): ApexAxisChartSeries {
+    const kpiLabel = kpiDataDto[0]?.kpiLabel ?? 'KPI Value';
 
+    const kpiSeries = kpiDataDto
+      .map(d => ({ x: new Date(d.timestamp!), y: this.round2(d.kpiValue ?? 0) }))
+      .sort((a, b) => a.x.getTime() - b.x.getTime());
+
+    const numeratorSeries = kpiDataDto
+      .map(d => ({ x: new Date(d.timestamp!), y: this.round2(d.numeratorKpiValue ?? 0) }))
+      .sort((a, b) => a.x.getTime() - b.x.getTime());
+
+    const denominatorSeries = kpiDataDto
+      .map(d => ({ x: new Date(d.timestamp!), y: this.round2(d.denominatorKpiValue ?? 0) }))
+      .sort((a, b) => a.x.getTime() - b.x.getTime());
+
+    return [
+      { name: kpiLabel, data: kpiSeries },
+      { name: 'Numerator', data: numeratorSeries },
+      { name: 'Denominator', data: denominatorSeries }
+    ];
+  }
+
+  public buildSeriesForCellWithOperands(kpiDataDto: KpiDataWithOperandsDto[], cellName: string): CellKpiSeries[] {
+    const kpiLabel = kpiDataDto[0]?.kpiLabel ?? 'KPI Value';
+
+    const kpiSeries = kpiDataDto
+      .map(d => ({ x: new Date(d.timestamp!), y: this.round2(d.kpiValue ?? 0) }))
+      .sort((a, b) => a.x.getTime() - b.x.getTime());
+
+    const numeratorSeries = kpiDataDto
+      .map(d => ({ x: new Date(d.timestamp!), y: this.round2(d.numeratorKpiValue ?? 0) }))
+      .sort((a, b) => a.x.getTime() - b.x.getTime());
+
+    const denominatorSeries = kpiDataDto
+      .map(d => ({ x: new Date(d.timestamp!), y: this.round2(d.denominatorKpiValue ?? 0) }))
+      .sort((a, b) => a.x.getTime() - b.x.getTime());
+
+    return [
+      { name: `${cellName} - ${kpiLabel}`, data: kpiSeries, cellName, kpiLabel, type: 'line' },
+      { name: 'Numerator', data: numeratorSeries, cellName, kpiLabel: 'Numerator', type: 'line' },
+      { name: 'Denominator', data: denominatorSeries, cellName, kpiLabel: 'Denominator', type: 'line' }
+    ];
+  }
 
 
 }

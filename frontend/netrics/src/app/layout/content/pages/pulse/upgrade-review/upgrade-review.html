@@ -1,0 +1,292 @@
+<div class="flex flex-col gap-4">
+
+  <!-- ── Top navigation bar ──────────────────────────────────────── -->
+  <nav class="flex flex-row flex-wrap gap-3 items-center">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumbs text-xs text-secondary grow">
+      <ul>
+        <li>
+          <a routerLink="/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 17.0002V11.4522C20 10.9179 19.9995 10.6506 19.9346 10.4019C19.877 10.1816 19.7825 9.97307
+                       19.6546 9.78464C19.5102 9.57201 19.3096 9.39569 18.9074 9.04383L14.1074 4.84383
+                       C13.3608 4.19054 12.9875 3.86406 12.5674 3.73982C12.1972 3.63035 11.8026 3.63035
+                       11.4324 3.73982C11.0126 3.86397 10.6398 4.19014 9.89436 4.84244L5.09277 9.04383
+                       C4.69064 9.39569 4.49004 9.57201 4.3457 9.78464C4.21779 9.97307 4.12255 10.1816
+                       4.06497 10.4019C4 10.6506 4 10.9179 4 11.4522V17.0002C4 17.932 4 18.3978 4.15224
+                       18.7654C4.35523 19.2554 4.74432 19.6452 5.23438 19.8482C5.60192 20.0005 6.06786
+                       20.0005 6.99974 20.0005C7.93163 20.0005 8.39808 20.0005 8.76562 19.8482C9.25568
+                       19.6452 9.64467 19.2555 9.84766 18.7654C9.9999 18.3979 10 17.932 10 17.0001V16.0001
+                       C10 14.8955 10.8954 14.0001 12 14.0001C13.1046 14.0001 14 14.8955 14 16.0001V17.0001
+                       C14 17.932 14 18.3979 14.1522 18.7654C14.3552 19.2555 14.7443 19.6452 15.2344
+                       19.8482C15.6019 20.0005 16.0679 20.0005 16.9997 20.0005C17.9316 20.0005 18.3981
+                       20.0005 18.7656 19.8482C19.2557 19.6452 19.6447 19.2554 19.8477 18.7654
+                       C19.9999 18.3978 20 17.932 20 17.0002Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Home
+          </a>
+        </li>
+        <li class="font-bold">Upgrade Review</li>
+      </ul>
+    </div>
+
+    <!-- Chart-type tabs -->
+    <div class="tabs tabs-box tabs-xs border border-base-300">
+      <input [disabled]="loadingAny()" type="radio" name="ur_chart_type" class="tab"
+             value="s_cell_s_kpi" aria-label="Single Cell"
+             [checked]="selectedChartType() === 's_cell_s_kpi'"
+             (change)="setSelectedChartType('s_cell_s_kpi')"/>
+      <input [disabled]="loadingAny()" type="radio" name="ur_chart_type" class="tab"
+             value="m_cell_s_kpi" aria-label="Multi-Cell"
+             [checked]="selectedChartType() === 'm_cell_s_kpi'"
+             (change)="setSelectedChartType('m_cell_s_kpi')"/>
+    </div>
+
+    <!-- Granularity tabs -->
+    <div class="tabs tabs-box tabs-xs border border-base-300">
+      <input [disabled]="loadingAny()" type="radio" name="ur_granularity"
+             class="tab text-primary" value="day-average" aria-label="Day Average"
+             [checked]="selectedGranularity() === 'day-average'"
+             (change)="setSelectedGranularity('day-average')"/>
+      <input [disabled]="loadingAny()" type="radio" name="ur_granularity"
+             class="tab text-error" value="busy-hour" aria-label="Busy Hour"
+             [checked]="selectedGranularity() === 'busy-hour'"
+             (change)="setSelectedGranularity('busy-hour')"/>
+    </div>
+
+    <!-- Period tabs -->
+    <div class="tabs tabs-box tabs-xs border border-base-300">
+      <input [disabled]="loadingAny()" type="radio" name="ur_period"
+             class="tab" aria-label="Week (hourly)"
+             [(ngModel)]="trendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange()"/>
+      <input [disabled]="loadingAny()" type="radio" name="ur_period"
+             class="tab" aria-label="Month"
+             [(ngModel)]="trendPeriod" [value]="'month'" (ngModelChange)="onPeriodChange()"/>
+      <input [disabled]="loadingAny()" type="radio" name="ur_period"
+             class="tab" aria-label="Quarter"
+             [(ngModel)]="trendPeriod" [value]="'quarter'" (ngModelChange)="onPeriodChange()"/>
+    </div>
+
+    <!-- Grid-column selector -->
+    <div class="tabs tabs-box tabs-xs border border-base-300">
+      <input disabled type="radio" name="ur_cols" class="tab" aria-label="1"
+             [checked]="selectedCols() === 1" (change)="setSelectedCols(1)"/>
+      <input disabled type="radio" name="ur_cols" class="tab" aria-label="2"
+             [checked]="selectedCols() === 2" (change)="setSelectedCols(2)"/>
+      <input disabled type="radio" name="ur_cols" class="tab" aria-label="3"
+             [checked]="selectedCols() === 3" (change)="setSelectedCols(3)"/>
+    </div>
+
+    <!-- Cell search dropdown -->
+    <div class="dropdown">
+      <label tabindex="0" class="input input-sm">
+        <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </g>
+        </svg>
+        <input type="search" class="grow" placeholder="Search cell"
+               [ngModel]="queryCell()" (ngModelChange)="onSearchCell($event)"/>
+      </label>
+
+      @if (queryCell().length > 2) {
+        @if (filteredCells().length > 0) {
+          <ul tabindex="-1"
+              class="dropdown-content menu bg-base-100 rounded-box z-10 w-auto min-w-max p-2 shadow text-xs whitespace-nowrap">
+
+            @for (cell of filteredCells(); track cell.cellName) {
+              <li>
+                <a class="p-2 hover:bg-base-200 cursor-pointer w-auto whitespace-nowrap"
+                   (click)="selectCell(cell)">
+                  <span class="text-base-content">{{ cell.cellName }}</span>
+                  <span class="text-base-content/30">{{ cell.ratLabel }}</span>
+                  @if (isCellSelected(cell.cellName!)) {
+                    <!-- checkmark -->
+                    <svg class="text-primary" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M15 10L11 14L9 12M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3
+                               C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  } @else if (selectedChartType() === 'm_cell_s_kpi') {
+                    <!-- add icon -->
+                    <svg class="text-success" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M8 12H12M12 12H16M12 12V16M12 12V8M12 21C7.02944 21 3 16.9706 3 12
+                               C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  }
+                </a>
+              </li>
+            }
+
+            <!-- Sector sub-menu (multi-cell only) -->
+            @if (selectedChartType() === 'm_cell_s_kpi' && filteredSectors().length > 0) {
+              <div class="border border-base-300 rounded-xl bg-base-200 mt-2">
+                @for (sector of filteredSectors(); track sector.name) {
+                  <li class="relative group">
+                    <a class="p-2 hover:bg-base-300 cursor-pointer text-base-300 w-auto whitespace-nowrap flex justify-between">
+                      <span class="text-base-content">{{ sector.name }}</span>
+                      <span class="text-base-content/30 ml-4">SECTOR</span>
+                      <svg class="text-base-content/50 ml-2" width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </a>
+                    <ul class="absolute right-full top-0 hidden group-hover:block
+                               menu bg-base-200 rounded-box z-10 w-auto min-w-max p-2 shadow text-xs whitespace-nowrap">
+                      @for (r of rats; track r.name) {
+                        <li><a (click)="selectSector(sector, r)">{{ r.label }}</a></li>
+                      }
+                    </ul>
+                  </li>
+                }
+              </div>
+            }
+          </ul>
+        } @else {
+          <ul tabindex="-1"
+              class="dropdown-content menu bg-base-100 text-secondary rounded-box z-10 w-auto p-4 shadow text-xs">
+            <li>No cell available for "{{ queryCell() }}"</li>
+          </ul>
+        }
+      }
+    </div>
+
+    <!-- Upgrade date marker -->
+    <div class="flex items-center gap-1">
+      <input type="date"
+             class="input input-sm text-xs"
+             [ngModel]="upgradeDate()"
+             (ngModelChange)="upgradeDate.set($event)"
+             title="Set upgrade date marker"/>
+      @if (upgradeDate()) {
+        <button class="btn btn-sm btn-ghost text-error px-1"
+                (click)="clearUpgradeDate()"
+                title="Clear upgrade date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18"
+                  stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      }
+    </div>
+  </nav>
+
+  <!-- ── Main content area ──────────────────────────────────────────── -->
+  @if (!cellSelected()) {
+
+    <!-- Empty state -->
+    <div class="flex justify-center py-8">
+      <div class="card w-96 card-md border border-info rounded-xl bg-base-100">
+        <div class="card-body text-secondary">
+          <h2 class="card-title text-info">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
+              <path d="M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944
+                       21 12C21 16.9706 16.9706 21 12 21ZM12.0498 8V8.1L11.9502 8.1002V8H12.0498Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            No Cell Selected
+          </h2>
+          <p>Search and select a cell above to begin the upgrade review analysis.</p>
+          <p>Set a date to plot the upgraded date.</p>
+        </div>
+      </div>
+    </div>
+
+  } @else {
+
+    <div class="grid sm:grid-cols-[1fr_220px] gap-4">
+
+      <!-- ── Left: chart grid ──────────────────────────────────────── -->
+      <div class="flex flex-col gap-3">
+
+        <!-- Active cell pills (multi-cell mode) -->
+        @if (selectedChartType() === 'm_cell_s_kpi') {
+          <div class="flex flex-row flex-wrap gap-2">
+            @for (cell of selectedCells(); track cell.cellName) {
+              <button [disabled]="loadingAny()"
+                      class="btn btn-xs bg-base-100"
+                      [style.color]="getCellColor(cell.cellName!)"
+                      (click)="removeCellFromChart(cell.cellName!)">
+                ● {{ cell.cellName }} &nbsp; ✕
+              </button>
+            }
+          </div>
+        }
+
+        <!-- No KPI selected hint -->
+        @if (selectedKpiNames().size === 0) {
+          <div class="flex items-center gap-2 text-xs text-secondary border border-base-300
+                      rounded-lg px-4 py-3 bg-base-100">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3
+                       C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Select one or more KPIs from the list on the right to display charts.
+          </div>
+        }
+
+        <!-- KPI tile grid -->
+        <div class="grid gap-4" [class]="gridClass()">
+          @for (tile of kpiTiles(); track tile.kpiName) {
+            <div class="border border-base-300 rounded-xl bg-base-100 p-3 flex flex-col gap-2">
+
+              <!-- Tile header -->
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-base-content">{{ tile.kpiLabel }}</span>
+                <button class="btn btn-xs btn-ghost text-error"
+                        (click)="removeTile(tile.kpiName)"
+                        title="Remove chart">✕</button>
+              </div>
+
+              <!-- Loading skeleton -->
+              @if (tile.loading) {
+                <div class="flex flex-col gap-2">
+                  <div class="skeleton h-52 w-full rounded-lg"></div>
+                </div>
+              }
+
+              <!-- Chart -->
+              <app-linechart [hidden]="tile.loading"
+                             [chartSeries]="tile.series"
+                             [chartHeight]="220"
+                             [showLegend]="false"
+                             [annotationDate]="upgradeDate()">
+              </app-linechart>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Right: KPI checkbox panel ──────────────────────────────── -->
+      <div class="join flex flex-col gap-0 border border-base-300 p-3 rounded-md">
+        <p class="text-xs text-secondary font-medium mb-1">Standard KPIs</p>
+
+        @if (loadingStandardKpis()) {
+          <div class="flex flex-col gap-2">
+            @for (_ of [1,2,3,4,5]; track $index) {
+              <div class="skeleton h-4 w-full rounded"></div>
+            }
+          </div>
+        } @else {
+          @for (kpi of standardKpis; track kpi.kpiName) {
+            <label class="label cursor-pointer gap-2 py-1">
+              <input type="checkbox"
+                     class="checkbox checkbox-xs"
+                     [checked]="isKpiSelected(kpi.kpiName!)"
+                     [disabled]="loadingAny()"
+                     (change)="toggleKpi(kpi.kpiName!)"/>
+              <span class="label-text text-xs grow">{{ kpi.label }}</span>
+            </label>
+          }
+        }
+      </div>
+
+    </div>
+  }
+</div>

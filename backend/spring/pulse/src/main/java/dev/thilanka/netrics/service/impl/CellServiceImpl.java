@@ -35,6 +35,7 @@ public class CellServiceImpl implements CellService {
     private final SectorService sectorService;
     private final GeoUtilService geoUtilService;
     private final DataTypeUtilService dataTypeUtilService;
+    private final DistrictCodeService districtCodeService;
 
     Integer cellCountWithMissingInfo = 0;
     List<CellDto> allCells = new ArrayList<>();
@@ -54,6 +55,8 @@ public class CellServiceImpl implements CellService {
 
     private Cell dtoToCell(CellDto dto) {
         Cell.CellBuilder cell = Cell.builder().cellName(dto.cellName());
+
+        districtCodeService.resolveByCellName(dto.cellName()).ifPresent(cell::districtCode);
 
         if (dto.nodeName() != null) {
             cell.nodeName(dto.nodeName());
@@ -246,6 +249,12 @@ public class CellServiceImpl implements CellService {
         } else {
             warnings.add("Sector not specified");
         }
+
+        districtCodeService.resolveByCellName(cell.getCellName())
+                        .ifPresentOrElse(
+                                cell::setDistrictCode,
+                                () -> warnings.add("District code unresolved for " + cell.getCellName())
+                        );
 
         applyDefaultValues(cell, warnings);
 

@@ -169,7 +169,7 @@ export class KpiMap implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting AreaByUserId)`);
+        this.alertService.error(`Error getting Area for User. ${error.status} ${error.statusText}`);
       }
     })
   }
@@ -236,7 +236,7 @@ export class KpiMap implements OnInit {
         this.loadingGranularity = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving granularities ${error.status}:${error.statusText}`);
+        this.alertService.error(`Error retrieving granularities. ${error.status}:${error.statusText}`);
         this.loadingGranularity = false;
       }
     })
@@ -259,7 +259,7 @@ export class KpiMap implements OnInit {
         this.loadingRats = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving RATs ${error.status}:${error.statusText}`);
+        this.alertService.error(`Error retrieving RATs. ${error.status}:${error.statusText}`);
         this.loadingRats = false;
       }
     })
@@ -289,7 +289,7 @@ export class KpiMap implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error("Standard KPI retrieval failed");
+        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
         this.loadingStandardKpis = false;
       }
     })
