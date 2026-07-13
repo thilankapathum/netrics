@@ -14,9 +14,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -119,11 +117,19 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
     }
 
     @Override
-    public PagedResponse<WorstCellsDto> getAllAnomalyCellsByArea(String period, String areaName, String ratName, String granularityName, String severity, String sortBy, String sortDir, int page, int pageSize) {
+    @Cacheable(value = "allAnomalyCellsByArea", key = "#period + '_' + #areaName + '_' + #severity + '_' + #kpiName + '_' + #sortBy + '_' + #sortDir + '_' + #page + '_' + #pageSize + '_' + #granularityName + '_' + #ratName")
+    public PagedResponse<WorstCellsDto> getAllAnomalyCellsByArea(
+            String period, String areaName, String ratName, String granularityName,
+            String severity, String kpiName, String sortBy, String sortDir, int page, int pageSize) {
 
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
         Area area = areaService.findAreaByName(areaName);
+
+        Long standardKpiId = null;
+        if (kpiName != null && !kpiName.isBlank() && !kpiName.equalsIgnoreCase("all")) {
+            standardKpiId = standardKpiService.findByKpiName(kpiName, rat).getId();
+        }
 
         LocalDateTime latestDate = kpiAnomalyRepository.getLatestDate(rat.getId(), granularity.getId());
         LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
@@ -135,7 +141,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         LocalDateTime streakStart = currEnd.toLocalDate().minusDays(30).atStartOfDay();
 
         long totalElements = kpiAnomalyRepository.countAnomalyCellsByArea(
-                currStart, currEnd, area.getId(), rat.getId(), granularity.getId(), severity);
+                currStart, currEnd, area.getId(), rat.getId(), granularity.getId(), severity, standardKpiId);
 
         if (totalElements == 0) {
             return new PagedResponse<>(List.of(), 0, 0, page, pageSize);
@@ -143,7 +149,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         List<AnomalyCellsProjection> anomalyCells = kpiAnomalyRepository.findAllAnomalyCellsByAreaPaged(
                 currStart, currEnd, prevStart, prevEnd, area.getId(), rat.getId(), granularity.getId(),
-                severity, sortBy, sortDir, pageSize, page * pageSize
+                severity, standardKpiId, sortBy, sortDir, pageSize, page * pageSize
         );
 
         Map<String, List<AnomalyCellsProjection>> byKpi = anomalyCells.stream()
@@ -175,6 +181,67 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         int totalPages = (int) Math.ceil((double) totalElements / pageSize);
         return new PagedResponse<>(content, totalElements, totalPages, page, pageSize);
+    }
+
+    @Override
+    @Cacheable(value = "anomalySummaryByArea", key = "#kpiName + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
+    public AnomalySummaryDto getAnomalySummaryByArea(String areaName, String ratName, String granularityName, String kpiName) {
+        Rat rat = ratService.findRatByName(ratName);
+        Granularity granularity = granularityService.findGranularityByName(granularityName);
+        Area area = areaService.findAreaByName(areaName);
+
+        Long standardKpiId = null;
+        if (kpiName != null && !kpiName.isBlank() && !kpiName.equalsIgnoreCase("all")) {
+            standardKpiId = standardKpiService.findByKpiName(kpiName, rat).getId();
+        }
+
+        LocalDateTime latestDate = kpiAnomalyRepository.getLatestDate(rat.getId(), granularity.getId());
+        if (latestDate == null) {
+            return new AnomalySummaryDto(List.of(), new AnomalySummaryRowDto("", "Total", 0, 0, 0, 0));
+        }
+        LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
+        LocalDateTime currEnd = currStart.plusSeconds(granularity.getPlusSeconds());
+
+        List<AnomalySeverityCountProjection> counts = kpiAnomalyRepository.countAnomaliesByKpiAndSeverity(
+                currStart, currEnd, area.getId(), rat.getId(), granularity.getId(), standardKpiId);
+
+        Map<String, AnomalySummaryRowDto> byKpi = new LinkedHashMap<>();
+        long grandCritical = 0, grandHigh = 0, grandModerate = 0;
+
+        // Group raw counts per KPI, accumulating critical/high/moderate into one row per KPI
+        Map<String, long[]> tally = new LinkedHashMap<>(); // kpiLabel -> [critical, high, moderate]
+        Map<String, String> kpiNameByLabel = new LinkedHashMap<>();
+
+        for (AnomalySeverityCountProjection p : counts) {
+            long[] arr = tally.computeIfAbsent(p.kpiLabel(), k -> new long[3]);
+            kpiNameByLabel.putIfAbsent(p.kpiLabel(), p.kpiName());
+            switch (p.severity()) {
+                case "critical" -> arr[0] += p.cnt();
+                case "high"     -> arr[1] += p.cnt();
+                case "moderate" -> arr[2] += p.cnt();
+                default -> { }
+            }
+        }
+
+        List<AnomalySummaryRowDto> rows = new ArrayList<>();
+        for (Map.Entry<String, long[]> entry : tally.entrySet()) {
+            long[] arr = entry.getValue();
+            long total = arr[0] + arr[1] + arr[2];
+            rows.add(new AnomalySummaryRowDto(
+                    kpiNameByLabel.get(entry.getKey()), entry.getKey(), arr[0], arr[1], arr[2], total));
+            grandCritical += arr[0];
+            grandHigh += arr[1];
+            grandModerate += arr[2];
+        }
+
+        // Sort rows by total descending — worst KPIs first
+        rows.sort((a, b) -> Long.compare(b.total(), a.total()));
+
+        AnomalySummaryRowDto grandTotal = new AnomalySummaryRowDto(
+                "", "Total", grandCritical, grandHigh, grandModerate,
+                grandCritical + grandHigh + grandModerate);
+
+        return new AnomalySummaryDto(rows, grandTotal);
     }
 
     private KpiAnomalyDto toDto(KpiAnomalyProjection p) {

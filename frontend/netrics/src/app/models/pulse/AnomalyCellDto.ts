@@ -19,5 +19,5 @@ export interface PagedResponse<T> {
   pageSize: number;
 }
 
-export type SortField = 'cellName' | 'severity' | 'difference';
+export type SortField = 'cellName' | 'severity' | 'difference' | 'value';
 export type SortDir = 'asc' | 'desc';

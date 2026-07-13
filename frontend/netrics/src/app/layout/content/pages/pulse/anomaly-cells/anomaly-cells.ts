@@ -18,6 +18,9 @@ import {UserAreaService} from '../../../../../service/pulse/user-area-service';
 import {RatService} from '../../../../../service/pulse/rat-service';
 import {CellAnalysisModal} from './cell-analysis-modal/cell-analysis-modal';
 import {CellMapCellAnalysis} from '../kpi-map/cell-map-cell-analysis/cell-map-cell-analysis';
+import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
+import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
+import {AnomalySummaryModal} from './anomaly-summary-modal/anomaly-summary-modal';
 
 @Component({
   selector: 'app-anomaly-cells',
@@ -27,19 +30,14 @@ import {CellMapCellAnalysis} from '../kpi-map/cell-map-cell-analysis/cell-map-ce
     RouterLink,
     FormsModule,
     CellAnalysisModal,
-    CellMapCellAnalysis
+    CellMapCellAnalysis,
+    AnomalySummaryModal
   ],
   templateUrl: './anomaly-cells.html',
   styleUrl: './anomaly-cells.css'
 })
 export class AnomalyCells implements OnInit {
 
-  // private anomalyCellsService = inject(AnomalyCellsService);
-
-  // Inputs from parent (area/RAT/granularity/period selectors live upstream)
-  // areaName = input.required<string>();
-  // ratName = input.required<string>();
-  // granularityName = input.required<string>();
   period = input<string>('day');
 
   rat = signal<string | undefined>(undefined);
@@ -57,6 +55,9 @@ export class AnomalyCells implements OnInit {
   userArea = signal<AreaDto | undefined>(undefined);
   userProfile: KeycloakProfile = {};
 
+  kpiFilter = signal<string | null>(null);
+  standardKpis: StandardKpiDto[] = [];  // adjust type to your actual model
+
   // Table state
   cells = signal<AnomalyCellDto[]>([]);
   totalElements = signal(0);
@@ -66,7 +67,7 @@ export class AnomalyCells implements OnInit {
   sortBy = signal<SortField>('severity');
   sortDir = signal<SortDir>('desc');
   severityFilter = signal<string | null>(null);
-  loading = signal(false);
+  loadingAnomalyCells = signal(false);
 
   pageSizeOptions = [10, 20, 50, 100];
 
@@ -84,8 +85,10 @@ export class AnomalyCells implements OnInit {
   loadingGranularity: boolean = false;
   loadingAreaTypes: boolean = false;
   loadingAreas: boolean = false;
+  loadingStandardKpis: boolean = false;
 
   showCellAnalysisModal = signal<boolean>(false);
+  showSummaryModal = signal<boolean>(false);
   selectedCellName = signal<string>('');
   standardKpi = signal<string | undefined>(undefined);
 
@@ -97,7 +100,8 @@ export class AnomalyCells implements OnInit {
               private alertService: AlertService,
               private router: Router,
               private authService: AuthService,
-              private userAreaService: UserAreaService,) {
+              private userAreaService: UserAreaService,
+              private standardKpiService: StandardkpiService) {
     effect(() => {
       const area = this.area();
       const rat = this.rat();
@@ -108,6 +112,7 @@ export class AnomalyCells implements OnInit {
       const sortBy = this.sortBy();
       const sortDir = this.sortDir();
       const severityFilter = this.severityFilter();
+      this.kpiFilter();
 
       // Guard: don't fetch until all required filters have real values
       if (!area || !rat || !granularity) {
@@ -124,7 +129,7 @@ export class AnomalyCells implements OnInit {
   }
 
   loadingAll() {
-    return this.loadingAreaTypes || this.loadingAreas || this.loadingRats || this.loadingGranularity;
+    return this.loadingAreaTypes || this.loadingAreas || this.loadingRats || this.loadingGranularity || this.loadingStandardKpis || this.loadingAnomalyCells();
   }
 
   //------------ FILTERS ---------------------------
@@ -146,7 +151,7 @@ export class AnomalyCells implements OnInit {
 
   setRat(rat: string) {
     this.rat.set(rat);
-    // this.fetchCells();
+    this.getStandardKpisForRat(rat);
   }
 
   //----------- GETTERS ----------------------------------
@@ -228,7 +233,7 @@ export class AnomalyCells implements OnInit {
         this.alertService.error(`Error retrieving granularities. ${error.status}:${error.statusText}`);
         this.loadingGranularity = false;
       }
-    })
+    });
   }
 
   getRats() {
@@ -238,20 +243,35 @@ export class AnomalyCells implements OnInit {
         this.rats = data;
         this.rat.set(this.rats[0]?.name);
         // this.fetchCells();
-        // this.getAllStandardKpi(this.rat()!);
+        this.getStandardKpisForRat(this.rat()!);
         this.loadingRats = false;
       }, error: error => {
         console.log(error);
         this.alertService.error(`Error retrieving RATs. ${error.status}:${error.statusText}`);
         this.loadingRats = false;
       }
-    })
+    });
+  }
+
+  getStandardKpisForRat(ratName: string) {
+    this.loadingStandardKpis = true;
+    this.standardKpiService.getAllStandardKpi(ratName).subscribe({
+      next: data => {
+        this.standardKpis = data;
+        this.loadingStandardKpis = false;
+      },
+      error: error => {
+        console.log(error);
+        this.alertService.error(`Error retrieving KPIs. ${error.status}:${error.statusText}`);
+        this.loadingStandardKpis = false;
+      }
+    });
   }
 
   //------------- FETCHING CELLS -----------
 
   private fetchCells(): void {
-    this.loading.set(true);
+    this.loadingAnomalyCells.set(true);
     this.anomalyCellsService
       .getAnomalyCells({
         period: this.period(),
@@ -259,6 +279,7 @@ export class AnomalyCells implements OnInit {
         ratName: this.rat()!,
         granularityName: this.granularity()!,
         severity: this.severityFilter(),
+        kpiName: this.kpiFilter(),
         sortBy: this.sortBy(),
         sortDir: this.sortDir(),
         page: this.page(),
@@ -269,13 +290,20 @@ export class AnomalyCells implements OnInit {
           this.cells.set(res.content);
           this.totalElements.set(res.totalElements);
           this.totalPages.set(res.totalPages);
-          this.loading.set(false);
+          this.loadingAnomalyCells.set(false);
         },
         error: () => {
-          this.loading.set(false);
+          this.loadingAnomalyCells.set(false);
         },
       });
   }
+
+  onKpiFilterChange(value: string): void {
+    this.kpiFilter.set(value === 'all' ? null : value);
+    this.page.set(0);
+  }
+
+
 
   onSort(field: SortField): void {
     if (this.sortBy() === field) {
@@ -306,6 +334,16 @@ export class AnomalyCells implements OnInit {
   sortIcon(field: SortField): string {
     if (this.sortBy() !== field) return '';
     return this.sortDir() === 'asc' ? '↑' : '↓';
+  }
+
+  // component — replace sortIcon() with two helpers
+  sortIconChar(field: SortField): string {
+    if (this.sortBy() !== field) return '⇅';
+    return this.sortDir() === 'asc' ? '↑' : '↓';
+  }
+
+  isActiveSortField(field: SortField): boolean {
+    return this.sortBy() === field;
   }
 
   severityDotClass(severity: string | null): string {
@@ -357,6 +395,14 @@ export class AnomalyCells implements OnInit {
     this.showCellAnalysisModal.set(true);
     this.selectedCellName.set(cellName);
     this.standardKpi.set(kpiName);
+  }
+
+  openSummaryModal(): void {
+    this.showSummaryModal.set(true);
+  }
+
+  closeSummaryModal(): void {
+    this.showSummaryModal.set(false);
   }
 
   protected readonly open = open;

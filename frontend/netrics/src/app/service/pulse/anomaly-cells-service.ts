@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {UrlService} from '../url/url-service';
 import {AnomalyCellDto, PagedResponse} from '../../models/pulse/AnomalyCellDto';
 import {Observable} from 'rxjs';
+import {AnomalySummaryDto} from '../../models/pulse/AnomalySummaryRowDto';
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +22,7 @@ export class AnomalyCellsService {
     ratName: string;
     granularityName: string;
     severity?: string | null;
+    kpiName?: string | null;
     sortBy: string;
     sortDir: string;
     page: number;
@@ -36,11 +38,26 @@ export class AnomalyCellsService {
       .set('page', params.page.toString())
       .set('pageSize', params.pageSize.toString());
 
-    if (params.severity) {
-      httpParams = httpParams.set('severity', params.severity);
-    }
+    if (params.severity) httpParams = httpParams.set('severity', params.severity);
+    if (params.kpiName) httpParams = httpParams.set('kpiName', params.kpiName);
 
-    return this.http.get<PagedResponse<AnomalyCellDto>>(`${this.baseUrl}/cells`, { params: httpParams });
+    return this.http.get<PagedResponse<AnomalyCellDto>>(`${this.baseUrl}/cells`, {params: httpParams});
+  }
+
+  getAnomalySummary(params: {
+    areaName: string;
+    ratName: string;
+    granularityName: string;
+    kpiName?: string | null;
+  }): Observable<AnomalySummaryDto> {
+    let httpParams = new HttpParams()
+      .set('areaName', params.areaName)
+      .set('ratName', params.ratName)
+      .set('granularityName', params.granularityName);
+
+    if (params.kpiName) httpParams = httpParams.set('kpiName', params.kpiName);
+
+    return this.http.get<AnomalySummaryDto>(`${this.baseUrl}/summary`, { params: httpParams });
   }
 
 }

@@ -53,22 +53,33 @@
              (change)="setGranularity($any($event.target).value)"/>
     </div>
     <div class="flex items-center gap-2 ml-2">
-      <div class="flex items-center gap-1">
-        <!--        <span class="text-sm text-base-content/70">Severity:</span>-->
-        <select
-          class="select select-sm select-bordered"
-          (change)="onSeverityFilterChange($any($event.target).value)">
-          <option value="all">All Severities</option>
-          <option value="critical">Critical</option>
-          <option value="high">High</option>
-          <option value="moderate">Moderate</option>
-        </select>
-      </div>
+      <select
+        [disabled]="loadingAll()"
+        class="select select-sm select-bordered"
+        (change)="onKpiFilterChange($any($event.target).value)">
+        <option value="all">All KPIs</option>
+        @for (kpi of standardKpis; track kpi.kpiName) {
+          <option [value]="kpi.kpiName">{{ kpi.label }}</option>
+        }
+      </select>
 
-      <div class="text-xs text-base-content/70">
-        {{ totalElements() }} anomal{{ totalElements() === 1 ? 'y' : 'ies' }} found
-      </div>
+      <select [disabled]="loadingAll()"
+        class="select select-sm select-bordered"
+        (change)="onSeverityFilterChange($any($event.target).value)">
+        <option value="all">All Severities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="moderate">Moderate</option>
+      </select>
     </div>
+    <button class="btn btn-sm" (click)="openSummaryModal()">
+      <svg class="text-base-content/50" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 17H19M9 12H19M9 7H19M5.00195 17V17.002L5 17.002V17H5.00195ZM5.00195 12V12.002L5 12.002V12H5.00195ZM5.00195 7V7.002L5 7.00195V7H5.00195Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+
+      Summary</button>
+
+
   </nav>
 
 
@@ -79,21 +90,43 @@
         <tr>
           <th class="font-semibold">#</th>
           <th class="font-semibold cursor-pointer select-none" (click)="onSort('cellName')">
-            Cell Name {{ sortIcon('cellName') }}
+  <span class="inline-flex items-center gap-1">
+    Cell Name
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('cellName')" [class.font-bold]="isActiveSortField('cellName')">
+      {{ sortIconChar('cellName') }}
+    </span>
+  </span>
           </th>
           <th class="font-semibold">KPI</th>
-          <th class="font-semibold">Value</th>
+          <th class="font-semibold cursor-pointer select-none" (click)="onSort('value')">
+  <span class="inline-flex items-center gap-1">
+    Value
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('value')" [class.font-bold]="isActiveSortField('value')">
+      {{ sortIconChar('value') }}
+    </span>
+  </span>
+          </th>
           <th class="font-semibold cursor-pointer select-none" (click)="onSort('difference')">
-            Change {{ sortIcon('difference') }}
+  <span class="inline-flex items-center gap-1">
+    Change
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('difference')" [class.font-bold]="isActiveSortField('difference')">
+      {{ sortIconChar('difference') }}
+    </span>
+  </span>
           </th>
           <th class="font-semibold">Streak</th>
           <th class="font-semibold cursor-pointer select-none" (click)="onSort('severity')">
-            Severity {{ sortIcon('severity') }}
+  <span class="inline-flex items-center gap-1">
+    Severity
+    <span class="text-xs" [class.opacity-30]="!isActiveSortField('severity')" [class.font-bold]="isActiveSortField('severity')">
+      {{ sortIconChar('severity') }}
+    </span>
+  </span>
           </th>
         </tr>
         </thead>
         <tbody>
-          @if (loading()) {
+          @if (loadingAnomalyCells()) {
             <tr>
               <td colspan="7" class="text-center py-8 text-base-content/50">
                 <span class="loading loading-spinner loading-sm"></span>
@@ -144,30 +177,36 @@
       </table>
     </div>
 
-    <div class="flex items-center justify-between mt-3">
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-neutral/50">Rows per page:</span>
-        <select
-          class="select select-sm select-bordered"
-          [value]="pageSize()"
-          (change)="onPageSizeChange($any($event.target).value)">
-          @for (size of pageSizeOptions; track size) {
-            <option [value]="size">{{ size }}</option>
-          }
-        </select>
+    <div class="flex flex-row items-center justify-between mt-3">
+      <div class="flex flex-row items-center gap-4">
+        <div class="flex flex-row items-center">
+          <span class="text-xs text-neutral/50">Rows per page:</span>
+          <select [disabled]="loadingAll()"
+            class="select select-sm select-bordered"
+            [value]="pageSize()"
+            (change)="onPageSizeChange($any($event.target).value)">
+            @for (size of pageSizeOptions; track size) {
+              <option [value]="size">{{ size }}</option>
+            }
+          </select>
+        </div>
+        <div class="text-xs text-neutral/50">
+          {{ totalElements() }} anomal{{ totalElements() === 1 ? 'y' : 'ies' }} found
+        </div>
+
       </div>
 
       <div class="join">
-        <button class="join-item btn btn-sm" [disabled]="page() === 0" (click)="goToPage(page() - 1)">«</button>
+        <button [disabled]="loadingAll()" class="join-item btn btn-sm" [disabled]="page() === 0" (click)="goToPage(page() - 1)">«</button>
         @for (p of pageNumbers(); track p) {
-          <button
+          <button [disabled]="loadingAll()"
             class="join-item btn btn-sm"
             [class.btn-active]="p === page()"
             (click)="goToPage(p)">
             {{ p + 1 }}
           </button>
         }
-        <button class="join-item btn btn-sm" [disabled]="page() === totalPages() - 1" (click)="goToPage(page() + 1)">»
+        <button [disabled]="loadingAll()" class="join-item btn btn-sm" [disabled]="page() === totalPages() - 1" (click)="goToPage(page() + 1)">»
         </button>
       </div>
     </div>
@@ -183,3 +222,12 @@
   [granularityName]="granularity"
   [cellName]="selectedCellName()"
 ></app-cell-analysis-modal>
+
+<app-anomaly-summary-modal
+  [open]="showSummaryModal"
+  (closed)="closeSummaryModal()"
+  [areaName]="area"
+  [ratName]="rat"
+  [granularityName]="granularity"
+  [kpiName]="kpiFilter"
+></app-anomaly-summary-modal>
