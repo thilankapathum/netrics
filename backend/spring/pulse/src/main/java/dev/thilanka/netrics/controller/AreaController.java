@@ -41,7 +41,7 @@ public class AreaController {
     @GetMapping("area-type")
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     ResponseEntity<List<AreaDto>> getAreasByAreaType(@RequestParam("areaTypeName") String areaTypeName){
-        List<AreaDto> areaDtos = areaService.getAreasByAreaType(areaTypeName);
+        List<AreaDto> areaDtos = areaService.getEnabledAreasByAreaType(areaTypeName);
         return ResponseEntity.ok(areaDtos);
     }
 }
