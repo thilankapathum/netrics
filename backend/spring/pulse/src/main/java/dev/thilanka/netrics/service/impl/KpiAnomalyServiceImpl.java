@@ -9,6 +9,7 @@ import dev.thilanka.netrics.repository.KpiAnomalyRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class KpiAnomalyServiceImpl implements KpiAnomalyService {
@@ -127,7 +129,9 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
         LocalDateTime currEnd = currStart.plusSeconds(granularity.getPlusSeconds());
 
-        int prevPeriodDays = dateService.getPeriod(period).intValue();
+        LocalDateTime prevStart = dateService.getPreviousDate(currStart, period);
+        LocalDateTime prevEnd = dateService.getPreviousDate(currEnd, period);
+
         LocalDateTime streakStart = currEnd.toLocalDate().minusDays(30).atStartOfDay();
 
         long totalElements = kpiAnomalyRepository.countAnomalyCellsByArea(
@@ -138,7 +142,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         }
 
         List<AnomalyCellsProjection> anomalyCells = kpiAnomalyRepository.findAllAnomalyCellsByAreaPaged(
-                currStart, currEnd, prevPeriodDays, area.getId(), rat.getId(), granularity.getId(),
+                currStart, currEnd, prevStart, prevEnd, area.getId(), rat.getId(), granularity.getId(),
                 severity, sortBy, sortDir, pageSize, page * pageSize
         );
 

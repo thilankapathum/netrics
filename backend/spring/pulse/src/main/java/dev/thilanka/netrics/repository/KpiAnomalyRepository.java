@@ -331,12 +331,14 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
     @Query(value = """
         WITH params AS (
             SELECT
-                :prevPeriodDays ::int       AS prev_period_days,
+                --:prevPeriodDays ::int       AS prev_period_days,
                 :areaId        ::bigint    AS area_id,
                 :ratId         ::bigint    AS rat_id,
                 :granularityId ::bigint    AS granularity_id,
                 :currStart     ::timestamp AS curr_start,
-                :currEnd       ::timestamp AS curr_end
+                :currEnd       ::timestamp AS curr_end,
+                :prevStart     ::timestamp AS prev_start,
+                :prevEnd       ::timestamp AS prev_end
         ),
         area_cells AS MATERIALIZED (
             SELECT c.cell_name
@@ -353,7 +355,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             WHERE ka.rat_id = p.rat_id
               AND ka.granularity_id = p.granularity_id
               AND ka.timestamp >= p.curr_start
-              AND ka.timestamp <  p.curr_end
+              AND ka.timestamp <=  p.curr_end
               AND (:severityFilter IS NULL OR ka.severity = :severityFilter)
         ),
         kpi_meta AS MATERIALIZED (
@@ -371,8 +373,8 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             CROSS JOIN params p
             WHERE kv.rat_id = p.rat_id
               AND kv.granularity_id = p.granularity_id
-              AND kv.timestamp >= p.curr_start - (p.prev_period_days * INTERVAL '1 day')
-              AND kv.timestamp <  p.curr_start
+              AND kv.timestamp >= p.prev_start
+              AND kv.timestamp <=  p.prev_end
             GROUP BY kv.cell_name, kv.standard_kpi_id
         ),
         calc AS MATERIALIZED (
@@ -416,7 +418,8 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
     List<AnomalyCellsProjection> findAllAnomalyCellsByAreaPaged(
             @Param("currStart") LocalDateTime currStart,
             @Param("currEnd") LocalDateTime currEnd,
-            @Param("prevPeriodDays") int prevPeriodDays,
+            @Param("prevStart") LocalDateTime prevStart,
+            @Param("prevEnd") LocalDateTime prevEnd,
             @Param("areaId") Long areaId,
             @Param("ratId") Long ratId,
             @Param("granularityId") Long granularityId,
@@ -436,7 +439,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
           AND ka.rat_id = :ratId
           AND ka.granularity_id = :granularityId
           AND ka.timestamp >= :currStart
-          AND ka.timestamp <  :currEnd
+          AND ka.timestamp <=  :currEnd
           AND (:severityFilter IS NULL OR ka.severity = :severityFilter)
         """, nativeQuery = true)
     long countAnomalyCellsByArea(

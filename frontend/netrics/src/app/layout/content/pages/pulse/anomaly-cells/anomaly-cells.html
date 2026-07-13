@@ -13,7 +13,7 @@
           Home
         </a></li>
         <!--        <li><a routerLink="/pulse">Worst Cell Analysis</a></li>-->
-        <li class=" font-bold">Spatial Analysis</li>
+        <li class=" font-bold">Anomaly Cells</li>
       </ul>
     </div>
     <div>
@@ -54,11 +54,11 @@
     </div>
     <div class="flex items-center gap-2 ml-2">
       <div class="flex items-center gap-1">
-        <span class="text-sm text-base-content/70">Severity:</span>
+        <!--        <span class="text-sm text-base-content/70">Severity:</span>-->
         <select
           class="select select-sm select-bordered"
           (change)="onSeverityFilterChange($any($event.target).value)">
-          <option value="all">All</option>
+          <option value="all">All Severities</option>
           <option value="critical">Critical</option>
           <option value="high">High</option>
           <option value="moderate">Moderate</option>
@@ -95,7 +95,9 @@
         <tbody>
           @if (loading()) {
             <tr>
-              <td colspan="7" class="text-center py-8 text-base-content/50">Loading...</td>
+              <td colspan="7" class="text-center py-8 text-base-content/50">
+                <span class="loading loading-spinner loading-sm"></span>
+                Loading...</td>
             </tr>
           } @else if (cells().length === 0) {
             <tr>
@@ -103,7 +105,7 @@
             </tr>
           } @else {
             @for (cell of cells(); track cell.cellName + cell.kpiName; let i = $index) {
-              <tr class="hover:bg-base-200 border-l-4" [class]="severityBorderClass(cell.severity)">
+              <tr (click)="openCellAnalysisModal(cell.cellName, cell.kpiName)" class="hover:bg-base-200 cursor-pointer border-l-4" [class]="severityBorderClass(cell.severity)">
                 <td>{{ (page() * pageSize()) + i + 1 }}</td>
                 <td>{{ cell.cellName }}</td>
                 <td>{{ cell.kpiLabel }}</td>
@@ -144,7 +146,7 @@
 
     <div class="flex items-center justify-between mt-3">
       <div class="flex items-center gap-2">
-        <span class="text-sm text-base-content/70">Rows per page:</span>
+        <span class="text-xs text-neutral/50">Rows per page:</span>
         <select
           class="select select-sm select-bordered"
           [value]="pageSize()"
@@ -172,3 +174,12 @@
   </div>
 
 </div>
+
+<app-cell-analysis-modal
+  [open]="showCellAnalysisModal"
+  (closed)="closeCellAnalysisModal()"
+  [standardKpiName]="standardKpi"
+  [ratName]="rat"
+  [granularityName]="granularity"
+  [cellName]="selectedCellName()"
+></app-cell-analysis-modal>

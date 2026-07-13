@@ -16,6 +16,8 @@ import {AlertService} from '../../../../../components/alert/alert.service';
 import {AuthService} from '../../../../../auth/service/auth-service';
 import {UserAreaService} from '../../../../../service/pulse/user-area-service';
 import {RatService} from '../../../../../service/pulse/rat-service';
+import {CellAnalysisModal} from './cell-analysis-modal/cell-analysis-modal';
+import {CellMapCellAnalysis} from '../kpi-map/cell-map-cell-analysis/cell-map-cell-analysis';
 
 @Component({
   selector: 'app-anomaly-cells',
@@ -23,7 +25,9 @@ import {RatService} from '../../../../../service/pulse/rat-service';
     DecimalPipe,
     ReactiveFormsModule,
     RouterLink,
-    FormsModule
+    FormsModule,
+    CellAnalysisModal,
+    CellMapCellAnalysis
   ],
   templateUrl: './anomaly-cells.html',
   styleUrl: './anomaly-cells.css'
@@ -80,6 +84,10 @@ export class AnomalyCells implements OnInit {
   loadingGranularity: boolean = false;
   loadingAreaTypes: boolean = false;
   loadingAreas: boolean = false;
+
+  showCellAnalysisModal = signal<boolean>(false);
+  selectedCellName = signal<string>('');
+  standardKpi = signal<string | undefined>(undefined);
 
   constructor(private anomalyCellsService: AnomalyCellsService,
               private ratService: RatService,
@@ -339,4 +347,17 @@ export class AnomalyCells implements OnInit {
     }
   }
 
+  //--------- MODAL ---------------
+
+  closeCellAnalysisModal(): void {
+    this.showCellAnalysisModal.set(false);
+  }
+
+  openCellAnalysisModal(cellName:string, kpiName:string): void {
+    this.showCellAnalysisModal.set(true);
+    this.selectedCellName.set(cellName);
+    this.standardKpi.set(kpiName);
+  }
+
+  protected readonly open = open;
 }
