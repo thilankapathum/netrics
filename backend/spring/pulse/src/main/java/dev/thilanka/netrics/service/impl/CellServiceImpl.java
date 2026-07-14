@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -418,6 +419,25 @@ public class CellServiceImpl implements CellService {
     @Override
     public Integer getCellCountWithMissingInfo() {
         return this.cellCountWithMissingInfo;
+    }
+
+    @Override
+    @Transactional
+    public int updateNodeNamesFromLatestKpiValues() {
+        LocalDateTime latestDate = dateService.getLatestDate();
+
+        if (latestDate == null) {
+            log.warn("No latest date found; skipping node_name sync from kpi_values");
+            return 0;
+        }
+
+        LocalDateTime startOfDay = latestDate.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+        int updatedCount = cellRepository.updateNodeNamesFromKpiValues(startOfDay, endOfDay);
+        log.info("Synced node_name for {} cells from kpi_values for {}", updatedCount, startOfDay.toLocalDate());
+
+        return updatedCount;
     }
 
 

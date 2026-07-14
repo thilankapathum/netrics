@@ -4,9 +4,11 @@ import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.CellNameDto;
 import dev.thilanka.netrics.entity.Cell;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,4 +72,22 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
             ORDER BY c.cell_name LIMIT 20
             """, nativeQuery = true)
     List<CellNameDto> findCellsBySector(@Param("sectorId") Long sectorId, @Param("ratId") Long ratId);
+
+    @Modifying
+    @Query(value = """
+            UPDATE cells c
+            SET node_name = sub.site_name
+            FROM (
+                SELECT DISTINCT ON (kv.cell_name) kv.cell_name, kv.site_name
+                FROM kpi_values kv
+                WHERE kv.timestamp >= :startOfDay
+                  AND kv.timestamp <= :endOfDay
+                  AND kv.site_name IS NOT NULL
+                ORDER BY kv.cell_name, kv.timestamp DESC, kv.id DESC
+            ) sub
+            WHERE c.cell_name = sub.cell_name
+              AND c.node_name IS DISTINCT FROM sub.site_name
+            """, nativeQuery = true)
+    int updateNodeNamesFromKpiValues(@Param("startOfDay") LocalDateTime startOfDay,
+                                     @Param("endOfDay") LocalDateTime endOfDay);
 }

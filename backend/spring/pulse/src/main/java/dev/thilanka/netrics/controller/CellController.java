@@ -120,4 +120,11 @@ public class CellController {
         Integer count = cellService.reloadCellCountWithMissingInfo();
         return ResponseEntity.ok(count);
     }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PostMapping("sync/node-names")
+    public ResponseEntity<Integer> syncNodeNamesFromKpiValues() {
+        int updatedCount = cellService.updateNodeNamesFromLatestKpiValues();
+        return ResponseEntity.ok(updatedCount);
+    }
 }

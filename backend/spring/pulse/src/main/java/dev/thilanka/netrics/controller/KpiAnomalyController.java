@@ -6,7 +6,7 @@ import dev.thilanka.netrics.dto.PagedResponse;
 import dev.thilanka.netrics.dto.WorstCellsDto;
 import dev.thilanka.netrics.service.AnomalyDetectionService;
 import dev.thilanka.netrics.service.KpiAnomalyService;
-import dev.thilanka.netrics.service.impl.AnomalyDetectionScheduler;
+import dev.thilanka.netrics.service.impl.DailyTaskScheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +23,7 @@ import java.util.List;
 public class KpiAnomalyController {
 
     private final AnomalyDetectionService anomalyDetectionService;
-    private final AnomalyDetectionScheduler anomalyDetectionScheduler;
+    private final DailyTaskScheduler dailyTaskScheduler;
     private final KpiAnomalyService kpiAnomalyService;
 
     @GetMapping
@@ -38,7 +38,7 @@ public class KpiAnomalyController {
     @GetMapping("run")
     @PreAuthorize("hasAuthority('ROLE_PULSE_DELETE')")
     public ResponseEntity<String> runAnomalyDetection() {
-        anomalyDetectionScheduler.runAnomalyDetection();
+        dailyTaskScheduler.runAnomalyDetection();
         return ResponseEntity.ok("Ran Anomaly detection");
     }
 
@@ -46,7 +46,7 @@ public class KpiAnomalyController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_DELETE')")
     public ResponseEntity<String> runAnomalyDetection(@RequestParam String granularityName,
                                                       @RequestParam String ratName) {
-        anomalyDetectionScheduler.runAnomalyDetection(granularityName, ratName);
+        dailyTaskScheduler.runAnomalyDetection(granularityName, ratName);
         return ResponseEntity.ok("Ran Anomaly detection");
     }
 
