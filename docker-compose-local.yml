@@ -287,7 +287,7 @@ services:
         condition: service_healthy
 
   beam:
-    image: thilankaw/netrics/beam:0.0.1
+    image: thilankaw/netrics/beam:0.0.2
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
