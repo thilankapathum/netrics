@@ -241,7 +241,7 @@ services:
       - "${DOMAIN_IP}:host-gateway"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.2.4
+    image: thilankaw/netrics/pulse:0.2.5
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -368,6 +368,26 @@ services:
       postgres:
         condition: service_healthy
       pulse:
+        condition: service_healthy
+
+  alarms:
+    image: thilankaw/netrics/alarms:0.0.1
+    container_name: alarms
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}          # change to your actual DB service/host name
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB_PULSE: ${POSTGRES_DB_PULSE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}       # move to a .env file / secret, don't commit real credentials
+      ALARM_FILES_BASE_DIR: /app/files/alarms
+      POLL_INTERVAL_SECONDS: "30"
+    volumes:
+      - ./backend/python/pulse/alarms/files:/app/files
+    networks:
+      - private_net
+    depends_on:
+      postgres:
         condition: service_healthy
 
   frontend:

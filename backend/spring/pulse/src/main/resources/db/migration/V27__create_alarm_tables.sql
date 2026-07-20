@@ -88,6 +88,7 @@ CREATE UNIQUE INDEX uq_alarms_dedup ON alarms (
                                                ack_state,
                                                clear_state,
                                                alarm_id,
+                                               COALESCE(location, ''),
                                                alarm_source_id
     );
 
