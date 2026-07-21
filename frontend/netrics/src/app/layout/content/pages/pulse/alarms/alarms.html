@@ -1,0 +1,167 @@
+<div class="flex flex-col gap-3">
+  <nav class="flex flex-row flex-wrap gap-2  items-center">
+    <div class="breadcrumbs text-xs text-secondary grow-1">
+      <ul>
+        <li><a routerLink="/">
+          <svg class="text-base-300" width="14" height="14" viewBox="0 0 24 24" fill="none"
+               xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M20 17.0002V11.4522C20 10.9179 19.9995 10.6506 19.9346 10.4019C19.877 10.1816 19.7825 9.97307 19.6546 9.78464C19.5102 9.57201 19.3096 9.39569 18.9074 9.04383L14.1074 4.84383C13.3608 4.19054 12.9875 3.86406 12.5674 3.73982C12.1972 3.63035 11.8026 3.63035 11.4324 3.73982C11.0126 3.86397 10.6398 4.19014 9.89436 4.84244L5.09277 9.04383C4.69064 9.39569 4.49004 9.57201 4.3457 9.78464C4.21779 9.97307 4.12255 10.1816 4.06497 10.4019C4 10.6506 4 10.9179 4 11.4522V17.0002C4 17.932 4 18.3978 4.15224 18.7654C4.35523 19.2554 4.74432 19.6452 5.23438 19.8482C5.60192 20.0005 6.06786 20.0005 6.99974 20.0005C7.93163 20.0005 8.39808 20.0005 8.76562 19.8482C9.25568 19.6452 9.64467 19.2555 9.84766 18.7654C9.9999 18.3979 10 17.932 10 17.0001V16.0001C10 14.8955 10.8954 14.0001 12 14.0001C13.1046 14.0001 14 14.8955 14 16.0001V17.0001C14 17.932 14 18.3979 14.1522 18.7654C14.3552 19.2555 14.7443 19.6452 15.2344 19.8482C15.6019 20.0005 16.0679 20.0005 16.9997 20.0005C17.9316 20.0005 18.3981 20.0005 18.7656 19.8482C19.2557 19.6452 19.6447 19.2554 19.8477 18.7654C19.9999 18.3978 20 17.932 20 17.0002Z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Home
+        </a></li>
+        <!--        <li><a routerLink="/pulse">Worst Cell Analysis</a></li>-->
+        <li class=" font-bold">Alarms</li>
+      </ul>
+    </div>
+    <div class="flex flex-row join">
+      <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [ngModel]="areaType()"
+              (ngModelChange)="areaType.set($event); getAreasByAreaType(areaType()!);">
+        @for (at of areaTypes; track at.name) {
+          <option [value]="at.name">{{ at.name }}</option>
+        }
+      </select>
+      <select [disabled]="loadingAll() " class="select select-sm border join-item w-auto" [ngModel]="area()"
+              (ngModelChange)="area.set($event); onFilterChange()">
+        @for (ar of areas; track ar.name) {
+          <option [value]="ar.name">{{ ar.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-control">
+      <select [disabled]="loadingAll()" class="select select-sm select-bordered w-auto" [ngModel]="severity()"
+              (ngModelChange)="severity.set($event); onFilterChange()">
+        <option value="">All Severities</option>
+        @for (s of severities; track $index) {
+          <option [value]="s"> {{ s }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-control">
+      <select [disabled]="loadingAll()" class="select select-sm select-bordered w-auto" [ngModel]="alarmType()"
+              (ngModelChange)="alarmType.set($event); onFilterChange()">
+        <option value="">All Alarm Types</option>
+        @for (at of alarmTypes; track $index) {
+          <option [value]="at.name"> {{ at.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-control">
+      <select [disabled]="loadingAll()" class="select select-sm select-bordered w-auto" [ngModel]="alarmSource()"
+              (ngModelChange)="alarmSource.set($event); onFilterChange()">
+        <option value="">All OSS</option>
+        @for (alarmSource of alarmSources; track $index) {
+          <option [value]="alarmSource.name"> {{ alarmSource.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="form-control">
+      <select [disabled]="loadingAll()" class="select select-sm select-bordered w-auto" [ngModel]="period()"
+              (ngModelChange)="period.set($event); onFilterChange()">
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+        <option value="quarter">Quarter</option>
+        <option value="half-year">6-Months</option>
+      </select>
+    </div>
+  </nav>
+
+  <div class="flex flex-col p-4 border border-base-300 rounded-xl bg-base-100 gap-3">
+    <div class="flex flex-wrap gap-2 items-center bg-base-100 rounded-lg">
+      <div class="form-control">
+<!--        <label class="label"><span class="text-xs">Node Name</span></label>-->
+        <input type="text" placeholder="Search node name..." class="input input-sm input-bordered w-48"
+               [value]="nodeName()" (input)="onNodeNameInput($any($event.target).value)"/>
+      </div>
+
+      <div class="form-control">
+<!--        <label class="label"><span class="label-text">Alarm Name</span></label>-->
+        <input type="text" placeholder="Search alarm name..." class="input input-sm input-bordered w-48"
+               [value]="alarmName()" (input)="onAlarmNameInput($any($event.target).value)"/>
+      </div>
+
+      <div class="form-control">
+        <select class="select select-sm select-bordered w-auto" [ngModel]="ackState()"
+                (ngModelChange)="ackState.set($event); onFilterChange()">
+          <option value="">All Ack states</option>
+          @for (s of ackStates; track $index) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-control">
+        <select class="select select-sm select-bordered w-auto" [ngModel]="clearState()"
+                (ngModelChange)="clearState.set($event); onFilterChange()">
+          <option value="">All Clear States</option>
+          @for (clearState of clearStates; track $index) {
+            <option [value]="clearState">{{ clearState }}</option>
+          }
+        </select>
+      </div>
+      <button class="btn btn-sm btn-ghost" (click)="clearFilters()">Clear filters</button>
+    </div>
+
+    <div class="overflow-x-auto overflow-y-auto max-h-[28rem]">
+      <table class="table table-xs table-zebra">
+        <thead>
+        <tr class="text-xs">
+          <th>Occurrence Time</th>
+          <th>Node</th>
+          <th>Severity</th>
+          <th>Alarm Type</th>
+          <th>Alarm Name</th>
+<!--          <th>Alarm Code</th>-->
+          <th>Location</th>
+          <th>Acknowledge</th>
+          <th>Clear</th>
+          <th>Source</th>
+        </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            <tr>
+              <td colspan="10" class="text-center py-6">
+                <span class="loading loading-spinner loading-sm"></span> Loading...
+              </td>
+            </tr>
+          } @else if (alarms().length === 0) {
+            <tr>
+              <td colspan="10" class="text-center py-6 text-base-content/60">No alarms found</td>
+            </tr>
+          } @else {
+            @for (alarm of alarms(); track alarm.alarmId) {
+              <tr>
+                <td class="whitespace-nowrap">{{ alarm.occurrenceTime | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                <td>{{ alarm.nodeName }}</td>
+                <td><span class="badge badge-sm"
+                          [ngClass]="severityBadgeClass(alarm.severity)">{{ alarm.severity }}</span></td>
+                <td>{{ alarm.alarmType }}</td>
+                <td>{{ alarm.alarmName }}</td>
+<!--                <td>{{ alarm.alarmCode }}</td>-->
+                <td class="max-w-xs truncate" [title]="alarm.location">{{ alarm.location }}</td>
+                <td>{{ alarm.ackState }}</td>
+                <td>{{ alarm.clearState }}</td>
+                <td>{{ alarm.alarmSource }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between">
+    <span class="text-xs text-base-content/60">
+      {{ totalElements() }} alarm(s) — page {{ page() + 1 }} of {{ totalPages() }}
+    </span>
+      <div class="join">
+        <button class="join-item btn btn-sm" [disabled]="page() === 0" (click)="goToPage(page() - 1)">«</button>
+        <button class="join-item btn btn-sm">{{ page() + 1 }}</button>
+        <button class="join-item btn btn-sm" [disabled]="page() + 1 >= totalPages()" (click)="goToPage(page() + 1)">»
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

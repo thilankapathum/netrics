@@ -20,6 +20,8 @@ spring:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-    logging:
-      level:
-        org.springframework.cloud.gateway: DEBUG
+#logging:
+#  level:
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.orm.jdbc.bind: TRACE
+#    org.springframework.cloud.gateway: DEBUG

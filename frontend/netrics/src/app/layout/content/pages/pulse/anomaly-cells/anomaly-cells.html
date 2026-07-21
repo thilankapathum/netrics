@@ -55,7 +55,7 @@
     <div class="flex items-center gap-2 ml-2">
       <select
         [disabled]="loadingAll()"
-        class="select select-sm select-bordered"
+        class="select select-sm w-auto"
         (change)="onKpiFilterChange($any($event.target).value)">
         <option value="all">All KPIs</option>
         @for (kpi of standardKpis; track kpi.kpiName) {
@@ -64,7 +64,7 @@
       </select>
 
       <select [disabled]="loadingAll()"
-        class="select select-sm select-bordered"
+        class="select select-sm w-auto"
         (change)="onSeverityFilterChange($any($event.target).value)">
         <option value="all">All Severities</option>
         <option value="critical">Critical</option>
@@ -85,43 +85,43 @@
 
   <div class="p-4 border border-base-300 rounded-xl bg-base-100">
     <div class="overflow-x-auto overflow-y-auto max-h-[28rem]">
-      <table class="table table-sm">
+      <table class="table table-xs">
         <thead class="sticky top-0 bg-base-100 z-10">
         <tr>
           <th class="font-semibold">#</th>
           <th class="font-semibold cursor-pointer select-none" (click)="onSort('cellName')">
-  <span class="inline-flex items-center gap-1">
-    Cell Name
-    <span class="text-xs" [class.opacity-30]="!isActiveSortField('cellName')" [class.font-bold]="isActiveSortField('cellName')">
-      {{ sortIconChar('cellName') }}
-    </span>
-  </span>
+            <span class="inline-flex items-center gap-1">
+              Cell Name
+              <span class="text-xs" [class.opacity-30]="!isActiveSortField('cellName')" [class.font-bold]="isActiveSortField('cellName')">
+                {{ sortIconChar('cellName') }}
+              </span>
+            </span>
           </th>
           <th class="font-semibold">KPI</th>
           <th class="font-semibold cursor-pointer select-none" (click)="onSort('value')">
-  <span class="inline-flex items-center gap-1">
-    Value
-    <span class="text-xs" [class.opacity-30]="!isActiveSortField('value')" [class.font-bold]="isActiveSortField('value')">
-      {{ sortIconChar('value') }}
-    </span>
-  </span>
+            <span class="inline-flex items-center gap-1">
+              Value
+              <span class="text-xs" [class.opacity-30]="!isActiveSortField('value')" [class.font-bold]="isActiveSortField('value')">
+                {{ sortIconChar('value') }}
+              </span>
+            </span>
           </th>
           <th class="font-semibold cursor-pointer select-none" (click)="onSort('difference')">
-  <span class="inline-flex items-center gap-1">
-    Change
-    <span class="text-xs" [class.opacity-30]="!isActiveSortField('difference')" [class.font-bold]="isActiveSortField('difference')">
-      {{ sortIconChar('difference') }}
-    </span>
-  </span>
+            <span class="inline-flex items-center gap-1">
+              Change
+              <span class="text-xs" [class.opacity-30]="!isActiveSortField('difference')" [class.font-bold]="isActiveSortField('difference')">
+                {{ sortIconChar('difference') }}
+              </span>
+            </span>
           </th>
           <th class="font-semibold">Streak</th>
           <th class="font-semibold cursor-pointer select-none" (click)="onSort('severity')">
-  <span class="inline-flex items-center gap-1">
-    Severity
-    <span class="text-xs" [class.opacity-30]="!isActiveSortField('severity')" [class.font-bold]="isActiveSortField('severity')">
-      {{ sortIconChar('severity') }}
-    </span>
-  </span>
+              <span class="inline-flex items-center gap-1">
+                Severity
+                <span class="text-xs" [class.opacity-30]="!isActiveSortField('severity')" [class.font-bold]="isActiveSortField('severity')">
+                  {{ sortIconChar('severity') }}
+                </span>
+              </span>
           </th>
         </tr>
         </thead>
