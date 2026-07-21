@@ -2,7 +2,7 @@
   <div class="modal-box max-w-6xl border border-base-300">
 
     <div class="flex flex-row gap-2 flex-wrap mb-2">
-      <h3 class="text-lg font-bold"> {{ cellName }}</h3>
+      <h3 class="text-lg font-bold"> {{ cellName() }}</h3>
       <div class="tabs tabs-box tabs-xs ml-auto">
         <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab"
                aria-label="Week (hourly)"
@@ -24,10 +24,19 @@
       </div>
     }
 
-    <app-linechart [hidden]="loadingChart" [chartSeries]="chartSeries"></app-linechart>
+<!--    <app-linechart [hidden]="loadingChart" [chartSeries]="chartSeries"></app-linechart>-->
+    <app-linechart
+      [hidden]="loadingChart"
+      [chartSeries]="chartSeries"
+      [yaxisOverride]="modalYAxis">
+    </app-linechart>
 
 
     <div class="modal-action">
+      <label [hidden]="!standardRawKpiMappingAvailable()" class="label mr-auto">
+        <input [disabled]="loadingAll()" type="checkbox" class="checkbox" [ngModel]="showOperands()" (ngModelChange)="onShowOperandsChangeModal($event)" />
+        Show Operands
+      </label>
       <form class="flex flex-row gap-2">
         <a class="btn btn-outline btn-primary btn-sm" (click)="onCellNavigate()" [routerLink]="getRouterLinkForCell()">
           Cell Analysis
