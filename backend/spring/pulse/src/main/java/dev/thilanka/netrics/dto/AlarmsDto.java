@@ -15,6 +15,7 @@ public record AlarmsDto(
         String clearState,
         String specificProblem,
         String additionalInfo,
-        String alarmSource
+        String alarmSource,
+        String parsedCellName
 ) {
 }

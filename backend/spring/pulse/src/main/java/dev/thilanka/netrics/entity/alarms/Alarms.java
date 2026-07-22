@@ -54,4 +54,6 @@ public class Alarms {
     @ManyToOne
     @JoinColumn(name = "alarm_source_id", nullable = false)
     private AlarmSource alarmSource;
+
+    private String parsedCellName;
 }

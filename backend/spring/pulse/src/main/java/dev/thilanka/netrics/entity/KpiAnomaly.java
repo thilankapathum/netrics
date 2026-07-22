@@ -49,4 +49,17 @@ public class KpiAnomaly {
 
     @Column(name = "detected_at", nullable = false)
     private LocalDateTime detectedAt;
+
+    @Column(name = "has_alarm_correlation", nullable = false)
+    private boolean hasAlarmCorrelation;
+
+    @Column(name = "distinct_alarm_def_count", nullable = false)
+    private int distinctAlarmDefCount;
+
+    @Column(name = "total_alarm_occurrences", nullable = false)
+    private int totalAlarmOccurrences;
+
+    @Column(name = "best_match_level")
+    private String bestMatchLevel;
+
 }

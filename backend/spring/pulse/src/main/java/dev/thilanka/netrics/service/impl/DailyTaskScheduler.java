@@ -19,6 +19,7 @@ public class DailyTaskScheduler {
     private final GranularityService granularityService;
     private final KpiDayService kpiDayService;
     private final CellService cellService;
+    private final AnomalyAlarmCorrelationService anomalyAlarmCorrelationService;
 
     private static final List<String> TARGET_GRANULARITIES = List.of("day-average", "busy-hour");
 
@@ -48,6 +49,9 @@ public class DailyTaskScheduler {
                 }
             }
         }
+
+        /* Run ANOMALY-ALARM CORRELATION */
+        anomalyAlarmCorrelationService.runCorrelation();
 
     }
 

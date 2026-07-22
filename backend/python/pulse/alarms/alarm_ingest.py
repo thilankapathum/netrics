@@ -84,6 +84,10 @@ PROFILES = {
 
 _SCI_NOTATION_RE = re.compile(r'^\d(\.\d+)?E\+?\d+$', re.IGNORECASE)
 
+# Keys ending in "cell name" (case-insensitive) are treated as candidate cell
+# identity fields in `location`/`additional_info` strings.
+CELL_NAME_KEY_EXCLUDE_SUBSTRINGS = ("neighbour", "neighbor", "target", "source")
+
 _shutdown = False
 
 
@@ -247,7 +251,7 @@ def insert_alarms(conn, rows):
                 node_name, alarm_definition_id, occurrence_time, specific_problem,
                 severity, raw_severity, ack_state, alarm_id, alarm_type_id,
                 location, additional_info, description, clear_state, clear_time,
-                alarm_source_id
+                alarm_source_id, parsed_cell_name
             ) VALUES %s
             ON CONFLICT (occurrence_time, node_name, alarm_definition_id, severity,
                          ack_state, clear_state, alarm_id, COALESCE(location, ''), alarm_source_id)
@@ -320,6 +324,48 @@ def map_row(row, field_mappings):
         else:
             result[field] = cfg["default_value"]
     return result
+
+
+def parse_key_value_string(raw):
+    """Parse a flat 'key=value, key=value' string (`location` / `additional_info` fields)
+     into a dict. Tolerant of missing/
+    extra whitespace and varying field order/presence between alarm types.
+    """
+    if not raw:
+        return {}
+    fields = {}
+    for part in raw.split(","):
+        if "=" not in part:
+            continue
+        key, _, value = part.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if key and value:
+            fields[key] = value
+    return fields
+
+
+def extract_cell_name(location, additional_info=None):
+    """Return the first plausible cell name found in `location`, falling back
+    to `additional_info`. Matches any key ENDING in "cell name" (case-
+    insensitive) — covers both observed vendor variants ("NR DU Cell Name",
+    "Cell Name") without hardcoding a single exact key, while still rejecting
+    node-identity keys like "eNodeB Function Name" / "gNodeB Function Name"
+    (which end in "function name", not "cell name").
+
+    Returns None for UME/U31 (no location/additional_info in this shape) and
+    for U2020 alarms that don't carry cell identity at all.
+    """
+    for raw in (location, additional_info):
+        fields = parse_key_value_string(raw)
+        for key, value in fields.items():
+            key_lower = key.lower()
+            if not key_lower.endswith("cell name"):
+                continue
+            if any(bad in key_lower for bad in CELL_NAME_KEY_EXCLUDE_SUBSTRINGS):
+                continue
+            return value
+    return None
 
 
 def parse_datetime(value):
@@ -443,6 +489,9 @@ def process_dataframe(df, source, field_mappings, value_maps, logger):
 
             clear_time = parse_datetime(mapped.get("CLEAR_TIME"))
 
+            # Cell-level correlation identity (best-effort — populated for alarms that carry a "...Cell Name" key in location/additional_info
+            parsed_cell_name = extract_cell_name(mapped.get("LOCATION"), mapped.get("ADDITIONAL_INFO"))
+
             alarm_type_id = get_or_create_alarm_type(source["conn"], alarm_type_raw)
             alarm_definition_id = get_or_create_alarm_definition(
                 source["conn"], source["id"], to_bigint(alarm_code_raw),
@@ -452,7 +501,7 @@ def process_dataframe(df, source, field_mappings, value_maps, logger):
                 node_name, alarm_definition_id, occurrence_time, mapped.get("SPECIFIC_PROBLEM"),
                 severity, mapped.get("SEVERITY"), ack_state, to_bigint(alarm_id_raw), alarm_type_id,
                 mapped.get("LOCATION"), mapped.get("ADDITIONAL_INFO"), mapped.get("DESCRIPTION"),
-                clear_state, clear_time, source["id"]
+                clear_state, clear_time, source["id"], parsed_cell_name
             ))
         except Exception as e:
             error_count += 1

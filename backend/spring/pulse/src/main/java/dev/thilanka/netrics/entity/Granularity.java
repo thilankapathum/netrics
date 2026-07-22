@@ -31,6 +31,9 @@ public class Granularity extends AuditEntity {
     @Column(nullable = true)
     private int plusSeconds;
 
+    @Column(nullable = true)
+    private int windowSeconds;
+
     @OneToMany(mappedBy = "granularity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<KpiDay> kpiDays;
 
