@@ -11,6 +11,7 @@ volumes:
   redis-data:
   pgadmin:
   kafka_data:
+  alarm_state:
 
 services:
   postgres:
@@ -389,6 +390,26 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  alarm-puller:
+    image: thilankaw/netrics/alarm-puller:0.0.1
+    container_name: alarm-puller
+    group_add:
+      - "1002"
+    restart: unless-stopped
+    environment:
+      - REMOTE_PASSWORD=${REMOTE_PASSWORD}
+      - REMOTE_HOST=${REMOTE_HOST}
+      - REMOTE_USERNAME=${REMOTE_USERNAME}
+      - U2020_REM_DIR=${U2020_REM_DIR}
+      - U2020_LOC_DIR=${U2020_LOC_DIR}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      # Uncomment if using key-based auth instead of a password:
+      # - ./secrets/id_ed25519:/app/secrets/id_ed25519:ro
+      - alarm_state:/data/state
+      - /home/ftpuser/apps/netrics/alarms/oss/u2020:/data/incoming/u2020
 
   frontend:
     image: thilankaw/netrics/frontend:0.1.5
