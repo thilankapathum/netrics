@@ -165,12 +165,6 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
                                  @Param("zThreshold") double zThreshold);
 
 
-//    @Query(value = """
-//        SELECT MAX(timestamp) FROM kpi_anomalies
-//        WHERE rat_id = :ratId AND granularity_id = :granularityId
-//        """, nativeQuery = true)
-//    LocalDateTime getLatestAnomalyTimestamp(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId);
-
     @Query(value = """
         SELECT ka.cell_name AS cellName,
                sk.kpi_name AS kpiName,
@@ -206,6 +200,36 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
                 AND cell_name = ANY(:cellNames ::varchar[])
         """, nativeQuery = true)
     List<CellSeverityProjection> findSeveritiesForCells(
+            @Param("standardKpiId") Long standardKpiId,
+            @Param("currStart") LocalDateTime currStart,
+            @Param("currEnd") LocalDateTime currEnd,
+            @Param("cellNames") String[] cellNames,
+            @Param("ratId") Long ratId,
+            @Param("granularityId") Long granularityId);
+
+
+    /**
+     * Alarm-correlation rollup lookup, keyed by cell_name — sibling to
+     * findSeveritiesForCells above, same params/window, separate query since
+     * kpi_values (where worst-cells come from) has no alarm-correlation
+     * columns of its own; only kpi_anomalies does. Call both with identical
+     * args and merge into WorstCellsDto in the service layer, same pattern
+     * already used for severity.
+     */
+    @Query(value = """
+            SELECT cell_name AS cellName,
+                   has_alarm_correlation AS hasAlarmCorrelation,
+                   distinct_alarm_def_count AS distinctAlarmDefCount,
+                   total_alarm_occurrences AS totalAlarmOccurrences,
+                   best_match_level AS bestMatchLevel
+            FROM kpi_anomalies
+            WHERE standard_kpi_id = :standardKpiId
+                AND rat_id = :ratId
+                AND granularity_id = :granularityId
+                AND timestamp BETWEEN :currStart AND :currEnd
+                AND cell_name = ANY(:cellNames ::varchar[])
+        """, nativeQuery = true)
+    List<CellAlarmCorrelationProjection> findAlarmCorrelationsForCells(
             @Param("standardKpiId") Long standardKpiId,
             @Param("currStart") LocalDateTime currStart,
             @Param("currEnd") LocalDateTime currEnd,

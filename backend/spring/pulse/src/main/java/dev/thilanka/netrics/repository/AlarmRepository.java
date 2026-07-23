@@ -59,7 +59,8 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
                 a.clear_state      AS clearState,
                 a.specific_problem AS specificProblem,
                 a.additional_info  AS additionalInfo,
-                alms.label         AS alarmSource
+                alms.label         AS alarmSource,
+                a.parsed_cell_name AS parsedCellName
             FROM alarms a
             LEFT JOIN alarm_definitions ad ON ad.id = a.alarm_definition_id
             JOIN alarm_types "at" ON at.id = a.alarm_type_id

@@ -10,6 +10,10 @@ public record WorstCellsDto(
         Double difference,
         Integer improved,
         Integer consecutiveBadDays,
-        String severity
+        String severity,
+        Boolean hasAlarmCorrelation,
+        Integer distinctAlarmDefCount,
+        Integer totalAlarmOccurrences,
+        String bestMatchLevel
 ) {
 }

@@ -302,6 +302,15 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .plusSeconds(granularity.getPlusSeconds());
         LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
 
+        // NOTE: unchanged — this overload doesn't merge severity either, so
+        // alarm correlation isn't merged here for consistency. findWorstCells
+        // returns WorstCellsDto directly via constructor projection; its
+        // SELECT list doesn't populate consecutiveBadDays/severity/the 4 new
+        // alarm-correlation fields either, so those come back null here (same
+        // as the pre-existing behavior for consecutiveBadDays/severity).
+        // If this overload needs correlation data too, it would need the
+        // same two-query merge pattern used in the Area/AreaAndBand overloads
+        // below — say if you want that added.
         return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, rat.getId(), excludeZeroes, granularity.getId());
     }
 
@@ -362,20 +371,43 @@ public class KpiDayServiceImpl implements KpiDayService {
                         CellSeverityProjection::severity
                 ));
 
+        // Sibling lookup to severities above — same window/params, separate
+        // query since kpi_values (worst-cells source) carries no
+        // alarm-correlation columns itself. A cell absent from this map
+        // never had a kpi_anomalies row for this window at all (not the
+        // same as "had one, but hasAlarmCorrelation = false").
+        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = kpiAnomalyRepository.findAlarmCorrelationsForCells(
+                        standardKpi.getId(), currStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellAlarmCorrelationProjection::cellName,
+                        c -> c
+                ));
+
 
         return worstCells.stream()
-                .map(wc -> new WorstCellsDto(
-                        wc.cellName(),
-                        wc.kpiName(),
-                        wc.kpiLabel(),
-                        wc.unit(),
-                        wc.value(),
-                        wc.previousValue(),
-                        wc.difference(),
-                        wc.improved(),
-                        streaks.getOrDefault(wc.cellName(), 0),
-                        severities.get(wc.cellName())
-                ))
+                .map(wc -> {
+                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.cellName());
+                    return new WorstCellsDto(
+                            wc.cellName(),
+                            wc.kpiName(),
+                            wc.kpiLabel(),
+                            wc.unit(),
+                            wc.value(),
+                            wc.previousValue(),
+                            wc.difference(),
+                            wc.improved(),
+                            streaks.getOrDefault(wc.cellName(), 0),
+                            severities.get(wc.cellName()),
+                            ac == null ? null : ac.hasAlarmCorrelation(),
+                            ac == null ? null : ac.distinctAlarmDefCount(),
+                            ac == null ? null : ac.totalAlarmOccurrences(),
+                            ac == null ? null : ac.bestMatchLevel()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -432,20 +464,38 @@ public class KpiDayServiceImpl implements KpiDayService {
                         CellSeverityProjection::severity
                 ));
 
+        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = kpiAnomalyRepository.findAlarmCorrelationsForCells(
+                        standardKpi.getId(), currStart, currEnd,
+                        cellNames.toArray(String[]::new),
+                        rat.getId(), granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellAlarmCorrelationProjection::cellName,
+                        c -> c
+                ));
+
         // Merge
         return worstCells.stream()
-                .map(wc -> new WorstCellsDto(
-                        wc.cellName(),
-                        wc.kpiName(),
-                        wc.kpiLabel(),
-                        wc.unit(),
-                        wc.value(),
-                        wc.previousValue(),
-                        wc.difference(),
-                        wc.improved(),
-                        streaks.getOrDefault(wc.cellName(), 0),
-                        severities.get(wc.cellName())
-                ))
+                .map(wc -> {
+                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.cellName());
+                    return new WorstCellsDto(
+                            wc.cellName(),
+                            wc.kpiName(),
+                            wc.kpiLabel(),
+                            wc.unit(),
+                            wc.value(),
+                            wc.previousValue(),
+                            wc.difference(),
+                            wc.improved(),
+                            streaks.getOrDefault(wc.cellName(), 0),
+                            severities.get(wc.cellName()),
+                            ac == null ? null : ac.hasAlarmCorrelation(),
+                            ac == null ? null : ac.distinctAlarmDefCount(),
+                            ac == null ? null : ac.totalAlarmOccurrences(),
+                            ac == null ? null : ac.bestMatchLevel()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 

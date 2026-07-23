@@ -100,6 +100,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
                     .forEach(s -> streaks.put(s.cellName() + "|" + entry.getKey(), s.consecutiveBadDays()));
         }
 
+        //TODO: IMPLEMENT ALARM CORRELATION
         return anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
                         ac.cellName(),
@@ -111,7 +112,11 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
                         ac.difference(),
                         ac.improved(),
                         streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
-                        ac.severity()
+                        ac.severity(),
+                        null,
+                        null,
+                        null,
+                        null
                 ))
                 .collect(Collectors.toList());
     }
@@ -170,12 +175,17 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
                     .forEach(s -> streaks.put(s.cellName() + "|" + entry.getKey(), s.consecutiveBadDays()));
         }
 
+        //TODO: IMPLEMENT ALARM CORRELATION FIELDS
         List<WorstCellsDto> content = anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
                         ac.cellName(), ac.kpiName(), ac.kpiLabel(), ac.unit(),
                         ac.value(), ac.previousValue(), ac.difference(), ac.improved(),
                         streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
-                        ac.severity()
+                        ac.severity(),
+                        null,
+                        null,
+                        null,
+                        null
                 ))
                 .collect(Collectors.toList());
 

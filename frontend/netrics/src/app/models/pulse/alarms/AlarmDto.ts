@@ -29,6 +29,7 @@ export interface AlarmsDto {
   specificProblem: string,
   additionalInfo: string,
   alarmSource: string,
+  parsedCellName:string
 }
 
 export interface AlarmFilter {

@@ -292,18 +292,23 @@
                   <td>
                     <div class="flex items-center gap-2">
                       <span>{{ cell.cellName }}</span>
+                      @if (cell.hasAlarmCorrelation) {
+                        <div class="tooltip" [attr.data-tip]="cell.distinctAlarmDefCount + ' Alarms, ' + cell.totalAlarmOccurrences + ' occurrences'">
+                          <div class="w-2 h-2 rounded-full bg-error"></div>
+                        </div>
+                      }
                     </div>
                   </td>
                   <td>{{ cell.kpiLabel }}</td>
                   <td>
-          <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
-            {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
-          </span> &nbsp;
+                    <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
+                      {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
+                    </span> &nbsp;
                     <span class="badge badge-soft badge-sm"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0) {
                       +
-                    }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
-          </span>
+                      }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
+                    </span>
                   </td>
                   <td>
                     @if (cell.consecutiveBadDays! < 31) {
