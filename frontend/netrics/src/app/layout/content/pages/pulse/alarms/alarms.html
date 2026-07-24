@@ -71,13 +71,13 @@
   <div class="flex flex-col p-4 border border-base-300 rounded-xl bg-base-100 gap-3">
     <div class="flex flex-wrap gap-2 items-center bg-base-100 rounded-lg">
       <div class="form-control">
-<!--        <label class="label"><span class="text-xs">Node Name</span></label>-->
+        <!--        <label class="label"><span class="text-xs">Node Name</span></label>-->
         <input type="text" placeholder="Search node name..." class="input input-sm input-bordered w-48"
                [value]="nodeName()" (input)="onNodeNameInput($any($event.target).value)"/>
       </div>
 
       <div class="form-control">
-<!--        <label class="label"><span class="label-text">Alarm Name</span></label>-->
+        <!--        <label class="label"><span class="label-text">Alarm Name</span></label>-->
         <input type="text" placeholder="Search alarm name..." class="input input-sm input-bordered w-48"
                [value]="alarmName()" (input)="onAlarmNameInput($any($event.target).value)"/>
       </div>
@@ -107,17 +107,16 @@
     <div class="overflow-x-auto overflow-y-auto max-h-[28rem]">
       <table class="table table-xs table-zebra">
         <thead>
-        <tr class="text-xs">
+        <tr class="text-xs uppercase">
           <th>Occurrence Time</th>
           <th>Node</th>
           <th>Severity</th>
           <th>Alarm Type</th>
           <th>Alarm Name</th>
-<!--          <th>Alarm Code</th>-->
-          <th>Location</th>
-          <th>Acknowledge</th>
+<!--          <th>Acknowledge</th>-->
           <th>Clear</th>
           <th>Source</th>
+          <th></th>
         </tr>
         </thead>
         <tbody>
@@ -140,11 +139,25 @@
                           [ngClass]="severityBadgeClass(alarm.severity)">{{ alarm.severity }}</span></td>
                 <td>{{ alarm.alarmType }}</td>
                 <td>{{ alarm.alarmName }}</td>
-<!--                <td>{{ alarm.alarmCode }}</td>-->
-                <td class="max-w-xs truncate" [title]="alarm.location">{{ alarm.location }}</td>
-                <td>{{ alarm.ackState }}</td>
-                <td>{{ alarm.clearState }}</td>
+                <td>
+                  @if (alarm.clearState == 'CLEARED') {
+                    <div class="badge badge-success badge-soft badge-outline badge-xs">{{alarm.clearState}}</div>
+                  } @else {
+                    <div class="badge badge-soft badge-neutral badge-xs">{{alarm.clearState}}</div>
+                  }
                 <td>{{ alarm.alarmSource }}</td>
+                <td>
+                  <button type="button"
+                          class="btn btn-ghost btn-xs btn-circle text-primary"
+                          (mouseenter)="showInfoPopover($event, alarm)"
+                          (mouseleave)="scheduleHideInfoPopover()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 8V8.1L11.9502 8.1002V8H12.0498Z"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </td>
               </tr>
             }
           }
@@ -163,5 +176,41 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <div #infoPopover
+       popover="manual"
+       class="bg-base-100 border border-base-300 rounded-box shadow-xl p-4 text-xs w-80 space-y-2"
+       [style.top]="popoverStyle().top"
+       [style.left]="popoverStyle().left"
+       (mouseenter)="cancelHideInfoPopover()"
+       (mouseleave)="scheduleHideInfoPopover()">
+    @if (hoveredAlarm(); as alarm) {
+      <div class="grid grid-cols-2">
+        <div>
+          <div class="font-semibold text-neutral/50 uppercase">Alarm Code</div>
+          <div>{{ alarm.alarmCode }}</div>
+        </div>
+        <div class="flex flex-row justify-end">
+          @if (alarm.ackState == 'ACKNOWLEDGED') {
+            <div class="badge badge-xs badge-info badge-soft badge-outline">{{ alarm.ackState }}</div>
+          } @else {
+            <div class="badge badge-xs badge-neutral badge-soft">{{ alarm.ackState }}</div>
+          }
+        </div>
+      </div>
+      <div>
+        <div class="font-semibold text-neutral/50 uppercase">Location</div>
+        <div class="break-words">{{ alarm.location || '—' }}</div>
+      </div>
+      <div>
+        <div class="font-semibold text-neutral/50 uppercase">Additional Info</div>
+        <div class="break-words">{{ alarm.additionalInfo || '—' }}</div>
+      </div>
+      <div>
+        <div class="font-semibold text-neutral/50 uppercase">Specific Problem</div>
+        <div class="break-words">{{ alarm.specificProblem || '—' }}</div>
+      </div>
+    }
   </div>
 </div>

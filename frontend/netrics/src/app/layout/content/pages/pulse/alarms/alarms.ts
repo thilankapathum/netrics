@@ -1,4 +1,4 @@
-import {Component, computed, OnInit, signal} from '@angular/core';
+import {Component, computed, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
 import {AlarmFilter, AlarmsDto, AlarmSourceDto, AlarmTypeDto} from '../../../../../models/pulse/alarms/AlarmDto';
 import {debounceTime, distinctUntilChanged, Subject} from 'rxjs';
 import {AlarmService} from '../../../../../service/pulse/alarms/alarm-service';
@@ -75,6 +75,12 @@ export class Alarms implements OnInit {
 
   private nodeNameInput$ = new Subject<string>();
   private alarmNameInput$ = new Subject<string>();
+
+  hoveredAlarm = signal<AlarmsDto | null>(null);
+  popoverStyle = signal<{ top: string; left: string }>({ top: '0px', left: '0px' });
+  private hidePopoverTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  @ViewChild('infoPopover') infoPopoverRef!: ElementRef<HTMLElement>;
 
   constructor(private alarmService: AlarmService,
               private authService: AuthService,
@@ -269,6 +275,50 @@ export class Alarms implements OnInit {
       default:
         return 'badge-ghost badge-xs';
     }
+  }
+
+  //----- POPOVER -----
+  showInfoPopover(event: MouseEvent, alarm: AlarmsDto) {
+    clearTimeout(this.hidePopoverTimeout);
+    this.hoveredAlarm.set(alarm);
+
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const popoverWidth = 320;
+    const popoverEstHeight = 180;
+
+    // Prefer opening to the left of the icon; flip to the right if there's no room.
+    let left = rect.left - popoverWidth - 8;
+    if (left < 8) {
+      left = rect.right + 8;
+    }
+    // Clamp vertically so it doesn't run off the bottom of the viewport.
+    let top = rect.top - 8;
+    top = Math.min(top, window.innerHeight - popoverEstHeight - 8);
+    top = Math.max(top, 8);
+
+    this.popoverStyle.set({ top: `${top}px`, left: `${left}px` });
+
+    const popoverEl = this.infoPopoverRef.nativeElement as any;
+    if (!popoverEl.matches(':popover-open')) {
+      popoverEl.showPopover();
+    }
+  }
+
+  scheduleHideInfoPopover() {
+    this.hidePopoverTimeout = setTimeout(() => this.hideInfoPopover(), 150);
+  }
+
+  cancelHideInfoPopover() {
+    clearTimeout(this.hidePopoverTimeout);
+  }
+
+  hideInfoPopover() {
+    const popoverEl = this.infoPopoverRef?.nativeElement as any;
+    if (popoverEl?.matches(':popover-open')) {
+      popoverEl.hidePopover();
+    }
+    this.hoveredAlarm.set(null);
   }
 
 }
