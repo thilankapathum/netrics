@@ -72,9 +72,11 @@ public class KpiAnomalyController {
             @RequestParam(defaultValue = "severity") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int pageSize) {
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String alarmCorrelation) {
         return ResponseEntity.ok(kpiAnomalyService.getAllAnomalyCellsByArea(
-                period, areaName, ratName, granularityName, severity, kpiName, sortBy, sortDir, page, pageSize));
+                period, areaName, ratName, granularityName, severity, kpiName, sortBy, sortDir, page, pageSize,
+                alarmCorrelation));
     }
 
     @GetMapping("summary")

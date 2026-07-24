@@ -282,7 +282,9 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             WHERE adcm.area_id = (SELECT area_id FROM params)
         ),
         anomalies AS MATERIALIZED (
-            SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity
+            SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity,
+                   ka.has_alarm_correlation, ka.distinct_alarm_def_count,
+                   ka.total_alarm_occurrences, ka.best_match_level
             FROM kpi_anomalies ka
             JOIN area_cells ac ON ac.cell_name = ka.cell_name
             CROSS JOIN params p
@@ -313,6 +315,8 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         calc AS MATERIALIZED (
             SELECT
                 a.cell_name, a.observed_value, a.severity,
+                a.has_alarm_correlation, a.distinct_alarm_def_count,
+                a.total_alarm_occurrences, a.best_match_level,
                 km.kpi_name, km.label, km.unit, km.worst_order,
                 CASE
                     WHEN km.unit = '%' THEN COALESCE((pa.prev_num / NULLIF(pa.prev_den, 0)) * 100, pa.prev_avg)
@@ -335,7 +339,11 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
                 WHEN worst_order = 'DESC' AND observed_value < previous_value THEN 1
                 ELSE 0
             END AS improved,
-            severity AS severity
+            severity AS severity,
+            has_alarm_correlation    AS hasAlarmCorrelation,
+            distinct_alarm_def_count AS distinctAlarmDefCount,
+            total_alarm_occurrences  AS totalAlarmOccurrences,
+            best_match_level         AS bestMatchLevel
         FROM calc
         """, nativeQuery = true)
     List<AnomalyCellsProjection> findAllAnomalyCellsByArea(
@@ -368,7 +376,9 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         WHERE adcm.area_id = (SELECT area_id FROM params)
     ),
     anomalies AS MATERIALIZED (
-        SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity
+        SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity,
+               ka.has_alarm_correlation, ka.distinct_alarm_def_count,
+               ka.total_alarm_occurrences, ka.best_match_level
         FROM kpi_anomalies ka
         JOIN area_cells ac ON ac.cell_name = ka.cell_name
         CROSS JOIN params p
@@ -378,6 +388,11 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
           AND ka.timestamp <=  p.curr_end
           AND (:severityFilter IS NULL OR ka.severity = :severityFilter)
           AND (:standardKpiId IS NULL OR ka.standard_kpi_id = :standardKpiId)
+          AND (
+                :alarmCorrelationFilter IS NULL
+                OR (:alarmCorrelationFilter = 'correlated'   AND ka.has_alarm_correlation IS TRUE)
+                OR (:alarmCorrelationFilter = 'uncorrelated' AND ka.has_alarm_correlation IS FALSE)
+              )
     ),
     kpi_meta AS MATERIALIZED (
         SELECT id, kpi_name, label, unit, worst_order
@@ -401,6 +416,8 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
     calc AS MATERIALIZED (
         SELECT
             a.cell_name, a.observed_value, a.severity,
+            a.has_alarm_correlation, a.distinct_alarm_def_count,
+            a.total_alarm_occurrences, a.best_match_level,
             km.kpi_name, km.label, km.unit, km.worst_order,
             CASE
                 WHEN km.unit = '%' THEN COALESCE((pa.prev_num / NULLIF(pa.prev_den, 0)) * 100, pa.prev_avg)
@@ -423,7 +440,11 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             WHEN worst_order = 'DESC' AND observed_value < previous_value THEN 1
             ELSE 0
         END AS improved,
-        severity AS severity
+        severity AS severity,
+        has_alarm_correlation   AS hasAlarmCorrelation,
+        distinct_alarm_def_count AS distinctAlarmDefCount,
+        total_alarm_occurrences AS totalAlarmOccurrences,
+        best_match_level        AS bestMatchLevel
     FROM calc
     ORDER BY
         CASE WHEN :sortBy = 'severity' AND :sortDir = 'desc'
@@ -435,7 +456,9 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         CASE WHEN :sortBy = 'value' AND :sortDir = 'desc' THEN observed_value END DESC,
         CASE WHEN :sortBy = 'value' AND :sortDir = 'asc'  THEN observed_value END ASC,
         CASE WHEN :sortBy = 'cellName' AND :sortDir = 'desc' THEN cell_name END DESC,
-        CASE WHEN :sortBy = 'cellName' AND :sortDir = 'asc'  THEN cell_name END ASC
+        CASE WHEN :sortBy = 'cellName' AND :sortDir = 'asc'  THEN cell_name END ASC,
+        CASE WHEN :sortBy = 'alarmCorrelation' AND :sortDir = 'desc' THEN distinct_alarm_def_count END DESC,
+        CASE WHEN :sortBy = 'alarmCorrelation' AND :sortDir = 'asc'  THEN distinct_alarm_def_count END ASC
     LIMIT :pageSize OFFSET :offset
     """, nativeQuery = true)
     List<AnomalyCellsProjection> findAllAnomalyCellsByAreaPaged(
@@ -451,7 +474,8 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             @Param("sortBy") String sortBy,
             @Param("sortDir") String sortDir,
             @Param("pageSize") int pageSize,
-            @Param("offset") int offset);
+            @Param("offset") int offset,
+            @Param("alarmCorrelationFilter") String alarmCorrelationFilter);
 
     @Query(value = """
     SELECT COUNT(*)
@@ -466,6 +490,11 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
       AND ka.timestamp <=  :currEnd
       AND (:severityFilter IS NULL OR ka.severity = :severityFilter)
       AND (:standardKpiId IS NULL OR ka.standard_kpi_id = :standardKpiId)
+      AND (
+            :alarmCorrelationFilter IS NULL
+            OR (:alarmCorrelationFilter = 'correlated'   AND ka.has_alarm_correlation IS TRUE)
+            OR (:alarmCorrelationFilter = 'uncorrelated' AND ka.has_alarm_correlation IS FALSE)
+          )
     """, nativeQuery = true)
     long countAnomalyCellsByArea(
             @Param("currStart") LocalDateTime currStart,
@@ -474,7 +503,8 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             @Param("ratId") Long ratId,
             @Param("granularityId") Long granularityId,
             @Param("severityFilter") String severityFilter,
-            @Param("standardKpiId") Long standardKpiId);
+            @Param("standardKpiId") Long standardKpiId,
+            @Param("alarmCorrelationFilter") String alarmCorrelationFilter);
 
 
     @Query(value = """

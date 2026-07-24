@@ -34,6 +34,17 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
             "moderate", 1, "high", 2, "critical", 3
     );
 
+    // Valid values for the alarmCorrelation filter param — anything else is
+    // treated as "no filter" (same behavior as null/absent).
+    private static final Set<String> VALID_ALARM_CORRELATION_FILTERS = Set.of("correlated", "uncorrelated");
+
+    private String normalizeAlarmCorrelationFilter(String raw) {
+        if (raw == null || raw.isBlank() || !VALID_ALARM_CORRELATION_FILTERS.contains(raw.toLowerCase())) {
+            return null;
+        }
+        return raw.toLowerCase();
+    }
+
     @Override
     public List<KpiAnomalyDto> getLatestAnomalies(String ratName, String granularityName, String minSeverity) {
         Rat rat = ratService.findRatByName(ratName);
@@ -100,7 +111,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
                     .forEach(s -> streaks.put(s.cellName() + "|" + entry.getKey(), s.consecutiveBadDays()));
         }
 
-        //TODO: IMPLEMENT ALARM CORRELATION
+
         return anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
                         ac.cellName(),
@@ -113,23 +124,24 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
                         ac.improved(),
                         streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
                         ac.severity(),
-                        null,
-                        null,
-                        null,
-                        null
+                        ac.hasAlarmCorrelation(),
+                        ac.distinctAlarmDefCount(),
+                        ac.totalAlarmOccurrences(),
+                        ac.bestMatchLevel()
                 ))
                 .collect(Collectors.toList());
     }
 
     @Override
-    @Cacheable(value = "allAnomalyCellsByArea", key = "#period + '_' + #areaName + '_' + #severity + '_' + #kpiName + '_' + #sortBy + '_' + #sortDir + '_' + #page + '_' + #pageSize + '_' + #granularityName + '_' + #ratName")
+    @Cacheable(value = "allAnomalyCellsByArea", key = "#period + '_' + #areaName + '_' + #severity + '_' + #kpiName + '_' + #sortBy + '_' + #sortDir + '_' + #page + '_' + #pageSize + '_' + #alarmCorrelation + '_' + #granularityName + '_' + #ratName")
     public PagedResponse<WorstCellsDto> getAllAnomalyCellsByArea(
             String period, String areaName, String ratName, String granularityName,
-            String severity, String kpiName, String sortBy, String sortDir, int page, int pageSize) {
+            String severity, String kpiName, String sortBy, String sortDir, int page, int pageSize, String alarmCorrelation) {
 
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
         Area area = areaService.findAreaByName(areaName);
+        String alarmCorrelationFilter = normalizeAlarmCorrelationFilter(alarmCorrelation);
 
         Long standardKpiId = null;
         if (kpiName != null && !kpiName.isBlank() && !kpiName.equalsIgnoreCase("all")) {
@@ -146,7 +158,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         LocalDateTime streakStart = currEnd.toLocalDate().minusDays(30).atStartOfDay();
 
         long totalElements = kpiAnomalyRepository.countAnomalyCellsByArea(
-                currStart, currEnd, area.getId(), rat.getId(), granularity.getId(), severity, standardKpiId);
+                currStart, currEnd, area.getId(), rat.getId(), granularity.getId(), severity, standardKpiId, alarmCorrelationFilter);
 
         if (totalElements == 0) {
             return new PagedResponse<>(List.of(), 0, 0, page, pageSize);
@@ -154,7 +166,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         List<AnomalyCellsProjection> anomalyCells = kpiAnomalyRepository.findAllAnomalyCellsByAreaPaged(
                 currStart, currEnd, prevStart, prevEnd, area.getId(), rat.getId(), granularity.getId(),
-                severity, standardKpiId, sortBy, sortDir, pageSize, page * pageSize
+                severity, standardKpiId, sortBy, sortDir, pageSize, page * pageSize, alarmCorrelationFilter
         );
 
         Map<String, List<AnomalyCellsProjection>> byKpi = anomalyCells.stream()
@@ -175,17 +187,16 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
                     .forEach(s -> streaks.put(s.cellName() + "|" + entry.getKey(), s.consecutiveBadDays()));
         }
 
-        //TODO: IMPLEMENT ALARM CORRELATION FIELDS
         List<WorstCellsDto> content = anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
                         ac.cellName(), ac.kpiName(), ac.kpiLabel(), ac.unit(),
                         ac.value(), ac.previousValue(), ac.difference(), ac.improved(),
                         streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
                         ac.severity(),
-                        null,
-                        null,
-                        null,
-                        null
+                        ac.hasAlarmCorrelation(),
+                        ac.distinctAlarmDefCount(),
+                        ac.totalAlarmOccurrences(),
+                        ac.bestMatchLevel()
                 ))
                 .collect(Collectors.toList());
 

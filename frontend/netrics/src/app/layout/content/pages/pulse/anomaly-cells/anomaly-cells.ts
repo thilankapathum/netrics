@@ -1,6 +1,6 @@
 import {Component, computed, effect, inject, input, OnInit, signal} from '@angular/core';
 import {AnomalyCellsService} from '../../../../../service/pulse/anomaly-cells-service';
-import {AnomalyCellDto, SortDir, SortField} from '../../../../../models/pulse/AnomalyCellDto';
+import {AlarmCorrelationFilter, AnomalyCellDto, SortDir, SortField} from '../../../../../models/pulse/AnomalyCellDto';
 import {DecimalPipe} from '@angular/common';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
@@ -67,6 +67,7 @@ export class AnomalyCells implements OnInit {
   sortBy = signal<SortField>('severity');
   sortDir = signal<SortDir>('desc');
   severityFilter = signal<string | null>(null);
+  alarmCorrelationFilter = signal<AlarmCorrelationFilter>('all');
   loadingAnomalyCells = signal(false);
 
   pageSizeOptions = [10, 20, 50, 100];
@@ -112,6 +113,7 @@ export class AnomalyCells implements OnInit {
       const sortBy = this.sortBy();
       const sortDir = this.sortDir();
       const severityFilter = this.severityFilter();
+      const alarmCorrelationFilter = this.alarmCorrelationFilter();
       this.kpiFilter();
 
       // Guard: don't fetch until all required filters have real values
@@ -284,6 +286,7 @@ export class AnomalyCells implements OnInit {
         sortDir: this.sortDir(),
         page: this.page(),
         pageSize: this.pageSize(),
+        alarmCorrelation: this.alarmCorrelationFilter() === 'all' ? null : this.alarmCorrelationFilter(),
       })
       .subscribe({
         next: (res) => {
@@ -317,6 +320,11 @@ export class AnomalyCells implements OnInit {
 
   onSeverityFilterChange(value: string): void {
     this.severityFilter.set(value === 'all' ? null : value);
+    this.page.set(0);
+  }
+
+  onAlarmCorrelationFilterChange(value: string): void {
+    this.alarmCorrelationFilter.set(value as AlarmCorrelationFilter);
     this.page.set(0);
   }
 

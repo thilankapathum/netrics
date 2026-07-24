@@ -9,6 +9,10 @@ public record AnomalyCellsProjection(
         Double previousValue,
         Double difference,
         Integer improved,
-        String severity
+        String severity,
+        Boolean hasAlarmCorrelation,
+        Integer distinctAlarmDefCount,
+        Integer totalAlarmOccurrences,
+        String bestMatchLevel
 ) {
 }
