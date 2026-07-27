@@ -34,6 +34,7 @@ import {BandWorstCellsKpiTrend} from '../../../../models/pulse/BandWorstCellsKpi
 import {BandKpiSeries} from '../../../../models/apexCharts/BandKpiSeries';
 import {PsCells} from './pulse-settings/ps-cells/ps-cells';
 import {StandardRawKpiMappingService} from '../../../../service/pulse/standard-raw-kpi-mapping-service';
+import {AlarmService} from '../../../../service/pulse/alarms/alarm-service';
 
 @Component({
   selector: 'app-pulse',
@@ -120,7 +121,8 @@ export class PulseComponent implements OnInit {
               private authService: AuthService,
               private cellService: CellService,
               private bandService: BandService,
-              private standardRawKpiMappingService: StandardRawKpiMappingService) {
+              private standardRawKpiMappingService: StandardRawKpiMappingService,
+              private alarmService: AlarmService) {
     this.queryDateRanges();
   }
 
@@ -587,10 +589,23 @@ export class PulseComponent implements OnInit {
     this.setPage(this.currentPage - 1);
   }
 
+  getAlarmsByCellGranularity(cellName: string, startDate: string, granularityName: string){
+    this.alarmService.getAlarmsByCellGranularity(cellName, startDate, granularityName).subscribe({
+      next: data => {
+        console.log(data);
+      }, error: error => {
+        console.error("Error getting alarmsByCellGranularity:", error);
+        this.alertService.error(`AlarmsByCellGranularity: ${error.status} ${error.statusText}`);
+      }
+    })
+  }
+
 
   //---------- OPEN ANALYSIS MODAL (DIALOG) ----------------
 
-  openAnalysisModal(kpiName: string, cellName: string) {
+  openAnalysisModal(kpiName: string, cellName: string, timestamp:Date) {
+    const localTimestamp = this.toLocalDateTimeString(timestamp);
+    this.getAlarmsByCellGranularity(cellName, localTimestamp, this.selectedGranularity())
     this.analysisModalCell = cellName;
     this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
@@ -599,6 +614,13 @@ export class PulseComponent implements OnInit {
     this.getStandardRawKpiMappingAvailable(this.selectedRat(), this.selectedStandardKpi());
     this.showOperands = false;
     this.queryModalTrendData(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity());
+  }
+
+  private toLocalDateTimeString(date: Date | string): string {
+    const d = date instanceof Date ? date : new Date(date);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+      `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
 
   onNextCell(){

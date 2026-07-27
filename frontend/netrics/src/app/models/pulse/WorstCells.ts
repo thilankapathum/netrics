@@ -1,4 +1,5 @@
 export interface WorstCells {
+  timestamp?: Date;
   cellName?: string;
   kpiName?: string;
   kpiLabel?: string;

@@ -93,13 +93,13 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         // Group by KPI name so streaks are looked up correctly per-KPI, not mixed across KPIs
         Map<String, List<AnomalyCellsProjection>> byKpi = anomalyCells.stream()
-                .collect(Collectors.groupingBy(AnomalyCellsProjection::kpiName));
+                .collect(Collectors.groupingBy(AnomalyCellsProjection::getKpiName));
 
         Map<String, Integer> streaks = new HashMap<>();
         for (Map.Entry<String, List<AnomalyCellsProjection>> entry : byKpi.entrySet()) {
             StandardKpi standardKpi = standardKpiService.findByKpiName(entry.getKey(), rat);
             List<String> cellNames = entry.getValue().stream()
-                    .map(AnomalyCellsProjection::cellName)
+                    .map(AnomalyCellsProjection::getCellName)
                     .toList();
 
             // Key streaks by "cellName|kpiName" since the same cell can appear under multiple KPIs
@@ -114,20 +114,21 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         return anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
-                        ac.cellName(),
-                        ac.kpiName(),
-                        ac.kpiLabel(),
-                        ac.unit(),
-                        ac.value(),
-                        ac.previousValue(),
-                        ac.difference(),
-                        ac.improved(),
-                        streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
-                        ac.severity(),
-                        ac.hasAlarmCorrelation(),
-                        ac.distinctAlarmDefCount(),
-                        ac.totalAlarmOccurrences(),
-                        ac.bestMatchLevel()
+                        ac.getTimestamp(),
+                        ac.getCellName(),
+                        ac.getKpiName(),
+                        ac.getKpiLabel(),
+                        ac.getUnit(),
+                        ac.getValue(),
+                        ac.getPreviousValue(),
+                        ac.getDifference(),
+                        ac.getImproved(),
+                        streaks.getOrDefault(ac.getCellName() + "|" + ac.getKpiName(), 0),
+                        ac.getSeverity(),
+                        ac.getHasAlarmCorrelation(),
+                        ac.getDistinctAlarmDefCount(),
+                        ac.getTotalAlarmOccurrences(),
+                        ac.getBestMatchLevel()
                 ))
                 .collect(Collectors.toList());
     }
@@ -170,13 +171,13 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         );
 
         Map<String, List<AnomalyCellsProjection>> byKpi = anomalyCells.stream()
-                .collect(Collectors.groupingBy(AnomalyCellsProjection::kpiName));
+                .collect(Collectors.groupingBy(AnomalyCellsProjection::getKpiName));
 
         Map<String, Integer> streaks = new HashMap<>();
         for (Map.Entry<String, List<AnomalyCellsProjection>> entry : byKpi.entrySet()) {
             StandardKpi standardKpi = standardKpiService.findByKpiName(entry.getKey(), rat);
             List<String> cellNames = entry.getValue().stream()
-                    .map(AnomalyCellsProjection::cellName)
+                    .map(AnomalyCellsProjection::getCellName)
                     .toList();
 
             kpiDayRepository.findStreaksForCells(
@@ -189,14 +190,14 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         List<WorstCellsDto> content = anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
-                        ac.cellName(), ac.kpiName(), ac.kpiLabel(), ac.unit(),
-                        ac.value(), ac.previousValue(), ac.difference(), ac.improved(),
-                        streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
-                        ac.severity(),
-                        ac.hasAlarmCorrelation(),
-                        ac.distinctAlarmDefCount(),
-                        ac.totalAlarmOccurrences(),
-                        ac.bestMatchLevel()
+                        ac.getTimestamp(), ac.getCellName(), ac.getKpiName(), ac.getKpiLabel(), ac.getUnit(),
+                        ac.getValue(), ac.getPreviousValue(), ac.getDifference(), ac.getImproved(),
+                        streaks.getOrDefault(ac.getCellName() + "|" + ac.getKpiName(), 0),
+                        ac.getSeverity(),
+                        ac.getHasAlarmCorrelation(),
+                        ac.getDistinctAlarmDefCount(),
+                        ac.getTotalAlarmOccurrences(),
+                        ac.getBestMatchLevel()
                 ))
                 .collect(Collectors.toList());
 

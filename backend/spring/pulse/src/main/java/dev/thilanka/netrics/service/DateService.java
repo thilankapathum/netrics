@@ -30,6 +30,8 @@ public interface DateService {
 
     LocalDateTime extractDate(String date);
 
+    LocalDateTime extractDateTime(String date);
+
     LocalDateTime getPreviousDate(LocalDateTime currentDate, String period);
 
     LocalDateTime getStartDate(LocalDateTime currentDate, String period);

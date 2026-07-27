@@ -287,7 +287,7 @@
                 <tr
                   class="hover:bg-base-200 cursor-pointer border-l-4"
                   [class]="severityBorderClass(cell.severity)"
-                  (click)="openAnalysisModal(cell.kpiName!, cell.cellName!)">
+                  (click)="openAnalysisModal(cell.kpiName!, cell.cellName!, cell.timestamp!)">
                   <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
                   <td>
                     <div class="flex items-center gap-2">

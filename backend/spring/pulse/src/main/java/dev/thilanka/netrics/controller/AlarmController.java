@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -26,6 +27,12 @@ public class AlarmController {
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     public ResponseEntity<List<CellAlarmDto>> getAlarmsByCell(@RequestParam String cellName, @RequestParam String period) {
         return new ResponseEntity<>(alarmService.getAlarmsByCell(cellName, period), HttpStatus.OK);
+    }
+
+    @GetMapping("cell-granularity")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    public ResponseEntity<List<CellAlarmDto>> getAlarmsByCell(@RequestParam String cellName, @RequestParam LocalDateTime startDate, @RequestParam String granularityName) {
+        return new ResponseEntity<>(alarmService.getAlarmsByCell(cellName, startDate, granularityName), HttpStatus.OK);
     }
 
     @GetMapping

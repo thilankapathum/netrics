@@ -7,6 +7,7 @@ import {KpiDataDto} from '../../../models/pulse/KpiDataDto';
 import {KpiTrendDto} from '../../../models/pulse/KpiTrendDto';
 import {Observable} from 'rxjs';
 import {KpiDataWithOperandsDto} from '../../../models/pulse/KpiDataWithOperandsDto';
+import {WorstCells} from '../../../models/pulse/WorstCells';
 
 @Injectable({
   providedIn: 'root'
@@ -36,11 +37,11 @@ export class KpidayService {
   }
 
   getWorstCellsByKpiAndArea(kpiName: string, period: string, excludeZeroes:boolean, limit:number, areaName:string,  ratName:string, granularityName:string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/worst-cells-area`,{ params: { kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName } });
+    return this.http.get<Array<WorstCells>>(`${this.baseUrl}/worst-cells-area`,{ params: { kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName } });
   }
 
   getWorstCellsByKpiAreaAndBand(kpiName: string, period: string, excludeZeroes:boolean, limit:number, areaName:string,  ratName:string, granularityName:string, bandName:string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/worst-cells-area-band`,{ params: { kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName, bandName } });
+    return this.http.get<Array<WorstCells>>(`${this.baseUrl}/worst-cells-area-band`,{ params: { kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName, bandName } });
   }
 
   getDataByKpiAndCell(kpiName:string, cellName:string, period: string, ratName:string, granularityName:string): Observable<any> {

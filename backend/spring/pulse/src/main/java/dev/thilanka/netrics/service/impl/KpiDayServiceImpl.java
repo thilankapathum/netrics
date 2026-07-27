@@ -342,7 +342,7 @@ public class KpiDayServiceImpl implements KpiDayService {
         // Query 2: streaks only for the specific cells returned above — 30-day window
         //          but filtered to just N cell names instead of the whole area
         List<String> cellNames = worstCells.stream()
-                .map(WorstCellsProjection::cellName)
+                .map(WorstCellsProjection::getCellName)
                 .toList();
 
         Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
@@ -390,18 +390,19 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         return worstCells.stream()
                 .map(wc -> {
-                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.cellName());
+                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.getCellName());
                     return new WorstCellsDto(
-                            wc.cellName(),
-                            wc.kpiName(),
-                            wc.kpiLabel(),
-                            wc.unit(),
-                            wc.value(),
-                            wc.previousValue(),
-                            wc.difference(),
-                            wc.improved(),
-                            streaks.getOrDefault(wc.cellName(), 0),
-                            severities.get(wc.cellName()),
+                            wc.getTimestamp(),
+                            wc.getCellName(),
+                            wc.getKpiName(),
+                            wc.getKpiLabel(),
+                            wc.getUnit(),
+                            wc.getValue(),
+                            wc.getPreviousValue(),
+                            wc.getDifference(),
+                            wc.getImproved(),
+                            streaks.getOrDefault(wc.getCellName(), 0),
+                            severities.get(wc.getCellName()),
                             ac == null ? null : ac.hasAlarmCorrelation(),
                             ac == null ? null : ac.distinctAlarmDefCount(),
                             ac == null ? null : ac.totalAlarmOccurrences(),
@@ -438,7 +439,7 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         // Query 2: streaks for the returned cells only — reuses findStreaksForCells unchanged
         List<String> cellNames = worstCells.stream()
-                .map(WorstCellsProjection::cellName)
+                .map(WorstCellsProjection::getCellName)
                 .toList();
 
         Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
@@ -478,18 +479,19 @@ public class KpiDayServiceImpl implements KpiDayService {
         // Merge
         return worstCells.stream()
                 .map(wc -> {
-                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.cellName());
+                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.getCellName());
                     return new WorstCellsDto(
-                            wc.cellName(),
-                            wc.kpiName(),
-                            wc.kpiLabel(),
-                            wc.unit(),
-                            wc.value(),
-                            wc.previousValue(),
-                            wc.difference(),
-                            wc.improved(),
-                            streaks.getOrDefault(wc.cellName(), 0),
-                            severities.get(wc.cellName()),
+                            wc.getTimestamp(),
+                            wc.getCellName(),
+                            wc.getKpiName(),
+                            wc.getKpiLabel(),
+                            wc.getUnit(),
+                            wc.getValue(),
+                            wc.getPreviousValue(),
+                            wc.getDifference(),
+                            wc.getImproved(),
+                            streaks.getOrDefault(wc.getCellName(), 0),
+                            severities.get(wc.getCellName()),
                             ac == null ? null : ac.hasAlarmCorrelation(),
                             ac == null ? null : ac.distinctAlarmDefCount(),
                             ac == null ? null : ac.totalAlarmOccurrences(),

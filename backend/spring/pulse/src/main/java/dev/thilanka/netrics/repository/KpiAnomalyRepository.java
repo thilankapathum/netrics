@@ -282,7 +282,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             WHERE adcm.area_id = (SELECT area_id FROM params)
         ),
         anomalies AS MATERIALIZED (
-            SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity,
+            SELECT ka.timestamp, ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity,
                    ka.has_alarm_correlation, ka.distinct_alarm_def_count,
                    ka.total_alarm_occurrences, ka.best_match_level
             FROM kpi_anomalies ka
@@ -314,7 +314,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         ),
         calc AS MATERIALIZED (
             SELECT
-                a.cell_name, a.observed_value, a.severity,
+                a.timestamp, a.cell_name, a.observed_value, a.severity,
                 a.has_alarm_correlation, a.distinct_alarm_def_count,
                 a.total_alarm_occurrences, a.best_match_level,
                 km.kpi_name, km.label, km.unit, km.worst_order,
@@ -327,6 +327,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
             LEFT JOIN prev_agg pa ON pa.cell_name = a.cell_name AND pa.standard_kpi_id = a.standard_kpi_id
         )
         SELECT
+            timestamp   AS timestamp,
             cell_name    AS cellName,
             kpi_name     AS kpiName,
             label        AS kpiLabel,
@@ -376,7 +377,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         WHERE adcm.area_id = (SELECT area_id FROM params)
     ),
     anomalies AS MATERIALIZED (
-        SELECT ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity,
+        SELECT ka.timestamp, ka.cell_name, ka.standard_kpi_id, ka.observed_value, ka.severity,
                ka.has_alarm_correlation, ka.distinct_alarm_def_count,
                ka.total_alarm_occurrences, ka.best_match_level
         FROM kpi_anomalies ka
@@ -415,7 +416,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
     ),
     calc AS MATERIALIZED (
         SELECT
-            a.cell_name, a.observed_value, a.severity,
+            a.timestamp, a.cell_name, a.observed_value, a.severity,
             a.has_alarm_correlation, a.distinct_alarm_def_count,
             a.total_alarm_occurrences, a.best_match_level,
             km.kpi_name, km.label, km.unit, km.worst_order,
@@ -428,6 +429,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         LEFT JOIN prev_agg pa ON pa.cell_name = a.cell_name AND pa.standard_kpi_id = a.standard_kpi_id
     )
     SELECT
+        timestamp   AS timestamp,
         cell_name    AS cellName,
         kpi_name     AS kpiName,
         label        AS kpiLabel,

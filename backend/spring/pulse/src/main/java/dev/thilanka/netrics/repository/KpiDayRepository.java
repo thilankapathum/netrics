@@ -361,6 +361,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
         ),
         agg AS MATERIALIZED (
             SELECT
+                l.timestamp,
                 l.cell_name,
                 SUM(l.numerator_kpi_value)
                     FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
@@ -380,9 +381,10 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                 AND l.rat_id          = p.rat_id
                 AND l.granularity_id  = p.granularity_id
                 AND l.timestamp BETWEEN p.prev_start AND p.curr_end
-            GROUP BY l.cell_name
+            GROUP BY l.cell_name, l.timestamp
         )
         SELECT
+            a.timestamp     AS timestamp,
             a.cell_name     AS cell_name,
             km.kpi_name     AS kpi_name,
             km.label        AS kpi_label,
@@ -537,6 +539,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
         ),
         agg AS MATERIALIZED (
             SELECT
+                l.timestamp,
                 l.cell_name,
                 SUM(l.numerator_kpi_value)
                     FILTER (WHERE l.timestamp BETWEEN p.curr_start AND p.curr_end) AS curr_num,
@@ -557,9 +560,10 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                 AND l.rat_id          = p.rat_id
                 AND l.granularity_id  = p.granularity_id
                 AND l.timestamp BETWEEN p.prev_start AND p.curr_end
-            GROUP BY l.cell_name
+            GROUP BY l.cell_name, l.timestamp
         )
         SELECT
+            a.timestamp                                                         AS timestamp,
             a.cell_name                                                         AS cell_name,
             km.kpi_name                                                         AS kpi_name,
             km.label                                                            AS kpi_label,

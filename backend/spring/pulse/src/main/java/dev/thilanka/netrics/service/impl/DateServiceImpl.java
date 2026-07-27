@@ -62,7 +62,7 @@ public class DateServiceImpl implements DateService {
         Granularity granularity = granularityService.findGranularityByName(granularityName);
         LocalDateTime latestDate = getLatestDate(rat, granularity).toLocalDate().atStartOfDay();
         LocalDateTime latestPrevDate = getLatestPreviousDate(period, rat, granularity).plusDays(1);
-        return new DateRangeDto(Timestamp.valueOf(latestDate), Timestamp.valueOf(latestPrevDate));
+        return new DateRangeDto(latestDate, latestPrevDate);
     }
 
     @Override
@@ -145,6 +145,11 @@ public class DateServiceImpl implements DateService {
     public LocalDateTime extractDate(String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return LocalDate.parse(date, formatter).atStartOfDay();
+    }
+
+    @Override
+    public LocalDateTime extractDateTime(String date) {
+        return null;
     }
 
     @Override

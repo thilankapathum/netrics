@@ -84,7 +84,7 @@ public class MapCellServiceImpl implements MapCellService {
 
     @Override
     @Cacheable(
-            value = "mapCellTiles",
+            value = "mapCellSiteTiles",
             key = "#z + '_' + #x + '_' + #y"
     )
     public List<SiteDto> getSitesByTile(int z, int x, int y) {
@@ -94,13 +94,12 @@ public class MapCellServiceImpl implements MapCellService {
     }
 
     @Override
-
     public byte[] getTile(int z, int x, int y, Long standardKpiId, Long ratId, Long granularityId, Long areaId, LocalDateTime startTime, LocalDateTime endTime) {
         return mapCellRepository.getTile(z, x, y, standardKpiId, ratId, granularityId, startTime, endTime, areaId);
     }
 
     @Override
-    @Cacheable(value = "mapCellTiles",
+    @Cacheable(value = "mapCellByteTiles",
             key = "#z + '_' + #x + '_' + #y + '_' + #standardKpiName + '_' + #areaName + '_' + #date + '_' + #granularityName + '_' + #ratName")
     public byte[] getTile(int z, int x, int y, String standardKpiName, String ratName, String granularityName, String date, String areaName) {
         Rat rat = ratService.findRatByName(ratName);

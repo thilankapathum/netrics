@@ -44,6 +44,38 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
             """, nativeQuery = true)
     List<CellAlarmDto> getAlarmsByCell(@Param("cellName") String cellName, @Param("startTime") LocalDateTime startTime);
 
+    @Query(value = """
+            SELECT
+                a.alarm_id,
+                c.cell_name,
+                c.node_name,
+                a.severity,
+                a.occurrence_time,
+                at.name          AS alarm_type,
+                ad.alarm_code,
+                ad.alarm_name,
+                a.location,
+                a.ack_state,
+                a.clear_state,
+                a.specific_problem,
+                a.additional_info,
+                alms.label AS alarm_source
+            FROM alarms a
+            JOIN cells c
+                ON a.node_name = c.node_name
+            LEFT JOIN alarm_definitions ad
+                ON ad.id = a.alarm_definition_id
+            JOIN alarm_types "at"
+                ON at.id = a.alarm_type_id
+            JOIN alarm_sources alms
+                ON alms.id = a.alarm_source_id
+            WHERE c.cell_name = :cellName
+                AND a.occurrence_time <= :endTime
+                AND a.occurrence_time >= :startTime
+            ORDER BY a.occurrence_time DESC;
+            """, nativeQuery = true)
+    List<CellAlarmDto> getAlarmsByCell(@Param("cellName") String cellName, @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
+
 
     @Query(value = """
             SELECT

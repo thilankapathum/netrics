@@ -20,6 +20,23 @@ export class AlarmService {
     return this.http.get<Array<CellAlarmDto>>(`${this.baseUrl}/cell`, {params: {cellName, period}});
   }
 
+  getAlarmsByCellGranularity(
+    cellName: string,
+    startDate: string,
+    granularityName: string
+  ) {
+    return this.http.get<CellAlarmDto[]>(
+      `${this.baseUrl}/cell-granularity`,
+      {
+        params: {
+          cellName,
+          startDate,
+          granularityName
+        }
+      }
+    );
+  }
+
   getAlarms(filter: AlarmFilter, page: number, size: number) {
     let params = new HttpParams()
       .set('period', filter.period)
