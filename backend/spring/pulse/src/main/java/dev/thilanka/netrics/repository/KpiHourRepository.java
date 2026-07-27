@@ -24,7 +24,7 @@ public interface KpiHourRepository extends JpaRepository<KpiHour, Long> {
         SELECT
             "timestamp",
             cell_name,
-            standard_kpi.label AS label,
+            standard_kpi.label AS kpiLabel,
             kpi_value
         FROM kpi_values_hour
         LEFT JOIN standard_kpi

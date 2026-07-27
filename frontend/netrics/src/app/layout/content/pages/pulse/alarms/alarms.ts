@@ -16,9 +16,9 @@ import {AreaService} from '../../../../../service/pulse/area-service';
 import {AlarmTypeService} from '../../../../../service/pulse/alarms/alarm-type-service';
 import {AlarmSourceService} from '../../../../../service/pulse/alarms/alarm-source-service';
 
-const SEVERITIES = ['CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'INDETERMINATE', 'CLEARED'];
-const ACK_STATES = ['ACKNOWLEDGED', 'UNACKNOWLEDGED', 'UNKNOWN'];
-const CLEAR_STATES = ['CLEARED', 'UNCLEARED', 'UNKNOWN'];
+// const SEVERITIES = ['CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'INDETERMINATE', 'CLEARED'];
+// const ACK_STATES = ['ACKNOWLEDGED', 'UNACKNOWLEDGED', 'UNKNOWN'];
+// const CLEAR_STATES = ['CLEARED', 'UNCLEARED', 'UNKNOWN'];
 
 @Component({
   selector: 'app-alarms',
@@ -69,15 +69,18 @@ export class Alarms implements OnInit {
   loadingAlarmTypes: boolean = false;
   loadingAlarmSources: boolean = false;
 
-  readonly severities = SEVERITIES;
-  readonly ackStates = ACK_STATES;
-  readonly clearStates = CLEAR_STATES;
+  // readonly severities = SEVERITIES;
+  // readonly ackStates = ACK_STATES;
+  // readonly clearStates = CLEAR_STATES;
+  readonly severities: string[] = [];
+  readonly ackStates: string[] = [];
+  readonly clearStates: string[] = [];
 
   private nodeNameInput$ = new Subject<string>();
   private alarmNameInput$ = new Subject<string>();
 
   hoveredAlarm = signal<AlarmsDto | null>(null);
-  popoverStyle = signal<{ top: string; left: string }>({ top: '0px', left: '0px' });
+  popoverStyle = signal<{ top: string; left: string }>({top: '0px', left: '0px'});
   private hidePopoverTimeout: ReturnType<typeof setTimeout> | undefined;
 
   @ViewChild('infoPopover') infoPopoverRef!: ElementRef<HTMLElement>;
@@ -90,6 +93,10 @@ export class Alarms implements OnInit {
               private areaService: AreaService,
               private alarmTypeService: AlarmTypeService,
               private alarmSourceService: AlarmSourceService,) {
+    this.severities = alarmService.SEVERITIES;
+    this.ackStates = alarmService.ACK_STATES;
+    this.clearStates = alarmService.CLEAR_STATES;
+
     this.nodeNameInput$.pipe(debounceTime(400), distinctUntilChanged())
       .subscribe(value => {
         this.nodeName.set(value);
@@ -192,7 +199,7 @@ export class Alarms implements OnInit {
     })
   }
 
-  getAlarmSources(){
+  getAlarmSources() {
     this.loadingAlarmSources = true;
     this.alarmSourceService.getAll().subscribe({
       next: data => {
@@ -297,7 +304,7 @@ export class Alarms implements OnInit {
     top = Math.min(top, window.innerHeight - popoverEstHeight - 8);
     top = Math.max(top, 8);
 
-    this.popoverStyle.set({ top: `${top}px`, left: `${left}px` });
+    this.popoverStyle.set({top: `${top}px`, left: `${left}px`});
 
     const popoverEl = this.infoPopoverRef.nativeElement as any;
     if (!popoverEl.matches(':popover-open')) {

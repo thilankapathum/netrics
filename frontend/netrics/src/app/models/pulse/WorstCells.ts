@@ -10,8 +10,8 @@ export interface WorstCells {
   improved?: number;
   consecutiveBadDays?: number;
   severity?: string;
-  hasAlarmCorrelation: boolean;
-  distinctAlarmDefCount: number;
-  totalAlarmOccurrences: number;
-  bestMatchLevel: string
+  hasAlarmCorrelation?: boolean;
+  distinctAlarmDefCount?: number;
+  totalAlarmOccurrences?: number;
+  bestMatchLevel?: string
 }

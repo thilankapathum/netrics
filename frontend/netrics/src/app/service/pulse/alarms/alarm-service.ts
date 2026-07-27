@@ -12,6 +12,10 @@ export class AlarmService {
 
   private readonly baseUrl: string;
 
+   readonly SEVERITIES = ['CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'INDETERMINATE', 'CLEARED'];
+   readonly ACK_STATES = ['ACKNOWLEDGED', 'UNACKNOWLEDGED', 'UNKNOWN'];
+   readonly CLEAR_STATES = ['CLEARED', 'UNCLEARED', 'UNKNOWN'];
+
   constructor(private http: HttpClient, private urlService: UrlService) {
     this.baseUrl = `${this.urlService.getPulseUrl()}/alarms/details`;
   }

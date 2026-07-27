@@ -242,7 +242,7 @@ services:
       - "${DOMAIN_IP}:host-gateway"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.2.5
+    image: thilankaw/netrics/pulse:0.2.6
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -412,7 +412,7 @@ services:
       - /home/ftpuser/apps/netrics/alarms/oss/u2020:/data/incoming/u2020
 
   frontend:
-    image: thilankaw/netrics/frontend:0.1.5
+    image: thilankaw/netrics/frontend:0.1.6
     container_name: frontend
     expose:
       - "80"
