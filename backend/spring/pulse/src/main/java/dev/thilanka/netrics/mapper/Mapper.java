@@ -94,7 +94,7 @@ public class Mapper {
     public KpiDataDto kpiDayToKpiDataDto(KpiDay kpiDay) {
 
         return new KpiDataDto(
-                Timestamp.valueOf(kpiDay.getTimestamp()),
+                kpiDay.getTimestamp(),
                 kpiDay.getCellName(),
                 kpiDay.getStandardKpi().getKpiName(),
                 kpiDay.getKpiValue()

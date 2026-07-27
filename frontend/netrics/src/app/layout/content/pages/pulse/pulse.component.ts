@@ -657,6 +657,7 @@ export class PulseComponent implements OnInit {
     this.getTrendDataByKpiNameAndCell(kpiName, cellName, trendPeriod, ratName, resolvedGranularity)
       .subscribe({
         next: data => {
+          console.log('trend data',data)
           this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
           this.loadingAnalysisModalChart = false;
         }, error: error => {
