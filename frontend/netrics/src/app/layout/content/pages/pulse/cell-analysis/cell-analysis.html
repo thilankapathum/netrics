@@ -176,9 +176,7 @@
               </button>
             }
             @if (chartCellName().length > 1) {
-              <button [disabled]="loadingAll()" class="btn btn-xs btn-ghost" (click)="chartSeries.set([])">
-                Clear All
-              </button>
+              <button [disabled]="loadingAll()" class="btn btn-xs btn-ghost" (click)="clearAllChartCells()">Clear All</button>
             }
           </div>
         </div>
