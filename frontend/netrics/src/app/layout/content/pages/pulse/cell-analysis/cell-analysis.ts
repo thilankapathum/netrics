@@ -121,8 +121,8 @@ export class CellAnalysis implements OnInit {
 
   setSelectedGranularity(granularity: 'day-average' | 'busy-hour') {
     this.selectedGranularity.set(granularity);
-    if (this.cellSelected()) {  // Query KPI only if a cell is selected
-      this.getRat(this.rat()?.name!);
+    if (this.cellSelected()) {
+      this.refreshTrendDataForSelection();
     }
   }
 
@@ -310,6 +310,10 @@ export class CellAnalysis implements OnInit {
   }
 
   onPeriodChange(event: Event) {
+    this.refreshTrendDataForSelection();
+  }
+
+  private refreshTrendDataForSelection(): void {
     if (this.selectedChartType() === 'm_cell_s_kpi') {
       const cells = this.chartSeries().map(s => s.cellName);
       this.chartSeries.set([]);
@@ -449,10 +453,35 @@ export class CellAnalysis implements OnInit {
   }
 
   setSelectedChartType(type: 's_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi') {
+    const previousType = this.selectedChartType();
     this.selectedChartType.set(type);
-    this.chartSeries.set([]);
+
     if (type !== 's_cell_s_kpi') {
       this.showOperands.set(false);   // operands only make sense for a single cell
+    }
+
+    if (previousType === 's_cell_s_kpi' && type === 'm_cell_s_kpi' && this.cellSelected() && this.cellName()) {
+      // Carry the single-mode cell into multi-cell mode instead of losing it
+      this.chartSeries.set([]);
+      this.cellColorMap = {};
+      this.queryCell.set(this.cellName());
+      this.getTrendDataByKpiAndCell(
+        this.selectedStandardKpi(), this.cellName(), this.trendPeriod(),
+        this.rat()?.name!, this.selectedGranularity()
+      );
+    } else if (previousType === 'm_cell_s_kpi' && type === 's_cell_s_kpi' && this.chartSeries().length > 0) {
+      // Carry the first-selected multi-cell mode cell into single-cell mode
+      const firstCell = this.chartSeries()[0].cellName;
+      this.chartSeries.set([]);
+      this.cellName.set(firstCell);
+      this.queryCell.set(firstCell);
+      this.cellSelected.set(true);
+      this.getTrendDataByKpiAndCell(
+        this.selectedStandardKpi(), firstCell, this.trendPeriod(),
+        this.rat()?.name!, this.selectedGranularity()
+      );
+    } else {
+      this.chartSeries.set([]);
     }
   }
 
