@@ -185,18 +185,25 @@
        (mouseenter)="cancelHideInfoPopover()"
        (mouseleave)="scheduleHideInfoPopover()">
     @if (hoveredAlarm(); as alarm) {
-      <div class="grid grid-cols-2">
-        <div>
-          <div class="font-semibold text-neutral/50 uppercase">Alarm Code</div>
-          <div>{{ alarm.alarmCode }}</div>
-        </div>
-        <div class="flex flex-row justify-end">
+        <div class="flex flex-row">
           @if (alarm.ackState == 'ACKNOWLEDGED') {
             <div class="badge badge-xs badge-info badge-soft badge-outline">{{ alarm.ackState }}</div>
           } @else {
-            <div class="badge badge-xs badge-neutral badge-soft">{{ alarm.ackState }}</div>
+            <div class="badge badge-xs badge-soft">{{ alarm.ackState }}</div>
           }
         </div>
+      <div class="grid grid-cols-2">
+        <div class="flex flex-col">
+          <div class="font-semibold text-neutral/50 uppercase">Alarm Code</div>
+          <div>{{ alarm.alarmCode }}</div>
+        </div>
+        <div class="flex flex-col justify-end">
+          <div class="font-semibold text-neutral/50 uppercase">Alarm ID</div>
+          <div>{{ alarm.alarmId }}</div>
+        </div>
+      </div>
+      <div>
+
       </div>
       <div>
         <div class="font-semibold text-neutral/50 uppercase">Location</div>

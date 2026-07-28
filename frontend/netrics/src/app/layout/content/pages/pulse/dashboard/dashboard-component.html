@@ -82,11 +82,20 @@
           </div>
         </div>
         <div class="flex flex-col gap-2" [hidden]="!isTrendDataAvailable()">
-          <h3 class="text-primary">{{ selectedCell() }}</h3>
+          <div class="flex flex-row items-center gap-2">
+            <h3 class="text-primary">{{ selectedCell() }}</h3>
+          </div>
           <div [hidden]="!loadingKpiTrend" class="flex w-full flex-col gap-4 mb-2">
             <div class="skeleton h-64 w-full"></div>
           </div>
-          <app-linechart [hidden]="loadingKpiTrend" [chartSeries]="chartSeries"></app-linechart>
+          <app-linechart [hidden]="loadingKpiTrend" [chartSeries]="chartSeries" [yaxisOverride]="trendYAxis"></app-linechart>
+          <div>
+            <label [hidden]="!standardRawKpiMappingAvailable()" class="label text-xs ml-auto">
+              <input [disabled]="loadingAll()" type="checkbox" class="checkbox checkbox-sm"
+                     [ngModel]="showOperands()" (ngModelChange)="onShowOperandsChange($event)"/>
+              Show Operands
+            </label>
+          </div>
         </div>
         <div [hidden]="isTrendDataAvailable()"
              class="card m-auto w-96 card-md border border-base-300 rounded-xl bg-base-100">
@@ -150,7 +159,20 @@
                     (click)="getTrendDataByKpi(cell.kpiName,cell.cellName,'quarter',this.selectedRat(), this.selectedGranularity())">
                   <!-- GET TREND-CHART BY CLICKING ON THE ROW -->
                   <td>{{ i + 1 }}</td>
-                  <td>{{ cell.cellName }}</td>
+                  <td>
+                    <div class="flex items-center gap-1">
+                      <span>{{ cell.cellName }}</span>
+                      <a class="btn btn-ghost btn-xs btn-circle text-primary"
+                         [routerLink]="getRouterLinkForCell()"
+                         (click)="onCellNavigate(cell, $event)"
+                         title="Go to Cell Analysis">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"/>
+                        </svg>
+                      </a>
+                    </div>
+                  </td>
                   <td>
                     <span class="badge badge-soft badge-xs"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;

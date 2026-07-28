@@ -7,7 +7,7 @@ import {LatLngExpression} from 'leaflet';
 export class SharedService {
 
   //-- General
-  returnPage:string = '';
+  returnPage: string = '';
   selectedGranularity = signal<string>('day-average');
   selectedRat = signal<string>('ltefdd');
   selectedStandardKpi = signal('');
@@ -20,6 +20,15 @@ export class SharedService {
   selectedBand = signal('');
   excludeZeroes: boolean = false;
   currentPage: number = 0;
+
+  //-- Dashboard Component
+  dashboardGranularity = signal<string>('day-average');
+  dashboardRat = signal<string>('ltefdd');
+  dashboardStandardKpi = signal('');
+  dashboardAreaType = signal<string | undefined>('');
+  dashboardArea = signal<string | undefined>('');
+  dashboardExcludeZeroes: boolean = false;
+  dashboardTimestamp = signal<Date | undefined>(undefined);
 
   //-- Cell Analysis
   selectedCell = signal('');
@@ -46,6 +55,14 @@ export class SharedService {
     this.bandWise = false;
     this.selectedBand.set('');
     this.cellMapDate.set('');
+
+    this.dashboardGranularity.set('day-average');
+    this.dashboardRat.set('ltefdd');
+    this.dashboardStandardKpi.set('');
+    this.dashboardAreaType.set('');
+    this.dashboardArea.set('');
+    this.dashboardExcludeZeroes = false;
+    this.dashboardTimestamp.set(undefined);
 
     this.minLng = 0;
     this.minLat = 0;
