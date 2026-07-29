@@ -37,7 +37,6 @@ public class RedisConfig {
     @Bean
     RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory,
                                    RedisSerializer<Object> valueSerializer) {
-        System.out.println(">>> MY cacheManager building, serializer=" + valueSerializer.getClass());
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(keySerializer()))
@@ -94,8 +93,6 @@ public class RedisConfig {
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY
         );
-        System.out.println(">>> valueSerializer bean created, defaultTyping="
-                + (mapper.getSerializationConfig().getDefaultTyper(null) != null));
         return new GenericJackson2JsonRedisSerializer(mapper);
     }
 

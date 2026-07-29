@@ -904,7 +904,7 @@ export class PulseComponent implements OnInit {
       )
       : '-';
 
-    return `${cell.distinctAlarmDefCount} Alarms (${cell.totalAlarmOccurrences}) | ${_date} ${_startTime}-${_endTime}`;
+    return `${cell.distinctAlarmDefCount} Alarms (${cell.totalAlarmOccurrences}x) • ${_date} ${_startTime}-${_endTime}`;
   }
 
   //----------------- MODALS -------------------------------
