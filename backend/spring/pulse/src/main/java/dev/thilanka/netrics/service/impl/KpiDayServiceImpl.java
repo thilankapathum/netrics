@@ -5,6 +5,7 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.mapper.Mapper;
+import dev.thilanka.netrics.repository.AlarmRepository;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
 import dev.thilanka.netrics.repository.KpiAnomalyRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
@@ -46,6 +47,7 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final BandService bandService;
     private final KpiHourService kpiHourService;
     private final KpiAnomalyRepository kpiAnomalyRepository;
+    private final AlarmRepository alarmRepository;
 
     @Override
     public boolean checkImproved(String worstOrder, Double difference) {
@@ -345,6 +347,10 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .map(WorstCellsProjection::getCellName)
                 .toList();
 
+        List<LocalDateTime> cellTimestamps = worstCells.stream()
+                .map(WorstCellsProjection::getTimestamp)
+                .toList();
+
         Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
                         standardKpi.getId(), streakStart, currEnd,
                         cellNames.toArray(String[]::new),
@@ -376,10 +382,10 @@ public class KpiDayServiceImpl implements KpiDayService {
         // alarm-correlation columns itself. A cell absent from this map
         // never had a kpi_anomalies row for this window at all (not the
         // same as "had one, but hasAlarmCorrelation = false").
-        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = kpiAnomalyRepository.findAlarmCorrelationsForCells(
-                        standardKpi.getId(), currStart, currEnd,
+        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = alarmRepository.findLiveAlarmCorrelationsForCells(
                         cellNames.toArray(String[]::new),
-                        rat.getId(), granularity.getId()
+                        cellTimestamps.toArray(LocalDateTime[]::new),
+                        granularity.getId()
                 )
                 .stream()
                 .collect(Collectors.toMap(
@@ -442,6 +448,10 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .map(WorstCellsProjection::getCellName)
                 .toList();
 
+        List<LocalDateTime> cellTimestamps = worstCells.stream()
+                .map(WorstCellsProjection::getTimestamp)
+                .toList();
+
         Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
                         standardKpi.getId(), streakStart, currEnd,
                         cellNames.toArray(String[]::new),
@@ -465,10 +475,10 @@ public class KpiDayServiceImpl implements KpiDayService {
                         CellSeverityProjection::severity
                 ));
 
-        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = kpiAnomalyRepository.findAlarmCorrelationsForCells(
-                        standardKpi.getId(), currStart, currEnd,
+        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = alarmRepository.findLiveAlarmCorrelationsForCells(
                         cellNames.toArray(String[]::new),
-                        rat.getId(), granularity.getId()
+                        cellTimestamps.toArray(LocalDateTime[]::new),
+                        granularity.getId()
                 )
                 .stream()
                 .collect(Collectors.toMap(

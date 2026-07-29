@@ -16,7 +16,6 @@ volumes:
 services:
   postgres:
 #    image: postgres:17-alpine
-#    image: timescale/timescaledb:latest-pg17
     image: timescale/timescaledb-ha:pg17
     container_name: postgres
     restart: unless-stopped

@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.repository;
 
 import dev.thilanka.netrics.dto.AlarmsDto;
+import dev.thilanka.netrics.dto.CellAlarmCorrelationProjection;
 import dev.thilanka.netrics.dto.CellAlarmDto;
 import dev.thilanka.netrics.entity.alarms.Alarms;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -162,4 +163,62 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
             @Param("alarmSource") String alarmSource,
             @Param("areaId") Long areaId
     );
+
+    @Query(value = """
+        WITH pairs AS (
+            SELECT * FROM unnest(:cellNames ::varchar[], :timestamps ::timestamp[])
+                AS p(cell_name, obs_timestamp)
+        ),
+        targets AS (
+            SELECT
+                p.cell_name,
+                p.obs_timestamp                                            AS window_start,
+                p.obs_timestamp + (g.window_seconds || ' seconds')::interval AS window_end
+            FROM pairs p
+            CROSS JOIN granularity g
+            WHERE g.id = :granularityId
+        ),
+        candidate_matches AS (
+            SELECT
+                t.cell_name,
+                al.id AS alarm_id,
+                al.alarm_definition_id,
+                'CELL' AS match_level
+            FROM targets t
+            JOIN alarms al ON al.parsed_cell_name = t.cell_name
+            WHERE al.occurrence_time >= t.window_start
+              AND al.occurrence_time <  t.window_end
+
+            UNION ALL
+
+            SELECT
+                t.cell_name,
+                al.id AS alarm_id,
+                al.alarm_definition_id,
+                'NODE' AS match_level
+            FROM targets t
+            JOIN cells c   ON c.cell_name = t.cell_name
+            JOIN alarms al ON al.node_name = c.node_name
+            WHERE al.occurrence_time >= t.window_start
+              AND al.occurrence_time <  t.window_end
+        ),
+        deduped AS (
+            SELECT DISTINCT ON (cell_name, alarm_id) *
+            FROM candidate_matches
+            ORDER BY cell_name, alarm_id,
+                     CASE match_level WHEN 'CELL' THEN 0 ELSE 1 END
+        )
+        SELECT
+            cell_name                                  AS cellName,
+            TRUE                                        AS hasAlarmCorrelation,
+            COUNT(DISTINCT alarm_definition_id)::int    AS distinctAlarmDefCount,
+            COUNT(*)::int                               AS totalAlarmOccurrences,
+            MIN(match_level)                            AS bestMatchLevel
+        FROM deduped
+        GROUP BY cell_name
+        """, nativeQuery = true)
+    List<CellAlarmCorrelationProjection> findLiveAlarmCorrelationsForCells(
+            @Param("cellNames") String[] cellNames,
+            @Param("timestamps") LocalDateTime[] timestamps,
+            @Param("granularityId") Long granularityId);
 }

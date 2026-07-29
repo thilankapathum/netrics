@@ -31,32 +31,30 @@ public interface AnomalyAlarmCorrelationRepository extends JpaRepository<Anomaly
                 al.id AS alarm_id, al.alarm_definition_id, al.alarm_source_id,
                 'CELL' AS match_level,
                 GREATEST(0, EXTRACT(EPOCH FROM (
-                    LEAST(COALESCE(al.clear_time, ta.window_end), ta.window_end)
-                    - GREATEST(al.occurrence_time, ta.window_start)
+                    LEAST(COALESCE(al.clear_time, ta.window_end), ta.window_end) - al.occurrence_time
                 )))::int AS overlap_seconds,
                 ta.window_seconds
             FROM target_anomalies ta
             JOIN alarms al ON al.parsed_cell_name = ta.cell_name
-            WHERE al.occurrence_time < ta.window_end
-              AND (al.clear_time IS NULL OR al.clear_time >= ta.window_start)
+            WHERE al.occurrence_time >= ta.window_start
+              AND al.occurrence_time <  ta.window_end
  
             UNION ALL
  
-            -- Tier 1: NODE-level match
+            -- Tier 1: NODE-level match (all vendors)
             SELECT
                 ta.anomaly_id, ta.anomaly_timestamp,
                 al.id AS alarm_id, al.alarm_definition_id, al.alarm_source_id,
                 'NODE' AS match_level,
                 GREATEST(0, EXTRACT(EPOCH FROM (
-                    LEAST(COALESCE(al.clear_time, ta.window_end), ta.window_end)
-                    - GREATEST(al.occurrence_time, ta.window_start)
+                    LEAST(COALESCE(al.clear_time, ta.window_end), ta.window_end) - al.occurrence_time
                 )))::int AS overlap_seconds,
                 ta.window_seconds
             FROM target_anomalies ta
             JOIN cells c   ON c.cell_name = ta.cell_name
             JOIN alarms al ON al.node_name = c.node_name
-            WHERE al.occurrence_time < ta.window_end
-              AND (al.clear_time IS NULL OR al.clear_time >= ta.window_start)
+            WHERE al.occurrence_time >= ta.window_start
+              AND al.occurrence_time <  ta.window_end
         ),
         deduped AS (
             -- If the same alarm row matched at both CELL and NODE tier for the

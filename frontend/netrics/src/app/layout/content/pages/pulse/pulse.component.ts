@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
-import {CommonModule, DecimalPipe} from '@angular/common';
+import {CommonModule, DecimalPipe, formatDate} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {BasickpiService} from '../../../../service/pulse/ltefdd/basickpi.service';
 import {KpidayService} from '../../../../service/pulse/ltefdd/kpiday.service';
@@ -37,6 +37,9 @@ import {StandardRawKpiMappingService} from '../../../../service/pulse/standard-r
 import {AlarmService} from '../../../../service/pulse/alarms/alarm-service';
 import {AlarmsDto, CellAlarmDto} from '../../../../models/pulse/alarms/AlarmDto';
 import {WorstCell} from '../../../../models/pulse/WorstCell';
+import {CellDto} from '../../../../models/pulse/CellDto';
+import {GranularityService} from '../../../../service/pulse/granularity-service';
+import {GranularityDto} from '../../../../models/pulse/GranularityDto';
 
 @Component({
   selector: 'app-pulse',
@@ -51,6 +54,7 @@ export class PulseComponent implements OnInit {
   // selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
   selectedRat = signal<string>('ltefdd');
   selectedGranularity = signal<string>('day-average');
+  granularities: GranularityDto[] = [];
   dateRanges = signal<{ [aggregation: string]: DateRangeDto | undefined }>({});
 
   areaTypes: AreaTypeDto[] = [];
@@ -133,7 +137,8 @@ export class PulseComponent implements OnInit {
               private cellService: CellService,
               private bandService: BandService,
               private standardRawKpiMappingService: StandardRawKpiMappingService,
-              private alarmService: AlarmService) {
+              private alarmService: AlarmService,
+              private granularityService: GranularityService,) {
     this.SEVERITIES = alarmService.SEVERITIES;
     this.queryDateRanges();
   }
@@ -195,6 +200,8 @@ export class PulseComponent implements OnInit {
 
   ngOnInitRemaining(): void {
     this.cdr.detectChanges(); // Force change detection
+
+    this.getGranularities();
 
     if (this.sharedService.selectedGranularity() != this.selectedGranularity()) {
       this.selectedGranularity.set(this.sharedService.selectedGranularity());
@@ -296,6 +303,17 @@ export class PulseComponent implements OnInit {
   }
 
   //----------- GETTERS ----------------------------------
+
+  getGranularities(){
+    this.granularityService.getAllGranularities().subscribe({
+      next: data => {
+        this.granularities = data;
+      }, error: error => {
+        console.error(error);
+        this.alertService.error(`Error retrieving Granularities.${error.status} ${error.statusText}`)
+      }
+    });
+  }
 
   getAreaTypes() {
     this.loadingAreaTypes = true;
@@ -849,6 +867,44 @@ export class PulseComponent implements OnInit {
 
   extractCurrentCellIndex(cellName: string, worstCellList: WorstCells[]) {
     return worstCellList.findIndex(cN => cN.cellName === cellName);
+  }
+
+  getAlarmTooltip(cell: WorstCells): string {
+    const granularity = this.granularities.find(
+      g => g.name === this.selectedGranularity()
+    );
+
+    const start = cell.timestamp ? new Date(cell.timestamp) : null;
+
+    const previous = start
+      ? formatDate(start, 'MMM-dd HH:mm', 'en-US')
+      : '-';
+
+    const _date = start
+      ? formatDate(start, 'MMM-dd', 'en-US')
+      : '-';
+
+    const _startTime = start
+      ? formatDate(start, 'HH:mm', 'en-US')
+      : '-';
+
+    const _endTime = start && granularity
+      ? formatDate(
+        new Date(start.getTime() + granularity.windowSeconds! * 1000 - 1000),
+        'HH:mm',
+        'en-US'
+      )
+      : '-';
+
+    const current = start && granularity
+      ? formatDate(
+        new Date(start.getTime() + granularity.windowSeconds! * 1000 - 1000),
+        'MMM-dd HH:mm',
+        'en-US'
+      )
+      : '-';
+
+    return `${cell.distinctAlarmDefCount} Alarms (${cell.totalAlarmOccurrences}) | ${_date} ${_startTime}-${_endTime}`;
   }
 
   //----------------- MODALS -------------------------------

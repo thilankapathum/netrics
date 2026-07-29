@@ -142,12 +142,12 @@
         @if (analysisModalCellAlarms.length > 0) {
           <div class="p-1 flex flex-row items-center gap-2 border border-base-300 rounded-lg">
             <div class="flex flex-row items-center">
-                <label class="label cursor-pointer gap-1 w-fit">
-                  <input type="checkbox" class="checkbox checkbox-sm"
-                         [ngModel]="showAlarmDetails"
-                         (ngModelChange)="onShowAlarmDetailsToggle($event)"/>
-                  <span class="label-text text-xs">Show Node Alarms</span>
-                </label>
+              <label class="label cursor-pointer gap-1 w-fit">
+                <input type="checkbox" class="checkbox checkbox-sm"
+                       [ngModel]="showAlarmDetails"
+                       (ngModelChange)="onShowAlarmDetailsToggle($event)"/>
+                <span class="label-text text-xs">Show Node Alarms</span>
+              </label>
             </div>
 
             <div class="flex flex-row gap-1 flex-wrap">
@@ -409,8 +409,9 @@
                     <div class="flex items-center gap-2">
                       <span>{{ cell.cellName }}</span>
                       @if (cell.hasAlarmCorrelation) {
-                        <div class="tooltip"
-                             [attr.data-tip]="cell.distinctAlarmDefCount + ' Alarms, ' + cell.totalAlarmOccurrences + ' occurrences'">
+                        <div
+                          class="tooltip before:text-xs"
+                          [attr.data-tip]="getAlarmTooltip(cell)">
                           <div class="w-2 h-2 rounded-full bg-error"></div>
                         </div>
                       }
