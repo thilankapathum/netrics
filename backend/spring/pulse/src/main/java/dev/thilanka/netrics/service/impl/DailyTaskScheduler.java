@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.entity.AreaType;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.service.*;
@@ -20,6 +21,9 @@ public class DailyTaskScheduler {
     private final KpiDayService kpiDayService;
     private final CellService cellService;
     private final AnomalyAlarmCorrelationService anomalyAlarmCorrelationService;
+    private final WorstCellDashboardService worstCellDashboardService;
+    private final AreaTypeService areaTypeService;
+    private final DateService dateService;
 
     private static final List<String> TARGET_GRANULARITIES = List.of("day-average", "busy-hour");
 
@@ -52,6 +56,23 @@ public class DailyTaskScheduler {
 
         /* Run ANOMALY-ALARM CORRELATION */
         anomalyAlarmCorrelationService.runCorrelation();
+
+    }
+
+    @Scheduled(cron = "0 0 18 * * WED")
+    public void runWeeklyWorstCellGeneration() {
+
+        AreaType areaType = areaTypeService.findAreaTypeByName("Engineer");
+
+        List<Rat> rats = ratService.findAll();
+        Granularity granularity = granularityService.findGranularityByName("busy-hour");
+
+        if (!worstCellDashboardService.isCreatingWorstCells()) {     // Checking whether already creating Worst Cells in progress
+            for (Rat rat : rats) {
+                worstCellDashboardService.createWeeklyWorstCellsByRatAndAreaType("week", areaType, rat, granularity);
+            }
+        }
+
 
     }
 

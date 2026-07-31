@@ -163,6 +163,59 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
+    public Map<String, List<WorstCellSaveDto>> createWeeklyWorstCellsByRatAndAreaType(String period, AreaType areaType, Rat rat, Granularity granularity) {
+        this.creatingWorstCells = true;
+
+        boolean[] excludeZero = {false, true};
+        LocalDateTime latestDate = dateService.getLatestDate(rat, granularity);
+
+        LocalDateTime currentEnd = latestDate.toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
+        LocalDateTime currentStart = latestDate.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
+
+        LocalDateTime previousEnd = dateService.getPreviousDate(latestDate, period)
+                .toLocalDate()
+                .atStartOfDay()
+                .plusSeconds(granularity.getPlusSeconds());
+        LocalDateTime previousStart = previousEnd.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
+
+        List<Area> areas = areaService.findAreasByAreaType(areaType.getName());
+
+        List<StandardKpi> standardKpis = standardKpiService.findAllStandardKpiByRat(rat);
+
+        Map<String, List<WorstCellSaveDto>> savedWorstCellsMap = new HashMap<>();
+
+        this.totalItems = excludeZero.length * areas.size() * standardKpis.size();
+        this.executedItems = 0;
+
+        for (boolean eZ : excludeZero) {
+            for (Area area : areas) {
+                for (StandardKpi kpi : standardKpis) {
+                    List<WorstCellSaveDto> dashboardWorstCells = kpiDayRepository.findWorstCellsForDashboardByArea(
+                            kpi.getId(),
+                            currentEnd,     //-- Assign latestTime (including plusSeconds) to query the worstCell.
+                            currentStart,
+                            previousEnd,
+                            previousStart,
+                            area.getId(),
+                            rat.getId(),
+                            eZ,
+                            granularity.getId()
+                    );
+                    List<WorstCellSaveDto> savedWorstCells = dashboardWorstCells.stream().map(wc -> createWorstCell(wc, period, area.getName(), latestDate)).toList();  //-- Saving worst-cells to database (worst_cells table) [timestamp is used as the argument to save the worstCell with the querying timestamp (not busy-hour timestamp)]
+                    savedWorstCellsMap.put(area.getName() + " - " + kpi.getKpiName(), savedWorstCells);
+
+                    this.executedItems++;
+                }
+                System.out.println("[" + rat.getLabel() + " - " + granularity.getLabel() + "] Exclude Zeroes: " + eZ + " | Area: (" + areaType + ") " + area.getName());
+            }
+        }
+        this.creatingWorstCells = false;
+        this.totalItems = 0;
+        this.executedItems = 0;
+        return savedWorstCellsMap;
+    }
+
+    @Override
     @Cacheable(value = "dashboardWorstCells", key = "#timestamp + '_' + #kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
     public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName, String granularityName) {
         LocalDateTime timestamps = dateService.extractDate(timestamp);
