@@ -1,21 +1,19 @@
-import {Component, Input, Output, EventEmitter, signal} from '@angular/core';
-import {FormBuilder, FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {Linechart} from "../../../../../../components/charts/linechart/linechart/linechart";
-import {AreaTypeDto} from '../../../../../../models/pulse/AreaTypeDto';
-import {AreaDto} from '../../../../../../models/pulse/AreaDto';
-import {AreaTypeService} from '../../../../../../service/pulse/area-type-service';
-import {AlertService} from '../../../../../../components/alert/alert.service';
-import {AreaService} from '../../../../../../service/pulse/area-service';
-import {PulseSettingService} from '../../../../../../service/pulse/pulse-setting-service';
-import {UserAreaMappingDto} from '../../../../../../models/pulse/UserAreaMappingDto';
-// import EventEmitter from 'node:events';
+import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { AreaTypeDto } from '../../../../../../models/pulse/AreaTypeDto';
+import { AreaDto } from '../../../../../../models/pulse/AreaDto';
+import { AreaTypeService } from '../../../../../../service/pulse/area-type-service';
+import { AlertService } from '../../../../../../components/alert/alert.service';
+import { AreaService } from '../../../../../../service/pulse/area-service';
+import { PulseSettingService } from '../../../../../../service/pulse/pulse-setting-service';
+import { UserAreaMappingDto } from '../../../../../../models/pulse/UserAreaMappingDto';
 
 @Component({
   selector: 'app-pulse-setting-user-area-mapping',
-    imports: [
-        FormsModule,
-        ReactiveFormsModule
-    ],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule
+  ],
   templateUrl: './pulse-setting-user-area-mapping.html',
   styleUrl: './pulse-setting-user-area-mapping.css'
 })
@@ -34,43 +32,47 @@ export class PulseSettingUserAreaMapping {
   loadingUserAreaMapping = false;
 
   constructor(private formBuilder: FormBuilder,
-              private areaTypeService:AreaTypeService,
+              private areaTypeService: AreaTypeService,
               private alertService: AlertService,
               private areaService: AreaService,
-              private settingService:PulseSettingService) {
+              private settingService: PulseSettingService) {
     this.getAllAreaTypes();
-
   }
 
-  onCancel():void{
+  onCancel(): void {
     this.closed.emit();
     this.userId.set('');
   }
 
   getAllAreaTypes() {
     this.areaTypeService.getAllAreaTypes().subscribe({
-        next: data => {
-          this.areaTypes = data;
+      next: data => {
+        this.areaTypes = data;
+        if (this.areaTypes.length > 0) {
           this.areaType.set(this.areaTypes[0].name!);
           this.getAreasByAreaType(this.areaType()!);
-        }, error: error => {
-          console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
         }
+      }, error: error => {
+        console.log(error);
+        this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
       }
-    )
+    });
   }
 
   getAreasByAreaType(areaTypeName: string) {
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
-        this.area.set(this.areas.at(0)?.name);
+        if (this.areas.length > 0) {
+          this.area.set(this.areas.at(0)?.name);
+        } else {
+          this.area.set('');
+        }
       }, error: error => {
         console.log(error);
         this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
       }
-    })
+    });
   }
 
   selectAreaType(areaType: string) {
@@ -84,13 +86,13 @@ export class PulseSettingUserAreaMapping {
     console.log(this.area());
   }
 
-  createUserAreaMapping(){
+  createUserAreaMapping() {
     this.loadingUserAreaMapping = true;
     console.log(this.userId());
     console.log(this.area());
 
-    if (this.userId != null && this.userId() != '' && this.area != null && this.area() != '') {
-      const userAreaMapping:UserAreaMappingDto = {userId: this.userId(), areaName: this.area()!}
+    if (this.userId() != '' && this.area() != '') {
+      const userAreaMapping: UserAreaMappingDto = { userId: this.userId(), areaName: this.area()! };
       this.settingService.createUserAreaMapping(userAreaMapping).subscribe({
         next: data => {
           this.alertService.success(`Successfully created mapping for ${data.areaName} - ${data.userId}`);

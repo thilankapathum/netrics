@@ -1,14 +1,14 @@
-import {Component, EventEmitter, Input, Output, signal} from '@angular/core';
-import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {SectorService} from '../../../../../../service/pulse/sector-service';
-import {AlertService} from '../../../../../../components/alert/alert.service';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { SectorService } from '../../../../../../service/pulse/sector-service';
+import { AlertService } from '../../../../../../components/alert/alert.service';
 
 @Component({
   selector: 'app-ps-sector-info',
-    imports: [
-        FormsModule,
-        ReactiveFormsModule
-    ],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule
+  ],
   templateUrl: './ps-sector-info.html',
   styleUrl: './ps-sector-info.css'
 })
@@ -23,12 +23,12 @@ export class PsSectorInfo {
   @Input() open: boolean = false;
   @Output() closed = new EventEmitter<void>();
 
-  onCancel():void{
+  onCancel(): void {
     this.closed.emit();
   }
 
-  constructor(private sectorService:SectorService,
-              private alertService: AlertService,) {
+  constructor(private sectorService: SectorService,
+              private alertService: AlertService) {
     this.getSectorCountWithMissingInfo();
   }
 
@@ -50,10 +50,10 @@ export class PsSectorInfo {
         this.alertService.error("Error exporting missing sector information!");
         this.loadingMissingSectorInfoDownload = false;
       }
-    })
+    });
   }
 
-  exportAllSectors(){
+  exportAllSectors() {
     this.loadingAllSectorDownload = true;
     this.sectorService.exportAllSectors().subscribe({
       next: (blob) => {
@@ -71,26 +71,22 @@ export class PsSectorInfo {
         this.alertService.error(`Error exporting missing sector information! - ${error.statusText}`);
         this.loadingAllSectorDownload = false;
       }
-    })
+    });
   }
 
   importSectorsWithCorrectedInfo(fileInput: HTMLInputElement) {
-
     this.loadingMissingSectorInfoUpload = true;
-
     const files = fileInput.files;
 
     if (!files || files.length === 0) {
-      this.alertService.warning('Please select a CSV file to upload.')
+      this.alertService.warning('Please select a CSV file to upload.');
       this.loadingMissingSectorInfoUpload = false;
       return;
     }
 
     const file: File = files[0];
-
-    // Optional: validate file type
     if (!file.name.endsWith('.csv')) {
-      this.alertService.warning('Please upload a CSV file.')
+      this.alertService.warning('Please upload a CSV file.');
       this.loadingMissingSectorInfoUpload = false;
       return;
     }
@@ -106,6 +102,7 @@ export class PsSectorInfo {
 
         fileInput.value = '';
         this.loadingMissingSectorInfoUpload = false;
+        this.getSectorCountWithMissingInfo();
       },
       error: error => {
         console.log("Error exporting missing sector information:");
@@ -114,7 +111,7 @@ export class PsSectorInfo {
         this.alertService.error("Error exporting missing sector information!");
         fileInput.value = '';
       }
-    })
+    });
   }
 
   getSectorCountWithMissingInfo() {
@@ -127,7 +124,6 @@ export class PsSectorInfo {
         console.error(error);
         this.alertService.error("Error retrieving Sector count with missing information");
       }
-    })
+    });
   }
-
 }

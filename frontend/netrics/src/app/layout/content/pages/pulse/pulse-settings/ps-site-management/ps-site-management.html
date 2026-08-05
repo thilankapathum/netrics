@@ -1,0 +1,153 @@
+<div class="w-full max-w-4xl flex flex-col gap-6">
+
+  <!-- Page Header -->
+  <div>
+    <h2 class="text-2xl font-bold">Site Management</h2>
+    <p class="text-sm text-base-content/70 mt-1">Manage individual site creation, bulk imports, and metadata exports or corrections.</p>
+  </div>
+
+  <!-- Top-Level Layout Tabs -->
+  <div role="tablist" class="tabs tabs-lifted">
+
+    <!-- TAB 1: Create Site -->
+    <input type="radio" name="site_management_tabs" role="tab" class="tab" aria-label="Create Site" checked />
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+
+      <div class="flex flex-col gap-6">
+        <!-- Sub-tabs for Single vs Bulk -->
+        <div role="tablist" class="tabs tabs-bordered w-fit">
+          <button role="tab" class="tab"
+                  [class.tab-active]="!createMultipleSites()"
+                  (click)="createMultipleSites.set(false)">
+            Single Site
+          </button>
+          <button role="tab" class="tab"
+                  [class.tab-active]="createMultipleSites()"
+                  (click)="createMultipleSites.set(true)">
+            Bulk Upload (JSON)
+          </button>
+        </div>
+
+        <!-- View: Single Site Form -->
+        @if (!createMultipleSites()) {
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="form-control w-full">
+              <div class="label"><span class="label-text font-medium">Site ID</span></div>
+              <input type="text" placeholder="KYKAN1" class="input input-bordered w-full"
+                     [(ngModel)]="siteCode" [disabled]="creatingSite()" />
+            </label>
+
+            <label class="form-control w-full">
+              <div class="label"><span class="label-text font-medium">Site Name</span></div>
+              <input type="text" placeholder="Kandy 1" class="input input-bordered w-full"
+                     [(ngModel)]="siteName" [disabled]="creatingSite()" />
+            </label>
+
+            <label class="form-control w-full">
+              <div class="label"><span class="label-text font-medium">Latitude</span></div>
+              <input type="number" placeholder="8.12345" class="input input-bordered w-full"
+                     [(ngModel)]="latitude" [disabled]="creatingSite()" />
+            </label>
+
+            <label class="form-control w-full">
+              <div class="label"><span class="label-text font-medium">Longitude</span></div>
+              <input type="number" placeholder="81.1234" class="input input-bordered w-full"
+                     [(ngModel)]="longitude" [disabled]="creatingSite()" />
+            </label>
+          </div>
+
+          <div class="flex gap-3 mt-2">
+            <button class="btn btn-primary btn-sm"
+                    [disabled]="creatingSite() || !isInputsValid() || !hasAnyRole(['PULSE_CREATE'])"
+                    (click)="createSite()">
+              @if (creatingSite()) {
+                <span class="loading loading-spinner loading-xs"></span>
+              }
+              Create Site
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" [disabled]="creatingSite()" (click)="resetSingleSiteForm()">
+              Clear
+            </button>
+          </div>
+        }
+
+        <!-- View: Bulk Upload JSON -->
+        @if (createMultipleSites()) {
+          <div class="form-control w-full">
+            <div class="label"><span class="label-text font-medium">Site List JSON</span></div>
+            <textarea [(ngModel)]="siteListJson"
+                      [disabled]="creatingSites()"
+                      class="textarea textarea-bordered h-48 w-full font-mono text-sm"
+                      placeholder='[&#10;  {&#10;    "siteCode": "KYKAN1",&#10;    "siteName": "Kandy 1",&#10;    "latitude": 8.123,&#10;    "longitude": 81.123&#10;  }&#10;]'></textarea>
+          </div>
+
+          <div class="flex gap-3 mt-2">
+            <button class="btn btn-primary btn-sm"
+                    [disabled]="creatingSites() || !isJsonInputValid() || !hasAnyRole(['PULSE_CREATE'])"
+                    (click)="createSiteList(siteListJson())">
+              @if (creatingSites()) {
+                <span class="loading loading-spinner loading-xs"></span>
+              }
+              Create Sites
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" [disabled]="creatingSites()" (click)="siteListJson.set('')">
+              Clear
+            </button>
+          </div>
+        }
+      </div>
+
+    </div>
+
+    <!-- TAB 2: Site Data & Corrections -->
+    <input type="radio" name="site_management_tabs" role="tab" class="tab" aria-label="Site Data & Corrections" />
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+
+        <!-- Export Missing -->
+        <div class="flex flex-col gap-2">
+          <span class="font-medium text-sm">Missing Information</span>
+          <p class="text-xs text-base-content/60">Download a template containing only sites with missing metadata.</p>
+          <button [disabled]="loadingMissingSiteInfoDownload" class="btn btn-sm btn-outline mt-2 self-start" (click)="exportSitesWithMissingInfo()">
+            @if (loadingMissingSiteInfoDownload) {
+              <span class="loading loading-spinner loading-xs"></span>
+            }
+            Download Missing CSV
+          </button>
+        </div>
+
+        <!-- Export All -->
+        <div class="flex flex-col gap-2">
+          <span class="font-medium text-sm">All Sites Export</span>
+          <p class="text-xs text-base-content/60">Export a complete register of all current system sites.</p>
+          <button [disabled]="loadingAllSitesDownload" class="btn btn-sm btn-outline btn-primary mt-2 self-start" (click)="exportAllSites()">
+            @if (loadingAllSitesDownload) {
+              <span class="loading loading-spinner loading-xs"></span>
+            }
+            Download All CSV
+          </button>
+        </div>
+
+        <!-- Upload Corrections -->
+        <div class="flex flex-col gap-2">
+          <span class="font-medium text-sm">Upload Corrections</span>
+          <p class="text-xs text-base-content/60">Upload a corrected CSV file to fix site data errors.</p>
+          <input [disabled]="loadingMissingSiteInfoUpload" #siteMissingInfoFileInput type="file"
+                 class="file-input file-input-bordered file-input-sm w-full mt-1"/>
+          <button [disabled]="loadingMissingSiteInfoUpload" class="btn btn-sm btn-accent mt-2 self-start"
+                  (click)="importSitesWithCorrectedInfo(siteMissingInfoFileInput)">
+            @if (loadingMissingSiteInfoUpload) {
+              <span class="loading loading-spinner loading-xs"></span>
+            }
+            Upload & Process
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

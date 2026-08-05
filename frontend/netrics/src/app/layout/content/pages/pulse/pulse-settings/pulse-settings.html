@@ -1,8 +1,8 @@
-<nav class="flex flex-row flex-wrap gap-2 space-x-2 items-center">
+<nav class="flex flex-row flex-wrap gap-2 space-x-2 items-center mb-6">
   <div class="breadcrumbs text-xs text-secondary grow-1">
     <ul>
       <li><a routerLink="/">
-        <svg class="text-base-300" width="14" height="14" viewBox="0 0 24 24" fill="none"
+        <svg class="text-base-300 mr-1" width="14" height="14" viewBox="0 0 24 24" fill="none"
              xmlns="http://www.w3.org/2000/svg">
           <path
             d="M20 17.0002V11.4522C20 10.9179 19.9995 10.6506 19.9346 10.4019C19.877 10.1816 19.7825 9.97307 19.6546 9.78464C19.5102 9.57201 19.3096 9.39569 18.9074 9.04383L14.1074 4.84383C13.3608 4.19054 12.9875 3.86406 12.5674 3.73982C12.1972 3.63035 11.8026 3.63035 11.4324 3.73982C11.0126 3.86397 10.6398 4.19014 9.89436 4.84244L5.09277 9.04383C4.69064 9.39569 4.49004 9.57201 4.3457 9.78464C4.21779 9.97307 4.12255 10.1816 4.06497 10.4019C4 10.6506 4 10.9179 4 11.4522V17.0002C4 17.932 4 18.3978 4.15224 18.7654C4.35523 19.2554 4.74432 19.6452 5.23438 19.8482C5.60192 20.0005 6.06786 20.0005 6.99974 20.0005C7.93163 20.0005 8.39808 20.0005 8.76562 19.8482C9.25568 19.6452 9.64467 19.2555 9.84766 18.7654C9.9999 18.3979 10 17.932 10 17.0001V16.0001C10 14.8955 10.8954 14.0001 12 14.0001C13.1046 14.0001 14 14.8955 14 16.0001V17.0001C14 17.932 14 18.3979 14.1522 18.7654C14.3552 19.2555 14.7443 19.6452 15.2344 19.8482C15.6019 20.0005 16.0679 20.0005 16.9997 20.0005C17.9316 20.0005 18.3981 20.0005 18.7656 19.8482C19.2557 19.6452 19.6447 19.2554 19.8477 18.7654C19.9999 18.3978 20 17.932 20 17.0002Z"
@@ -14,96 +14,125 @@
       <li class="font-bold">Settings</li>
     </ul>
   </div>
-
 </nav>
-<div class="grid w-full sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 py-2 gap-2">
 
-  <div class="flex flex-col gap-1 p-3 border border-base-300 rounded-xl bg-base-100">
-    <div class="flex flex-row gap-2">
-      <svg class="text-primary" width="16" height="16" viewBox="0 0 24 24" fill="none"
-           xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M18 12V17C18 18.6569 15.3137 20 12 20C8.68629 20 6 18.6569 6 17V12M18 12V7M18 12C18 13.6569 15.3137 15 12 15C8.68629 15 6 13.6569 6 12M18 7C18 5.34315 15.3137 4 12 4C8.68629 4 6 5.34315 6 7M18 7C18 8.65685 15.3137 10 12 10C8.68629 10 6 8.65685 6 7M6 12V7"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h2 class="text-md font-semibold mb-3">Cache</h2>
-    </div>
-    <div class="flex flex-row flex-wrap gap-3">
-      <button class="btn btn-sm " (click)="openEvictCacheModal()">Evict</button>
-    </div>
-  </div>
+<div class="flex flex-col md:flex-row gap-2 w-full items-start">
 
-  <div class="flex flex-col gap-1 p-3 border border-base-300 rounded-xl bg-base-100">
-    <div class="flex flex-row gap-2">
-      <svg class="text-primary" width="16" height="16" viewBox="0 0 24 24" fill="none"
-           xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M14 18H21M3 18H5M5 18C5 19.3807 6.11929 20.5 7.5 20.5C8.88071 20.5 10 19.3807 10 18C10 16.6193 8.88071 15.5 7.5 15.5C6.11929 15.5 5 16.6193 5 18ZM20 12H21M3 12H10M13 6H21M13 6C13 4.61929 11.8807 3.5 10.5 3.5C9.11929 3.5 8 4.61929 8 6C8 7.38071 9.11929 8.5 10.5 8.5C11.8807 8.5 13 7.38071 13 6ZM3 6H4M16.5 14.5C15.1193 14.5 14 13.3807 14 12C14 10.6193 15.1193 9.5 16.5 9.5C17.8807 9.5 19 10.6193 19 12C19 13.3807 17.8807 14.5 16.5 14.5Z"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="w-full md:w-72 flex-shrink-0">
+    <ul class="menu bg-base-100 border border-base-300 rounded-lg p-2 w-full gap-1">
 
-      <h2 class="text-md font-semibold mb-3">Engineering Data Management</h2>
-    </div>
-    <div class="flex flex-row flex-wrap gap-4">
-      <div class="indicator">
-        @if (missingCellInfoCount() > 0) {
-          <span class="indicator-item  badge badge-error badge-xs">{{ missingCellInfoCount() }}</span>
-        }
-        <button class="btn btn-sm" (click)="openMissingCellInfoModal()">Cell Information</button>
-      </div>
-      <div class="indicator">
-        @if (missingSectorInfoCount() > 0) {
-          <span class="indicator-item  badge badge-error badge-xs">{{ missingSectorInfoCount() }}</span>
-        }
-        <button class="btn btn-sm" (click)="openMissingSectorInfoModal()">Sector Information</button>
-      </div>
-      <button class="btn btn-sm" (click)="openCreateSiteModal()">Create Site</button>
-      <div class="indicator">
-        @if (missingSiteInfoCount() > 0) {
-          <span class="indicator-item  badge badge-error badge-xs">{{ missingSiteInfoCount() }}</span>
-        }
-        <button class="btn btn-sm" (click)="openSiteInformationModal()">Site Information</button>
-      </div>
-    </div>
-  </div>
+      <!-- Cache -->
+      <li>
+        <a [class.active]="activeView() === 'CACHE'" (click)="setActiveView('CACHE')">
+          <svg class="w-4 h-4 text-primary text-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M18 12V17C18 18.6569 15.3137 20 12 20C8.68629 20 6 18.6569 6 17V12M18 12V7M18 12C18 13.6569 15.3137 15 12 15C8.68629 15 6 13.6569 6 12M18 7C18 5.34315 15.3137 4 12 4C8.68629 4 6 5.34315 6 7M18 7C18 8.65685 15.3137 10 12 10C8.68629 10 6 8.65685 6 7M6 12V7"/>
+          </svg>
+          Cache
+        </a>
+      </li>
 
-  <div class="flex flex-col gap-1 p-3 border border-base-300 rounded-xl bg-base-100">
-    <div class="flex flex-row gap-2">
-      <svg class="text-primary" width="16" height="16" viewBox="0 0 24 24" fill="none"
-           xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M3 15.0002V16.8C3 17.9201 3 18.4798 3.21799 18.9076C3.40973 19.2839 3.71547 19.5905 4.0918 19.7822C4.5192 20 5.07899 20 6.19691 20H21.0002M3 15.0002V5M3 15.0002L6.8534 11.7891L6.85658 11.7865C7.55366 11.2056 7.90288 10.9146 8.28154 10.7964C8.72887 10.6567 9.21071 10.6788 9.64355 10.8584C10.0105 11.0106 10.3323 11.3324 10.9758 11.9759L10.9822 11.9823C11.6357 12.6358 11.9633 12.9635 12.3362 13.1153C12.7774 13.2951 13.2685 13.3106 13.7207 13.1606C14.1041 13.0334 14.4542 12.7275 15.1543 12.115L21 7"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h2 class="text-md font-semibold mb-3">KPI Management</h2>
-    </div>
-    <div class="flex flex-row flex-wrap gap-4">
-      <button class="btn btn-sm" (click)="openStandardKpiModal()">Create Standard KPI</button>
-    </div>
-  </div>
+      <!-- Engineering Data Management -->
+      <li>
+        <h2 class="menu-title flex items-center gap-2">
+          <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M14 18H21M3 18H5M5 18C5 19.3807 6.11929 20.5 7.5 20.5C8.88071 20.5 10 19.3807 10 18C10 16.6193 8.88071 15.5 7.5 15.5C6.11929 15.5 5 16.6193 5 18ZM20 12H21M3 12H10M13 6H21M13 6C13 4.61929 11.8807 3.5 10.5 3.5C9.11929 3.5 8 4.61929 8 6C8 7.38071 9.11929 8.5 10.5 8.5C11.8807 8.5 13 7.38071 13 6ZM3 6H4M16.5 14.5C15.1193 14.5 14 13.3807 14 12C14 10.6193 15.1193 9.5 16.5 9.5C17.8807 9.5 19 10.6193 19 12C19 13.3807 17.8807 14.5 16.5 14.5Z"/>
+          </svg>
+          Engineering Data
+        </h2>
+        <ul>
+          <li>
+            <a [class.active]="activeView() === 'CELL_INFO'" (click)="setActiveView('CELL_INFO')"
+               class="flex justify-between">
+              Cell Information
+              @if (missingCellInfoCount() > 0) {
+                <span class="badge badge-error badge-xs">{{ missingCellInfoCount() }}</span>
+              }
+            </a>
+          </li>
+          <li>
+            <a [class.active]="activeView() === 'SECTOR_INFO'" (click)="setActiveView('SECTOR_INFO')"
+               class="flex justify-between">
+              Sector Information
+              @if (missingSectorInfoCount() > 0) {
+                <span class="badge badge-error badge-xs">{{ missingSectorInfoCount() }}</span>
+              }
+            </a>
+          </li>
+          <li>
+            <a [class.active]="activeView() === 'SITE_INFO'" (click)="setActiveView('SITE_INFO')"
+               class="flex justify-between">
+              Site Information
+              @if (missingSiteInfoCount() > 0) {
+                <span class="badge badge-error badge-xs">{{ missingSiteInfoCount() }}</span>
+              }
+            </a>
+          </li>
+        </ul>
+      </li>
 
-  <div class="flex flex-col gap-1 p-3 border border-base-300 rounded-xl bg-base-100">
-    <div class="flex flex-row gap-2">
-      <svg class="text-primary" width="16" height="16" viewBox="0 0 24 24" fill="none"
-           xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M20 21C20 18.2386 16.4183 16 12 16C7.58172 16 4 18.2386 4 21M12 13C9.23858 13 7 10.7614 7 8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8C17 10.7614 14.7614 13 12 13Z"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h2 class="text-md font-semibold mb-3">User Management</h2>
-    </div>
-    <div class="flex flex-row flex-wrap gap-4">
-      <button class="btn btn-sm" (click)="openUserAreaMappingModal()">User-Area Mapping</button>
-    </div>
-  </div>
+      <!-- KPI Management -->
+      <li>
+        <a [class.active]="activeView() === 'STANDARD_KPI'" (click)="setActiveView('STANDARD_KPI')">
+          <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M3 15.0002V16.8C3 17.9201 3 18.4798 3.21799 18.9076C3.40973 19.2839 3.71547 19.5905 4.0918 19.7822C4.5192 20 5.07899 20 6.19691 20H21.0002M3 15.0002V5M3 15.0002L6.8534 11.7891L6.85658 11.7865C7.55366 11.2056 7.90288 10.9146 8.28154 10.7964C8.72887 10.6567 9.21071 10.6788 9.64355 10.8584C10.0105 11.0106 10.3323 11.3324 10.9758 11.9759L10.9822 11.9823C11.6357 12.6358 11.9633 12.9635 12.3362 13.1153C12.7774 13.2951 13.2685 13.3106 13.7207 13.1606C14.1041 13.0334 14.4542 12.7275 15.1543 12.115L21 7"/>
+          </svg>
+          KPI Management
+        </a>
+      </li>
 
+      <!-- User Management -->
+      <li>
+        <a [class.active]="activeView() === 'USER_AREA_MAPPING'" (click)="setActiveView('USER_AREA_MAPPING')">
+          <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M20 21C20 18.2386 16.4183 16 12 16C7.58172 16 4 18.2386 4 21M12 13C9.23858 13 7 10.7614 7 8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8C17 10.7614 14.7614 13 12 13Z"/>
+          </svg>
+          User Management
+        </a>
+      </li>
+    </ul>
+  </aside>
 
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-grow bg-base-100 border border-base-300 rounded-xl p-6 min-h-[400px]">
+    @switch (activeView()) {
+      @case ('CACHE') {
+        <app-ps-evict-cache></app-ps-evict-cache>
+      }
+      @case ('CELL_INFO') {
+        <app-ps-cell-settings></app-ps-cell-settings>
+      }
+      @case ('SECTOR_INFO') {
+        <app-ps-sector-info [open]="true"></app-ps-sector-info>
+      }
+      @case ('CREATE_SITE') {
+        <app-ps-create-site></app-ps-create-site>
+      }
+      @case ('SITE_INFO') {
+        <app-ps-site-management></app-ps-site-management>
+      }
+      @case ('STANDARD_KPI') {
+        <!--        <app-ps-standard-kpi [open]="true"></app-ps-standard-kpi>-->
+      }
+      @case ('USER_AREA_MAPPING') {
+        <app-pulse-setting-user-area-mapping></app-pulse-setting-user-area-mapping>
+      }
+      @default {
+        <div class="flex h-full w-full items-center justify-center text-base-content/50 mt-10">
+          <div class="text-center">
+            <h3 class="text-lg font-semibold">Settings</h3>
+            <p class="text-sm">Select a category from the sidebar to view or edit settings.</p>
+          </div>
+        </div>
+      }
+    }
+  </main>
 </div>
-<app-pulse-setting-user-area-mapping [open]="showUserAreaMappingModal"
-                                     (closed)="closeUserAreaMappingModal()"></app-pulse-setting-user-area-mapping>
-<app-ps-standard-kpi [open]="showStandardKpiModal" (closed)="closeStandardKpiModal()"></app-ps-standard-kpi>
-<app-ps-cells [open]="showMissingCellInfoModal" (closed)="closeMissingCellInfoModal()"></app-ps-cells>
-<app-ps-create-site [open]="showCreateSiteModal" (closed)="closeCreateSiteModal()"></app-ps-create-site>
-<app-ps-evict-cache [open]="showEvictCacheModal" (closed)="closeEvictCacheModal()"></app-ps-evict-cache>
-<app-ps-site-info [open]="showSiteInformationModal" (closed)="closeSiteInformationModal()"></app-ps-site-info>
-<app-ps-sector-info [open]="showMissingSectorInfoModal" (closed)="closeMissingSectorInfoModal()"></app-ps-sector-info>
