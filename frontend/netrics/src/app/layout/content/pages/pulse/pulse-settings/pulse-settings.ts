@@ -13,6 +13,7 @@ import { SectorService } from '../../../../../service/pulse/sector-service';
 import { SiteService } from '../../../../../service/pulse/site-service';
 import {PsCellSettings} from './ps-cell-settings/ps-cell-settings';
 import {PsSiteManagement} from './ps-site-management/ps-site-management';
+import {PsKpiSourceMapping} from './ps-kpi-source-mapping/ps-kpi-source-mapping';
 
 export type SettingsView =
   | 'CACHE'
@@ -21,6 +22,7 @@ export type SettingsView =
   | 'CREATE_SITE'
   | 'SITE_INFO'
   | 'STANDARD_KPI'
+  | 'KPI_SOURCE_MAPPING'
   | 'USER_AREA_MAPPING'
   | null;
 
@@ -30,12 +32,13 @@ export type SettingsView =
     PulseSettingUserAreaMapping,
     RouterLink,
     PsStandardKpi,
+    PsKpiSourceMapping,
     PsCellSettings,
     PsCreateSite,
     PsEvictCache,
-    PsSiteInfo,
     PsSectorInfo,
-    PsSiteManagement
+    PsSiteManagement,
+    PsKpiSourceMapping
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'
