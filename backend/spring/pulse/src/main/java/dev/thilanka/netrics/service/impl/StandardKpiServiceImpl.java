@@ -98,10 +98,22 @@ public class StandardKpiServiceImpl implements StandardKpiService {
     }
 
     @Override
+    public List<StandardKpi> findAllStandardKpiByRatWithOperands(Rat rat) {
+        return standardKpiRepository.findAllStandardKpiByRatWithOperands(rat.getId());
+    }
+
+    @Override
     public List<StandardKpiDto> getAllStandardKpiByRat(String ratName) {
         Rat rat = ratService.findRatByName(ratName);
 
         List<StandardKpi> standardKpis = standardKpiRepository.findAllStandardKpiByRat(rat.getId());
+        return standardKpis.stream().map(mapper::standardKpiToDto).toList();
+    }
+
+    @Override
+    public List<StandardKpiDto> getAllStandardKpiByRatWithOperands(String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        List<StandardKpi> standardKpis = standardKpiRepository.findAllStandardKpiByRatWithOperands(rat.getId());
         return standardKpis.stream().map(mapper::standardKpiToDto).toList();
     }
 }

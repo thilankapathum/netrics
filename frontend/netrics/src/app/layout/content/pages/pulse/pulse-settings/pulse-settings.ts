@@ -14,6 +14,7 @@ import { SiteService } from '../../../../../service/pulse/site-service';
 import {PsCellSettings} from './ps-cell-settings/ps-cell-settings';
 import {PsSiteManagement} from './ps-site-management/ps-site-management';
 import {PsKpiSourceMapping} from './ps-kpi-source-mapping/ps-kpi-source-mapping';
+import {PsStandardRawKpiMapping} from './ps-standard-raw-kpi-mapping/ps-standard-raw-kpi-mapping';
 
 export type SettingsView =
   | 'CACHE'
@@ -23,6 +24,7 @@ export type SettingsView =
   | 'SITE_INFO'
   | 'STANDARD_KPI'
   | 'KPI_SOURCE_MAPPING'
+  | 'STANDARD_RAW_KPI_MAPPING'
   | 'USER_AREA_MAPPING'
   | null;
 
@@ -38,7 +40,8 @@ export type SettingsView =
     PsEvictCache,
     PsSectorInfo,
     PsSiteManagement,
-    PsKpiSourceMapping
+    PsKpiSourceMapping,
+    PsStandardRawKpiMapping
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'

@@ -1,0 +1,194 @@
+<div class="w-full max-w-5xl flex flex-col">
+  <!-- Header -->
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold">Standard Raw KPI Mapping</h2>
+    <p class="text-sm text-base-content/70 mt-1">
+      Map 'numerator' and 'denominator' type KPIs to their corresponding 'standard' type KPI.
+    </p>
+  </div>
+
+  <!-- Mode Selection Tabs -->
+  <div role="tablist" class="tabs tabs-bordered mb-8 w-fit">
+    <button role="tab" class="tab"
+            [class.tab-active]="activeTab() === 'CREATE'"
+            (click)="setActiveTab('CREATE')">
+      Create Mapping
+    </button>
+    <button role="tab" class="tab"
+            [class.tab-active]="activeTab() === 'LIST'"
+            (click)="setActiveTab('LIST')">
+      All Mappings
+    </button>
+  </div>
+
+  <!-- View: Create -->
+  @if (activeTab() === 'CREATE') {
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+      <div class="sm:col-span-2">
+        <div class="label"><span class="label-text font-medium">RAT</span></div>
+        <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+          @for (_rat of rats; track _rat.name) {
+            <input type="radio" name="create_rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
+                   [checked]="createRat() === _rat.name" (change)="selectCreateRat($any($event.target).value)"/>
+          }
+        </div>
+      </div>
+
+      <label class="form-control w-full sm:col-span-2">
+        <div class="label">
+          <span class="label-text font-medium">Standard KPI</span>
+          <span class="label-text-alt text-base-content/50">type: standard</span>
+        </div>
+        <select class="select select-bordered w-full"
+                [ngModel]="standardKpi()" (ngModelChange)="standardKpi.set($event)"
+                [disabled]="creatingMapping() || loadingStandardKpis()">
+          <option value="" disabled>Select Standard KPI...</option>
+          @for (sk of standardTypeKpis(); track sk.kpiName) {
+            <option [value]="sk.kpiName">{{ sk.label }} ({{ sk.kpiName }})</option>
+          }
+        </select>
+        @if (standardKpi() && mappingAlreadyExists()) {
+          <div class="label">
+            <span class="label-text-alt text-warning flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18C1.64 18.32 1.55 18.68 1.56 19.05C1.57 19.42 1.68 19.77 1.87 20.08C2.06 20.39 2.33 20.65 2.65 20.83C2.97 21 3.33 21.1 3.7 21.1H20.3C20.67 21.1 21.03 21 21.35 20.83C21.67 20.65 21.94 20.39 22.13 20.08C22.32 19.77 22.43 19.42 22.44 19.05C22.45 18.68 22.36 18.32 22.18 18L13.71 3.86C13.53 3.56 13.27 3.31 12.96 3.14C12.65 2.97 12.3 2.88 11.95 2.88C11.6 2.88 11.25 2.97 10.94 3.14C10.63 3.31 10.37 3.56 10.29 3.86Z"/>
+              </svg>
+              This Standard KPI already has a mapping. Creating another will add a duplicate.
+            </span>
+          </div>
+        }
+        @if (loadingStandardKpis()) {
+          <div class="label">
+            <span class="label-text-alt flex items-center gap-1.5">
+              <span class="loading loading-spinner loading-xs"></span>
+              Loading Standard KPIs for {{ createRat() }}...
+            </span>
+          </div>
+        }
+      </label>
+
+      <label class="form-control w-full">
+        <div class="label">
+          <span class="label-text font-medium">Numerator</span>
+          <span class="label-text-alt text-base-content/50">type: numerator</span>
+        </div>
+        <select class="select select-bordered w-full"
+                [ngModel]="numerator()" (ngModelChange)="numerator.set($event)"
+                [disabled]="creatingMapping() || loadingStandardKpis()">
+          <option value="" disabled>Select Numerator KPI...</option>
+          @for (nk of numeratorTypeKpis(); track nk.kpiName) {
+            <option [value]="nk.kpiName">{{ nk.label }} ({{ nk.kpiName }})</option>
+          }
+        </select>
+        @if (!loadingStandardKpis() && numeratorTypeKpis().length === 0) {
+          <div class="label">
+            <span class="label-text-alt text-base-content/50">No 'numerator' type KPIs found for {{ createRat() }}.</span>
+          </div>
+        }
+      </label>
+
+      <label class="form-control w-full">
+        <div class="label">
+          <span class="label-text font-medium">Denominator</span>
+          <span class="label-text-alt text-base-content/50">type: denominator</span>
+        </div>
+        <select class="select select-bordered w-full"
+                [ngModel]="denominator()" (ngModelChange)="denominator.set($event)"
+                [disabled]="creatingMapping() || loadingStandardKpis()">
+          <option value="" disabled>Select Denominator KPI...</option>
+          @for (dk of denominatorTypeKpis(); track dk.kpiName) {
+            <option [value]="dk.kpiName">{{ dk.label }} ({{ dk.kpiName }})</option>
+          }
+        </select>
+        @if (!loadingStandardKpis() && denominatorTypeKpis().length === 0) {
+          <div class="label">
+            <span class="label-text-alt text-base-content/50">No 'denominator' type KPIs found for {{ createRat() }}.</span>
+          </div>
+        }
+      </label>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="mt-8 flex gap-3">
+      <button class="btn btn-primary"
+              [disabled]="creatingMapping() || !isInputsValid() || !hasAnyRole(['PULSE_CREATE'])"
+              (click)="createMapping()">
+        @if (creatingMapping()) {
+          <span class="loading loading-spinner loading-sm"></span>
+        } @else {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 8V16M8 12H16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        }
+        Create Mapping
+      </button>
+
+      <button class="btn btn-ghost" type="button" [disabled]="creatingMapping()" (click)="resetForm()">
+        Clear
+      </button>
+    </div>
+  }
+
+  <!-- View: List All -->
+  @if (activeTab() === 'LIST') {
+
+    <div class="flex flex-col gap-4">
+
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+          @for (_rat of rats; track _rat.name) {
+            <input type="radio" name="list_rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
+                   [checked]="listRat() === _rat.name" (change)="selectListRat($any($event.target).value)"/>
+          }
+        </div>
+
+        <button class="btn btn-sm btn-outline" [disabled]="loadingList()" (click)="loadMappings()">
+          @if (loadingList()) {
+            <span class="loading loading-spinner loading-xs"></span>
+          } @else {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 12C3 7.02944 7.02944 3 12 3C15.5778 3 18.6691 5.06082 20.1493 8.06217M21 12C21 16.9706 16.9706 21 12 21C8.42212 21 5.33087 18.9392 3.85074 15.9378M21 8V4M21 8H17M3 16V20M3 20H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          }
+          Refresh
+        </button>
+      </div>
+
+      <div class="overflow-x-auto border border-base-300 rounded-xl">
+        <table class="table table-zebra table-sm">
+          <thead>
+          <tr>
+            <th>Standard KPI</th>
+            <th>Numerator</th>
+            <th>Denominator</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (m of mappings(); track m.standardKpi) {
+              <tr>
+                <td class="font-mono text-xs">{{ m.standardKpi }}</td>
+                <td class="font-mono text-xs">{{ m.numerator }}</td>
+                <td class="font-mono text-xs">{{ m.denominator }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="text-center text-base-content/50 py-6">
+                  @if (loadingList()) {
+                    Loading mappings...
+                  } @else {
+                    No Standard Raw KPI Mappings found for this RAT.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  }
+
+</div>

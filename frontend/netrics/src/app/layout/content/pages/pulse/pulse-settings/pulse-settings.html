@@ -96,6 +96,11 @@
               KPI Source Mapping
             </a>
           </li>
+          <li>
+            <a [class.active]="activeView() === 'STANDARD_RAW_KPI_MAPPING'" (click)="setActiveView('STANDARD_RAW_KPI_MAPPING')">
+              Standard Raw KPI Mapping
+            </a>
+          </li>
         </ul>
       </li>
 
@@ -136,6 +141,9 @@
       }
       @case ('KPI_SOURCE_MAPPING') {
         <app-ps-kpi-source-mapping></app-ps-kpi-source-mapping>
+      }
+      @case ('STANDARD_RAW_KPI_MAPPING') {
+        <app-ps-standard-raw-kpi-mapping></app-ps-standard-raw-kpi-mapping>
       }
       @case ('USER_AREA_MAPPING') {
         <app-pulse-setting-user-area-mapping></app-pulse-setting-user-area-mapping>
