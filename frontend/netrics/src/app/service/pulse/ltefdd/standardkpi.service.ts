@@ -21,4 +21,8 @@ export class StandardkpiService {
     return this.http.get<Array<StandardKpiDto>>(this.baseUrl,{ params: { ratName } });
   }
 
+  createStandardKpi(dto: StandardKpiDto): Observable<StandardKpiDto> {
+    return this.http.post<StandardKpiDto>(this.baseUrl, dto);
+  }
+
 }

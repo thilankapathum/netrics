@@ -7,4 +7,5 @@ export interface StandardKpiDto {
   threshold?: number;
   aggregation?: string;
   basicKpi?: string;
+  ratName?: string;
 }
