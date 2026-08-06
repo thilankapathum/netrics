@@ -98,7 +98,7 @@ export class PsStandardKpi {
       return;
     }
     this.loadingList.set(true);
-    this.standardKpiService.getAllStandardKpi(this.listRat()).subscribe({
+    this.standardKpiService.getAllStandardKpiWithOperands(this.listRat()).subscribe({
       next: data => {
         this.standardKpis.set(data);
         this.loadingList.set(false);

@@ -1,171 +1,294 @@
 <div class="w-full max-w-5xl flex flex-col">
-  <!-- Header -->
-  <div class="mb-6">
-    <h2 class="text-2xl font-bold">KPI Source Mapping</h2>
-    <p class="text-sm text-base-content/70 mt-1">
+
+  <!-- Header Section -->
+  <div>
+    <h2 class="text-xl font-semibold text-base-content">KPI Source Mapping</h2>
+    <p class="text-xs text-secondary mt-1">
       Map OSS-reported KPI names to their corresponding Standard KPI in the system.
     </p>
   </div>
 
+
   <!-- Mode Selection Tabs -->
-  <div role="tablist" class="tabs tabs-bordered mb-8 w-fit">
-    <button role="tab" class="tab"
-            [class.tab-active]="activeTab() === 'CREATE'"
-            (click)="setActiveTab('CREATE')">
-      Create Mapping
-    </button>
-    <button role="tab" class="tab"
-            [class.tab-active]="activeTab() === 'LIST'"
-            (click)="setActiveTab('LIST')">
-      All Mappings
-    </button>
-  </div>
+  <div class="tabs tabs-lift mt-4">
 
-  <!-- View: Create -->
-  @if (activeTab() === 'CREATE') {
+    <!-- CREATE TAB -->
+    <input
+      type="radio"
+      name="kpi_mapping_tabs"
+      class="tab"
+      aria-label="Create Mapping"
+      [checked]="activeTab() === 'CREATE'"
+      (change)="setActiveTab('CREATE')" />
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div class="tab-content bg-base-100 border-base-300 p-6">
 
-      <div class="sm:col-span-2">
-        <div class="label"><span class="label-text font-medium">RAT</span></div>
-        <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
-          @for (_rat of rats; track _rat.name) {
-            <input type="radio" name="create_rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
-                   [checked]="createRat() === _rat.name" (change)="selectCreateRat($any($event.target).value)"/>
-          }
-        </div>
-      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-      <label class="form-control w-full">
-        <div class="label"><span class="label-text font-medium">OSS KPI Name</span></div>
-        <input type="text" placeholder="pmRrcConnEstabSucc" class="input input-bordered w-full"
-               [ngModel]="ossKpiName()" (ngModelChange)="ossKpiName.set($event)" [disabled]="creatingMapping()" />
-      </label>
 
-      <label class="form-control w-full">
-        <div class="label"><span class="label-text font-medium">OSS</span></div>
-        <select class="select select-bordered w-full"
-                [ngModel]="ossIdentifier()" (ngModelChange)="ossIdentifier.set($event)" [disabled]="creatingMapping()">
-          <option value="" disabled>Select OSS...</option>
-          @for (oss of ossList(); track oss.identifier) {
-            <option [value]="oss.identifier">{{oss.identifier}} ({{ oss.vendor }})</option>
-          }
-        </select>
-      </label>
+        <!-- RAT -->
+        <div class="sm:col-span-2">
 
-      <label class="form-control w-full">
-        <div class="label">
-          <span class="label-text font-medium">Standard KPI</span>
-        </div>
-        <select class="select select-bordered w-full"
-                [ngModel]="standardKpi()" (ngModelChange)="standardKpi.set($event)"
-                [disabled]="creatingMapping() || loadingStandardKpis()">
-          <option value="" disabled>Select Standard KPI...</option>
-          @for (sk of standardKpis(); track sk.kpiName) {
-            <option [value]="sk.kpiName">{{ sk.label }} ({{ sk.kpiName }})</option>
-          }
-        </select>
-        @if (loadingStandardKpis()) {
           <div class="label">
-            <span class="label-text-alt flex items-center gap-1.5">
-              <span class="loading loading-spinner loading-xs"></span>
-              Loading Standard KPIs for {{ createRat() }}...
+            <span class="label-text text-xs font-medium">RAT</span>
+          </div>
+
+          <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+            @for (_rat of rats; track _rat.name) {
+              <input
+                type="radio"
+                name="create_rat_tabs"
+                class="tab"
+                [value]="_rat.name"
+                aria-label="{{_rat.label}}"
+                [checked]="createRat() === _rat.name"
+                (change)="selectCreateRat($any($event.target).value)" />
+
+            }
+          </div>
+        </div>
+
+
+        <!-- OSS KPI Name -->
+        <label class="form-control w-full">
+
+          <div class="label">
+            <span class="label-text text-xs font-medium">
+              OSS KPI Name
             </span>
           </div>
-        }
-      </label>
 
-      <label class="form-control w-full">
-        <div class="label">
-          <span class="label-text font-medium">Multiplication Factor</span>
-          <span class="label-text-alt text-base-content/50">Default 1.0</span>
-        </div>
-        <input type="number" step="0.01" placeholder="1.0" class="input input-bordered w-full"
-               [ngModel]="multiplicationFactor()" (ngModelChange)="multiplicationFactor.set($event)" [disabled]="creatingMapping()" />
-      </label>
+          <input
+            type="text"
+            placeholder="pmRrcConnEstabSucc"
+            class="input input-bordered input-sm w-full"
+            [ngModel]="ossKpiName()"
+            (ngModelChange)="ossKpiName.set($event)"
+            [disabled]="creatingMapping()" />
 
-    </div>
+        </label>
 
-    <!-- Actions -->
-    <div class="mt-8 flex gap-3">
-      <button class="btn btn-primary"
-              [disabled]="creatingMapping() || !isInputsValid() || !hasAnyRole(['PULSE_CREATE'])"
-              (click)="createKpiMapping()">
-        @if (creatingMapping()) {
-          <span class="loading loading-spinner loading-sm"></span>
-        } @else {
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 8V16M8 12H16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        }
-        Create Mapping
-      </button>
 
-      <button class="btn btn-ghost" type="button" [disabled]="creatingMapping()" (click)="resetForm()">
-        Clear
-      </button>
-    </div>
-  }
+        <!-- OSS -->
+        <label class="form-control w-full">
 
-  <!-- View: List All -->
-  @if (activeTab() === 'LIST') {
+          <div class="label">
+            <span class="label-text text-xs font-medium">
+              OSS
+            </span>
+          </div>
 
-    <div class="flex flex-col gap-4">
+          <select
+            class="select select-bordered select-sm w-full"
+            [ngModel]="ossIdentifier()"
+            (ngModelChange)="ossIdentifier.set($event)"
+            [disabled]="creatingMapping()">
 
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
-          @for (_rat of rats; track _rat.name) {
-            <input type="radio" name="list_rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
-                   [checked]="listRat() === _rat.name" (change)="selectListRat($any($event.target).value)"/>
+            <option value="" disabled>Select OSS...</option>
+
+            @for (oss of ossList(); track oss.identifier) {
+              <option [value]="oss.identifier">
+                {{oss.identifier}} ({{oss.vendor}})
+              </option>
+            }
+          </select>
+        </label>
+
+
+        <!-- Standard KPI -->
+        <label class="form-control w-full">
+
+          <div class="label">
+            <span class="label-text text-xs font-medium">
+              Standard KPI
+            </span>
+          </div>
+
+          <select
+            class="select select-bordered select-sm w-full"
+            [ngModel]="standardKpi()"
+            (ngModelChange)="standardKpi.set($event)"
+            [disabled]="creatingMapping() || loadingStandardKpis()">
+
+            <option value="" disabled>
+              Select Standard KPI...
+            </option>
+
+            @for (sk of standardKpis(); track sk.kpiName) {
+              <option [value]="sk.kpiName">
+                {{ sk.label }} ({{ sk.kpiName }})
+              </option>
+            }
+          </select>
+
+          @if (loadingStandardKpis()) {
+            <div class="label">
+              <span class="label-text-alt flex items-center gap-1.5">
+                <span class="loading loading-spinner loading-xs"></span>
+                Loading Standard KPIs for {{createRat()}}...
+              </span>
+            </div>
           }
-        </div>
+        </label>
 
-        <button class="btn btn-sm btn-outline" [disabled]="loadingList()" (click)="loadKpiMappings()">
-          @if (loadingList()) {
-            <span class="loading loading-spinner loading-xs"></span>
-          } @else {
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 12C3 7.02944 7.02944 3 12 3C15.5778 3 18.6691 5.06082 20.1493 8.06217M21 12C21 16.9706 16.9706 21 12 21C8.42212 21 5.33087 18.9392 3.85074 15.9378M21 8V4M21 8H17M3 16V20M3 20H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Factor -->
+        <label class="form-control w-full">
+
+          <div class="label">
+            <span class="label-text text-xs font-medium">
+              Multiplication Factor
+            </span>
+
+            <span class="label-text-alt text-xs text-base-content/50">
+              Default 1.0
+            </span>
+          </div>
+
+          <input
+            type="number"
+            step="0.01"
+            placeholder="1.0"
+            class="input input-bordered input-sm w-full"
+            [ngModel]="multiplicationFactor()"
+            (ngModelChange)="multiplicationFactor.set($event)"
+            [disabled]="creatingMapping()" />
+        </label>
+      </div>
+
+
+      <!-- Actions -->
+      <div class="mt-8 flex gap-3">
+
+        <button
+          class="btn btn-primary btn-sm"
+          [disabled]="creatingMapping() || !isInputsValid() || !hasAnyRole(['PULSE_CREATE'])"
+          (click)="createKpiMapping()">
+
+          <span
+            [hidden]="!creatingMapping()"
+            class="loading loading-spinner loading-xs">
+          </span>
+
+          <span [hidden]="creatingMapping()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 8V16M8 12H16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 16.9706 21 12C21 16.9706 16.9706 21 12 21Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"/>
             </svg>
-          }
-          Refresh
+          </span>
+          Create Mapping
+        </button>
+
+        <button
+          class="btn btn-ghost btn-sm"
+          type="button"
+          [disabled]="creatingMapping()"
+          (click)="resetForm()">
+          Clear
         </button>
       </div>
-
-      <div class="overflow-x-auto border border-base-300 rounded-xl">
-        <table class="table table-zebra table-sm">
-          <thead>
-          <tr>
-            <th>OSS KPI Name</th>
-            <th>OSS</th>
-            <th>Standard KPI</th>
-            <th>Multiplication Factor</th>
-          </tr>
-          </thead>
-          <tbody>
-            @for (mapping of kpiMappings(); track mapping.ossKpiName! + mapping.ossIdentifier) {
-              <tr>
-                <td class="font-mono text-xs">{{ mapping.ossKpiName }}</td>
-                <td>{{ mapping.ossIdentifier }}</td>
-                <td class="font-mono text-xs">{{ mapping.standardKpi }}</td>
-                <td>{{ mapping.multiplicationFactor ?? '-' }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="text-center text-base-content/50 py-6">
-                  @if (loadingList()) {
-                    Loading KPI Mappings...
-                  } @else {
-                    No KPI Mappings found for this RAT.
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
     </div>
-  }
+
+
+    <!-- LIST TAB -->
+    <input
+      type="radio"
+      name="kpi_mapping_tabs"
+      class="tab"
+      aria-label="All Mappings"
+      [checked]="activeTab() === 'LIST'"
+      (change)="setActiveTab('LIST')" />
+
+    <div class="tab-content bg-base-100 border-base-300 p-6">
+
+      <div class="flex flex-col gap-4">
+
+        <!-- Toolbar -->
+        <div class="flex items-center justify-between flex-wrap gap-3">
+
+          <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+            @for (_rat of rats; track _rat.name) {
+              <input
+                type="radio"
+                name="list_rat_tabs"
+                class="tab"
+                [value]="_rat.name"
+                aria-label="{{_rat.label}}"
+                [checked]="listRat() === _rat.name"
+                (change)="selectListRat($any($event.target).value)" />
+            }
+          </div>
+
+          <button
+            class="btn btn-sm"
+            [disabled]="loadingList()"
+            (click)="loadKpiMappings()">
+            @if (loadingList()) {
+              <span class="loading loading-spinner loading-xs"></span>
+            } @else {
+              Refresh
+            }
+          </button>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto border border-base-300 rounded-xl">
+          <table class="table table-zebra table-xs">
+            <thead>
+            <tr class="text-xs uppercase">
+              <th class="max-w-40">OSS KPI Name</th>
+              <th>OSS</th>
+              <th class="max-w-40">Standard KPI</th>
+              <th>Factor</th>
+            </tr>
+            </thead>
+            <tbody>
+              @for (mapping of kpiMappings(); track mapping.ossKpiName! + mapping.ossIdentifier) {
+                <tr>
+                  <td class="max-w-40">
+                  <span
+                    class="block truncate font-mono text-secondary text-xs"
+                    [title]="mapping.ossKpiName">
+                    {{mapping.ossKpiName}}
+                  </span>
+                  </td>
+                  <td>
+                  <span class="badge badge-xs badge-soft">
+                    {{mapping.ossIdentifier}}
+                  </span>
+                  </td>
+                  <td class="max-w-40">
+                  <span
+                    class="block truncate font-mono text-secondary text-xs"
+                    [title]="mapping.standardKpi">
+                    {{mapping.standardKpi}}
+                  </span>
+                  </td>
+                  <td>
+                    {{mapping.multiplicationFactor ?? '-'}}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4"
+                      class="text-center text-base-content/50 py-6">
+                    @if (loadingList()) {
+                      Loading KPI Mappings...
+                    } @else {
+                      No KPI Mappings found for this RAT.
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 </div>
