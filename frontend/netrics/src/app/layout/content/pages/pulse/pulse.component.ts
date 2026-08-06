@@ -823,6 +823,12 @@ export class PulseComponent implements OnInit {
 
   //-------------------- UTILITY ----------------------
 
+  truncateMiddle(value: string | undefined, front: number = 7, back: number = 7): string {
+    if (!value) return '';
+    if (value.length <= front + back + 1) return value; // nothing gained by truncating
+    return `${value.slice(0, front)}…${value.slice(-back)}`;
+  }
+
   isBasicKpiValueRed(snapshot: BasicKpiSnapshot): boolean {
     const basicKpi = this.basicKpiDtos.find(kpi => kpi.label == snapshot.kpiLabel);
     if (!basicKpi || basicKpi.threshold == null || !basicKpi.worstOrder) {

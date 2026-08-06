@@ -388,7 +388,7 @@
               <div class="skeleton h-4 w-full"></div>
             </div>
           }
-          <table [hidden]="loadingWorstCells" class="table table-sm">
+          <table [hidden]="loadingWorstCells" class="table table-sm [&_td]:whitespace-nowrap">
             <thead>
             <tr>
               <th class="font-semibold">#</th>
@@ -407,7 +407,9 @@
                   <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
                   <td>
                     <div class="flex items-center gap-2">
-                      <span>{{ cell.cellName }}</span>
+                      <span class="tooltip" [attr.data-tip]="cell.cellName">
+                        {{ truncateMiddle(cell.cellName) }}
+                      </span>
                       @if (cell.hasAlarmCorrelation) {
                         <div
                           class="tooltip before:text-xs"
@@ -417,12 +419,16 @@
                       }
                     </div>
                   </td>
-                  <td>{{ cell.kpiLabel }}</td>
+                  <td class="max-w-[110px]">
+                    <span class="tooltip truncate block" [attr.data-tip]="cell.kpiLabel">
+                      {{ cell.kpiLabel }}
+                    </span>
+                  </td>
                   <td>
                     <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
                       {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
                     </span> &nbsp;
-                    <span class="badge badge-soft badge-sm"
+                    <span class="badge badge-soft badge-xs"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0) {
                       +
                     }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
