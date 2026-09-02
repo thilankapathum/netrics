@@ -41,7 +41,7 @@ services:
     command: ["postgres", "-c", "shared_preload_libraries=timescaledb,pg_stat_statements"]
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:9.15.0
     container_name: pgadmin
     restart: unless-stopped
     environment:
@@ -274,6 +274,8 @@ services:
       redis:
         condition: service_healthy
       discovery:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   beam:
