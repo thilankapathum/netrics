@@ -126,8 +126,12 @@ export class SectorMap implements OnInit, OnChanges {
     const zoom = this.sharedService.zoom;
     this.map = L.map('map').setView(viewCoordinates, zoom);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {attribution: 'OSM'}).addTo(this.map);
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {attribution: 'Tiles &copy; Esri'});
+
+    L.control.layers({'Street': streetLayer, 'Satellite': satelliteLayer}).addTo(this.map);
 
     this.sectorLayer.addTo(this.map);
     this.labelLayer.addTo(this.map);
@@ -284,6 +288,7 @@ export class SectorMap implements OnInit, OnChanges {
           <div style="transform:translate(-50%,-130%); pointer-events:none;">
             <span style="font-size:12px; font-family: 'Inter', sans-serif;  font-weight:600; color:#3F3F46;
                           padding:1px 5px; white-space:nowrap;
+                          background:rgba(255,255,255,0.85); border-radius:3px;
                          ">
               ${site.siteCode}
             </span>
