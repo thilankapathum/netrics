@@ -341,11 +341,8 @@ services:
     networks:
       - private_net
     volumes:
-      #      - ./backend/python/pulse/files/day-average:/app/day-average
       - ./backend/python/pulse/files/day-average:/app/day-average
       - ./backend/python/pulse/files/busy-hour:/app/busy-hour
-#      - /home/ftpuser/apps/netrics/files/day-average:/app/day-average
-#      - /home/ftpuser/apps/netrics/files/busy-hour:/app/busy-hour
     depends_on:
       postgres:
         condition: service_healthy
