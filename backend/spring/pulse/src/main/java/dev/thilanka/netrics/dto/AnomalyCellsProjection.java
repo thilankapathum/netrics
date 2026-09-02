@@ -7,6 +7,8 @@ public interface AnomalyCellsProjection {
 
     String getCellName();
 
+    Long getStandardKpiId();
+
     String getKpiName();
 
     String getKpiLabel();

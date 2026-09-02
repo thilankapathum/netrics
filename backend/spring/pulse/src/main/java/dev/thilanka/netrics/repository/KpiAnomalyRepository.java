@@ -314,7 +314,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         ),
         calc AS MATERIALIZED (
             SELECT
-                a.timestamp, a.cell_name, a.observed_value, a.severity,
+                a.timestamp, a.cell_name, a.standard_kpi_id, a.observed_value, a.severity,
                 a.has_alarm_correlation, a.distinct_alarm_def_count,
                 a.total_alarm_occurrences, a.best_match_level,
                 km.kpi_name, km.label, km.unit, km.worst_order,
@@ -329,6 +329,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
         SELECT
             timestamp   AS timestamp,
             cell_name    AS cellName,
+            standard_kpi_id AS standardKpiId,
             kpi_name     AS kpiName,
             label        AS kpiLabel,
             unit         AS unit,
@@ -416,7 +417,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
     ),
     calc AS MATERIALIZED (
         SELECT
-            a.timestamp, a.cell_name, a.observed_value, a.severity,
+            a.timestamp, a.cell_name, a.standard_kpi_id, a.observed_value, a.severity,
             a.has_alarm_correlation, a.distinct_alarm_def_count,
             a.total_alarm_occurrences, a.best_match_level,
             km.kpi_name, km.label, km.unit, km.worst_order,
@@ -431,6 +432,7 @@ public interface KpiAnomalyRepository extends JpaRepository<KpiAnomaly, Long> {
     SELECT
         timestamp   AS timestamp,
         cell_name    AS cellName,
+        standard_kpi_id AS standardKpiId,
         kpi_name     AS kpiName,
         label        AS kpiLabel,
         unit         AS unit,

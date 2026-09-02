@@ -507,6 +507,62 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
     );
 
 
+    // Batched sibling of findStreaksForCells above — takes the full set of (cellName, standardKpiId)
+    // pairs needed for a worst-cells page in one call instead of one call per distinct KPI, to avoid
+    // the N+1 query pattern that dominated anomaly-cells page latency.
+    @Query(value = """
+            WITH pairs AS (
+                SELECT * FROM unnest(:cellNames ::varchar[], :standardKpiIds ::bigint[])
+                    AS p(cell_name, standard_kpi_id)
+            ),
+            kpi_meta AS MATERIALIZED (
+                SELECT id, unit, worst_order, threshold
+                FROM standard_kpi
+                WHERE id = ANY(:standardKpiIds ::bigint[])
+            ),
+            streak_raw AS (
+                SELECT
+                    l.cell_name,
+                    l.standard_kpi_id,
+                    ROW_NUMBER() OVER (PARTITION BY l.cell_name, l.standard_kpi_id ORDER BY l.timestamp DESC) AS rn,
+                    CASE
+                        WHEN km.worst_order = 'ASC'  AND
+                             COALESCE(l.numerator_kpi_value / NULLIF(l.denominator_kpi_value, 0)
+                                 * CASE WHEN km.unit = '%' THEN 100 ELSE 1 END,
+                                 l.kpi_value) < km.threshold THEN 1
+                        WHEN km.worst_order = 'DESC' AND
+                             COALESCE(l.numerator_kpi_value / NULLIF(l.denominator_kpi_value, 0)
+                                 * CASE WHEN km.unit = '%' THEN 100 ELSE 1 END,
+                                 l.kpi_value) > km.threshold THEN 1
+                        ELSE 0
+                    END AS is_bad
+                FROM kpi_values l
+                JOIN pairs p ON p.cell_name = l.cell_name AND p.standard_kpi_id = l.standard_kpi_id
+                JOIN kpi_meta km ON km.id = l.standard_kpi_id
+                WHERE l.rat_id         = :ratId
+                    AND l.granularity_id = :granularityId
+                    AND l.timestamp BETWEEN :streakStart AND :currEnd
+            )
+            SELECT
+                cell_name                                            AS cellName,
+                standard_kpi_id                                      AS standardKpiId,
+                LEAST(
+                    COALESCE(MIN(rn) FILTER (WHERE is_bad = 0) - 1, COUNT(*)),
+                    31
+                )::int AS consecutiveBadDays
+            FROM streak_raw
+            GROUP BY cell_name, standard_kpi_id;
+            """, nativeQuery = true)
+    List<CellKpiStreakProjection> findStreaksForCellKpiPairs(
+            @Param("cellNames") String[] cellNames,
+            @Param("standardKpiIds") Long[] standardKpiIds,
+            @Param("streakStart") LocalDateTime streakStart,
+            @Param("currEnd") LocalDateTime currEnd,
+            @Param("ratId") Long ratId,
+            @Param("granularityId") Long granularityId
+    );
+
+
     @Query(value = """
             WITH params AS (
                 SELECT

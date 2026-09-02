@@ -139,21 +139,23 @@ export class AnomalyCells implements OnInit {
   selectAreaType(areaType: string) {
     this.areaType.set(areaType);
     this.getAreasByAreaType(this.areaType()!);
+    this.page.set(0);
   }
 
   selectArea(areaName: string) {
     this.area.set(areaName);
-    // this.fetchCells();
+    this.page.set(0);
   }
 
   setGranularity(granularity: 'day-average' | 'busy-hour') {
     this.granularity.set(granularity);
-    // this.fetchCells();
+    this.page.set(0);
   }
 
   setRat(rat: string) {
     this.rat.set(rat);
     this.getStandardKpisForRat(rat);
+    this.page.set(0);
   }
 
   //----------- GETTERS ----------------------------------
