@@ -14,6 +14,13 @@ import java.util.List;
 public interface AlarmRepository extends JpaRepository<Alarms, Long> {
 
     @Query(value = """
+            WITH latest_alarms AS (
+                SELECT DISTINCT ON (a.alarm_source_id, a.node_name, a.alarm_id) a.*
+                FROM alarms a
+                WHERE a.occurrence_time <= now()
+                    AND a.occurrence_time >= :startTime
+                ORDER BY a.alarm_source_id, a.node_name, a.alarm_id, a.occurrence_time DESC
+            )
             SELECT
                 a.alarm_id,
                 c.cell_name,
@@ -29,7 +36,7 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
                 a.specific_problem,
                 a.additional_info,
                 alms.label AS alarm_source
-            FROM alarms a
+            FROM latest_alarms a
             JOIN cells c
                 ON a.node_name = c.node_name
             LEFT JOIN alarm_definitions ad
@@ -39,13 +46,18 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
             JOIN alarm_sources alms
                 ON alms.id = a.alarm_source_id
             WHERE c.cell_name = :cellName
-                AND a.occurrence_time <= now()
-                AND a.occurrence_time >= :startTime
             ORDER BY a.occurrence_time DESC;
             """, nativeQuery = true)
     List<CellAlarmDto> getAlarmsByCell(@Param("cellName") String cellName, @Param("startTime") LocalDateTime startTime);
 
     @Query(value = """
+            WITH latest_alarms AS (
+                SELECT DISTINCT ON (a.alarm_source_id, a.node_name, a.alarm_id) a.*
+                FROM alarms a
+                WHERE a.occurrence_time <= :endTime
+                    AND a.occurrence_time >= :startTime
+                ORDER BY a.alarm_source_id, a.node_name, a.alarm_id, a.occurrence_time DESC
+            )
             SELECT
                 a.alarm_id,
                 c.cell_name,
@@ -61,7 +73,7 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
                 a.specific_problem,
                 a.additional_info,
                 alms.label AS alarm_source
-            FROM alarms a
+            FROM latest_alarms a
             JOIN cells c
                 ON a.node_name = c.node_name
             LEFT JOIN alarm_definitions ad
@@ -71,14 +83,19 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
             JOIN alarm_sources alms
                 ON alms.id = a.alarm_source_id
             WHERE c.cell_name = :cellName
-                AND a.occurrence_time <= :endTime
-                AND a.occurrence_time >= :startTime
             ORDER BY a.occurrence_time DESC;
             """, nativeQuery = true)
     List<CellAlarmDto> getAlarmsByCell(@Param("cellName") String cellName, @Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
 
     @Query(value = """
+            WITH latest_alarms AS (
+                SELECT DISTINCT ON (a.alarm_source_id, a.node_name, a.alarm_id) a.*
+                FROM alarms a
+                WHERE a.occurrence_time <= now()
+                    AND a.occurrence_time >= :startTime
+                ORDER BY a.alarm_source_id, a.node_name, a.alarm_id, a.occurrence_time DESC
+            )
             SELECT
                 a.alarm_id         AS alarmId,
                 a.node_name        AS nodeName,
@@ -94,13 +111,11 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
                 a.additional_info  AS additionalInfo,
                 alms.label         AS alarmSource,
                 a.parsed_cell_name AS parsedCellName
-            FROM alarms a
+            FROM latest_alarms a
             LEFT JOIN alarm_definitions ad ON ad.id = a.alarm_definition_id
             JOIN alarm_types "at" ON at.id = a.alarm_type_id
             JOIN alarm_sources alms ON alms.id = a.alarm_source_id
-            WHERE a.occurrence_time <= now()
-              AND a.occurrence_time >= :startTime
-              AND (CAST(:nodeName AS text) IS NULL OR a.node_name ILIKE CONCAT('%', CAST(:nodeName AS text), '%'))
+            WHERE (CAST(:nodeName AS text) IS NULL OR a.node_name ILIKE CONCAT('%', CAST(:nodeName AS text), '%'))
               AND (CAST(:severity AS text) IS NULL OR a.severity = CAST(:severity AS text))
               AND (CAST(:alarmType AS text) IS NULL OR at.name = CAST(:alarmType AS text))
               AND (CAST(:alarmName AS text) IS NULL OR ad.alarm_name ILIKE CONCAT('%', CAST(:alarmName AS text), '%'))
@@ -131,14 +146,19 @@ public interface AlarmRepository extends JpaRepository<Alarms, Long> {
     );
 
     @Query(value = """
+            WITH latest_alarms AS (
+                SELECT DISTINCT ON (a.alarm_source_id, a.node_name, a.alarm_id) a.*
+                FROM alarms a
+                WHERE a.occurrence_time <= now()
+                    AND a.occurrence_time >= :startTime
+                ORDER BY a.alarm_source_id, a.node_name, a.alarm_id, a.occurrence_time DESC
+            )
             SELECT count(*)
-            FROM alarms a
+            FROM latest_alarms a
             LEFT JOIN alarm_definitions ad ON ad.id = a.alarm_definition_id
             JOIN alarm_types "at" ON at.id = a.alarm_type_id
             JOIN alarm_sources alms ON alms.id = a.alarm_source_id
-            WHERE a.occurrence_time <= now()
-              AND a.occurrence_time >= :startTime
-              AND (CAST(:nodeName AS text) IS NULL OR a.node_name ILIKE CONCAT('%', CAST(:nodeName AS text), '%'))
+            WHERE (CAST(:nodeName AS text) IS NULL OR a.node_name ILIKE CONCAT('%', CAST(:nodeName AS text), '%'))
               AND (CAST(:severity AS text) IS NULL OR a.severity = CAST(:severity AS text))
               AND (CAST(:alarmType AS text) IS NULL OR at.name = CAST(:alarmType AS text))
               AND (CAST(:alarmName AS text) IS NULL OR ad.alarm_name ILIKE CONCAT('%', CAST(:alarmName AS text), '%'))
