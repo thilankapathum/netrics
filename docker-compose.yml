@@ -10,6 +10,8 @@ volumes:
   postgres_data:
   redis-data:
   pgadmin:
+  kafka_data:
+  alarm_state:
 
 services:
   postgres:
@@ -23,8 +25,11 @@ services:
       PGDATA: /var/lib/postgresql/data
     expose:
       - "${POSTGRES_PORT}"
+    # ports:
+    #   - "5432:5432"
     networks:
       - private_net
+      # - public_net
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -36,7 +41,7 @@ services:
     command: ["postgres", "-c", "shared_preload_libraries=timescaledb,pg_stat_statements"]
 
   pgadmin:
-    image: dpage/pgadmin4:9.15.0
+    image: dpage/pgadmin4
     container_name: pgadmin
     restart: unless-stopped
     environment:
@@ -228,7 +233,7 @@ services:
       - "keycloak.local:${DOMAIN_IP}"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.2.0
+    image: thilankaw/netrics/pulse:0.2.6
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -272,7 +277,7 @@ services:
         condition: service_healthy
 
   beam:
-    image: thilankaw/netrics/beam:0.0.1
+    image: thilankaw/netrics/beam:0.0.2
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -317,7 +322,7 @@ services:
         condition: service_healthy
 
   kpip-day:
-    image: thilankaw/netrics/kpip-day:0.0.8
+    image: thilankaw/netrics/kpip-day:0.0.9
     container_name: kpip-day
     tty: true          # REQUIRED for single-line updates
     stdin_open: true   # REQUIRED for single-line updates
@@ -351,8 +356,48 @@ services:
       pulse:
         condition: service_healthy
 
+  alarms:
+    image: thilankaw/netrics/alarms:0.0.2
+    container_name: alarms
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}          # change to your actual DB service/host name
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB_PULSE: ${POSTGRES_DB_PULSE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}       # move to a .env file / secret, don't commit real credentials
+      ALARM_FILES_BASE_DIR: /app/files/alarms
+      POLL_INTERVAL_SECONDS: "30"
+    volumes:
+      - /home/ftpuser/apps/netrics:/app/files
+    networks:
+      - private_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  alarm-puller:
+    image: thilankaw/netrics/alarm-puller:0.0.1
+    container_name: alarm-puller
+    group_add:
+      - "1002"
+    restart: unless-stopped
+    environment:
+      - REMOTE_PASSWORD=${REMOTE_PASSWORD}
+      - REMOTE_HOST=${REMOTE_HOST}
+      - REMOTE_USERNAME=${REMOTE_USERNAME}
+      - U2020_REM_DIR=/export/home/sysm/opt/oss/server/var/fileint/fm
+      - U2020_LOC_DIR=/data/incoming/u2020
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      # Uncomment if using key-based auth instead of a password:
+      # - ./secrets/id_ed25519:/app/secrets/id_ed25519:ro
+      - alarm_state:/data/state
+      - /home/ftpuser/apps/netrics/alarms/oss/u2020:/data/incoming/u2020
+
   frontend:
-    image: thilankaw/netrics/frontend:0.1.1
+    image: thilankaw/netrics/frontend:0.1.6
     container_name: frontend
     expose:
       - "80"
@@ -400,8 +445,11 @@ services:
     expose:
       - "9092"
       - "9094"
+    # ports:
+    #   - "9093:9093"
     networks:
       - private_net
+      # - public_net
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller

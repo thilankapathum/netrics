@@ -45,7 +45,7 @@ Each Spring service uses Java package root `dev.thilanka.netrics` (pulse) / `dev
 Full stack (recommended for integration work) via Docker Compose — copy `.env.example` to `.env` and fill in secrets first:
 
 ```bash
-docker compose -f docker-compose-local.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 Bring-up order matters and is encoded in `depends_on`/healthchecks: postgres/redis/kafka/keycloak → config-server → discovery → pulse/beam → gateway/nginx → frontend.
