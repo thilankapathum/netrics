@@ -88,7 +88,7 @@ export class PdbCreateCells implements OnInit, OnDestroy {
           this.onCancel();
         }, error: (err) => {
           console.log(err);
-          this.alertService.error(`Error creating Worst Cells. ${err.status} ${err.statusText}`);
+          this.alertService.error('Error creating Worst Cells', 'Error', `${err.status} ${err.statusText}`);
           this.creatingWorstCells.set(false);
         }
       });
@@ -103,7 +103,7 @@ export class PdbCreateCells implements OnInit, OnDestroy {
         this.rat.set(this.rats[0].name!);
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error retrieving RATs. ${err.status} ${err.statusText}`);
+        this.alertService.error('Error retrieving RATs', 'Error', `${err.status} ${err.statusText}`);
       }
     })
   }
@@ -124,7 +124,7 @@ export class PdbCreateCells implements OnInit, OnDestroy {
           this.areaType.set(this.areaTypes[0].name!);
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
         }
       }
     )
@@ -167,7 +167,7 @@ export class PdbCreateCells implements OnInit, OnDestroy {
           this.executedItems.set(result.executedItems);
         }, error: (err) => {
           console.log(err);
-          this.alertService.error(`Error retrieving Worst Cells creation status. ${err.status} ${err.statusText}`);
+          this.alertService.error('Error retrieving Worst Cells creation status', 'Error', `${err.status} ${err.statusText}`);
         }
       })
   }

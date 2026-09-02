@@ -54,7 +54,7 @@ export class PulseSettingUserAreaMapping {
         }
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
       }
     });
   }
@@ -70,7 +70,7 @@ export class PulseSettingUserAreaMapping {
         }
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
       }
     });
   }

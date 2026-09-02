@@ -137,7 +137,7 @@ export class CellAnalysis implements OnInit, OnDestroy {
       }, error: err => {
         console.error(err);
         this.loadingRats.set(false);
-        this.alertService.error(`Retrieving RATs failed. ${err.status} ${err.statusText}`);
+        this.alertService.error('Retrieving RATs failed', 'Error', `${err.status} ${err.statusText}`);
       }
     });
   }
@@ -184,7 +184,7 @@ export class CellAnalysis implements OnInit, OnDestroy {
         }
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingStandardKpis.set(false);
       }
     });
@@ -201,7 +201,7 @@ export class CellAnalysis implements OnInit, OnDestroy {
       },
       error: error => {
         console.error("Error getting standardRawKpiMappingAvailable:", error);
-        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard-Raw-KPI-Mapping retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.standardRawKpiMappingAvailable.set(false);
         this.showOperands.set(false);
         this.fetchTrendDataForKpi(kpi, ratName, selectByOption, granularityName);
@@ -399,7 +399,7 @@ export class CellAnalysis implements OnInit, OnDestroy {
       error: (error: HttpErrorResponse) => {
         console.warn('Sector search unavailable:', error.status, error.statusText);
         if (error.status !== 503 && error.status !== 502 && error.status !== 504) {
-          this.alertService.error(`Sector search failed. ${error.status} ${error.statusText}`);
+          this.alertService.error('Sector search failed', 'Error', `${error.status} ${error.statusText}`);
         }
       }
     });
@@ -452,13 +452,13 @@ export class CellAnalysis implements OnInit, OnDestroy {
             );
           },
           error: err => {
-            this.alertService.error(`Standard KPI retrieval failed. ${err.status} ${err.statusText}`);
+            this.alertService.error('Standard KPI retrieval failed', 'Error', `${err.status} ${err.statusText}`);
             this.loadingStandardKpis.set(false);
           }
         });
       },
       error: err => {
-        this.alertService.error(`Failed to get cells for sector. ${err.status} ${err.statusText}`);
+        this.alertService.error('Failed to get cells for sector', 'Error', `${err.status} ${err.statusText}`);
       }
     });
   }

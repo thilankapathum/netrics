@@ -102,7 +102,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
         this.loadingRats = false;
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error retrieving RATs. ${err.status} ${err.statusText}`);
+        this.alertService.error('Error retrieving RATs', 'Error', `${err.status} ${err.statusText}`);
         this.loadingRats = false;
       }
     })
@@ -123,7 +123,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingStandardKpis = false;
       }
     })
@@ -138,7 +138,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
         this.loadingGranularities = false;
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error retrieving Granularities. ${err.status} ${err.statusText}`);
+        this.alertService.error('Error retrieving Granularities', 'Error', `${err.status} ${err.statusText}`);
         this.loadingGranularities = false;
       }
     })
@@ -154,7 +154,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
           this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
           this.loadingAreaTypes = false;
         }
       }
@@ -170,7 +170,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAreas = false;
       }
     })
@@ -245,7 +245,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
       },
       error: (error) => {
         this.jobStatus.set('IDLE');
-        this.alertService.error(`Error starting report job! ${error.status} ${error.statusText}`);
+        this.alertService.error('Error starting report job', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }
@@ -266,7 +266,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
       },
       error: (error) => {
         this.jobStatus.set('IDLE');
-        this.alertService.error(`Error checking report status. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error checking report status', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }
@@ -290,7 +290,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
       },
       error: (error) => {
         this.downloadingFile.set(false);
-        this.alertService.error(`Error downloading report! ${error.status} ${error.statusText}`);
+        this.alertService.error('Error downloading report', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }

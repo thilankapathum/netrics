@@ -51,7 +51,7 @@ export class CellMapEngParaModify {
         this.getSiteInfo(this.cell.siteCode!);
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error finding cell by ${cellName}. ${err.statusCode} ${err.statusText}`);
+        this.alertService.error(`Error finding cell by ${cellName}`, 'Error', `${err.statusCode} ${err.statusText}`);
       }
     })
   }
@@ -63,7 +63,7 @@ export class CellMapEngParaModify {
         console.log('site info', data);
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error finding site info: ${err.statusCode} ${err.statusText}`);
+        this.alertService.error('Error finding site info', 'Error', `${err.statusCode} ${err.statusText}`);
       }
     })
   }
@@ -84,7 +84,7 @@ export class CellMapEngParaModify {
           this.savingCell = false;
         }, error: err => {
           console.error(err);
-          this.alertService.error(`Error updating cell ${this.cellName}. ${err.statusCode} ${err.statusText}`);
+          this.alertService.error(`Error updating cell ${this.cellName}`, 'Error', `${err.statusCode} ${err.statusText}`);
           this.savingCell = false;
         }
       })
@@ -103,7 +103,7 @@ export class CellMapEngParaModify {
           this.savingSite = false;
         }, error: err => {
           console.error(err);
-          this.alertService.error(`Error updating site ${this.site.siteCode}. ${err.statusCode} ${err.statusText}`);
+          this.alertService.error(`Error updating site ${this.site.siteCode}`, 'Error', `${err.statusCode} ${err.statusText}`);
         }
       })
     } else {

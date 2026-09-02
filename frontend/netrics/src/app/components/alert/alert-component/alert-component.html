@@ -1,21 +1,17 @@
-<!--@if (visible) {-->
-<!--  <div class="alert alert-soft shadow-lg fixed top-5 right-5 w-80 z-[9999]" [ngClass]="typeClass">-->
-<!--    <div>-->
-<!--      <span>{{ alert?.message }}</span>-->
-<!--    </div>-->
-<!--    <button class="btn btn-sm" (click)="close()">✕</button>-->
-<!--  </div>-->
-<!--}-->
-
-<div class="fixed top-5 right-5 flex flex-col gap-3 z-[9999]">
+<div class="fixed bottom-5 right-5 flex flex-col-reverse gap-3 z-[9999] w-96 max-w-[calc(100vw-2.5rem)]">
   @for (alert of alerts; track alert.id) {
-    <div role="alert" class="alert shadow-xl w-80 animate-fade-in-down"
-         [ngClass]="getTypeClass(alert.type)">
-      <div>
-        <span>{{ alert.message }}</span>
+    <div class="toast-card" [ngClass]="'toast-card-' + alert.type" [class.leaving]="leavingIds.has(alert.id)">
+      <div class="toast-badge" [ngClass]="typeMeta[alert.type].badgeClass">{{ typeMeta[alert.type].icon }}</div>
+      <div class="toast-body">
+        <div class="toast-title-row">
+          <span class="toast-title">{{ alert.title }}</span>
+        </div>
+        <p class="toast-message">{{ alert.message }}</p>
+        @if (alert.errorCode) {
+          <p class="toast-code">{{ alert.errorCode }}</p>
+        }
       </div>
-      <button class="ml-auto" (click)="close(alert.id)">✕</button>
+      <button class="toast-close" (click)="close(alert.id)" aria-label="Dismiss">✕</button>
     </div>
   }
 </div>
-

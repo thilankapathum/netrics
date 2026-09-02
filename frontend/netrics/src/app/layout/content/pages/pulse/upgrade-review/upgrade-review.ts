@@ -131,7 +131,7 @@ export class UpgradeReview implements OnInit{
         this.loadingRats.set(false);
       },
       error: err => {
-        this.alertService.error(`Retrieving RATs failed. ${err.status} ${err.statusText}`);
+        this.alertService.error('Retrieving RATs failed', 'Error', `${err.status} ${err.statusText}`);
         this.loadingRats.set(false);
       }
     });
@@ -355,7 +355,7 @@ export class UpgradeReview implements OnInit{
       next: data => this.filteredSectors.set(data),
       error: (err: HttpErrorResponse) => {
         if (err.status !== 503 && err.status !== 502 && err.status !== 504) {
-          this.alertService.error(`Sector search failed. ${err.status} ${err.statusText}`);
+          this.alertService.error('Sector search failed', 'Error', `${err.status} ${err.statusText}`);
         }
       }
     });
@@ -426,7 +426,7 @@ export class UpgradeReview implements OnInit{
           }
         });
       },
-      error: err => this.alertService.error(`Failed to get cells. ${err.statusText}`)
+      error: err => this.alertService.error('Failed to get cells', 'Error', `${err.statusText}`)
     });
   }
 

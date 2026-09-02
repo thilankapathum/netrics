@@ -50,7 +50,7 @@ export class PsEvictCache {
           this.evictingCache = false;
         }, error: error => {
           console.error(error);
-          this.alertService.error(`Error evicting cache for ${this.rat()}-${this.granularity()} - ${error.statusText}`);
+          this.alertService.error(`Error evicting cache for ${this.rat()}-${this.granularity()}`, 'Error', `${error.statusText}`);
           this.evictingCache = false;
         }
       });
@@ -61,7 +61,7 @@ export class PsEvictCache {
           this.evictingCache = false;
         }, error: error => {
           console.error(error);
-          this.alertService.error(`Error evicting cache for ${this.rat()} - ${error.statusText}`);
+          this.alertService.error(`Error evicting cache for ${this.rat()}`, 'Error', `${error.statusText}`);
           this.evictingCache = false;
         }
       });
@@ -76,7 +76,7 @@ export class PsEvictCache {
         this.evictingAllCaches = false;
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Error evicting caches - ${error.statusText}`);
+        this.alertService.error('Error evicting caches', 'Error', `${error.statusText}`);
         this.evictingAllCaches = false;
       }
     });

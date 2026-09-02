@@ -137,7 +137,7 @@ export class Alarms implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Area for User. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error getting Area for User', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -157,7 +157,7 @@ export class Alarms implements OnInit {
           this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
           this.loadingAreaTypes = false;
         }
       }
@@ -179,7 +179,7 @@ export class Alarms implements OnInit {
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAreas = false;
       }
     })
@@ -193,7 +193,7 @@ export class Alarms implements OnInit {
         this.loadingAlarmTypes = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Alarms (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Alarms', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAlarmTypes = false;
       }
     })
@@ -207,7 +207,7 @@ export class Alarms implements OnInit {
         this.loadingAlarmSources = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Alarm Sources (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Alarm Sources', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAlarmSources = false;
       }
     })

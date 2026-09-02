@@ -103,7 +103,7 @@ export class CellAnalysisModal {
       error: error => {
         this.loadingChart = false;
         console.error('Error retrieving KPI trend data:', error);
-        this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('KPI Data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }
@@ -116,7 +116,7 @@ export class CellAnalysisModal {
         this.loadingStandardRawKpiMapping = false;
       }, error: error => {
         console.error("Error getting standardRawKpiMappingAvailable:", error);
-        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed :"${error.status} ${error.statusText}`);
+        this.alertService.error('Standard-Raw-KPI-Mapping retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingStandardRawKpiMapping = false;
       }
     })

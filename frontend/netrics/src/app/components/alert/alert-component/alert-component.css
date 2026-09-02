@@ -1,0 +1,92 @@
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(8px) scale(.96); }
+}
+
+.toast-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  border: 1px solid var(--color-base-300);
+  box-shadow: 0 10px 30px -5px var(--toast-shadow-color, rgb(0 0 0 / 0.3)), 0 4px 8px -2px rgb(0 0 0 / 0.025);
+  animation: toast-in .25s ease-out;
+}
+
+.toast-card.leaving {
+  animation: toast-out .25s ease-in forwards;
+}
+
+.toast-card-success { --toast-shadow-color: color-mix(in srgb, var(--color-success) 45%, transparent); }
+.toast-card-error { --toast-shadow-color: color-mix(in srgb, var(--color-error) 15%, transparent); }
+.toast-card-warning { --toast-shadow-color: color-mix(in srgb, var(--color-warning) 45%, transparent); }
+.toast-card-info { --toast-shadow-color: color-mix(in srgb, var(--color-info) 45%, transparent); }
+
+.toast-badge {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.toast-badge-success { background-color: var(--color-success); color: var(--color-success-content); }
+.toast-badge-error { background-color: var(--color-error); color: var(--color-error-content); }
+.toast-badge-warning { background-color: var(--color-warning); color: var(--color-warning-content); }
+.toast-badge-info { background-color: var(--color-info); color: var(--color-info-content); }
+
+.toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.toast-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.toast-code {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: var(--color-base-content);
+  opacity: 0.4;
+}
+
+.toast-message {
+  margin-top: 0.125rem;
+  font-size: 0.8125rem;
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  opacity: 0.5;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.25rem;
+  border-radius: 9999px;
+}
+
+.toast-close:hover {
+  opacity: 1;
+  background-color: var(--color-base-200);
+}

@@ -175,7 +175,7 @@ export class AnomalyCells implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Area for User. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error getting Area for User', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -195,7 +195,7 @@ export class AnomalyCells implements OnInit {
           this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
           this.loadingAreaTypes = false;
         }
       }
@@ -218,7 +218,7 @@ export class AnomalyCells implements OnInit {
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAreas = false;
       }
     })
@@ -234,7 +234,7 @@ export class AnomalyCells implements OnInit {
         this.loadingGranularity = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving granularities. ${error.status}:${error.statusText}`);
+        this.alertService.error('Error retrieving granularities', 'Error', `${error.status}:${error.statusText}`);
         this.loadingGranularity = false;
       }
     });
@@ -251,7 +251,7 @@ export class AnomalyCells implements OnInit {
         this.loadingRats = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving RATs. ${error.status}:${error.statusText}`);
+        this.alertService.error('Error retrieving RATs', 'Error', `${error.status}:${error.statusText}`);
         this.loadingRats = false;
       }
     });
@@ -266,7 +266,7 @@ export class AnomalyCells implements OnInit {
       },
       error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving KPIs. ${error.status}:${error.statusText}`);
+        this.alertService.error('Error retrieving KPIs', 'Error', `${error.status}:${error.statusText}`);
         this.loadingStandardKpis = false;
       }
     });

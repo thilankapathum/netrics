@@ -75,7 +75,7 @@ export class PulseSettings {
       next: data => this.missingCellInfoCount.set(data),
       error: error => {
         console.error("Error getCellCountWithMissingInfo:", error);
-        this.alertService.error(`Error retrieving Cell count with missing information. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error retrieving Cell count with missing information', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }
@@ -85,7 +85,7 @@ export class PulseSettings {
       next: data => this.missingSiteInfoCount.set(data),
       error: error => {
         console.error("Error getSiteCountWithMissingInfo:", error);
-        this.alertService.error(`Error retrieving Site count with missing information. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error retrieving Site count with missing information', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }
@@ -95,7 +95,7 @@ export class PulseSettings {
       next: data => this.missingSectorInfoCount.set(data),
       error: error => {
         console.error("Error getSectorCountWithMissingInfo:", error);
-        this.alertService.error(`Error retrieving Sector count with missing information. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error retrieving Sector count with missing information', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }

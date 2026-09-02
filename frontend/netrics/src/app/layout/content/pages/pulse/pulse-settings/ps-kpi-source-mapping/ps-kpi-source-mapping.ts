@@ -111,7 +111,7 @@ export class PsKpiSourceMapping {
         this.loadingStandardKpis.set(false);
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Error retrieving Standard KPIs for ${ratName} - ${error.statusText}`);
+        this.alertService.error(`Error retrieving Standard KPIs for ${ratName}`, 'Error', `${error.statusText}`);
         this.loadingStandardKpis.set(false);
       }
     });
@@ -128,7 +128,7 @@ export class PsKpiSourceMapping {
         this.loadingList.set(false);
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Error retrieving KPI Mappings for ${this.listRat()} - ${error.statusText}`);
+        this.alertService.error(`Error retrieving KPI Mappings for ${this.listRat()}`, 'Error', `${error.statusText}`);
         this.loadingList.set(false);
       }
     });
@@ -169,7 +169,7 @@ export class PsKpiSourceMapping {
         }
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error creating KPI Mapping for ${dto.ossKpiName} - ${err.statusText}`);
+        this.alertService.error(`Error creating KPI Mapping for ${dto.ossKpiName}`, 'Error', `${err.statusText}`);
         this.creatingMapping.set(false);
       }
     });

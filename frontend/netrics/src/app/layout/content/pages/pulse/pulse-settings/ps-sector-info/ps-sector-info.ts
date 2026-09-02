@@ -68,7 +68,7 @@ export class PsSectorInfo {
       error: error => {
         console.log("Error exporting sector information:");
         console.error(error);
-        this.alertService.error(`Error exporting missing sector information! - ${error.statusText}`);
+        this.alertService.error('Error exporting missing sector information', 'Error', `${error.statusText}`);
         this.loadingAllSectorDownload = false;
       }
     });

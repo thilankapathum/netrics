@@ -58,7 +58,7 @@ export class PsSiteManagement {
       },
       error: err => {
         console.log(err);
-        this.alertService.error(`Error creating Site ${site.siteCode} - ${err.statusText}`);
+        this.alertService.error(`Error creating Site ${site.siteCode}`, 'Error', `${err.statusText}`);
         this.creatingSite.set(false);
       }
     });
@@ -75,7 +75,7 @@ export class PsSiteManagement {
       },
       error: err => {
         console.log(err);
-        this.alertService.error(`Error creating Sites. - ${err.statusText}`);
+        this.alertService.error('Error creating Sites', 'Error', `${err.statusText}`);
         this.creatingSites.set(false);
       }
     });
@@ -127,7 +127,7 @@ export class PsSiteManagement {
       },
       error: error => {
         console.error(error);
-        this.alertService.error(`Error exporting site information! - ${error.statusText}`);
+        this.alertService.error('Error exporting site information', 'Error', `${error.statusText}`);
         this.loadingAllSitesDownload = false;
       }
     });

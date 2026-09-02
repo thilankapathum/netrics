@@ -146,7 +146,7 @@ export class DashboardComponent implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi");
         console.error(error);
-        this.alertService.error(`Error getting Standard KPIs! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Standard KPIs', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -163,7 +163,7 @@ export class DashboardComponent implements OnInit {
         this.getAreasByAreaType(this.areaType()!);
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -192,7 +192,7 @@ export class DashboardComponent implements OnInit {
         this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -224,7 +224,7 @@ export class DashboardComponent implements OnInit {
         this.getWorstCells(this.timestamp(), this.excludeZeroes);
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Timestamps! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Timestamps', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -278,7 +278,7 @@ export class DashboardComponent implements OnInit {
         }, error: error => {
           console.log(error);
           this.loadingWorstCells = false;
-          this.alertService.error(`Error getting Worst cells! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Worst cells', 'Error', `${error.status}:${error.statusText}`);
         }
       });
   }
@@ -323,7 +323,7 @@ export class DashboardComponent implements OnInit {
         })
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}. (${error.status}:${error.statusText})`);
+        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`, 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -351,7 +351,7 @@ export class DashboardComponent implements OnInit {
         this.isAddingComment = false;
         this.openDropdownCellId = null;
         console.log(error);
-        this.alertService.error(`Error creating comment! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error creating comment', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -377,7 +377,7 @@ export class DashboardComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error updating comment! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error updating comment', 'Error', `${error.status}:${error.statusText}`);
         this.isEditingComment = false;
         this.editingCommentId = null;
         this._comment.set('');
@@ -401,7 +401,7 @@ export class DashboardComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error deleting comment! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error deleting comment', 'Error', `${error.status}:${error.statusText}`);
         this.getAllWorstCellComments(worstCell);
         this.openDropdownCellId = null;
       }
@@ -472,7 +472,7 @@ export class DashboardComponent implements OnInit {
           this.loadingKpiTrend = false;
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(err);
-          this.alertService.error(`Error getting data! (${err.status}:${err.statusText})`);
+          this.alertService.error('Error getting data', 'Error', `${err.status}:${err.statusText}`);
         }
       })
   }
@@ -528,7 +528,7 @@ export class DashboardComponent implements OnInit {
         this.loadingStandardRawKpiMapping = false;
       }, error: error => {
         console.error("Error getting standardRawKpiMappingAvailable:", error);
-        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed :"${error.status} ${error.statusText}`);
+        this.alertService.error('Standard-Raw-KPI-Mapping retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingStandardRawKpiMapping = false;
       }
     })

@@ -48,7 +48,7 @@ export class AnomalySummaryModal {
         },
         error: (err) => {
           this.loading.set(false);
-          this.alertService.error(`Summary retrieval failed. ${err.status} ${err.statusText}`);
+          this.alertService.error('Summary retrieval failed', 'Error', `${err.status} ${err.statusText}`);
         },
       });
   }

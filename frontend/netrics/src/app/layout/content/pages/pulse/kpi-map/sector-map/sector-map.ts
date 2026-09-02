@@ -211,7 +211,7 @@ export class SectorMap implements OnInit, OnChanges {
       finalize(() => this.loadingCells = false)
     ).subscribe({
       next: () => this.renderFromCache(zoom, tileRange),
-      error: err => this.alertService.error(`Error loading tiles. ${err.status} ${err.statusText}`)
+      error: err => this.alertService.error('Error loading tiles', 'Error', `${err.status} ${err.statusText}`)
     });
 
     const bounds2 = this.map.getBounds();

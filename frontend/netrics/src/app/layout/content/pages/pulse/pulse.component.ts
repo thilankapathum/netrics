@@ -166,7 +166,7 @@ export class PulseComponent implements OnInit {
         }, error: err => {
           console.log('Error getting date range');
           console.error(err);
-          this.alertService.error(`Error getting date range. ${err.status} ${err.statusText}`);
+          this.alertService.error('Error getting date range', 'Error', `${err.status} ${err.statusText}`);
           this.loadingDateRanges = false;
         }
       }
@@ -193,7 +193,7 @@ export class PulseComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Area. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error getting Area', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -272,7 +272,7 @@ export class PulseComponent implements OnInit {
             this.loadingWorstCells = false;
           }, error: error => {
             console.error(error);
-            this.alertService.error(`Error getting Worst Cells. ${error.status} ${error.statusText}`);
+            this.alertService.error('Error getting Worst Cells', 'Error', `${error.status} ${error.statusText}`);
             this.loadingWorstCells = false;
           }
         });
@@ -310,7 +310,7 @@ export class PulseComponent implements OnInit {
         this.granularities = data;
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Error retrieving Granularities.${error.status} ${error.statusText}`)
+        this.alertService.error('Error retrieving Granularities', 'Error', `${error.status} ${error.statusText}`)
       }
     });
   }
@@ -332,7 +332,7 @@ export class PulseComponent implements OnInit {
           this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types. (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
           this.loadingAreaTypes = false;
         }
       }
@@ -360,7 +360,7 @@ export class PulseComponent implements OnInit {
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas. (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAreas = false;
       }
     })
@@ -383,14 +383,14 @@ export class PulseComponent implements OnInit {
           }, error: error => {
             console.log("Error getAllBasicKpiSnapshots");
             console.error(error);
-            this.alertService.error(`Basic KPI Snapshot retrieval failed. ${error.status} ${error.statusText}`);
+            this.alertService.error('Basic KPI Snapshot retrieval failed', 'Error', `${error.status} ${error.statusText}`);
           }
         })
       }, error: error => {
         this.loadingBasicKpi = false;
         console.log("Error getAllBasicKpi");
         console.error(error);
-        this.alertService.error(`Basic KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Basic KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }
@@ -432,7 +432,7 @@ export class PulseComponent implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -515,7 +515,7 @@ export class PulseComponent implements OnInit {
       },
       error: error => {
         console.error('Error getting KPI Trend Data:', error);
-        this.alertService.error(`KPI Trend Data retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('KPI Trend Data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingKpiTrend = false;
       }
     });
@@ -533,7 +533,7 @@ export class PulseComponent implements OnInit {
       error: error => {
         console.log("Error getDataByKpi:");
         console.error(error);
-        this.alertService.error(`Trend data retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Trend data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingKpiTrend = false;
       }
     })
@@ -557,7 +557,7 @@ export class PulseComponent implements OnInit {
       },
       error: error => {
         console.error("Error getWorstCellsByKpi:", error);
-        this.alertService.error(`Worst cells retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Worst cells retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingWorstCells = false;
       }
     });
@@ -569,7 +569,7 @@ export class PulseComponent implements OnInit {
         this.standardRawKpiMappingAvailable.set(data);
       }, error: error => {
         console.error("Error getting standardRawKpiMappingAvailable:", error);
-        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed :"${error.status} ${error.statusText}`);
+        this.alertService.error('Standard-Raw-KPI-Mapping retrieval failed', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -628,7 +628,7 @@ export class PulseComponent implements OnInit {
         );
       }, error: error => {
         console.error("Error getting alarmsByCellGranularity:", error);
-        this.alertService.error(`AlarmsByCellGranularity: ${error.status} ${error.statusText}`);
+        this.alertService.error('AlarmsByCellGranularity', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -718,7 +718,7 @@ export class PulseComponent implements OnInit {
           this.loadingAnalysisModalChart = false;
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(error);
-          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+          this.alertService.error('KPI Data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         }
       });
   }
@@ -737,7 +737,7 @@ export class PulseComponent implements OnInit {
           this.loadingAnalysisModalChart = false;
           console.log("Error getTrendDataByKpiNameAndCellWithOperands:");
           console.error(error);
-          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+          this.alertService.error('KPI Data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         }
       });
   }
@@ -762,7 +762,7 @@ export class PulseComponent implements OnInit {
       error: error => {
         console.log("Error getCellCountWithMissingInfo:");
         console.error(error);
-        this.alertService.error(`Error retrieving Cell count with missing information. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error retrieving Cell count with missing information', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }

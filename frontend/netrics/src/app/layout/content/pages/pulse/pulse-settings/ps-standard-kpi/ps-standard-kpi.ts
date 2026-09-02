@@ -104,7 +104,7 @@ export class PsStandardKpi {
         this.loadingList.set(false);
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Error retrieving Standard KPIs for ${this.listRat()} - ${error.statusText}`);
+        this.alertService.error(`Error retrieving Standard KPIs for ${this.listRat()}`, 'Error', `${error.statusText}`);
         this.loadingList.set(false);
       }
     });
@@ -120,7 +120,7 @@ export class PsStandardKpi {
         this.loadingBasicKpis.set(false);
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Error retrieving Basic KPIs for ${ratName} - ${error.statusText}`);
+        this.alertService.error(`Error retrieving Basic KPIs for ${ratName}`, 'Error', `${error.statusText}`);
         this.loadingBasicKpis.set(false);
       }
     });
@@ -187,7 +187,7 @@ export class PsStandardKpi {
         }
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error creating Standard KPI ${dto.kpiName} - ${err.statusText}`);
+        this.alertService.error(`Error creating Standard KPI ${dto.kpiName}`, 'Error', `${err.statusText}`);
         this.creatingKpi.set(false);
       }
     });
