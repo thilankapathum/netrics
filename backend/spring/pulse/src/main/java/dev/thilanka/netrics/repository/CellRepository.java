@@ -21,7 +21,7 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
     @Query(value = """
             SELECT *
             FROM cells
-            WHERE
+            WHERE (
             	site_id IS NULL
             	OR node_name IS NULL
             	OR band_id IS NULL
@@ -30,6 +30,8 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
             	OR beamwidth IS NULL
             	OR carrier_id IS NULL
             	OR sector_id IS NULL
+            )
+            	AND id NOT IN (SELECT previous_cell_id FROM cell_mappings)
             ORDER BY cell_name ASC;
             """, nativeQuery = true)
     List<Cell> findCellsWithMissingInfo();
@@ -37,7 +39,7 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
     @Query(value = """
             SELECT COUNT(*)
             FROM cells
-            WHERE
+            WHERE (
             	site_id IS NULL
             	OR node_name IS NULL
             	OR band_id IS NULL
@@ -45,7 +47,9 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
             	OR azimuth IS NULL
             	OR beamwidth IS NULL
             	OR carrier_id IS NULL
-            	OR sector_id IS NULL;
+            	OR sector_id IS NULL
+            )
+            	AND id NOT IN (SELECT previous_cell_id FROM cell_mappings);
             """, nativeQuery = true)
     Integer findCellCountWithMissingInfo();
 
@@ -58,6 +62,7 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
             	LEFT JOIN bands b ON c.band_id = b.id
             	LEFT JOIN carriers carr ON c.carrier_id = carr.id
             	LEFT JOIN sectors sec ON c.sector_id = sec.id
+            WHERE c.id NOT IN (SELECT previous_cell_id FROM cell_mappings)
             ORDER BY c.cell_name ASC;
             """, nativeQuery = true)
     List<CellDto> findAllCells();
@@ -69,6 +74,7 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
                 JOIN rat r ON r.id = c.rat_id
             WHERE sector_id = :sectorId
                 AND rat_id = :ratId
+                AND c.id NOT IN (SELECT previous_cell_id FROM cell_mappings)
             ORDER BY c.cell_name LIMIT 20
             """, nativeQuery = true)
     List<CellNameDto> findCellsBySector(@Param("sectorId") Long sectorId, @Param("ratId") Long ratId);

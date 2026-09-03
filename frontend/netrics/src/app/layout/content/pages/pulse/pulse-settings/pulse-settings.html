@@ -72,6 +72,11 @@
               }
             </a>
           </li>
+          <li>
+            <a [class.active]="activeView() === 'CELL_MAPPING'" (click)="setActiveView('CELL_MAPPING')">
+              Cell Mapping
+            </a>
+          </li>
         </ul>
       </li>
 
@@ -135,6 +140,9 @@
       }
       @case ('SITE_INFO') {
         <app-ps-site-management></app-ps-site-management>
+      }
+      @case ('CELL_MAPPING') {
+        <app-ps-cell-mapping></app-ps-cell-mapping>
       }
       @case ('STANDARD_KPI') {
         <app-ps-standard-kpi></app-ps-standard-kpi>

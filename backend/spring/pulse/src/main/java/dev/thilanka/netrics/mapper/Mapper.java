@@ -328,6 +328,16 @@ public class Mapper {
         );
     }
 
+    // ================ CELL MAPPING ==================
+
+    public CellMappingDto cellMappingToDto(CellMapping cellMapping) {
+        return new CellMappingDto(
+                cellMapping.getId(),
+                cellMapping.getPreviousCell().getCellName(),
+                cellMapping.getNewCell().getCellName()
+        );
+    }
+
     // ================= CARRIER ======================
 
     public CarrierDto carrierToDto(Carrier carrier) {

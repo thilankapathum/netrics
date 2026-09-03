@@ -15,10 +15,12 @@ import {PsCellSettings} from './ps-cell-settings/ps-cell-settings';
 import {PsSiteManagement} from './ps-site-management/ps-site-management';
 import {PsKpiSourceMapping} from './ps-kpi-source-mapping/ps-kpi-source-mapping';
 import {PsStandardRawKpiMapping} from './ps-standard-raw-kpi-mapping/ps-standard-raw-kpi-mapping';
+import {PsCellMapping} from './ps-cell-mapping/ps-cell-mapping';
 
 export type SettingsView =
   | 'CACHE'
   | 'CELL_INFO'
+  | 'CELL_MAPPING'
   | 'SECTOR_INFO'
   | 'CREATE_SITE'
   | 'SITE_INFO'
@@ -41,7 +43,8 @@ export type SettingsView =
     PsSectorInfo,
     PsSiteManagement,
     PsKpiSourceMapping,
-    PsStandardRawKpiMapping
+    PsStandardRawKpiMapping,
+    PsCellMapping
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'

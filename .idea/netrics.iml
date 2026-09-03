@@ -14,6 +14,13 @@
       <excludeFolder url="file://$MODULE_DIR$/frontend/netrics/src/assets/fonts/axiforma" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/netrics/src/resources/fonts" />
       <excludeFolder url="file://$MODULE_DIR$/inspirations" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/inspectionProfiles" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/python/pulse/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/python/pulse/alarms/files" />
+      <excludeFolder url="file://$MODULE_DIR$/features" />
+      <excludeFolder url="file://$MODULE_DIR$/frontend/netrics/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
