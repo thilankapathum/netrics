@@ -21,7 +21,11 @@ public interface CsvService {
 
     List<SectorDto> readSectorsFromCsv(InputStream inputStream);
 
+    List<CellMappingDto> readCellMappingsFromCsv(InputStream inputStream);
+
     void writeCellImportResultToCsv(List<CellCsvImportResultDto> results, Writer writer);
+
+    void writeCellMappingImportResultToCsv(List<CellMappingCsvImportResultDto> results, Writer writer);
 
     void writeSiteImportResultToCsv(List<SiteCsvImportResultDto> results, Writer writer);
 

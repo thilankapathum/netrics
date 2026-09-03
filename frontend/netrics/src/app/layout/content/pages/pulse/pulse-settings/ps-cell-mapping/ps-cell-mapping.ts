@@ -31,6 +31,8 @@ export class PsCellMapping {
 
   mappingPendingDelete = signal<CellMappingDto | null>(null);
 
+  uploadingMappings = signal(false);
+
   private previousCellSearchTerms$ = new Subject<string>();
   private newCellSearchTerms$ = new Subject<string>();
 
@@ -154,6 +156,41 @@ export class PsCellMapping {
         console.error('Error deleting cell mapping:', error);
         this.alertService.error('Error deleting cell mapping', 'Error', `${error.status} ${error.statusText}`);
         this.mappingPendingDelete.set(null);
+      }
+    });
+  }
+
+  importCellMappings(fileInput: HTMLInputElement) {
+    const files = fileInput.files;
+    if (!files || files.length === 0) {
+      this.alertService.warning('Please select a CSV file to upload.');
+      return;
+    }
+    const file = files[0];
+    if (!file.name.endsWith('.csv')) {
+      this.alertService.warning('Please upload a CSV file.');
+      return;
+    }
+
+    this.uploadingMappings.set(true);
+    this.cellMappingService.importCellMappings(file).subscribe({
+      next: (blob) => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'cell_mapping_import_result.csv';
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+
+        fileInput.value = '';
+        this.uploadingMappings.set(false);
+        this.loadMappings();
+      },
+      error: error => {
+        console.error('Error uploading cell mappings:', error);
+        this.alertService.error('Error uploading cell mappings', 'Error', `${error.status} ${error.statusText}`);
+        this.uploadingMappings.set(false);
+        fileInput.value = '';
       }
     });
   }

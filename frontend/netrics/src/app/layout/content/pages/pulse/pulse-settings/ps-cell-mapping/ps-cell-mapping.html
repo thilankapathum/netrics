@@ -8,6 +8,23 @@
     </p>
   </div>
 
+  <!-- BULK UPLOAD -->
+  <div class="flex flex-col gap-3 p-4 border border-base-300 rounded-lg bg-base-100">
+    <h4 class="text-sm font-semibold">Bulk upload mappings (CSV)</h4>
+    <p class="text-xs text-secondary">
+      Columns: "Previous Cell Name", "New Cell Name". Each row is processed the same
+      way as a single mapping; a result CSV with a status/error column downloads
+      automatically.
+    </p>
+    <input [disabled]="uploadingMappings()" #cellMappingFileInput type="file"
+           class="file-input file-input-bordered file-input-sm w-full" accept=".csv" />
+    <button [disabled]="uploadingMappings()" class="btn btn-sm btn-success btn-outline self-start"
+            (click)="importCellMappings(cellMappingFileInput)">
+      <span [hidden]="!uploadingMappings()" class="loading loading-spinner loading-xs"></span>
+      Upload CSV
+    </button>
+  </div>
+
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- PREVIOUS CELL -->
     <div class="dropdown w-full">

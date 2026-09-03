@@ -3,18 +3,23 @@ package dev.thilanka.netrics.service.impl;
 import dev.thilanka.netrics.common.exception.DuplicateResourceException;
 import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.CellDto;
+import dev.thilanka.netrics.dto.CellMappingCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellMappingDto;
 import dev.thilanka.netrics.entity.Cell;
 import dev.thilanka.netrics.entity.CellMapping;
+import dev.thilanka.netrics.entity.enums.CsvImportStatus;
 import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.CellMappingRepository;
 import dev.thilanka.netrics.service.CellMappingService;
 import dev.thilanka.netrics.service.CellService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CellMappingServiceImpl implements CellMappingService {
@@ -65,6 +70,22 @@ public class CellMappingServiceImpl implements CellMappingService {
         CellMapping saved = cellMappingRepository.save(mapping);
 
         return mapper.cellMappingToDto(saved);
+    }
+
+    @Override
+    public List<CellMappingCsvImportResultDto> createCellMappingsFromCsv(List<CellMappingDto> dtos) {
+        List<CellMappingCsvImportResultDto> results = new ArrayList<>();
+
+        for (CellMappingDto dto : dtos) {
+            try {
+                CellMappingDto saved = createCellMapping(dto.previousCellName(), dto.newCellName());
+                results.add(new CellMappingCsvImportResultDto(saved, CsvImportStatus.SUCCESS, ""));
+            } catch (Exception e) {
+                log.warn("Error creating cell mapping due to: {}", e.getMessage());
+                results.add(new CellMappingCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
+            }
+        }
+        return results;
     }
 
     @Override

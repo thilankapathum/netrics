@@ -59,6 +59,11 @@ public class CsvServiceImpl implements CsvService {
             .map(SiteKpiReportHeader::getHeader)
             .toArray(String[]::new);
 
+    private static final String[] CELL_MAPPING_IMPORT_RESULT_HEADERS = Arrays
+            .stream(CellMappingCsvImportResultHeader.values())
+            .map(CellMappingCsvImportResultHeader::getHeader)
+            .toArray(String[]::new);
+
     @Override
     public void writeCellsToCsv(List<CellDto> dtos, Writer writer) {
 
@@ -219,6 +224,34 @@ public class CsvServiceImpl implements CsvService {
     }
 
     @Override
+    public List<CellMappingDto> readCellMappingsFromCsv(InputStream inputStream) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setTrim(true)
+                .get();
+
+        try (Reader reader = new InputStreamReader(inputStream);
+             CSVParser csvParser = CSVParser.parse(reader, csvFormat)) {
+
+            List<CellMappingDto> dtos = new ArrayList<>();
+
+            for (CSVRecord record : csvParser) {
+                CellMappingDto dto = new CellMappingDto(
+                        null,
+                        dataTypeUtilService.normalizeString(record.get(CellMappingCsvHeader.PREVIOUS_CELL_NAME.getHeader())),
+                        dataTypeUtilService.normalizeString(record.get(CellMappingCsvHeader.NEW_CELL_NAME.getHeader()))
+                );
+                dtos.add(dto);
+            }
+            return dtos;
+
+        } catch (IOException e) {
+            throw new FileProcessingException("Failed to read CSV", e);
+        }
+    }
+
+    @Override
     public void writeCellImportResultToCsv(List<CellCsvImportResultDto> results, Writer writer) {
         CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
                 .setHeader(CELL_IMPORT_RESULT_HEADERS)
@@ -281,6 +314,26 @@ public class CsvServiceImpl implements CsvService {
                         result.sectorDto().name(),
                         result.sectorDto().sectorIndex(),
                         result.sectorDto().azimuth(),
+                        result.status(),
+                        result.errorMessage()
+                );
+            }
+        } catch (IOException e) {
+            throw new FileProcessingException("Failed to write CSV", e);
+        }
+    }
+
+    @Override
+    public void writeCellMappingImportResultToCsv(List<CellMappingCsvImportResultDto> results, Writer writer) {
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(CELL_MAPPING_IMPORT_RESULT_HEADERS)
+                .get();
+
+        try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
+            for (CellMappingCsvImportResultDto result : results) {
+                printer.printRecord(
+                        result.cellMappingDto().previousCellName(),
+                        result.cellMappingDto().newCellName(),
                         result.status(),
                         result.errorMessage()
                 );
