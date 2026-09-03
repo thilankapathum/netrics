@@ -315,7 +315,7 @@ public class CellServiceImpl implements CellService {
 
     @Override
     public List<Cell> findAllCells() {
-        return cellRepository.findAll();
+        return cellRepository.findAllExcludingMappedPrevious();
     }
 
     @Override

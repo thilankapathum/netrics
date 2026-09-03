@@ -68,6 +68,7 @@ public class CellMappingServiceImpl implements CellMappingService {
                 .newCell(newCell)
                 .build();
         CellMapping saved = cellMappingRepository.save(mapping);
+        cellService.reloadCells();
 
         return mapper.cellMappingToDto(saved);
     }
@@ -94,6 +95,7 @@ public class CellMappingServiceImpl implements CellMappingService {
             throw new ResourceNotFoundException("CellMapping", "id", id);
         }
         cellMappingRepository.deleteById(id);
+        cellService.reloadCells();
     }
 
     @Override

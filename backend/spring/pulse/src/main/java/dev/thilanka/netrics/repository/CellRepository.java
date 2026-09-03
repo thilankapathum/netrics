@@ -16,6 +16,9 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
 
     Optional<Cell> findByCellName(String cellName);
 
+    @Query("SELECT c FROM Cell c WHERE c.id NOT IN (SELECT cm.previousCell.id FROM CellMapping cm)")
+    List<Cell> findAllExcludingMappedPrevious();
+
     //TODO: Update queries to include new fields
 
     @Query(value = """
