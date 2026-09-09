@@ -133,4 +133,129 @@
     </div>
 
   </div>
+
+  <!-- Existing Mappings -->
+  <div class="flex flex-col gap-4 p-6 border border-base-300 rounded-lg bg-base-100">
+
+    <div>
+      <h3 class="text-lg font-semibold">
+        Existing Mappings
+      </h3>
+
+      <p class="text-xs text-secondary mt-1">
+        Users currently assigned to an area.
+      </p>
+    </div>
+
+    <div class="overflow-x-auto border border-base-300 rounded-xl">
+      <table class="table table-zebra table-xs">
+        <thead>
+        <tr class="text-xs uppercase">
+          <th>User Name</th>
+          <th>Area Type</th>
+          <th>Area</th>
+          <th class="text-right">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (mapping of mappings; track mapping.id) {
+            <tr>
+              @if (editingMappingId === mapping.id) {
+                <td>{{ mapping.userFullName }}</td>
+
+                <td>
+                  <select
+                    class="select select-bordered select-xs w-full max-w-32"
+                    [ngModel]="editAreaType()"
+                    (ngModelChange)="selectEditAreaType($event)">
+                    @for (at of areaTypes; track at.name) {
+                      <option [value]="at.name">{{ at.name }}</option>
+                    }
+                  </select>
+                </td>
+
+                <td>
+                  <select
+                    class="select select-bordered select-xs w-full max-w-40"
+                    [ngModel]="editArea()"
+                    (ngModelChange)="selectEditArea($event)">
+                    @for (ar of editAreas; track ar.name) {
+                      <option [value]="ar.name">{{ ar.name }}</option>
+                    }
+                  </select>
+                </td>
+
+                <td class="text-right whitespace-nowrap">
+                  <button
+                    class="btn btn-xs btn-primary"
+                    [disabled]="savingEdit"
+                    (click)="saveEditMapping(mapping)">
+                    Save
+                  </button>
+                  <button
+                    class="btn btn-xs btn-ghost"
+                    [disabled]="savingEdit"
+                    (click)="cancelEditMapping()">
+                    Cancel
+                  </button>
+                </td>
+              } @else {
+                <td>{{ mapping.userFullName }}</td>
+                <td>{{ mapping.areaTypeName }}</td>
+                <td>{{ mapping.areaName }}</td>
+
+                <td class="text-right whitespace-nowrap">
+                  <button
+                    class="btn btn-xs btn-ghost"
+                    title="Edit"
+                    (click)="startEditMapping(mapping)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="btn btn-xs btn-ghost text-error"
+                    title="Delete"
+                    (click)="requestDeleteMapping(mapping)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 7h16M9 7V4h6v3m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"/>
+                    </svg>
+                  </button>
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="text-center text-base-content/50 py-6">
+                @if (loadingMappings) {
+                  Loading mappings...
+                } @else {
+                  No User-Area Mappings found.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
+
+<!-- DELETE CONFIRMATION -->
+<dialog class="modal" [class.modal-open]="mappingPendingDelete !== null">
+  @if (mappingPendingDelete; as mapping) {
+    <div class="modal-box">
+      <h3 class="text-lg font-bold mb-2">Remove mapping?</h3>
+      <p class="text-sm">
+        Remove the area mapping for '{{ mapping.userFullName }}' ('{{ mapping.areaName }}')?
+      </p>
+      <div class="modal-action">
+        <button class="btn btn-sm" (click)="cancelDeleteMapping()">Cancel</button>
+        <button class="btn btn-sm btn-error" (click)="confirmDeleteMapping()">Remove</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button (click)="cancelDeleteMapping()">close</button>
+    </form>
+  }
+</dialog>

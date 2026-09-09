@@ -77,4 +77,10 @@ public class UserServiceImpl implements UserService {
                 .map(u -> new UserDto(u.getId(), u.getFirstName(), u.getLastName(), u.getUsername(), u.getEmail()))
                 .toList();
     }
+
+    @Override
+    public UserDto getRealmUserById(String userId) {
+        UserRepresentation u = keycloakAdminClient.realm(realmName).users().get(userId).toRepresentation();
+        return new UserDto(u.getId(), u.getFirstName(), u.getLastName(), u.getUsername(), u.getEmail());
+    }
 }

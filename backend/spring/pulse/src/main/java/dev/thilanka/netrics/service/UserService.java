@@ -18,4 +18,6 @@ public interface UserService {
     User findByUserId(String userId);
 
     List<UserDto> getAllRealmUsers();
+
+    UserDto getRealmUserById(String userId);
 }
