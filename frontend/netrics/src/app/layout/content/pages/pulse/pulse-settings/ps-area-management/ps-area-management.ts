@@ -44,9 +44,9 @@ export class PsAreaManagement {
   assignAreaType = signal('');
   assignAreas: AreaDto[] = [];
   assignArea = signal('');
-  assignDistrictCode = signal('');
   districtCodes: DistrictCodeDto[] = [];
-  creatingAssignment = false;
+  assigningCode: string | null = null;
+  unassigningId: number | null = null;
 
   // ---- Lists ----
   loadingMappings = false;
@@ -99,12 +99,8 @@ export class PsAreaManagement {
 
   getAllDistrictCodes() {
     this.districtCodeService.getAll().subscribe({
-      next: data => {
-        this.districtCodes = data;
-        if (this.districtCodes.length > 0) {
-          this.assignDistrictCode.set(this.districtCodes[0].code!);
-        }
-      }, error: error => {
+      next: data => this.districtCodes = data,
+      error: error => {
         console.error(error);
         this.alertService.error('Error getting District Codes', 'Error', `${error.status}:${error.statusText}`);
       }
@@ -214,25 +210,60 @@ export class PsAreaManagement {
     });
   }
 
-  createAssignment() {
-    if (!this.assignArea() || !this.assignDistrictCode()) {
-      this.alertService.error('Select an Area and a District Code');
+  // District codes not yet assigned to the currently selected Area, sorted ascending.
+  // (a district code can be assigned to more than one Area, so this only excludes
+  // codes already assigned to *this* area, not every assigned code globally.)
+  getAvailableDistrictCodes(): DistrictCodeDto[] {
+    const assignedToThisArea = new Set(
+      this.mappings.filter(m => m.areaName === this.assignArea()).map(m => m.districtCode)
+    );
+    return this.districtCodes
+      .filter(dc => !assignedToThisArea.has(dc.code))
+      .sort((a, b) => (a.code ?? '').localeCompare(b.code ?? ''));
+  }
+
+  // District codes assigned to the currently selected Area, sorted ascending.
+  getAssignedDistrictCodesForArea(): AreaDistrictCodeMappingDto[] {
+    return this.mappings
+      .filter(m => m.areaName === this.assignArea())
+      .sort((a, b) => (a.districtCode ?? '').localeCompare(b.districtCode ?? ''));
+  }
+
+  assignCode(code: string) {
+    if (!this.assignArea()) {
+      this.alertService.error('Select an Area first');
       return;
     }
-    this.creatingAssignment = true;
+    this.assigningCode = code;
     const mapping: AreaDistrictCodeMappingDto = {
       areaName: this.assignArea(),
-      districtCode: this.assignDistrictCode()
+      districtCode: code
     };
     this.areaDistrictCodeMappingService.create(mapping).subscribe({
       next: data => {
-        this.alertService.success(`Assigned district code '${data.districtCode}' to area '${data.areaName}'`);
         this.mappings = [data, ...this.mappings];
-        this.creatingAssignment = false;
+        this.assigningCode = null;
       }, error: error => {
         console.error(error);
-        this.alertService.error('Error creating Area-District Code assignment');
-        this.creatingAssignment = false;
+        this.alertService.error('Error assigning District Code');
+        this.assigningCode = null;
+      }
+    });
+  }
+
+  unassignCode(mapping: AreaDistrictCodeMappingDto) {
+    if (!mapping.id) {
+      return;
+    }
+    this.unassigningId = mapping.id;
+    this.areaDistrictCodeMappingService.delete(mapping.id).subscribe({
+      next: () => {
+        this.mappings = this.mappings.filter(m => m.id !== mapping.id);
+        this.unassigningId = null;
+      }, error: error => {
+        console.error(error);
+        this.alertService.error('Error unassigning District Code');
+        this.unassigningId = null;
       }
     });
   }

@@ -263,30 +263,57 @@
               }
             </select>
           </label>
-
-          <label class="form-control w-full sm:col-span-2">
-            <div class="label">
-              <span class="label-text text-xs font-medium">District Code</span>
-            </div>
-            <select
-              class="select select-bordered select-sm w-full max-w-md"
-              [ngModel]="assignDistrictCode()"
-              (ngModelChange)="assignDistrictCode.set($event)">
-              @for (dc of districtCodes; track dc.code) {
-                <option [value]="dc.code">{{ dc.code }} — {{ dc.districtName }} ({{ dc.category }})</option>
-              }
-            </select>
-          </label>
         </div>
 
-        <div class="mt-6 flex gap-3">
-          <button
-            class="btn btn-primary btn-sm"
-            [disabled]="creatingAssignment || !assignArea() || !assignDistrictCode()"
-            (click)="createAssignment()">
-            <span [hidden]="!creatingAssignment" class="loading loading-spinner loading-xs"></span>
-            Assign District Code
-          </button>
+        <p class="text-xs text-secondary mt-4">
+          Click a code on the left to assign it to '{{ assignArea() }}'. Click the ✕ on an assigned code to unassign it.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+          <!-- AVAILABLE POOL -->
+          <div class="border border-base-300 rounded-xl p-4">
+            <h4 class="text-xs font-semibold uppercase text-secondary mb-3">
+              Available District Codes
+            </h4>
+            <div class="flex flex-wrap gap-2 max-h-80 overflow-y-auto">
+              @for (dc of getAvailableDistrictCodes(); track dc.code) {
+                <button
+                  type="button"
+                  class="badge badge-outline cursor-pointer hover:badge-primary"
+                  [disabled]="!assignArea() || assigningCode === dc.code"
+                  [title]="dc.districtName + ' (' + dc.category + ')'"
+                  (click)="assignCode(dc.code!)">
+                  {{ dc.code }}
+                </button>
+              } @empty {
+                <span class="text-xs text-base-content/50">No available district codes.</span>
+              }
+            </div>
+          </div>
+
+          <!-- ASSIGNED POOL -->
+          <div class="border border-base-300 rounded-xl p-4">
+            <h4 class="text-xs font-semibold uppercase text-secondary mb-3">
+              Assigned to '{{ assignArea() }}'
+            </h4>
+            <div class="flex flex-wrap gap-2 max-h-80 overflow-y-auto">
+              @for (m of getAssignedDistrictCodesForArea(); track m.id) {
+                <span class="badge badge-primary gap-1">
+                  {{ m.districtCode }}
+                  <button
+                    type="button"
+                    class="cursor-pointer"
+                    [disabled]="unassigningId === m.id"
+                    title="Unassign"
+                    (click)="unassignCode(m)">
+                    ✕
+                  </button>
+                </span>
+              } @empty {
+                <span class="text-xs text-base-content/50">No district codes assigned.</span>
+              }
+            </div>
+          </div>
         </div>
       } @else {
         <div class="mt-6 overflow-x-auto border border-base-300 rounded-xl">

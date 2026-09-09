@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.common.exception.ResourceNotFoundException;
 import dev.thilanka.netrics.dto.AreaDistrictCodeMappingDto;
 import dev.thilanka.netrics.entity.Area;
 import dev.thilanka.netrics.entity.AreaDistrictCodeMapping;
@@ -41,8 +42,7 @@ public class AreaDistrictCodeMappingServiceImpl implements AreaDistrictCodeMappi
 
         AreaDistrictCodeMapping savedAreaDistrictCodeMapping = createAreaDistrictCodeMapping(mapping);
 
-        return new AreaDistrictCodeMappingDto(savedAreaDistrictCodeMapping.getArea().getName(),
-                savedAreaDistrictCodeMapping.getDistrictCode().getCode());
+        return toDto(savedAreaDistrictCodeMapping);
     }
 
     @Override
@@ -64,10 +64,22 @@ public class AreaDistrictCodeMappingServiceImpl implements AreaDistrictCodeMappi
         return areaDistrictCodeMappingRepository
                 .findAll()
                 .stream()
-                .map(
-                        map -> new AreaDistrictCodeMappingDto(
-                                map.getArea().getName(),
-                                map.getDistrictCode().getCode())
-                ).toList();
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Override
+    public void deleteAreaDistrictCodeMapping(Long id) {
+        if (!areaDistrictCodeMappingRepository.existsById(id)) {
+            throw new ResourceNotFoundException("AreaDistrictCodeMapping", "ID", id);
+        }
+        areaDistrictCodeMappingRepository.deleteById(id);
+    }
+
+    private AreaDistrictCodeMappingDto toDto(AreaDistrictCodeMapping mapping) {
+        return new AreaDistrictCodeMappingDto(
+                mapping.getId(),
+                mapping.getArea().getName(),
+                mapping.getDistrictCode().getCode());
     }
 }

@@ -22,4 +22,8 @@ export class AreaDistrictCodeMappingService {
     return this.http.get<Array<AreaDistrictCodeMappingDto>>(`${this.baseUrl}`);
   }
 
+  delete(id: number){
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
 }
