@@ -16,6 +16,7 @@ import {PsSiteManagement} from './ps-site-management/ps-site-management';
 import {PsKpiSourceMapping} from './ps-kpi-source-mapping/ps-kpi-source-mapping';
 import {PsStandardRawKpiMapping} from './ps-standard-raw-kpi-mapping/ps-standard-raw-kpi-mapping';
 import {PsCellMapping} from './ps-cell-mapping/ps-cell-mapping';
+import {PsAreaManagement} from './ps-area-management/ps-area-management';
 
 export type SettingsView =
   | 'CACHE'
@@ -28,6 +29,7 @@ export type SettingsView =
   | 'KPI_SOURCE_MAPPING'
   | 'STANDARD_RAW_KPI_MAPPING'
   | 'USER_AREA_MAPPING'
+  | 'AREA_MANAGEMENT'
   | null;
 
 @Component({
@@ -44,7 +46,8 @@ export type SettingsView =
     PsSiteManagement,
     PsKpiSourceMapping,
     PsStandardRawKpiMapping,
-    PsCellMapping
+    PsCellMapping,
+    PsAreaManagement
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'

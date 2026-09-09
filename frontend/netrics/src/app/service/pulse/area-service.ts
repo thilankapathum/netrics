@@ -18,4 +18,8 @@ export class AreaService {
     return this.http.get<Array<AreaDto>>(`${this.baseUrl}/area-type`, {params: {areaTypeName}});
   }
 
+  createArea(area: AreaDto){
+    return this.http.post<AreaDto>(`${this.baseUrl}`, area);
+  }
+
 }
