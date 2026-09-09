@@ -7,6 +7,8 @@ import { AlertService } from '../../../../../../components/alert/alert.service';
 import { AreaService } from '../../../../../../service/pulse/area-service';
 import { PulseSettingService } from '../../../../../../service/pulse/pulse-setting-service';
 import { UserAreaMappingDto } from '../../../../../../models/pulse/UserAreaMappingDto';
+import { UserService } from '../../../../../../service/pulse/user-service';
+import { UserDto } from '../../../../../../models/pulse/UserDto';
 
 @Component({
   selector: 'app-pulse-setting-user-area-mapping',
@@ -28,6 +30,7 @@ export class PulseSettingUserAreaMapping {
   areas: AreaDto[] = [];
 
   userId = signal('');
+  users: UserDto[] = [];
 
   loadingUserAreaMapping = false;
 
@@ -35,8 +38,24 @@ export class PulseSettingUserAreaMapping {
               private areaTypeService: AreaTypeService,
               private alertService: AlertService,
               private areaService: AreaService,
-              private settingService: PulseSettingService) {
+              private settingService: PulseSettingService,
+              private userService: UserService) {
     this.getAllAreaTypes();
+    this.getAllUsers();
+  }
+
+  getAllUsers() {
+    this.userService.getAllUsers().subscribe({
+      next: data => {
+        this.users = data;
+        if (this.users.length > 0) {
+          this.userId.set(this.users[0].userId);
+        }
+      }, error: error => {
+        console.log(error);
+        this.alertService.error('Error getting Users', 'Error', `${error.status}:${error.statusText}`);
+      }
+    });
   }
 
   onCancel(): void {
@@ -95,7 +114,9 @@ export class PulseSettingUserAreaMapping {
       const userAreaMapping: UserAreaMappingDto = { userId: this.userId(), areaName: this.area()! };
       this.settingService.createUserAreaMapping(userAreaMapping).subscribe({
         next: data => {
-          this.alertService.success(`Successfully created mapping for ${data.areaName} - ${data.userId}`);
+          const user = this.users.find(u => u.userId === data.userId);
+          const userLabel = user ? `${user.firstName} ${user.lastName}` : data.userId;
+          this.alertService.success(`Successfully created mapping for ${data.areaName} - ${userLabel}`);
           console.log(data);
           this.loadingUserAreaMapping = false;
           this.onCancel();

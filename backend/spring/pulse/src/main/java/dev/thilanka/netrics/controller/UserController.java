@@ -9,11 +9,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/pulse/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping
+    ResponseEntity<List<UserDto>> getAllUsers(){
+        return ResponseEntity.ok(userService.getAllRealmUsers());
+    }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @GetMapping("{id}")
