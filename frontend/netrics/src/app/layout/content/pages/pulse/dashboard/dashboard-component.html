@@ -281,6 +281,9 @@
                                         stroke-linejoin="round"/>
                                     </svg>
                                     {{ comment.lastModifiedAt | date: 'yyyy-MM-dd' }}
+                                    @if (getCommentAuthorName(comment.createdBy); as authorName) {
+                                      <span class="ml-1">· {{ authorName }}</span>
+                                    }
                                   </div>
                                 } @else {
                                   <div class="flex flex-row text-secondary text-xs">
@@ -292,6 +295,9 @@
                                         stroke-linejoin="round"/>
                                     </svg>
                                     {{ comment.createdAt | date: 'yyyy-MM-dd' }}
+                                    @if (getCommentAuthorName(comment.createdBy); as authorName) {
+                                      <span class="ml-1">· {{ authorName }}</span>
+                                    }
                                   </div>
                                 }
                               </div>
