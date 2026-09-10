@@ -1,11 +1,9 @@
 package dev.thilanka.netrics.service.impl;
 
+import dev.thilanka.netrics.entity.AreaType;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.service.AnomalyDetectionService;
-import dev.thilanka.netrics.service.GranularityService;
-import dev.thilanka.netrics.service.KpiDayService;
-import dev.thilanka.netrics.service.RatService;
+import dev.thilanka.netrics.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,11 +14,16 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class AnomalyDetectionScheduler {
+public class DailyTaskScheduler {
     private final AnomalyDetectionService anomalyDetectionService;
     private final RatService ratService;
     private final GranularityService granularityService;
     private final KpiDayService kpiDayService;
+    private final CellService cellService;
+    private final AnomalyAlarmCorrelationService anomalyAlarmCorrelationService;
+    private final WorstCellDashboardService worstCellDashboardService;
+    private final AreaTypeService areaTypeService;
+    private final DateService dateService;
 
     private static final List<String> TARGET_GRANULARITIES = List.of("day-average", "busy-hour");
 
@@ -35,6 +38,10 @@ public class AnomalyDetectionScheduler {
             log.error("Deduplication Failed! Error: {}", e.getMessage());
         }
 
+        /* Updating nodeNames of Cells after Deduplicating KPI values */
+        cellService.updateNodeNamesFromLatestKpiValues();
+
+        /* Run ANOMALY DETECTION */
         for (String granName : TARGET_GRANULARITIES) {
             Granularity granularity = granularityService.findGranularityByName(granName);
             for (Rat rat : ratService.findAll()) {
@@ -46,6 +53,27 @@ public class AnomalyDetectionScheduler {
                 }
             }
         }
+
+        /* Run ANOMALY-ALARM CORRELATION */
+        anomalyAlarmCorrelationService.runCorrelation();
+
+    }
+
+    @Scheduled(cron = "0 0 18 * * WED")
+    public void runWeeklyWorstCellGeneration() {
+
+        AreaType areaType = areaTypeService.findAreaTypeByName("Engineer");
+
+        List<Rat> rats = ratService.findAll();
+        Granularity granularity = granularityService.findGranularityByName("busy-hour");
+
+        if (!worstCellDashboardService.isCreatingWorstCells()) {     // Checking whether already creating Worst Cells in progress
+            for (Rat rat : rats) {
+                worstCellDashboardService.createWeeklyWorstCellsByRatAndAreaType("week", areaType, rat, granularity);
+            }
+        }
+
+
     }
 
     public void runAnomalyDetection(String granularityName, String ratName) {

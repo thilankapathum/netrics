@@ -28,7 +28,7 @@ public class GranularityServiceImpl implements GranularityService {
 
         Granularity savedGranularity = granularityRepository.save(granularity);
 
-        return new GranularityDto(savedGranularity.getName(), savedGranularity.getLabel(), savedGranularity.getPlusSeconds());
+        return new GranularityDto(savedGranularity.getName(), savedGranularity.getLabel(), savedGranularity.getPlusSeconds(), savedGranularity.getWindowSeconds());
     }
 
     @Override
@@ -51,7 +51,7 @@ public class GranularityServiceImpl implements GranularityService {
     @Override
     public GranularityDto getGranularityByName(String name) {
         Granularity granularity = findGranularityByName(name);
-        return new GranularityDto(granularity.getName(),granularity.getLabel(), granularity.getPlusSeconds());
+        return new GranularityDto(granularity.getName(),granularity.getLabel(), granularity.getPlusSeconds(), granularity.getWindowSeconds());
     }
 
     @Override
@@ -63,7 +63,7 @@ public class GranularityServiceImpl implements GranularityService {
     @Override
     public GranularityDto getGranularityById(Long id) {
         Granularity granularity = findGranularityById(id);
-        return new GranularityDto(granularity.getName(), granularity.getLabel(),granularity.getPlusSeconds());
+        return new GranularityDto(granularity.getName(), granularity.getLabel(),granularity.getPlusSeconds(), granularity.getWindowSeconds());
     }
 
     @Override
@@ -75,6 +75,6 @@ public class GranularityServiceImpl implements GranularityService {
     public List<GranularityDto> getAll() {
         List<Granularity> granularities = findAll();
 
-        return granularities.stream().map(g -> new GranularityDto(g.getName(),g.getLabel(),g.getPlusSeconds())).collect(Collectors.toList());
+        return granularities.stream().map(g -> new GranularityDto(g.getName(),g.getLabel(),g.getPlusSeconds(),g.getWindowSeconds())).collect(Collectors.toList());
     }
 }

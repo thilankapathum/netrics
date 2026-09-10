@@ -63,6 +63,10 @@ keycloak:
   nginx-port: ${FRONTEND_PORT:8000}
   keycloak-host: ${KEYCLOAK_HOST:netrics.local}
   keycloak-port: ${KEYCLOAK_PORT:8000}
+  admin:
+    server-url: http://${KEYCLOAK_HOST:netrics.local}:${KEYCLOAK_PORT:8000}/auth
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:netrics-pulse-admin}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:GiSgUCY5ppGDs5wHolr43wx45cgRigpd}
 
 caching:
   async:

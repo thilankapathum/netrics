@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component, ElementRef, OnInit, signal, ViewChild} from '@angular/core';
-import {CommonModule, DecimalPipe} from '@angular/common';
+import {CommonModule, DecimalPipe, formatDate} from '@angular/common';
 import {LineChart} from '../../../../components/charts/linechart/line-chart/line-chart';
 import {BasickpiService} from '../../../../service/pulse/ltefdd/basickpi.service';
 import {KpidayService} from '../../../../service/pulse/ltefdd/kpiday.service';
@@ -34,6 +34,12 @@ import {BandWorstCellsKpiTrend} from '../../../../models/pulse/BandWorstCellsKpi
 import {BandKpiSeries} from '../../../../models/apexCharts/BandKpiSeries';
 import {PsCells} from './pulse-settings/ps-cells/ps-cells';
 import {StandardRawKpiMappingService} from '../../../../service/pulse/standard-raw-kpi-mapping-service';
+import {AlarmService} from '../../../../service/pulse/alarms/alarm-service';
+import {AlarmsDto, CellAlarmDto} from '../../../../models/pulse/alarms/AlarmDto';
+import {WorstCell} from '../../../../models/pulse/WorstCell';
+import {CellDto} from '../../../../models/pulse/CellDto';
+import {GranularityService} from '../../../../service/pulse/granularity-service';
+import {GranularityDto} from '../../../../models/pulse/GranularityDto';
 
 @Component({
   selector: 'app-pulse',
@@ -48,6 +54,7 @@ export class PulseComponent implements OnInit {
   // selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
   selectedRat = signal<string>('ltefdd');
   selectedGranularity = signal<string>('day-average');
+  granularities: GranularityDto[] = [];
   dateRanges = signal<{ [aggregation: string]: DateRangeDto | undefined }>({});
 
   areaTypes: AreaTypeDto[] = [];
@@ -76,6 +83,10 @@ export class PulseComponent implements OnInit {
   bandChartSeries = signal<BandKpiSeries[]>([]);
   analysisModalCell: string = '';
   analysisModalKpiLabel: string = '';
+  analysisModalCellAlarms: CellAlarmDto[] = [];
+  readonly SEVERITIES: string[] = [];
+  showAlarmDetails: boolean = false;
+  alarmTableExpanded: boolean = false;
 
   currentPage: number = 0;
   pageSize: number = 5;
@@ -84,7 +95,7 @@ export class PulseComponent implements OnInit {
   allBandWorstCells: WorstCells[] = [];
   worstCells: WorstCells[] = [];  // 5 Worst cells displayed in the page
   excludeZeroes: boolean = false;
-  showOperands:boolean = false;
+  showOperands: boolean = false;
   standardRawKpiMappingAvailable = signal<boolean>(false);
 
   bandWise: boolean = false;
@@ -102,6 +113,11 @@ export class PulseComponent implements OnInit {
 
   showMissingCellInfoModal: boolean = false;
 
+  hoveredAlarm = signal<CellAlarmDto | null>(null);
+  popoverStyle = signal<{ top: string; left: string }>({top: '0px', left: '0px'});
+  private hidePopoverTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  @ViewChild('infoPopover') infoPopoverRef!: ElementRef<HTMLElement>;
   @ViewChild('analysisModal') analysisModal!: ElementRef<HTMLDialogElement>;
   @ViewChild('cellMissingInfoModal') cellMissingInfoModal!: ElementRef<HTMLDialogElement>;
 
@@ -120,12 +136,15 @@ export class PulseComponent implements OnInit {
               private authService: AuthService,
               private cellService: CellService,
               private bandService: BandService,
-              private standardRawKpiMappingService: StandardRawKpiMappingService) {
+              private standardRawKpiMappingService: StandardRawKpiMappingService,
+              private alarmService: AlarmService,
+              private granularityService: GranularityService,) {
+    this.SEVERITIES = alarmService.SEVERITIES;
     this.queryDateRanges();
   }
 
   loadingAll() {
-    return this.loadingBasicKpi || this.loadingWorstCells || this.loadingKpiTrend  || this.loadingAreaTypes || this.loadingAreas || this.loadingDateRanges;
+    return this.loadingBasicKpi || this.loadingWorstCells || this.loadingKpiTrend || this.loadingAreaTypes || this.loadingAreas || this.loadingDateRanges;
   }
 
   queryDateRanges() {
@@ -147,7 +166,7 @@ export class PulseComponent implements OnInit {
         }, error: err => {
           console.log('Error getting date range');
           console.error(err);
-          this.alertService.error(`Error getting date range. ${err.status} ${err.statusText}`);
+          this.alertService.error('Error getting date range', 'Error', `${err.status} ${err.statusText}`);
           this.loadingDateRanges = false;
         }
       }
@@ -174,13 +193,15 @@ export class PulseComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Area. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error getting Area', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
 
   ngOnInitRemaining(): void {
     this.cdr.detectChanges(); // Force change detection
+
+    this.getGranularities();
 
     if (this.sharedService.selectedGranularity() != this.selectedGranularity()) {
       this.selectedGranularity.set(this.sharedService.selectedGranularity());
@@ -251,7 +272,7 @@ export class PulseComponent implements OnInit {
             this.loadingWorstCells = false;
           }, error: error => {
             console.error(error);
-            this.alertService.error(`Error getting Worst Cells. ${error.status} ${error.statusText}`);
+            this.alertService.error('Error getting Worst Cells', 'Error', `${error.status} ${error.statusText}`);
             this.loadingWorstCells = false;
           }
         });
@@ -283,6 +304,17 @@ export class PulseComponent implements OnInit {
 
   //----------- GETTERS ----------------------------------
 
+  getGranularities(){
+    this.granularityService.getAllGranularities().subscribe({
+      next: data => {
+        this.granularities = data;
+      }, error: error => {
+        console.error(error);
+        this.alertService.error('Error retrieving Granularities', 'Error', `${error.status} ${error.statusText}`)
+      }
+    });
+  }
+
   getAreaTypes() {
     this.loadingAreaTypes = true;
     this.areaTypeService.getAllAreaTypes().subscribe({
@@ -300,7 +332,7 @@ export class PulseComponent implements OnInit {
           this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types. (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
           this.loadingAreaTypes = false;
         }
       }
@@ -328,7 +360,7 @@ export class PulseComponent implements OnInit {
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas. (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAreas = false;
       }
     })
@@ -351,14 +383,14 @@ export class PulseComponent implements OnInit {
           }, error: error => {
             console.log("Error getAllBasicKpiSnapshots");
             console.error(error);
-            this.alertService.error(`Basic KPI Snapshot retrieval failed. ${error.status} ${error.statusText}`);
+            this.alertService.error('Basic KPI Snapshot retrieval failed', 'Error', `${error.status} ${error.statusText}`);
           }
         })
       }, error: error => {
         this.loadingBasicKpi = false;
         console.log("Error getAllBasicKpi");
         console.error(error);
-        this.alertService.error(`Basic KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Basic KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
       }
     });
   }
@@ -400,7 +432,7 @@ export class PulseComponent implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -483,7 +515,7 @@ export class PulseComponent implements OnInit {
       },
       error: error => {
         console.error('Error getting KPI Trend Data:', error);
-        this.alertService.error(`KPI Trend Data retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('KPI Trend Data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingKpiTrend = false;
       }
     });
@@ -501,7 +533,7 @@ export class PulseComponent implements OnInit {
       error: error => {
         console.log("Error getDataByKpi:");
         console.error(error);
-        this.alertService.error(`Trend data retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Trend data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingKpiTrend = false;
       }
     })
@@ -525,19 +557,19 @@ export class PulseComponent implements OnInit {
       },
       error: error => {
         console.error("Error getWorstCellsByKpi:", error);
-        this.alertService.error(`Worst cells retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Worst cells retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingWorstCells = false;
       }
     });
   }
 
-  getStandardRawKpiMappingAvailable(ratName:string, standardKpiName:string) {
+  getStandardRawKpiMappingAvailable(ratName: string, standardKpiName: string) {
     this.standardRawKpiMappingService.isMappingAvailable(ratName, standardKpiName).subscribe({
       next: data => {
         this.standardRawKpiMappingAvailable.set(data);
       }, error: error => {
         console.error("Error getting standardRawKpiMappingAvailable:", error);
-        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed :"${error.status} ${error.statusText}`);
+        this.alertService.error('Standard-Raw-KPI-Mapping retrieval failed', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -587,13 +619,31 @@ export class PulseComponent implements OnInit {
     this.setPage(this.currentPage - 1);
   }
 
+  getAlarmsByCellGranularity(cellName: string, startDate: string, granularityName: string) {
+    this.analysisModalCellAlarms = [];   // clear stale data before fetch, avoids showing prev cell's counts mid-load
+    this.alarmService.getAlarmsByCellGranularity(cellName, startDate, granularityName).subscribe({
+      next: data => {
+        this.analysisModalCellAlarms = [...data].sort(
+          (a, b) => new Date(b.occurrenceTime).getTime() - new Date(a.occurrenceTime).getTime()
+        );
+      }, error: error => {
+        console.error("Error getting alarmsByCellGranularity:", error);
+        this.alertService.error('AlarmsByCellGranularity', 'Error', `${error.status} ${error.statusText}`);
+      }
+    })
+  }
+
 
   //---------- OPEN ANALYSIS MODAL (DIALOG) ----------------
 
-  openAnalysisModal(kpiName: string, cellName: string) {
+  openAnalysisModal(kpiName: string, cellName: string, timestamp: Date) {
+    const localTimestamp = this.toLocalDateTimeString(timestamp);
+    this.getAlarmsByCellGranularity(cellName, localTimestamp, this.selectedGranularity())
     this.analysisModalCell = cellName;
     this.analysisModalKpiLabel = kpiName;
     this.loadingAnalysisModalChart = true;
+    this.showAlarmDetails = false;   // reset toggle each time modal opens
+    this.alarmTableExpanded = false;
     this.analysisModal.nativeElement.showModal();
     this.selectedKpiTrendPeriodModal.set('month');
     this.getStandardRawKpiMappingAvailable(this.selectedRat(), this.selectedStandardKpi());
@@ -601,19 +651,46 @@ export class PulseComponent implements OnInit {
     this.queryModalTrendData(kpiName, cellName, 'month', this.selectedRat(), this.selectedGranularity());
   }
 
-  onNextCell(){
+  private toLocalDateTimeString(date: Date | string): string {
+    const d = date instanceof Date ? date : new Date(date);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+      `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  onNextCell() {
     if (this.isNextCellAvailable(this.analysisModalCell, this.allWorstCells)) {
       let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
-      this.analysisModalCell = this.allWorstCells[currentIndex + 1].cellName!;
+      const nextCell = this.allWorstCells[currentIndex + 1];
+      this.analysisModalCell = nextCell.cellName!;
+      this.showAlarmDetails = false;
+      this.alarmTableExpanded = false;
+      this.refreshAlarmsForModalCell(nextCell.timestamp!);
       this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
     }
   }
 
-  onPrevCell(){
+  onPrevCell() {
     if (this.isPrevCellAvailable(this.analysisModalCell, this.allWorstCells)) {
       let currentIndex = this.extractCurrentCellIndex(this.analysisModalCell, this.allWorstCells);
-      this.analysisModalCell = this.allWorstCells[currentIndex - 1].cellName!;
+      const prevCell = this.allWorstCells[currentIndex - 1];
+      this.analysisModalCell = prevCell.cellName!;
+      this.showAlarmDetails = false;
+      this.alarmTableExpanded = false;
+      this.refreshAlarmsForModalCell(prevCell.timestamp!);
       this.queryModalTrendData(this.selectedStandardKpi(), this.analysisModalCell, this.selectedKpiTrendPeriodModal(), this.selectedRat(), this.selectedGranularity());
+    }
+  }
+
+  private refreshAlarmsForModalCell(timestamp: Date) {
+    const localTimestamp = this.toLocalDateTimeString(timestamp);
+    this.getAlarmsByCellGranularity(this.analysisModalCell, localTimestamp, this.selectedGranularity());
+  }
+
+  onShowAlarmDetailsToggle(checked: boolean) {
+    this.showAlarmDetails = checked;
+    if (!checked) {
+      this.alarmTableExpanded = false;
     }
   }
 
@@ -628,7 +705,7 @@ export class PulseComponent implements OnInit {
     }
   }
 
-  queryModalTrendDataByKpiNameAndCell(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
+  queryModalTrendDataByKpiNameAndCell(kpiName: string, cellName: string, trendPeriod: string, ratName: string, granularityName: string) {
     this.chartSeries = [];
     const resolvedGranularity = this.resolveGranularity(trendPeriod, granularityName);
     this.loadingAnalysisModalChart = true;
@@ -641,12 +718,12 @@ export class PulseComponent implements OnInit {
           this.loadingAnalysisModalChart = false;
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(error);
-          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+          this.alertService.error('KPI Data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         }
       });
   }
 
-  queryModalTrendDataByKpiNameAndCellWithOperands(kpiName: string, cellName: string, trendPeriod:string, ratName:string, granularityName:string) {
+  queryModalTrendDataByKpiNameAndCellWithOperands(kpiName: string, cellName: string, trendPeriod: string, ratName: string, granularityName: string) {
     this.chartSeries = [];
     const resolvedGranularity = this.resolveGranularity(trendPeriod, granularityName);
     this.loadingAnalysisModalChart = true;
@@ -660,7 +737,7 @@ export class PulseComponent implements OnInit {
           this.loadingAnalysisModalChart = false;
           console.log("Error getTrendDataByKpiNameAndCellWithOperands:");
           console.error(error);
-          this.alertService.error(`KPI Data retrieval failed. ${error.status} ${error.statusText}`);
+          this.alertService.error('KPI Data retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         }
       });
   }
@@ -685,9 +762,32 @@ export class PulseComponent implements OnInit {
       error: error => {
         console.log("Error getCellCountWithMissingInfo:");
         console.error(error);
-        this.alertService.error(`Error retrieving Cell count with missing information. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error retrieving Cell count with missing information', 'Error', `${error.status} ${error.statusText}`);
       }
     })
+  }
+
+  //----------------- ALARM SEVERITY (badges/table) -----------------
+
+  get alarmSeverityCounts(): { severity: string; count: number }[] {
+    return this.SEVERITIES
+      .map(severity => ({
+        severity,
+        count: this.analysisModalCellAlarms.filter(a => a.severity === severity).length
+      }))
+      .filter(s => s.count > 0);
+  }
+
+  alarmSeverityBadgeClass(severity: string | null | undefined): string {
+    switch (severity) {
+      case 'CRITICAL':      return 'badge-error';
+      case 'MAJOR':          return 'badge-warning';
+      case 'MINOR':          return 'badge-warning badge-soft badge-outline';
+      case 'WARNING':        return 'badge-info';
+      case 'INDETERMINATE':  return 'badge-neutral badge-soft badge-outline';
+      case 'CLEARED':        return 'badge-success';
+      default:                return 'badge-ghost';
+    }
   }
 
   //============ AUTH SERVICE ==========================
@@ -723,6 +823,12 @@ export class PulseComponent implements OnInit {
 
   //-------------------- UTILITY ----------------------
 
+  truncateMiddle(value: string | undefined, front: number = 7, back: number = 7): string {
+    if (!value) return '';
+    if (value.length <= front + back + 1) return value; // nothing gained by truncating
+    return `${value.slice(0, front)}…${value.slice(-back)}`;
+  }
+
   isBasicKpiValueRed(snapshot: BasicKpiSnapshot): boolean {
     const basicKpi = this.basicKpiDtos.find(kpi => kpi.label == snapshot.kpiLabel);
     if (!basicKpi || basicKpi.threshold == null || !basicKpi.worstOrder) {
@@ -755,18 +861,56 @@ export class PulseComponent implements OnInit {
     return period === 'week' ? 'hour' : selectedGranularity;
   }
 
-   isNextCellAvailable(cellName:string, worstCellList: WorstCells[]){
+  isNextCellAvailable(cellName: string, worstCellList: WorstCells[]) {
     const currentIndex = this.extractCurrentCellIndex(cellName, worstCellList);
     return currentIndex + 1 < worstCellList.length;
   }
 
-   isPrevCellAvailable(cellName:string, worstCellList: WorstCells[]){
+  isPrevCellAvailable(cellName: string, worstCellList: WorstCells[]) {
     const currentIndex = this.extractCurrentCellIndex(cellName, worstCellList);
     return currentIndex > 0;
   }
 
-   extractCurrentCellIndex(cellName:string, worstCellList: WorstCells[]){
+  extractCurrentCellIndex(cellName: string, worstCellList: WorstCells[]) {
     return worstCellList.findIndex(cN => cN.cellName === cellName);
+  }
+
+  getAlarmTooltip(cell: WorstCells): string {
+    const granularity = this.granularities.find(
+      g => g.name === this.selectedGranularity()
+    );
+
+    const start = cell.timestamp ? new Date(cell.timestamp) : null;
+
+    const previous = start
+      ? formatDate(start, 'MMM-dd HH:mm', 'en-US')
+      : '-';
+
+    const _date = start
+      ? formatDate(start, 'MMM-dd', 'en-US')
+      : '-';
+
+    const _startTime = start
+      ? formatDate(start, 'HH:mm', 'en-US')
+      : '-';
+
+    const _endTime = start && granularity
+      ? formatDate(
+        new Date(start.getTime() + granularity.windowSeconds! * 1000 - 1000),
+        'HH:mm',
+        'en-US'
+      )
+      : '-';
+
+    const current = start && granularity
+      ? formatDate(
+        new Date(start.getTime() + granularity.windowSeconds! * 1000 - 1000),
+        'MMM-dd HH:mm',
+        'en-US'
+      )
+      : '-';
+
+    return `${cell.distinctAlarmDefCount} Alarms (${cell.totalAlarmOccurrences}x) • ${_date} ${_startTime}-${_endTime}`;
   }
 
   //----------------- MODALS -------------------------------
@@ -781,38 +925,98 @@ export class PulseComponent implements OnInit {
   //----------------- SEVERITY INDICATIONS -----------------
   severityDotClass(severity: string | null | undefined): string {
     switch (severity) {
-      case 'critical': return 'bg-error';
-      case 'high':      return 'bg-warning';
-      case 'moderate':  return 'bg-warning opacity-50';
-      default:          return '';
+      case 'critical':
+        return 'bg-error';
+      case 'high':
+        return 'bg-warning';
+      case 'moderate':
+        return 'bg-warning opacity-50';
+      default:
+        return '';
     }
   }
 
   severityBorderClass(severity: string | null | undefined): string {
     switch (severity) {
-      case 'critical': return 'border-l-error bg-error-content/50';
-      case 'high':      return 'border-l-warning bg-warning-content/50';
-      case 'moderate':  return 'border-l-warning/40 bg-warning-content/20';
-      default:          return 'border-l-transparent';
+      case 'critical':
+        return 'border-l-error bg-error-content/50';
+      case 'high':
+        return 'border-l-warning bg-warning-content/50';
+      case 'moderate':
+        return 'border-l-warning/40 bg-warning-content/20';
+      default:
+        return 'border-l-transparent';
     }
   }
 
   severityLabel(severity: string | null | undefined): string {
     switch (severity) {
-      case 'critical': return 'Critical anomaly — statistically extreme deviation';
-      case 'high':      return 'High anomaly — significant deviation from baseline';
-      case 'moderate':  return 'Moderate anomaly — notable deviation from baseline';
-      default:          return '';
+      case 'critical':
+        return 'Critical anomaly — statistically extreme deviation';
+      case 'high':
+        return 'High anomaly — significant deviation from baseline';
+      case 'moderate':
+        return 'Moderate anomaly — notable deviation from baseline';
+      default:
+        return '';
     }
   }
 
   get modalYAxis(): ApexYAxis[] | undefined {
     if (!this.showOperands) return undefined;
     return [
-      { seriesName: 'KPI Value', title: { text: 'KPI Value' } },
-      { seriesName: 'Numerator', opposite: true, title: { text: 'Count' } },
-      { seriesName: 'Denominator', opposite: true, show: false }
+      {seriesName: 'KPI Value', title: {text: 'KPI Value'}},
+      {seriesName: 'Numerator', opposite: true, title: {text: 'Count'}},
+      {seriesName: 'Denominator', opposite: true, show: false}
     ];
+  }
+
+  //----- ALARM LIST POPOVER -----
+  showInfoPopover(event: MouseEvent, alarm: CellAlarmDto) {
+    clearTimeout(this.hidePopoverTimeout);
+    this.hoveredAlarm.set(alarm);
+
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const popoverWidth = 384;
+    const popoverEstHeight = 180;
+
+    // Prefer opening to the left of the icon; flip to the right if there's no room.
+    let left = rect.left - popoverWidth - 8;
+    if (left < 8) {
+      left = rect.right + 8;
+    }
+
+    // Anchor to the bottom of the icon, opening downward.
+    let top = rect.bottom + 8;
+    // Clamp so it doesn't run off the bottom of the viewport — flip upward if needed.
+    if (top + popoverEstHeight > window.innerHeight - 8) {
+      top = rect.top - popoverEstHeight - 8;
+    }
+    top = Math.max(top, 8);
+
+    this.popoverStyle.set({top: `${top}px`, left: `${left}px`});
+
+    const popoverEl = this.infoPopoverRef.nativeElement as any;
+    if (!popoverEl.matches(':popover-open')) {
+      popoverEl.showPopover();
+    }
+  }
+
+  scheduleHideInfoPopover() {
+    this.hidePopoverTimeout = setTimeout(() => this.hideInfoPopover(), 150);
+  }
+
+  cancelHideInfoPopover() {
+    clearTimeout(this.hidePopoverTimeout);
+  }
+
+  hideInfoPopover() {
+    const popoverEl = this.infoPopoverRef?.nativeElement as any;
+    if (popoverEl?.matches(':popover-open')) {
+      popoverEl.hidePopover();
+    }
+    this.hoveredAlarm.set(null);
   }
 
 }

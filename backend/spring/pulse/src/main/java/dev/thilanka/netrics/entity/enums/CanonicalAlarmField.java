@@ -1,0 +1,7 @@
+package dev.thilanka.netrics.entity.enums;
+
+public enum CanonicalAlarmField {
+    NODE_NAME, ALARM_CODE, ALARM_NAME, OCCURRENCE_TIME, SPECIFIC_PROBLEM,
+    SEVERITY, ACK_STATE, ALARM_ID, ALARM_TYPE, LOCATION, ADDITIONAL_INFO,
+    DESCRIPTION, CLEAR_STATE, CLEAR_TIME
+}

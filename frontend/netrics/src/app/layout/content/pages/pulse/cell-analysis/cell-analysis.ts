@@ -1,11 +1,12 @@
-import {Component, computed, OnInit, signal} from '@angular/core';
+import {Component, OnDestroy, OnInit, computed, signal} from '@angular/core';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
+import {Subject} from 'rxjs';
+import {debounceTime, distinctUntilChanged, takeUntil} from 'rxjs/operators';
 import {StandardKpiDto} from '../../../../../models/pulse/StandardKpiDto';
 import {StandardkpiService} from '../../../../../service/pulse/ltefdd/standardkpi.service';
 import {AlertService} from '../../../../../components/alert/alert.service';
 import {KpidayService} from '../../../../../service/pulse/ltefdd/kpiday.service';
-import {KpiTrendDto} from '../../../../../models/pulse/KpiTrendDto';
 import {ChartService} from '../../../../../service/components/chart/chart.service';
 import {Linechart} from '../../../../../components/charts/linechart/linechart/linechart';
 import {RatService} from '../../../../../service/pulse/rat-service';
@@ -32,18 +33,15 @@ import {StandardRawKpiMappingService} from '../../../../../service/pulse/standar
   templateUrl: './cell-analysis.html',
   styleUrl: './cell-analysis.css'
 })
-export class CellAnalysis implements OnInit {
+export class CellAnalysis implements OnInit, OnDestroy {
 
-  // selectedGranularity = signal<'day-average' | 'busy-hour'>('day-average');
   selectedGranularity = signal<string>('day-average');
-  // selectedRat = signal<'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm'>('ltefdd');
   selectedRat = signal<string>('ltefdd');
   rat = signal<RatDto | undefined>(undefined);
   rats: RatDto[] = [];
   cellName = signal('');
   selectedStandardKpi = signal('');
   initialStandardKpi: string = '';
-  kpiTrendData = signal<KpiTrendDto[]>([]);
   standardKpis: StandardKpiDto[] = [];
   chartSeries = signal<CellKpiSeries[]>([]);
   trendPeriod = signal<'week' | 'month' | 'quarter'>('month');
@@ -56,7 +54,6 @@ export class CellAnalysis implements OnInit {
   filteredCells = signal<Array<CellNameDto>>([]);
   filteredSectors = signal<Array<SectorDto>>([]);
 
-  // loadingTrendData = signal<boolean>(false);
   private pendingRequests = signal<number>(0);
   loadingTrendData = computed(() => this.pendingRequests() > 0);
   loadingRats = signal(false);
@@ -69,27 +66,18 @@ export class CellAnalysis implements OnInit {
 
   cellColorMap: Record<string, string> = {};
   colorPalette = [
-    '#008FFB', // blue
-    '#00E396', // orange
-    '#FEB019', // green
-    '#FF4560', // red
-    '#775DD0', // purple
-    '#4caf50', // brown
-    '#ffdd00', // pink
-    '#546E7A', // gray
-    '#8D5B4C', // yellow-green
-    '#C5D86D',  // cyan
-    '#2b908f', // blue
-    '#c200ff', // orange
-    '#66ca5b', // green
-    '#ff00bf', // red
-    '#ff8a47', // purple
-    '#00ff0c', // brown
-    '#e9006b', // pink
-    '#4ab5e7', // gray
-    '#9c2b08', // yellow-green
-    '#caff00'  // cyan
+    '#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0',
+    '#4caf50', '#ffdd00', '#546E7A', '#8D5B4C', '#C5D86D',
+    '#2b908f', '#c200ff', '#66ca5b', '#ff00bf', '#ff8a47',
+    '#00ff0c', '#e9006b', '#4ab5e7', '#9c2b08', '#caff00'
   ];
+
+  // ---- lifecycle / race-condition guards ----
+  private readonly destroy$ = new Subject<void>();
+  private readonly searchTerms$ = new Subject<string>();
+  /** Bumped every time a batch of trend-data fetches is (re)started, so late
+   *  responses from a superseded batch can be detected and ignored. */
+  private currentFetchToken = 0;
 
   constructor(private activatedRoute: ActivatedRoute,
               private standardKpiService: StandardkpiService,
@@ -101,7 +89,7 @@ export class CellAnalysis implements OnInit {
               private cellService: CellService,
               private cellNameService: CellNameService,
               private sectorService: SectorService,
-              private  standardRawKpiMappingService: StandardRawKpiMappingService,) {
+              private standardRawKpiMappingService: StandardRawKpiMappingService) {
 
     if (sharedService.selectedCell() === '' && sharedService.selectedStandardKpi() === '') {
       this.cellSelected.set(false);
@@ -111,24 +99,35 @@ export class CellAnalysis implements OnInit {
       this.selectedRat.set(sharedService.selectedRat());
       this.cellName.set(sharedService.selectedCell());
       this.initialStandardKpi = sharedService.selectedStandardKpi();
-      // this.getRat(this.selectedRat());
     }
   }
 
   ngOnInit(): void {
     this.getAllRats();
+
+    // Debounced cell search: a single HTTP call per settled query, not one per keystroke.
+    this.searchTerms$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(term => this.performCellSearch(term));
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   setSelectedGranularity(granularity: 'day-average' | 'busy-hour') {
     this.selectedGranularity.set(granularity);
-    if (this.cellSelected()) {  // Query KPI only if a cell is selected
-      this.getRat(this.rat()?.name!);
+    if (this.cellSelected()) {
+      this.refreshTrendDataForSelection();
     }
   }
 
   getAllRats(): void {
     this.loadingRats.set(true);
-    this.ratService.getAllRats().subscribe({
+    this.ratService.getAllRats().pipe(takeUntil(this.destroy$)).subscribe({
       next: data => {
         this.rats = data;
         this.loadingRats.set(false);
@@ -137,9 +136,10 @@ export class CellAnalysis implements OnInit {
         }
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Retirieving RATs failed. ${err.statusCode} ${err.statusText}`);
+        this.loadingRats.set(false);
+        this.alertService.error('Retrieving RATs failed', 'Error', `${err.status} ${err.statusText}`);
       }
-    })
+    });
   }
 
   getRat(ratName: string): RatDto | undefined {
@@ -162,21 +162,21 @@ export class CellAnalysis implements OnInit {
   getAllStandardKpi(ratName: string) {
     this.loadingStandardKpis.set(true);
     this.standardKpis = [];
-    this.standardKpiService.getAllStandardKpi(ratName).subscribe({
+    this.standardKpiService.getAllStandardKpi(ratName).pipe(takeUntil(this.destroy$)).subscribe({
       next: data => {
         this.standardKpis = data;
         if (this.standardKpis.length > 0) {
-          const kpiInit = this.standardKpis.find(k => k.kpiName == this.initialStandardKpi)   // default loading initial-standard-kpi
-          const kpiSelect = this.standardKpis.find(k => k.kpiName == this.selectedStandardKpi())   // default loading (previously) selected-standard-kpi
+          const kpiInit = this.standardKpis.find(k => k.kpiName == this.initialStandardKpi);
+          const kpiSelect = this.standardKpis.find(k => k.kpiName == this.selectedStandardKpi());
 
           if (this.selectedStandardKpi() !== '' && kpiSelect !== undefined) {
             this.selectedStandardKpi.set(kpiSelect.kpiName!);
           } else if (this.initialStandardKpi !== '' && kpiInit !== undefined) {
             this.selectedStandardKpi.set(kpiInit.kpiName!);
           } else {
-            this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);    // Set 1st standard KPI from the list as default KPI
+            this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
           }
-          this.selectKpi(this.selectedStandardKpi(), ratName, false, this.selectedGranularity());    // Getting Worst-cells and Trend-data
+          this.selectKpi(this.selectedStandardKpi(), ratName, false, this.selectedGranularity());
           this.loadingStandardKpis.set(false);
         } else {
           this.alertService.error("KPI are unavailable for the RAT");
@@ -184,27 +184,27 @@ export class CellAnalysis implements OnInit {
         }
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingStandardKpis.set(false);
       }
-    })
+    });
   }
 
   selectKpi(kpi: string, ratName: string, selectByOption: boolean, granularityName: string) {
-    this.standardRawKpiMappingService.isMappingAvailable(ratName, kpi).subscribe({
+    this.standardRawKpiMappingService.isMappingAvailable(ratName, kpi).pipe(takeUntil(this.destroy$)).subscribe({
       next: available => {
         this.standardRawKpiMappingAvailable.set(available);
         if (!available) {
-          this.showOperands.set(false);   // force back to standard trend if operands aren't supported
+          this.showOperands.set(false);
         }
         this.fetchTrendDataForKpi(kpi, ratName, selectByOption, granularityName);
       },
       error: error => {
         console.error("Error getting standardRawKpiMappingAvailable:", error);
-        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard-Raw-KPI-Mapping retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.standardRawKpiMappingAvailable.set(false);
         this.showOperands.set(false);
-        this.fetchTrendDataForKpi(kpi, ratName, selectByOption, granularityName);   // fail safe: still show standard trend
+        this.fetchTrendDataForKpi(kpi, ratName, selectByOption, granularityName);
       }
     });
   }
@@ -212,97 +212,115 @@ export class CellAnalysis implements OnInit {
   private fetchTrendDataForKpi(kpi: string, ratName: string, selectByOption: boolean, granularityName: string) {
     if (selectByOption) {
       const cells = this.chartSeries().map(s => s.cellName);
-      this.chartSeries.set([]);
-      for (let cell of cells) {
-        this.getTrendDataByKpiAndCell(kpi, cell, this.trendPeriod(), ratName, granularityName);
-      }
+      this.refetchCells(cells, kpi, ratName, granularityName);
     } else {
       if (this.selectedChartType() === 's_cell_s_kpi') {
+        const token = this.nextFetchToken();
         this.chartSeries.set([]);
+        this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName, granularityName, token);
+      } else {
+        const token = this.nextFetchToken();
+        this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName, granularityName, token);
       }
-      this.getTrendDataByKpiAndCell(kpi, this.cellName(), this.trendPeriod(), ratName, granularityName);
     }
   }
 
-  getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
+  /** Clears the chart, bumps the fetch token, and re-fetches trend data for every given cell. */
+  private refetchCells(cells: string[], kpi: string, ratName: string, granularityName: string): void {
+    const token = this.nextFetchToken();
+    this.chartSeries.set([]);
+    for (const cell of cells) {
+      this.getTrendDataByKpiAndCell(kpi, cell, this.trendPeriod(), ratName, granularityName, token);
+    }
+  }
+
+  private nextFetchToken(): number {
+    return ++this.currentFetchToken;
+  }
+
+  getTrendDataByKpiAndCell(kpiName: string, cellName: string, period: string, ratName: string,
+                           granularityName: string, token: number = this.currentFetchToken) {
     if (this.showOperands() && this.selectedChartType() === 's_cell_s_kpi') {
-      this.getTrendDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, granularityName);
+      this.getTrendDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, granularityName, token);
     } else {
-      this.getTrendDataByKpiAndCellPlain(kpiName, cellName, period, ratName, granularityName);
+      this.getTrendDataByKpiAndCellPlain(kpiName, cellName, period, ratName, granularityName, token);
     }
   }
 
-  private getTrendDataByKpiAndCellPlain(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
+  private getTrendDataByKpiAndCellPlain(kpiName: string, cellName: string, period: string, ratName: string,
+                                        granularityName: string, token: number) {
     this.pendingRequests.update(n => n + 1);
     const _granularity = this.resolveGranularity(period, granularityName);
 
-    this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, _granularity).subscribe({
-      next: data => {
-        this.kpiTrendData.set(data);
-        if (this.kpiTrendData().length > 0) {
-          if (this.selectedChartType() === 's_cell_s_kpi') {
-            this.chartSeries.set(this.chartService.buildSeriesForCell(data));
-          } else if (this.selectedChartType() === 'm_cell_s_kpi') {
-            const seriesForCell = this.chartService.buildSeriesForCell(data);
-            seriesForCell.forEach(s => {
-              if (!this.cellColorMap[s.cellName]) {
-                const usedColors = Object.values(this.cellColorMap);
-                this.cellColorMap[s.cellName] = this.colorPalette.find(c => !usedColors.includes(c)) ?? '#000000';
-              }
-              s.color = this.cellColorMap[s.cellName];
-            });
-            this.chartSeries.update(existing => {
-              const cellNamesToAdd = seriesForCell.map(s => s.name);
-              const filtered = existing.filter(s => !cellNamesToAdd.includes(s.name));
-              return [...filtered, ...seriesForCell];
-            });
+    this.kpidayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, _granularity)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: data => {
+          this.pendingRequests.update(n => Math.max(0, n - 1));
+
+          if (token !== this.currentFetchToken) {
+            return; // a newer batch superseded this request; discard the stale result
           }
+
+          if (data.length > 0) {
+            if (this.selectedChartType() === 's_cell_s_kpi') {
+              this.chartSeries.set(this.chartService.buildSeriesForCell(data));
+            } else if (this.selectedChartType() === 'm_cell_s_kpi') {
+              const seriesForCell = this.chartService.buildSeriesForCell(data);
+              seriesForCell.forEach(s => {
+                if (!this.cellColorMap[s.cellName]) {
+                  const usedColors = Object.values(this.cellColorMap);
+                  this.cellColorMap[s.cellName] = this.colorPalette.find(c => !usedColors.includes(c)) ?? '#000000';
+                }
+                s.color = this.cellColorMap[s.cellName];
+              });
+              this.chartSeries.update(existing => {
+                const cellNamesToAdd = seriesForCell.map(s => s.name);
+                const filtered = existing.filter(s => !cellNamesToAdd.includes(s.name));
+                return [...filtered, ...seriesForCell];
+              });
+            }
+          } else {
+            console.error(`KPI trend data unavailable for the cell ${cellName}`);
+            this.alertService.error(`KPI trend data unavailable for ${cellName}`);
+          }
+        }, error: error => {
           this.pendingRequests.update(n => Math.max(0, n - 1));
-        } else {
-          console.error(`KPI trend data unavailable for the cell ${cellName}`);
-          this.alertService.error(`KPI trend data unavailable for ${cellName}`);
-          this.pendingRequests.update(n => Math.max(0, n - 1));
+          console.error('Error retrieving KPI Trend data');
+          console.error(error);
+          this.alertService.error('KPI Trend data retrieval failed');
         }
-      }, error: error => {
-        this.pendingRequests.update(n => Math.max(0, n - 1));
-        console.error('Error retrieving KPI Trend data');
-        console.error(error);
-        this.alertService.error('KPI Trend data retrieval failed');
-      }
-    });
+      });
   }
 
-  private getTrendDataByKpiAndCellWithOperands(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
+  private getTrendDataByKpiAndCellWithOperands(kpiName: string, cellName: string, period: string, ratName: string,
+                                               granularityName: string, token: number) {
     this.pendingRequests.update(n => n + 1);
     const _granularity = this.resolveGranularity(period, granularityName);
 
-    this.kpidayService.getDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, _granularity).subscribe({
-      next: (data: KpiDataWithOperandsDto[]) => {
-        if (data.length > 0) {
-          this.chartSeries.set(this.chartService.buildSeriesForCellWithOperands(data, cellName));
-        } else {
-          console.error(`KPI operand data unavailable for the cell ${cellName}`);
-          this.alertService.error(`KPI trend data unavailable for ${cellName}`);
-        }
-        this.pendingRequests.update(n => Math.max(0, n - 1));
-      }, error: error => {
-        this.pendingRequests.update(n => Math.max(0, n - 1));
-        console.error('Error retrieving KPI operand trend data');
-        console.error(error);
-        this.alertService.error('KPI Trend data retrieval failed');
-      }
-    });
-  }
+    this.kpidayService.getDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, _granularity)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data: KpiDataWithOperandsDto[]) => {
+          this.pendingRequests.update(n => Math.max(0, n - 1));
 
-  getStandardRawKpiMappingAvailable(ratName:string, standardKpiName:string) {
-    this.standardRawKpiMappingService.isMappingAvailable(ratName, standardKpiName).subscribe({
-      next: data => {
-        this.standardRawKpiMappingAvailable.set(data);
-      }, error: error => {
-        console.error("Error getting standardRawKpiMappingAvailable:", error);
-        this.alertService.error(`Standard-Raw-KPI-Mapping retrieval failed :"${error.status} ${error.statusText}`);
-      }
-    })
+          if (token !== this.currentFetchToken) {
+            return;
+          }
+
+          if (data.length > 0) {
+            this.chartSeries.set(this.chartService.buildSeriesForCellWithOperands(data, cellName));
+          } else {
+            console.error(`KPI operand data unavailable for the cell ${cellName}`);
+            this.alertService.error(`KPI trend data unavailable for ${cellName}`);
+          }
+        }, error: error => {
+          this.pendingRequests.update(n => Math.max(0, n - 1));
+          console.error('Error retrieving KPI operand trend data');
+          console.error(error);
+          this.alertService.error('KPI Trend data retrieval failed');
+        }
+      });
   }
 
   private resolveGranularity(period: string, selectedGranularity: string): string {
@@ -310,19 +328,18 @@ export class CellAnalysis implements OnInit {
   }
 
   onPeriodChange(event: Event) {
+    this.refreshTrendDataForSelection();
+  }
+
+  private refreshTrendDataForSelection(): void {
     if (this.selectedChartType() === 'm_cell_s_kpi') {
       const cells = this.chartSeries().map(s => s.cellName);
-      this.chartSeries.set([]);
-      for (const cell of cells) {
-        this.getTrendDataByKpiAndCell(
-          this.selectedStandardKpi(), cell, this.trendPeriod(),
-          this.rat()?.name!, this.selectedGranularity()
-        );
-      }
+      this.refetchCells(cells, this.selectedStandardKpi(), this.rat()?.name!, this.selectedGranularity());
     } else {
+      const token = this.nextFetchToken();
       this.getTrendDataByKpiAndCell(
         this.selectedStandardKpi(), this.cellName(), this.trendPeriod(),
-        this.rat()?.name!, this.selectedGranularity()
+        this.rat()?.name!, this.selectedGranularity(), token
       );
     }
   }
@@ -330,64 +347,66 @@ export class CellAnalysis implements OnInit {
   onSearchCell(value: string) {
     this.queryCell.set(value);
 
-    if (this.queryCell().length > 2) {
-
-      //-- Querying cells
-      this.cellNameService.searchCell(value).subscribe({
-        next: data => {
-          const sortedData = [...data].sort((a, b) => {
-
-            this.searchSector(value);
-
-            const ratA = a.ratName?.toLowerCase() ?? '';
-            const ratB = b.ratName?.toLowerCase() ?? '';
-            const ratCompare = ratA.localeCompare(ratB);
-            if (ratCompare !== 0) {
-              return ratCompare; // sort by ratName first
-            }
-
-            const nameA = a.cellName?.toLowerCase() ?? '';
-            const nameB = b.cellName?.toLowerCase() ?? '';
-            return nameA.localeCompare(nameB); // then sort by cellName
-          });
-
-          this.filteredCells.set(sortedData);
-        }
-      });
-
-
+    if (value.length > 2) {
+      this.searchTerms$.next(value);
     } else {
       this.filteredCells.set([]);
       this.filteredSectors.set([]);
     }
   }
 
+  /** Runs once per debounced, de-duplicated search term (not once per keystroke,
+   *  and not once per sort comparison). */
+  private performCellSearch(value: string): void {
+    this.searchSector(value);
+
+    this.cellNameService.searchCell(value).pipe(takeUntil(this.destroy$)).subscribe({
+      next: data => {
+        const sortedData = [...data].sort((a, b) => {
+          const ratA = a.ratName?.toLowerCase() ?? '';
+          const ratB = b.ratName?.toLowerCase() ?? '';
+          const ratCompare = ratA.localeCompare(ratB);
+          if (ratCompare !== 0) {
+            return ratCompare; // sort by ratName first
+          }
+
+          const nameA = a.cellName?.toLowerCase() ?? '';
+          const nameB = b.cellName?.toLowerCase() ?? '';
+          return nameA.localeCompare(nameB); // then sort by cellName
+        });
+
+        this.filteredCells.set(sortedData);
+      }
+    });
+  }
+
   onShowOperandsChange(): void {
+    const token = this.nextFetchToken();
     this.chartSeries.set([]);
     if (this.cellSelected() && this.selectedChartType() === 's_cell_s_kpi') {
-      this.getTrendDataByKpiAndCell(this.selectedStandardKpi(), this.cellName(), this.trendPeriod(), this.rat()?.name!, this.selectedGranularity());
+      this.getTrendDataByKpiAndCell(
+        this.selectedStandardKpi(), this.cellName(), this.trendPeriod(),
+        this.rat()?.name!, this.selectedGranularity(), token
+      );
     }
   }
 
   searchSector(value: string) {
-    this.sectorService.searchSectorsByName(value).subscribe({
+    this.sectorService.searchSectorsByName(value).pipe(takeUntil(this.destroy$)).subscribe({
       next: data => {
         this.filteredSectors.set(data);
       },
       error: (error: HttpErrorResponse) => {
         console.warn('Sector search unavailable:', error.status, error.statusText);
-        // this.filteredSectors.set([]);  // just clear sectors silently
-
-        // Only alert for unexpected errors, not 503/502/504 gateway issues
         if (error.status !== 503 && error.status !== 502 && error.status !== 504) {
-          this.alertService.error(`Sector search failed. ${error.status} ${error.statusText}`);
+          this.alertService.error('Sector search failed', 'Error', `${error.status} ${error.statusText}`);
         }
       }
     });
   }
 
   selectCell(cellNameDto: CellNameDto, selectByDropDown: boolean) {
-    if (selectByDropDown) {   //-- Check if the RAT of the selecting cell in frontend is different from current RAT
+    if (selectByDropDown) {
       this.chartSeries.set([]);
     }
 
@@ -403,13 +422,13 @@ export class CellAnalysis implements OnInit {
 
     this.rat.set(rat);
 
-    this.cellService.getCellsBySector(sectorDto.name, rat.name!).subscribe({
+    this.cellService.getCellsBySector(sectorDto.name, rat.name!).pipe(takeUntil(this.destroy$)).subscribe({
       next: cells => {
         if (cells.length === 0) return;
 
         // Load KPIs for this RAT first, then fetch trend data for all cells
         this.loadingStandardKpis.set(true);
-        this.standardKpiService.getAllStandardKpi(rat.name!).subscribe({
+        this.standardKpiService.getAllStandardKpi(rat.name!).pipe(takeUntil(this.destroy$)).subscribe({
           next: kpis => {
             this.standardKpis = kpis;
             if (kpis.length === 0) {
@@ -425,34 +444,53 @@ export class CellAnalysis implements OnInit {
             this.loadingStandardKpis.set(false);
             this.cellSelected.set(true);
 
-            // Now fetch trend data for all cells with a known KPI
-            for (const cell of cells) {
-              this.getTrendDataByKpiAndCell(
-                kpiToUse,
-                cell.cellName!,
-                this.trendPeriod(),
-                rat.name!,
-                this.selectedGranularity()
-              );
-            }
+            this.refetchCells(
+              cells.map(c => c.cellName!),
+              kpiToUse,
+              rat.name!,
+              this.selectedGranularity()
+            );
           },
           error: err => {
-            this.alertService.error(`Standard KPI retrieval failed. ${err.status} ${err.statusText}`);
+            this.alertService.error('Standard KPI retrieval failed', 'Error', `${err.status} ${err.statusText}`);
             this.loadingStandardKpis.set(false);
           }
         });
       },
       error: err => {
-        this.alertService.error(`Failed to get cells for sector. ${err.status} ${err.statusText}`);
+        this.alertService.error('Failed to get cells for sector', 'Error', `${err.status} ${err.statusText}`);
       }
     });
   }
 
   setSelectedChartType(type: 's_cell_s_kpi' | 'm_cell_s_kpi' | 's_cell_m_kpi') {
+    const previousType = this.selectedChartType();
     this.selectedChartType.set(type);
-    this.chartSeries.set([]);
+
     if (type !== 's_cell_s_kpi') {
-      this.showOperands.set(false);   // operands only make sense for a single cell
+      this.showOperands.set(false);
+    }
+
+    if (previousType === 's_cell_s_kpi' && type === 'm_cell_s_kpi' && this.cellSelected() && this.cellName()) {
+      // Carry the single-mode cell into multi-cell mode instead of losing it.
+      this.cellColorMap = {};
+      this.queryCell.set(this.cellName());
+      this.refetchCells([this.cellName()], this.selectedStandardKpi(), this.rat()?.name!, this.selectedGranularity());
+
+    } else if (previousType === 'm_cell_s_kpi' && type === 's_cell_s_kpi' && this.chartSeries().length > 0) {
+      // Carry the first-selected multi-cell-mode cell into single-cell mode.
+      // Routed through selectKpi() (not a direct fetch) so standardRawKpiMappingAvailable
+      // is recomputed for the carried-over cell/KPI pair — otherwise the "Show Operands"
+      // toggle would keep reflecting stale multi-cell-mode state.
+      const firstCell = this.chartSeries()[0].cellName;
+      this.chartSeries.set([]);
+      this.cellName.set(firstCell);
+      this.queryCell.set(firstCell);
+      this.cellSelected.set(true);
+      this.selectKpi(this.selectedStandardKpi(), this.rat()?.name!, false, this.selectedGranularity());
+
+    } else {
+      this.chartSeries.set([]);
     }
   }
 
@@ -464,13 +502,20 @@ export class CellAnalysis implements OnInit {
     this.chartSeries.update(series => series.filter(s => s.name !== name));
   }
 
+  /** Clears every chart series and the associated color assignments together,
+   *  so the color palette doesn't silently exhaust itself over a long session. */
+  clearAllChartCells(): void {
+    this.chartSeries.set([]);
+    this.cellColorMap = {};
+  }
+
   get modalYAxis(): ApexYAxis[] | undefined {
     if (!this.showOperands() || this.selectedChartType() !== 's_cell_s_kpi') return undefined;
     const label = this.standardKpis.find(k => k.kpiName === this.selectedStandardKpi())?.label ?? 'KPI Value';
     return [
-      { seriesName: 'KPI Value', title: { text: label } },
-      { seriesName: 'Numerator', opposite: true, title: { text: 'Count' } },
-      { seriesName: 'Denominator', opposite: true, show: false }
+      {seriesName: 'KPI Value', title: {text: label}},
+      {seriesName: 'Numerator', opposite: true, title: {text: 'Count'}},
+      {seriesName: 'Denominator', opposite: true, show: false}
     ];
   }
 

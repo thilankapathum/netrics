@@ -47,7 +47,8 @@ public class KpiDayController {
             @RequestParam String ratName,
             @RequestParam String granularityName) {
 
-        return kpiDayService.getWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName);
+        List<WorstCellsDto> worstCells = kpiDayService.getWorstCellsByKpiAndArea(kpiName, period, excludeZeroes, limit, areaName, ratName, granularityName);
+        return worstCells;
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")

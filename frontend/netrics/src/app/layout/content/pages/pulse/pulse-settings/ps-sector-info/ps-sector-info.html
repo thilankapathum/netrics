@@ -1,75 +1,128 @@
-<dialog #sectorMissingInfoModal id="sector_missing_info_modal" [class.modal-open]="open" class="modal w-full">
-  <div class="modal-box max-w-2xl">
-    <h3 class="text-lg font-bold mb-2">Update Missing Sector Information</h3>
-    <p class="mb-4">There are <span class="text-error">{{ missingSectorInfoCount() }}</span> Sectors with missing
-      information</p>
-    <div class="flex flex-row justify-around flex-wrap p-4">
-      <div class="flex flex-col gap-6">
-        <div class="flex flex-col gap-3">
-          <p>Download Sectors with missing information</p>
-          <button [disabled]="loadingMissingSectorInfoDownload" class="btn btn-sm self-start" (click)="exportSectorsWithMissingInfo()">
-            <span [hidden]="!loadingMissingSectorInfoDownload" class="loading loading-spinner loading-xs"></span>
-            <span [hidden]="loadingMissingSectorInfoDownload">
-              <svg class="text-error" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                   xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 12V18M12 18L15 16M12 18L9 16M13 3.00087C12.9045 3 12.7973 3 12.6747 3H8.2002C7.08009 3 6.51962 3 6.0918 3.21799C5.71547 3.40973 5.40973 3.71547 5.21799 4.0918C5 4.51962 5 5.08009 5 6.2002V17.8002C5 18.9203 5 19.4801 5.21799 19.9079C5.40973 20.2842 5.71547 20.5905 6.0918 20.7822C6.5192 21 7.07899 21 8.19691 21H15.8031C16.921 21 17.48 21 17.9074 20.7822C18.2837 20.5905 18.5905 20.2842 18.7822 19.9079C19 19.4805 19 18.9215 19 17.8036V9.32568C19 9.20296 19 9.09561 18.9991 9M13 3.00087C13.2856 3.00347 13.4663 3.01385 13.6388 3.05526C13.8429 3.10425 14.0379 3.18526 14.2168 3.29492C14.4186 3.41857 14.5918 3.59182 14.9375 3.9375L18.063 7.06298C18.4089 7.40889 18.5809 7.58136 18.7046 7.78319C18.8142 7.96214 18.8953 8.15726 18.9443 8.36133C18.9857 8.53376 18.9963 8.71451 18.9991 9M13 3.00087V5.8C13 6.9201 13 7.47977 13.218 7.90759C13.4097 8.28392 13.7155 8.59048 14.0918 8.78223C14.5192 9 15.079 9 16.1969 9H18.9991M18.9991 9H19.0002"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            Download Missing
-          </button>
-        </div>
-        <div class="flex flex-col gap-3">
-          <p>Download all Sectors</p>
-          <button [disabled]="loadingAllSectorDownload" class="btn btn-sm self-start" (click)="exportAllSectors()">
-            <span [hidden]="!loadingAllSectorDownload" class="loading loading-spinner loading-xs"></span>
-            <span [hidden]="loadingAllSectorDownload">
-              <svg class="text-primary" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                   xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 12V18M12 18L15 16M12 18L9 16M13 3.00087C12.9045 3 12.7973 3 12.6747 3H8.2002C7.08009 3 6.51962 3 6.0918 3.21799C5.71547 3.40973 5.40973 3.71547 5.21799 4.0918C5 4.51962 5 5.08009 5 6.2002V17.8002C5 18.9203 5 19.4801 5.21799 19.9079C5.40973 20.2842 5.71547 20.5905 6.0918 20.7822C6.5192 21 7.07899 21 8.19691 21H15.8031C16.921 21 17.48 21 17.9074 20.7822C18.2837 20.5905 18.5905 20.2842 18.7822 19.9079C19 19.4805 19 18.9215 19 17.8036V9.32568C19 9.20296 19 9.09561 18.9991 9M13 3.00087C13.2856 3.00347 13.4663 3.01385 13.6388 3.05526C13.8429 3.10425 14.0379 3.18526 14.2168 3.29492C14.4186 3.41857 14.5918 3.59182 14.9375 3.9375L18.063 7.06298C18.4089 7.40889 18.5809 7.58136 18.7046 7.78319C18.8142 7.96214 18.8953 8.15726 18.9443 8.36133C18.9857 8.53376 18.9963 8.71451 18.9991 9M13 3.00087V5.8C13 6.9201 13 7.47977 13.218 7.90759C13.4097 8.28392 13.7155 8.59048 14.0918 8.78223C14.5192 9 15.079 9 16.1969 9H18.9991M18.9991 9H19.0002"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            Download All
-          </button>
-        </div>
-      </div>
-      <div class="divider divider-horizontal">OR</div>
-      <div class="flex flex-col gap-3">
-        <p>Upload Sector Information</p>
-        <input [disabled]="loadingMissingSectorInfoUpload" #sectorMissingInfoFileInput type="file"
-               class="file-input input-sm"/>
-        <button [disabled]="loadingMissingSectorInfoUpload" class="btn btn-sm self-start"
-                (click)="importSectorsWithCorrectedInfo(sectorMissingInfoFileInput)">
-          <span [hidden]="!loadingMissingSectorInfoUpload" class="loading loading-spinner loading-xs"></span>
-          <span [hidden]="loadingMissingSectorInfoUpload">
-            <svg class="text-accent" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M12 18V12M12 12L9 14M12 12L15 14M13 3.00087C12.9045 3 12.7973 3 12.6747 3H8.2002C7.08009 3 6.51962 3 6.0918 3.21799C5.71547 3.40973 5.40973 3.71547 5.21799 4.0918C5 4.51962 5 5.08009 5 6.2002V17.8002C5 18.9203 5 19.4801 5.21799 19.9079C5.40973 20.2842 5.71547 20.5905 6.0918 20.7822C6.51921 21 7.079 21 8.19694 21L15.8031 21C16.921 21 17.48 21 17.9074 20.7822C18.2837 20.5905 18.5905 20.2842 18.7822 19.9079C19 19.4805 19 18.9215 19 17.8036V9.32568C19 9.20296 19 9.09561 18.9991 9M13 3.00087C13.2856 3.00347 13.4663 3.01385 13.6388 3.05526C13.8429 3.10425 14.0379 3.18526 14.2168 3.29492C14.4186 3.41857 14.5918 3.59182 14.9375 3.9375L18.063 7.06298C18.4089 7.40889 18.5809 7.58136 18.7046 7.78319C18.8142 7.96214 18.8953 8.15726 18.9443 8.36133C18.9857 8.53376 18.9963 8.71451 18.9991 9M13 3.00087V5.8C13 6.9201 13 7.47977 13.218 7.90759C13.4097 8.28392 13.7155 8.59048 14.0918 8.78223C14.5192 9 15.079 9 16.1969 9H18.9991M18.9991 9H19.0002"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-          Upload
-        </button>
-        <!--        <progress [hidden]="!loadingMissingSectorInfoUpload" class="progress w-auto"></progress>-->
+<div class="flex flex-col gap-6 w-full max-w-4xl">
 
-      </div>
-    </div>
-    <div class="modal-action">
-      <form class="flex flex-row gap-2">
-        <button class="btn btn-sm" type="button" (click)="onCancel()">
-          Close
-          <span class="text-secondary">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 21L12 12M12 12L3 3M12 12L21.0001 3M12 12L3 21.0001" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Header Section -->
+  <div>
+    <h2 class="text-xl font-semibold text-base-content">Sector Information</h2>
+    <p class="text-xs text-secondary mt-1">
+      Manage and update sector data. Currently, there are
+      <span class="text-error font-semibold">{{ missingSectorInfoCount() }}</span>
+      sectors with missing information.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+
+    <!-- EXPORT SECTION -->
+    <div class="flex flex-col gap-5 p-6 border border-base-300 rounded-lg bg-base-100">
+      <h3 class="text-lg font-semibold">Download Data</h3>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-xs text-secondary">
+          Download sectors that are missing information to correct them.
+        </p>
+
+        <button
+          [disabled]="loadingMissingSectorInfoDownload"
+          class="btn btn-sm btn-outline btn-error self-start"
+          (click)="exportSectorsWithMissingInfo()">
+
+          <span
+            [hidden]="!loadingMissingSectorInfoDownload"
+            class="loading loading-spinner loading-xs">
+          </span>
+
+          <span [hidden]="loadingMissingSectorInfoDownload">
+            <svg class="text-error" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V19M6 13L12 19L18 13"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
             </svg>
           </span>
+
+          Download Missing
         </button>
-      </form>
+      </div>
+
+      <div class="divider my-0"></div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-xs text-secondary">
+          Download a complete master list of all sectors.
+        </p>
+
+        <button
+          [disabled]="loadingAllSectorDownload"
+          class="btn btn-sm btn-outline btn-primary self-start"
+          (click)="exportAllSectors()">
+
+          <span
+            [hidden]="!loadingAllSectorDownload"
+            class="loading loading-spinner loading-xs">
+          </span>
+
+          <span [hidden]="loadingAllSectorDownload">
+            <svg class="text-primary" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 13L12 17L8 13M16 7L12 11L8 7"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </span>
+
+          Download All
+        </button>
+      </div>
     </div>
+
+    <!-- IMPORT SECTION -->
+    <div class="flex flex-col gap-5 p-6 border border-base-300 rounded-lg bg-base-100">
+      <h3 class="text-lg font-semibold">Upload Corrections</h3>
+
+      <div class="flex flex-col gap-3">
+        <p class="text-xs text-secondary">
+          Upload a CSV file containing the corrected sector information.
+        </p>
+
+        <div class="form-control w-full">
+          <input
+            [disabled]="loadingMissingSectorInfoUpload"
+            #sectorMissingInfoFileInput
+            type="file"
+            class="file-input file-input-bordered file-input-sm w-full"
+            accept=".csv" />
+        </div>
+
+        <button
+          [disabled]="loadingMissingSectorInfoUpload"
+          class="btn btn-sm btn-success btn-outline self-start mt-2"
+          (click)="importSectorsWithCorrectedInfo(sectorMissingInfoFileInput)">
+
+          <span
+            [hidden]="!loadingMissingSectorInfoUpload"
+            class="loading loading-spinner loading-xs">
+          </span>
+
+          <span [hidden]="loadingMissingSectorInfoUpload">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 19V5M18 11L12 5L6 11"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </span>
+
+          Upload Corrections
+        </button>
+      </div>
+    </div>
+
   </div>
-</dialog>
+
+</div>

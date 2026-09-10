@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.thilanka</groupId>
 	<artifactId>pulse</artifactId>
-	<version>0.2.4</version>
+	<version>0.2.6</version>
 	<name>pulse</name>
 	<description>Netrics Pulse</description>
 	<url/>
@@ -119,6 +119,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-admin-client</artifactId>
+			<version>24.0.2</version>
 		</dependency>
 	</dependencies>
 	<dependencyManagement>

@@ -1,7 +1,7 @@
-import {Component, computed, CUSTOM_ELEMENTS_SCHEMA, signal} from '@angular/core';
+import {Component, computed, CUSTOM_ELEMENTS_SCHEMA, OnDestroy, signal} from '@angular/core';
 import {DatePipe} from "@angular/common";
 import {FormBuilder, FormsModule} from "@angular/forms";
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom, interval, Subscription, switchMap, takeWhile} from 'rxjs';
 import {AlertService} from '../../../../../../components/alert/alert.service';
 import {AreaTypeDto} from '../../../../../../models/pulse/AreaTypeDto';
 import {AreaDto} from '../../../../../../models/pulse/AreaDto';
@@ -25,7 +25,7 @@ import {StandardkpiService} from '../../../../../../service/pulse/ltefdd/standar
   styleUrl: './site-wise-report-by-kpi-and-date.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class SiteWiseReportByKpiAndDate {
+export class SiteWiseReportByKpiAndDate implements OnDestroy{
 
   rat = signal('');
   rats: RatDto[] = [];
@@ -46,6 +46,7 @@ export class SiteWiseReportByKpiAndDate {
   endDate = signal<string>('');
 
   downloadingCsv: boolean = false;
+  downloadingFile = signal(false);
   loadingRats:boolean = false;
   loadingStandardKpis:boolean = false;
   loadingAreaTypes:boolean = false;
@@ -64,7 +65,10 @@ export class SiteWiseReportByKpiAndDate {
     return endTime < startTime;
   })
 
-
+  jobId = signal<string | null>(null);
+  jobStatus = signal<'IDLE' | 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'>('IDLE');
+  jobFileName = signal<string | null>(null);
+  private pollSub?: Subscription;
 
   constructor(private alertService: AlertService,
               private areaService: AreaService,
@@ -76,6 +80,10 @@ export class SiteWiseReportByKpiAndDate {
     this.getAllGranularities();
     this.getAllRats();
     this.getAllAreaTypes();
+  }
+
+  ngOnDestroy() {
+    this.pollSub?.unsubscribe();
   }
 
   loadingAll(){
@@ -94,7 +102,7 @@ export class SiteWiseReportByKpiAndDate {
         this.loadingRats = false;
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error retrieving RATs. ${err.status} ${err.statusText}`);
+        this.alertService.error('Error retrieving RATs', 'Error', `${err.status} ${err.statusText}`);
         this.loadingRats = false;
       }
     })
@@ -115,7 +123,7 @@ export class SiteWiseReportByKpiAndDate {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingStandardKpis = false;
       }
     })
@@ -130,7 +138,7 @@ export class SiteWiseReportByKpiAndDate {
         this.loadingGranularities = false;
       }, error: err => {
         console.error(err);
-        this.alertService.error(`Error retrieving Granularities. ${err.status} ${err.statusText}`);
+        this.alertService.error('Error retrieving Granularities', 'Error', `${err.status} ${err.statusText}`);
         this.loadingGranularities = false;
       }
     })
@@ -146,7 +154,7 @@ export class SiteWiseReportByKpiAndDate {
           this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
           this.loadingAreaTypes = false;
         }
       }
@@ -162,7 +170,7 @@ export class SiteWiseReportByKpiAndDate {
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAreas = false;
       }
     })
@@ -214,36 +222,77 @@ export class SiteWiseReportByKpiAndDate {
     console.log('Selected date:', this.endDate());
   }
 
-  downloadCsv() {
 
+  startReportJob() {
     if (!this.startDate || !this.endDate) {
       this.alertService.warning(`Select a valid date range!`);
       return;
     }
-
     if (this.invalidRange()) {
       this.alertService.warning(`End date must be later than start date`);
       return;
     }
 
-    this.downloadingCsv = true;
-    this.kpiReportService.exportSiteWiseReportByKpiAndDate(this.rat(), this.granularity(), this.standardKpi(), this.startDate(), this.endDate(), this.area()!).subscribe({
-      next: (blob) => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = 'kpi_export.csv';
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        this.downloadingCsv = false;
+    this.jobStatus.set('PENDING');
+    this.jobFileName.set(null);
+
+    this.kpiReportService.submitSiteWiseReportJob(
+      this.rat(), this.granularity(), this.standardKpi(), this.startDate(), this.endDate(), this.area()!
+    ).subscribe({
+      next: (res) => {
+        this.jobId.set(res.jobId);
+        this.pollJobStatus(res.jobId);
       },
-      error: error => {
-        this.downloadingCsv = false;
-        console.log("Error exporting KPI report");
-        console.error(error);
-        this.alertService.error(`Error exporting KPI report! ${error.status} ${error.statusText}`);
+      error: (error) => {
+        this.jobStatus.set('IDLE');
+        this.alertService.error('Error starting report job', 'Error', `${error.status} ${error.statusText}`);
       }
-    })
+    });
+  }
+
+  private pollJobStatus(jobId: string) {
+    this.pollSub?.unsubscribe();
+    this.pollSub = interval(3000).pipe(
+      switchMap(() => this.kpiReportService.getJobStatus(jobId)),
+      takeWhile(res => res.status === 'PENDING' || res.status === 'PROCESSING', true)
+    ).subscribe({
+      next: (res) => {
+        this.jobStatus.set(res.status as any);
+        if (res.status === 'COMPLETED') {
+          this.jobFileName.set(res.fileName);
+        } else if (res.status === 'FAILED') {
+          this.alertService.error(`Report generation failed: ${res.errorMessage}`);
+        }
+      },
+      error: (error) => {
+        this.jobStatus.set('IDLE');
+        this.alertService.error('Error checking report status', 'Error', `${error.status} ${error.statusText}`);
+      }
+    });
+  }
+
+  downloadReadyFile() {
+    const id = this.jobId();
+    if (!id || this.downloadingFile()) return;
+
+    this.downloadingFile.set(true);
+    this.kpiReportService.downloadJobResult(id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.jobFileName() ?? 'kpi_export.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.downloadingFile.set(false);
+        this.jobStatus.set('IDLE');
+        this.jobId.set(null);
+      },
+      error: (error) => {
+        this.downloadingFile.set(false);
+        this.alertService.error('Error downloading report', 'Error', `${error.status} ${error.statusText}`);
+      }
+    });
   }
 
   //================ UTILS ================================

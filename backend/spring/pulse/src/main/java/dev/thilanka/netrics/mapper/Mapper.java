@@ -94,7 +94,7 @@ public class Mapper {
     public KpiDataDto kpiDayToKpiDataDto(KpiDay kpiDay) {
 
         return new KpiDataDto(
-                Timestamp.valueOf(kpiDay.getTimestamp()),
+                kpiDay.getTimestamp(),
                 kpiDay.getCellName(),
                 kpiDay.getStandardKpi().getKpiName(),
                 kpiDay.getKpiValue()
@@ -325,6 +325,16 @@ public class Mapper {
                 cell.isMultiBeam(),
                 cell.getCarrier() != null ? cell.getCarrier().getName() : null,
                 cell.getSector() != null ? cell.getSector().getName() : null
+        );
+    }
+
+    // ================ CELL MAPPING ==================
+
+    public CellMappingDto cellMappingToDto(CellMapping cellMapping) {
+        return new CellMappingDto(
+                cellMapping.getId(),
+                cellMapping.getPreviousCell().getCellName(),
+                cellMapping.getNewCell().getCellName()
         );
     }
 

@@ -1,10 +1,11 @@
 import { APP_INITIALIZER, Provider } from '@angular/core';
 import { KeycloakService, KeycloakOptions } from 'keycloak-angular';
+import { environment } from '../../environments/environment';
 
 // Keycloak Configuration
 export const keycloakConfig: KeycloakOptions = {
   config: {
-    url: 'http://netrics.local:8000/auth',
+    url: environment.authUrl,
     realm: 'netrics',
     clientId: 'netrics-frontend'
   },

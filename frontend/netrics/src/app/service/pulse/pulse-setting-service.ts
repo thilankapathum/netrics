@@ -18,4 +18,16 @@ export class PulseSettingService {
     return this.http.post<UserAreaMappingDto>(`${this.userAreaMappingUrl}`,userAreaMapping);
   }
 
+  getAllUserAreaMappings(){
+    return this.http.get<UserAreaMappingDto[]>(`${this.userAreaMappingUrl}/all`);
+  }
+
+  updateUserAreaMapping(id: number, areaName: string){
+    return this.http.put<UserAreaMappingDto>(`${this.userAreaMappingUrl}/${id}`, {areaName});
+  }
+
+  deleteUserAreaMapping(id: number){
+    return this.http.delete<void>(`${this.userAreaMappingUrl}/${id}`);
+  }
+
 }

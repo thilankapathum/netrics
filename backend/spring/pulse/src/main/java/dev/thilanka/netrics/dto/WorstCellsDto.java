@@ -1,6 +1,9 @@
 package dev.thilanka.netrics.dto;
 
+import java.time.LocalDateTime;
+
 public record WorstCellsDto(
+        LocalDateTime timestamp,
         String cellName,
         String kpiName,
         String kpiLabel,
@@ -10,6 +13,10 @@ public record WorstCellsDto(
         Double difference,
         Integer improved,
         Integer consecutiveBadDays,
-        String severity
+        String severity,
+        Boolean hasAlarmCorrelation,
+        Integer distinctAlarmDefCount,
+        Integer totalAlarmOccurrences,
+        String bestMatchLevel
 ) {
 }

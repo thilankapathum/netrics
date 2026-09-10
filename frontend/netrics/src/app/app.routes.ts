@@ -14,6 +14,7 @@ import {PulseSettings} from './layout/content/pages/pulse/pulse-settings/pulse-s
 import {KpiMap} from './layout/content/pages/pulse/kpi-map/kpi-map';
 import {UpgradeReview} from './layout/content/pages/pulse/upgrade-review/upgrade-review';
 import {AnomalyCells} from './layout/content/pages/pulse/anomaly-cells/anomaly-cells';
+import {Alarms} from './layout/content/pages/pulse/alarms/alarms';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -57,6 +58,11 @@ export const routes: Routes = [
             path: 'anomaly',
             canActivate: [authGuard, roleGuard(['PULSE_READ'])],
             component: AnomalyCells
+          },
+          {
+            path: 'alarms',
+            canActivate: [authGuard, roleGuard(['PULSE_READ'])],
+            component: Alarms
           },
           {
             path: 'dashboard',

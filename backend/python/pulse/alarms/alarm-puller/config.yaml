@@ -1,0 +1,59 @@
+# Copy this to config.yaml and adjust for your environment.
+# ${VAR} placeholders are substituted from environment variables at startup,
+# so secrets (like the SFTP password) don't need to live in this file.
+
+sftp:
+  host: ${REMOTE_HOST}
+  port: 22
+  username: ${REMOTE_USERNAME}
+  # Use ONE of password or private_key_path.
+  password: ${REMOTE_PASSWORD}
+  private_key_path: null          # e.g. /app/secrets/id_ed25519
+  private_key_passphrase: null
+
+# How often to check for new files.
+poll_interval_seconds: 60
+
+# A file is only downloaded once its remote mtime is at least this old,
+# to avoid grabbing a report the vendor system is still writing.
+# Can be overridden per-source below.
+min_file_age_seconds: 30
+
+# Where the "already downloaded" manifest is kept. Mount this on a
+# persistent volume so restarts don't re-pull everything.
+state_file: /data/state/downloaded_files.json
+
+# One entry per remote directory you want mirrored locally.
+#
+# If files sit directly in remote_dir, that's the whole config (see the
+# u2020 example below). If they're organized under dated sub-directories
+# (remote_dir/20260722/report.csv, remote_dir/20260721/report.csv, ...),
+# set use_date_subdirs: true - see the ume example, which matches
+# server/var/fileint/fm/<YYYYMMDD>/*.csv.
+sources:
+#  - name: ume
+#    remote_dir: /var/fileint/fm
+#    local_dir: /data/incoming/ume       # files land in /data/incoming/ume/20260722/...
+#    pattern: "*.csv"
+#    use_date_subdirs: true
+#    date_dir_format: "%Y%m%d"           # matches 20260722, 20260721, ...
+#    lookback_days: 2                    # check today's folder + yesterday's,
+#                                         # in case files trickle in after midnight
+#
+#  - name: u31
+#    remote_dir: /export/U31/alarms
+#    local_dir: /data/incoming/u31
+#    pattern: "*.csv"
+#    use_date_subdirs: true
+#    date_dir_format: "%Y%m%d"
+#    lookback_days: 2
+
+  - name: u2020
+    remote_dir: ${U2020_REM_DIR}    # no dated sub-directories on this one
+    local_dir: ${U2020_LOC_DIR}
+    pattern: "*.csv"
+    use_date_subdirs: true
+    date_dir_format: "%Y%m%d"           # matches 20260722, 20260721, ...
+    lookback_days: 2
+    flatten_local_dirs: true   # write all files directly into local_dir, no date subfolder
+    min_file_age_seconds: 60            # this vendor writes slower, give it more headroom

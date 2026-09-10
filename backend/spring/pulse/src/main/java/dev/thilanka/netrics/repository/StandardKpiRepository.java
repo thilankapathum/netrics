@@ -19,4 +19,10 @@ public interface StandardKpiRepository extends JpaRepository<StandardKpi, Long> 
             WHERE type = 'standard' AND rat_id = :ratId
             """, nativeQuery = true)
     List<StandardKpi> findAllStandardKpiByRat(@Param("ratId") Long ratId);
+
+    @Query(value = """
+            SELECT * FROM standard_kpi
+            WHERE rat_id = :ratId
+            """, nativeQuery = true)
+    List<StandardKpi> findAllStandardKpiByRatWithOperands(@Param("ratId") Long ratId);
 }

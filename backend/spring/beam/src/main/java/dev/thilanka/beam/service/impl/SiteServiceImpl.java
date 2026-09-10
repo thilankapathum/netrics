@@ -52,7 +52,7 @@ public class SiteServiceImpl implements SiteService {
             try {
                 createdSites.add(createSite(dto));
             } catch (Exception e) {
-                log.warn("Failed to save site {}", dto.siteCode(), e);
+                log.warn("Failed to save site {}", dto.siteCode());
             }
         }
         return createdSites;
@@ -151,14 +151,14 @@ public class SiteServiceImpl implements SiteService {
             Operator operator = operatorService.findByName(dto.operatorName());
             site.setOperator(operator);
         } catch (Exception e) {
-            log.warn("Operator not found by {}", dto.operatorName(), e);
+            log.warn("Operator not found by {}", dto.operatorName());
             warnings.add("Operator not found by '" + dto.operatorName() + "'");
         }
         try {
             InfraType infraType = infraTypeService.extractInfraType(dto.infraType());
             site.setInfraType(infraType);
         } catch (Exception e) {
-            log.warn("InfraType not found by {}", dto.infraType(), e);
+            log.warn("InfraType not found by {}", dto.infraType());
             warnings.add("InfraType not found by '" + dto.infraType() + "'");
         }
 
@@ -196,8 +196,13 @@ public class SiteServiceImpl implements SiteService {
                 }
             } catch (ResourceNotFoundException e) {     //-- If no site exist by SiteCode
                 log.warn(e.getMessage());
-                SiteDto newSite = createSite(dto);
-                importResultDtos.add(new SiteCsvImportResultDto(newSite, CsvImportStatus.SUCCESS, "New site created"));
+                try {
+                    SiteDto newSite = createSite(dto);
+                    importResultDtos.add(new SiteCsvImportResultDto(newSite, CsvImportStatus.SUCCESS, "New site created"));
+                } catch (Exception ex) {
+                    log.warn("Error creating new site {} | {}", dto.siteCode(), ex.getMessage());
+                    importResultDtos.add(new SiteCsvImportResultDto(dto, CsvImportStatus.FAIL, ex.getMessage()));
+                }
             } catch (Exception e) {
                 log.warn("Error updating site {} | {}", dto.siteCode(), e.getMessage());
                 importResultDtos.add(new SiteCsvImportResultDto(dto, CsvImportStatus.FAIL, e.getMessage()));
@@ -239,15 +244,15 @@ public class SiteServiceImpl implements SiteService {
 
         try {
             operator = operatorService.findByName(dto.operatorName());
-        } catch (ResourceNotFoundException e) {
-            log.warn("Operator not found by {}", dto.operatorName(), e);
+        } catch (Exception e) {
+            log.warn("Operator not found by {}", dto.operatorName());
             operator = null;
         }
 
         try {
             infraType = infraTypeService.extractInfraType(dto.infraType());
-        } catch (ResourceNotFoundException e) {
-            log.warn("InfraType not found by {}", dto.infraType(), e);
+        } catch (Exception e) {
+            log.warn("InfraType not found by {}", dto.infraType());
             infraType = null;
         }
 

@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-3">
-  <nav class="flex flex-row flex-wrap gap-4 space-x-4 items-center">
+  <nav class="flex flex-row flex-wrap gap-2 space-x-2 items-center">
     <div class="breadcrumbs text-xs text-secondary grow-1">
       <ul>
         <li><a routerLink="/" (click)="clearSharedServiceData()">
@@ -13,6 +13,7 @@
         </a></li>
         <li [hidden]="!checkReturnPage('pulse')"><a routerLink="/pulse">Worst Cell Analysis</a></li>
         <li [hidden]="!checkReturnPage('pulse/map')"><a routerLink="/pulse/map">Spatial Analysis</a></li>
+        <li [hidden]="!checkReturnPage('/pulse/dashboard')"><a routerLink="/pulse/dashboard">Worst-Cell Dashboard</a></li>
         <li class=" font-bold">Cell Analysis</li>
       </ul>
     </div>
@@ -29,19 +30,6 @@
       <input disabled type="radio" name="cell_kpi_tabs" class="tab" value="s_cell_m_kpi" aria-label="Multi-KPI"
              [checked]="selectedChartType() === 's_cell_m_kpi'"
              (change)="setSelectedChartType($any($event.target).value)"/>
-    </div>
-
-    <div class="tabs tabs-box tabs-xs border border-base-300">
-      <input [disabled]="loadingAll()" type="radio" name="granularity_tabs"
-             class="tab text-primary hover:text-primary/80" value="day-average"
-             aria-label="Day Average"
-             [checked]="selectedGranularity() === 'day-average'"
-             (change)="setSelectedGranularity($any($event.target).value)"/>
-      <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70"
-             value="busy-hour"
-             aria-label="Busy Hour"
-             [checked]="selectedGranularity() === 'busy-hour'"
-             (change)="setSelectedGranularity($any($event.target).value)"/>
     </div>
 
     <div class="dropdown">
@@ -134,6 +122,19 @@
         }
       }
     </div>
+
+    <div class="tabs tabs-box tabs-xs border border-base-300">
+      <input [disabled]="loadingAll()" type="radio" name="granularity_tabs"
+             class="tab text-primary hover:text-primary/80" value="day-average"
+             aria-label="Day Average"
+             [checked]="selectedGranularity() === 'day-average'"
+             (change)="setSelectedGranularity($any($event.target).value)"/>
+      <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70"
+             value="busy-hour"
+             aria-label="Busy Hour"
+             [checked]="selectedGranularity() === 'busy-hour'"
+             (change)="setSelectedGranularity($any($event.target).value)"/>
+    </div>
   </nav>
   <section>
     <div [hidden]="!cellSelected()"
@@ -176,9 +177,7 @@
               </button>
             }
             @if (chartCellName().length > 1) {
-              <button [disabled]="loadingAll()" class="btn btn-xs btn-ghost" (click)="chartSeries.set([])">
-                Clear All
-              </button>
+              <button [disabled]="loadingAll()" class="btn btn-xs btn-ghost" (click)="clearAllChartCells()">Clear All</button>
             }
           </div>
         </div>

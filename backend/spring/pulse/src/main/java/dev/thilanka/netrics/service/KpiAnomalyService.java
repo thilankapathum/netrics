@@ -14,7 +14,7 @@ public interface KpiAnomalyService {
 
     PagedResponse<WorstCellsDto> getAllAnomalyCellsByArea(
             String period, String areaName, String ratName, String granularityName,
-            String severity, String kpiName, String sortBy, String sortDir, int page, int pageSize);
+            String severity, String kpiName, String sortBy, String sortDir, int page, int pageSize, String alarmCorrelation);
 
     AnomalySummaryDto getAnomalySummaryByArea(String areaName, String ratName, String granularityName, String kpiName);
 }

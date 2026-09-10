@@ -1,0 +1,297 @@
+<div class="flex flex-col gap-6 w-full max-w-4xl">
+
+  <!-- Header -->
+  <div>
+    <h2 class="text-xl font-semibold text-base-content">Site Management</h2>
+    <p class="text-xs text-secondary mt-1">
+      Create new sites or manage site information through exports and bulk corrections.
+    </p>
+  </div>
+
+  <div role="tablist" class="tabs tabs-lift">
+
+    <!-- CREATE SITE TAB -->
+
+    <input
+      type="radio"
+      name="site_management_tabs"
+      role="tab"
+      class="tab"
+      aria-label="Create Site"
+      checked
+    />
+
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-4">
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+
+        <!-- SINGLE SITE -->
+
+        <div class="flex flex-col gap-5 p-6 border border-base-300 rounded-lg bg-base-200/20">
+
+          <div>
+            <h3 class="text-lg font-semibold">Create Single Site</h3>
+            <p class="text-xs text-secondary mt-1">
+              Create a new site by entering its basic information.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3">
+
+            <input
+              type="text"
+              class="input input-bordered input-sm"
+              placeholder="Site ID"
+              [(ngModel)]="siteCode"
+              [disabled]="creatingSite()">
+
+            <input
+              type="text"
+              class="input input-bordered input-sm"
+              placeholder="Site Name"
+              [(ngModel)]="siteName"
+              [disabled]="creatingSite()">
+
+            <input
+              type="number"
+              class="input input-bordered input-sm"
+              placeholder="Latitude"
+              [(ngModel)]="latitude"
+              [disabled]="creatingSite()">
+
+            <input
+              type="number"
+              class="input input-bordered input-sm"
+              placeholder="Longitude"
+              [(ngModel)]="longitude"
+              [disabled]="creatingSite()">
+
+          </div>
+
+          <div class="flex gap-2 mt-2">
+
+            <button
+              class="btn btn-sm btn-success btn-outline"
+              [disabled]="creatingSite() || !isInputsValid() || !hasAnyRole(['PULSE_CREATE'])"
+              (click)="createSite()">
+
+              <span
+                [hidden]="!creatingSite()"
+                class="loading loading-spinner loading-xs">
+              </span>
+
+              <span [hidden]="creatingSite()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5V19M5 12H19"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"/>
+                </svg>
+              </span>
+
+              Create Site
+            </button>
+
+            <button
+              class="btn btn-sm btn-ghost"
+              [disabled]="creatingSite()"
+              (click)="resetSingleSiteForm()">
+              Clear
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- BULK CREATE -->
+        <!-- ===================================================== -->
+
+        <div class="flex flex-col gap-5 p-6 border border-base-300 rounded-lg bg-base-200/20">
+
+          <div>
+            <h3 class="text-lg font-semibold">Bulk Create</h3>
+            <p class="text-xs text-secondary mt-1">
+              Paste a JSON array to create multiple sites in a single operation.
+            </p>
+          </div>
+
+          <textarea
+            [(ngModel)]="siteListJson"
+            [disabled]="creatingSites()"
+            class="textarea textarea-bordered h-64 font-mono text-sm"
+            placeholder='[
+  {
+    "siteCode":"KYKAN1",
+    "siteName":"Kandy 1",
+    "latitude":7.29,
+    "longitude":80.63
+  }
+]'>
+          </textarea>
+
+          <div class="flex gap-2 mt-2">
+
+            <button
+              class="btn btn-sm btn-success btn-outline"
+              [disabled]="creatingSites() || !isJsonInputValid() || !hasAnyRole(['PULSE_CREATE'])"
+              (click)="createSiteList(siteListJson())">
+
+              <span
+                [hidden]="!creatingSites()"
+                class="loading loading-spinner loading-xs">
+              </span>
+
+              <span [hidden]="creatingSites()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5V19M5 12H19"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"/>
+                </svg>
+              </span>
+
+              Create Sites
+            </button>
+
+            <button
+              class="btn btn-sm btn-ghost"
+              [disabled]="creatingSites()"
+              (click)="siteListJson.set('')">
+
+              Clear
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- SITE INFORMATION TAB -->
+
+    <input
+      type="radio"
+      name="site_management_tabs"
+      role="tab"
+      class="tab"
+      aria-label="Site Information"
+    />
+
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-4">
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- EXPORT -->
+
+        <div class="flex flex-col gap-5 p-6 border border-base-300 rounded-lg bg-base-200/20">
+
+          <h3 class="text-lg font-semibold">Download Data</h3>
+
+          <div class="flex flex-col gap-2">
+
+            <p class="text-xs text-secondary">
+              Download sites that are missing information to correct them.
+            </p>
+
+            <button
+              [disabled]="loadingMissingSiteInfoDownload"
+              class="btn btn-sm btn-outline btn-error self-start"
+              (click)="exportSitesWithMissingInfo()">
+
+              <span
+                [hidden]="!loadingMissingSiteInfoDownload"
+                class="loading loading-spinner loading-xs">
+              </span>
+
+              <span [hidden]="loadingMissingSiteInfoDownload">
+                Download Missing
+              </span>
+
+            </button>
+
+          </div>
+
+          <div class="divider my-0"></div>
+
+          <div class="flex flex-col gap-2">
+
+            <p class="text-xs text-secondary">
+              Download a complete master list of all sites.
+            </p>
+
+            <button
+              [disabled]="loadingAllSitesDownload"
+              class="btn btn-sm btn-outline btn-primary self-start"
+              (click)="exportAllSites()">
+
+              <span
+                [hidden]="!loadingAllSitesDownload"
+                class="loading loading-spinner loading-xs">
+              </span>
+
+              <span [hidden]="loadingAllSitesDownload">
+                Download All
+              </span>
+
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- IMPORT -->
+
+        <div class="flex flex-col gap-5 p-6 border border-base-300 rounded-lg bg-base-200/20">
+
+          <h3 class="text-lg font-semibold">Upload Corrections</h3>
+
+          <div class="flex flex-col gap-3">
+
+            <p class="text-xs text-secondary">
+              Upload a CSV file containing corrected site information.
+            </p>
+
+            <div class="form-control w-full">
+
+              <input
+                [disabled]="loadingMissingSiteInfoUpload"
+                #siteMissingInfoFileInput
+                type="file"
+                accept=".csv"
+                class="file-input file-input-bordered file-input-sm w-full">
+
+            </div>
+
+            <button
+              [disabled]="loadingMissingSiteInfoUpload"
+              class="btn btn-sm btn-success btn-outline self-start mt-2"
+              (click)="importSitesWithCorrectedInfo(siteMissingInfoFileInput)">
+
+              <span
+                [hidden]="!loadingMissingSiteInfoUpload"
+                class="loading loading-spinner loading-xs">
+              </span>
+
+              <span [hidden]="loadingMissingSiteInfoUpload">
+                Upload Corrections
+              </span>
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

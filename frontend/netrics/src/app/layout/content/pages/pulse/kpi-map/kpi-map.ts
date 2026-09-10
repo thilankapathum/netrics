@@ -169,7 +169,7 @@ export class KpiMap implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Area for User. ${error.status} ${error.statusText}`);
+        this.alertService.error('Error getting Area for User', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }
@@ -191,7 +191,7 @@ export class KpiMap implements OnInit {
           this.loadingAreaTypes = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
           this.loadingAreaTypes = false;
         }
       }
@@ -216,7 +216,7 @@ export class KpiMap implements OnInit {
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
         this.loadingAreas = false;
       }
     })
@@ -236,7 +236,7 @@ export class KpiMap implements OnInit {
         this.loadingGranularity = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving granularities. ${error.status}:${error.statusText}`);
+        this.alertService.error('Error retrieving granularities', 'Error', `${error.status}:${error.statusText}`);
         this.loadingGranularity = false;
       }
     })
@@ -259,7 +259,7 @@ export class KpiMap implements OnInit {
         this.loadingRats = false;
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving RATs. ${error.status}:${error.statusText}`);
+        this.alertService.error('Error retrieving RATs', 'Error', `${error.status}:${error.statusText}`);
         this.loadingRats = false;
       }
     })
@@ -289,7 +289,7 @@ export class KpiMap implements OnInit {
       }, error: error => {
         console.log("Error getAllStandardKpi:");
         console.error(error);
-        this.alertService.error(`Standard KPI retrieval failed. ${error.status} ${error.statusText}`);
+        this.alertService.error('Standard KPI retrieval failed', 'Error', `${error.status} ${error.statusText}`);
         this.loadingStandardKpis = false;
       }
     })
@@ -308,7 +308,7 @@ export class KpiMap implements OnInit {
         this.sharedService.clearAll();
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving latest date. ${error.status}:${error.statusText}`);
+        this.alertService.error('Error retrieving latest date', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -320,7 +320,7 @@ export class KpiMap implements OnInit {
         console.log(this.bands);
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error retrieving Bands. ${error.status}:${error.statusText}`);
+        this.alertService.error('Error retrieving Bands', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -336,7 +336,7 @@ export class KpiMap implements OnInit {
         if (error.status === 404) {
           this.isThresholdAvailable.set(false);
         } else {
-          this.alertService.error(`Error retrieving thresholds ${error.status}:${error.statusText}`);
+          this.alertService.error('Error retrieving thresholds', 'Error', `${error.status}:${error.statusText}`);
         }
       }
     })
@@ -376,7 +376,7 @@ export class KpiMap implements OnInit {
           this.filteredSites.set(data);
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error searching site. ${error.status} ${error.statusText}`);
+          this.alertService.error('Error searching site', 'Error', `${error.status} ${error.statusText}`);
         }
       });
     } else{
@@ -449,7 +449,7 @@ export class KpiMap implements OnInit {
           this.savingThresholds = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error creating Threshold Set ${error.status}:${error.statusText}`);
+          this.alertService.error('Error creating Threshold Set', 'Error', `${error.status}:${error.statusText}`);
           this.savingThresholds = false;
         }
       })
@@ -461,7 +461,7 @@ export class KpiMap implements OnInit {
           this.savingThresholds = false;
         }, error: error => {
           console.log(error);
-          this.alertService.error(`Error updating thresholds ${error.status}:${error.statusText}`);
+          this.alertService.error('Error updating thresholds', 'Error', `${error.status}:${error.statusText}`);
           this.savingThresholds = false;
         }
       })

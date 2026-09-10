@@ -1,53 +1,164 @@
 <dialog #analysisModal id="analyse_modal" class="modal w-full ">
-  <div class="modal-box max-w-6xl border border-base-300">
+  <div class="modal-box max-w-6xl border border-base-300 bg-base-200">
 
-    <div class="flex flex-row gap-2 flex-wrap mb-2">
-      <h3 class="text-lg font-bold"> <span class="font-medium text-secondary">{{extractCurrentCellIndex(analysisModalCell, allWorstCells) + 1}}.</span> {{ analysisModalCell }}</h3>
-      <div class="tabs tabs-box tabs-xs ml-auto">
-        <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab" aria-label="Week (hourly)"
-               [(ngModel)]="selectedKpiTrendPeriodModal" [value]="'week'" (ngModelChange)="onPeriodChangeModal($event)"/>
-        <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab" aria-label="Month" checked="checked"
-               [(ngModel)]="selectedKpiTrendPeriodModal"
-               [value]="'month'" (ngModelChange)="onPeriodChangeModal($event)"/>
+    <div class="flex flex-row gap-2 flex-wrap mb-2 items-center">
+      <h3 class="text-lg font-bold">
+        <span class="font-medium text-secondary">{{ extractCurrentCellIndex(analysisModalCell, allWorstCells) + 1 }}
+          .</span>
+        {{ analysisModalCell }}
+      </h3>
+
+      <div class="tabs tabs-box tabs-xs ml-auto border border-base-300">
+        <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab"
+               aria-label="Week (hourly)"
+               [(ngModel)]="selectedKpiTrendPeriodModal" [value]="'week'"
+               (ngModelChange)="onPeriodChangeModal($event)"/>
+        <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab" aria-label="Month"
+               checked="checked"
+               [(ngModel)]="selectedKpiTrendPeriodModal" [value]="'month'"
+               (ngModelChange)="onPeriodChangeModal($event)"/>
         <input [disabled]="loadingAll()" type="radio" name="period_tabs_analysis_modal" class="tab" aria-label="Quarter"
-               [(ngModel)]="selectedKpiTrendPeriodModal"
-               [value]="'quarter'" (ngModelChange)="onPeriodChangeModal($event)"/>
+               [(ngModel)]="selectedKpiTrendPeriodModal" [value]="'quarter'"
+               (ngModelChange)="onPeriodChangeModal($event)"/>
       </div>
     </div>
 
-    @if (loadingAnalysisModalChart) {
+    @if (loadingAnalysisModalChart && !alarmTableExpanded) {
       <div class="flex w-full flex-col gap-4 mt-2 mb-2">
         <div class="skeleton h-84 w-full"></div>
       </div>
     }
 
-<!--    <app-linechart [hidden]="loadingAnalysisModalChart" [chartSeries]="chartSeries"></app-linechart>-->
-    <app-linechart
-      [hidden]="loadingAnalysisModalChart"
-      [chartSeries]="chartSeries"
-      [yaxisOverride]="modalYAxis">
-    </app-linechart>
+    <div class="bg-base-100 border border-base-300 rounded-xl overflow-hidden"
+         [style.height.px]="alarmTableExpanded || loadingAnalysisModalChart ? 0 : 340"
+         [class.p-0]="alarmTableExpanded"
+         [class.border-0]="alarmTableExpanded">
+      <app-linechart
+        [hidden]="loadingAnalysisModalChart"
+        [chartSeries]="chartSeries"
+        [yaxisOverride]="modalYAxis">
+      </app-linechart>
+    </div>
+
+    <div>
+      @if (showAlarmDetails && analysisModalCellAlarms.length > 0) {
+        <div class="flex justify-center -my-2 relative z-10">
+          <button type="button"
+                  class="btn btn-xs btn-circle btn-ghost bg-base-100 border border-base-300 shadow-sm"
+                  [attr.title]="alarmTableExpanded ? 'Restore trend chart' : 'Maximize alarm table'"
+                  (click)="alarmTableExpanded = !alarmTableExpanded">
+            @if (alarmTableExpanded) {
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round"/>
+              </svg>
+            } @else {
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round"/>
+              </svg>
+            }
+          </button>
+        </div>
+
+        <div class="p-1 bg-base-100 border border-base-300 rounded-xl">
+          <div class="overflow-x-auto overflow-y-auto" [style.height.px]="alarmTableExpanded ? 420 : 96">
+            <table class="table table-xs table-pin-rows table-zebra">
+              <thead>
+              <tr class="text-xs uppercase">
+                <th class="font-semibold">Severity</th>
+                <th class="font-semibold">Alarm Type</th>
+                <th class="font-semibold">Alarm Name</th>
+                <th class="font-semibold">Node</th>
+                <th class="font-semibold">Occurrence Time</th>
+                <th class="font-semibold">Clear</th>
+                <th class="font-semibold"></th>
+              </tr>
+              </thead>
+              <tbody>
+                @for (alarm of analysisModalCellAlarms; track alarm.alarmId) {
+                  <tr>
+                    <td><span class="badge badge-xs"
+                              [class]="alarmSeverityBadgeClass(alarm.severity)">{{ alarm.severity }}</span></td>
+                    <td>{{ alarm.alarmType }}</td>
+                    <td>{{ alarm.alarmName }}</td>
+                    <td>{{ alarm.nodeName }}</td>
+                    <td>{{ alarm.occurrenceTime | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>
+                      @if (alarm.clearState == 'CLEARED') {
+                        <div class="badge badge-success badge-soft badge-outline badge-xs">{{ alarm.clearState }}</div>
+                      } @else {
+                        <div class="badge badge-soft badge-neutral badge-xs">{{ alarm.clearState }}</div>
+                      }
+                    </td>
+                    <td>
+                      <button type="button"
+                              class="btn btn-ghost btn-xs btn-circle text-primary"
+                              (mouseenter)="showInfoPopover($event, alarm)"
+                              (mouseleave)="scheduleHideInfoPopover()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path
+                            d="M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 8V8.1L11.9502 8.1002V8H12.0498Z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+
+
     <div class="modal-action">
-      <div class="flex flex-row mr-auto gap-2">
-        <button [disabled]="!isPrevCellAvailable(analysisModalCell, allWorstCells)" class="btn btn-outline btn-secondary btn-sm" (click)="onPrevCell()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+      <div class="flex flex-row mr-auto gap-6">
+        <div class="flex flex-row gap-1 items-center">
+          <button [disabled]="!isPrevCellAvailable(analysisModalCell, allWorstCells)"
+                  class="btn btn-outline btn-secondary btn-sm" (click)="onPrevCell()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </button>
 
-        </button>
+          <button [disabled]="!isNextCellAvailable(analysisModalCell, allWorstCells)"
+                  class="btn btn-outline btn-secondary btn-sm" (click)="onNextCell()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
 
-        <button [disabled]="!isNextCellAvailable(analysisModalCell, allWorstCells)" class="btn btn-outline btn-secondary btn-sm" (click)="onNextCell()">
-
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <label [hidden]="!standardRawKpiMappingAvailable()" class="label ml-6">
-          <input type="checkbox" class="checkbox" [(ngModel)]="showOperands" (ngModelChange)="onShowOperandsChangeModal($event)" />
+        <label [hidden]="!standardRawKpiMappingAvailable()" class="label text-xs">
+          <input type="checkbox" class="checkbox checkbox-sm" [(ngModel)]="showOperands"
+                 (ngModelChange)="onShowOperandsChangeModal($event)"/>
           Show Operands
         </label>
+
+        @if (analysisModalCellAlarms.length > 0) {
+          <div class="p-1 flex flex-row items-center gap-2 border border-base-300 rounded-lg">
+            <div class="flex flex-row items-center">
+              <label class="label cursor-pointer gap-1 w-fit">
+                <input type="checkbox" class="checkbox checkbox-sm"
+                       [ngModel]="showAlarmDetails"
+                       (ngModelChange)="onShowAlarmDetailsToggle($event)"/>
+                <span class="label-text text-xs">Show Node Alarms</span>
+              </label>
+            </div>
+
+            <div class="flex flex-row gap-1 flex-wrap">
+              @for (item of alarmSeverityCounts; track item.severity) {
+                <span class="badge badge-xs" [class]="alarmSeverityBadgeClass(item.severity)">
+                {{ item.count }}
+              </span>
+              }
+            </div>
+          </div>
+        }
       </div>
       <div class="flex flex-row mr-auto items-center">
 
@@ -60,7 +171,6 @@
                 stroke-linejoin="round"/>
         </svg>
       </a>
-
 
 
       <form method="dialog">
@@ -126,11 +236,13 @@
         </select>
       </div>
       <div class="tabs tabs-box tabs-xs border border-base-300">
-        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-primary hover:text-primary/80" value="day-average"
+        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs"
+               class="tab text-primary hover:text-primary/80" value="day-average"
                aria-label="Day Average"
                [checked]="selectedGranularity() === 'day-average'"
                (change)="setSelectedGranularity($any($event.target).value)"/>
-        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70" value="busy-hour"
+        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs" class="tab text-error hover:text-error/70"
+               value="busy-hour"
                aria-label="Busy Hour"
                [checked]="selectedGranularity() === 'busy-hour'"
                (change)="setSelectedGranularity($any($event.target).value)"/>
@@ -232,11 +344,14 @@
         <div class="flex flex-row gap-2">
           <h2 class="text-xl font-semibold">KPI Trend</h2>
           <div class="tabs tabs-box tabs-xs ml-auto">
-            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Week" checked="checked"
+            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Week"
+                   checked="checked"
                    [(ngModel)]="selectedKpiTrendPeriod" [value]="'week'" (ngModelChange)="onPeriodChange($event)"/>
-            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Month" [(ngModel)]="selectedKpiTrendPeriod"
+            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Month"
+                   [(ngModel)]="selectedKpiTrendPeriod"
                    [value]="'month'" (ngModelChange)="onPeriodChange($event)"/>
-            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Quarter" [(ngModel)]="selectedKpiTrendPeriod"
+            <input [disabled]="loadingAll()" type="radio" name="period_tabs" class="tab" aria-label="Quarter"
+                   [(ngModel)]="selectedKpiTrendPeriod"
                    [value]="'quarter'" (ngModelChange)="onPeriodChange($event)"/>
           </div>
         </div>
@@ -244,7 +359,8 @@
           <div class="skeleton h-64 w-full"></div>
         </div>
         <app-line-chart [hidden]="loadingKpiTrend || bandWise" [kpiTrendData]="kpiTrendData"></app-line-chart>
-        <app-linechart [hidden]="loadingKpiTrend || !bandWise" [chartSeries]="bandChartSeries()" [chartHeight]="215"></app-linechart>
+        <app-linechart [hidden]="loadingKpiTrend || !bandWise" [chartSeries]="bandChartSeries()"
+                       [chartHeight]="215"></app-linechart>
       </section>
 
 
@@ -272,7 +388,7 @@
               <div class="skeleton h-4 w-full"></div>
             </div>
           }
-          <table [hidden]="loadingWorstCells" class="table table-sm">
+          <table [hidden]="loadingWorstCells" class="table table-sm [&_td]:whitespace-nowrap">
             <thead>
             <tr>
               <th class="font-semibold">#</th>
@@ -287,23 +403,36 @@
                 <tr
                   class="hover:bg-base-200 cursor-pointer border-l-4"
                   [class]="severityBorderClass(cell.severity)"
-                  (click)="openAnalysisModal(cell.kpiName!, cell.cellName!)">
+                  (click)="openAnalysisModal(cell.kpiName!, cell.cellName!, cell.timestamp!)">
                   <td>{{ (currentPage * pageSize) + (i + 1) }}</td>
                   <td>
                     <div class="flex items-center gap-2">
-                      <span>{{ cell.cellName }}</span>
+                      <span class="tooltip" [attr.data-tip]="cell.cellName">
+                        {{ truncateMiddle(cell.cellName) }}
+                      </span>
+                      @if (cell.hasAlarmCorrelation) {
+                        <div
+                          class="tooltip before:text-xs"
+                          [attr.data-tip]="getAlarmTooltip(cell)">
+                          <div class="w-2 h-2 rounded-full bg-error"></div>
+                        </div>
+                      }
                     </div>
                   </td>
-                  <td>{{ cell.kpiLabel }}</td>
+                  <td class="max-w-[110px]">
+                    <span class="tooltip truncate block" [attr.data-tip]="cell.kpiLabel">
+                      {{ cell.kpiLabel }}
+                    </span>
+                  </td>
                   <td>
-          <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
-            {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
-          </span> &nbsp;
-                    <span class="badge badge-soft badge-sm"
+                    <span [class]="isKpiValueRed(cell) ? 'text-error font-semibold' : ''">
+                      {{ cell.value | number :'1.2-2' }}{{ cell.unit }}
+                    </span> &nbsp;
+                    <span class="badge badge-soft badge-xs"
                           [class]="cell.improved ? 'badge-success' : 'badge-error'">&nbsp;@if (cell.difference! > 0) {
                       +
                     }{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
-          </span>
+                    </span>
                   </td>
                   <td>
                     @if (cell.consecutiveBadDays! < 31) {
@@ -333,20 +462,24 @@
                       (click)="nextPage()">»
               </button>
               <label class="label ms-4 text-xs">
-                <input [disabled]="loadingAll()" type="checkbox" [(ngModel)]="excludeZeroes" (ngModelChange)="onExcludeZeroesChange($event)"
+                <input [disabled]="loadingAll()" type="checkbox" [(ngModel)]="excludeZeroes"
+                       (ngModelChange)="onExcludeZeroesChange($event)"
                        class="checkbox checkbox-sm"/>
                 Exclude zeroes
               </label>
               <label class="label ms-4 text-xs">
-                <input [disabled]="loadingAll()" type="checkbox" [(ngModel)]="bandWise" (ngModelChange)="onBandWiseChange($event)"
+                <input [disabled]="loadingAll()" type="checkbox" [(ngModel)]="bandWise"
+                       (ngModelChange)="onBandWiseChange($event)"
                        class="checkbox checkbox-sm"/>
                 Band-wise
               </label>
 
               <div class="filter" [hidden]="!bandWise">
-                <input [disabled]="loadingAll()" class="btn btn-xs filter-reset" (change)="selectBand('')" type="radio" name="bands" aria-label="All"/>
-                @for (band of bands; track $index){
-                  <input [disabled]="loadingAll()" class="btn btn-xs" [(ngModel)]="selectedBand" [value]="band.name" (change)="selectBand(band.name!)" type="radio" name="bands" [attr.aria-label]="band.name"/>
+                <input [disabled]="loadingAll()" class="btn btn-xs filter-reset" (change)="selectBand('')" type="radio"
+                       name="bands" aria-label="All"/>
+                @for (band of bands; track $index) {
+                  <input [disabled]="loadingAll()" class="btn btn-xs" [(ngModel)]="selectedBand" [value]="band.name"
+                         (change)="selectBand(band.name!)" type="radio" name="bands" [attr.aria-label]="band.name"/>
                 }
               </div>
 
@@ -356,5 +489,40 @@
       </section>
     </div>
   </div>
+  <div #infoPopover
+       popover="manual"
+       class="bg-base-100 border border-base-300 rounded-box shadow-xl p-4 text-xs w-[384px] space-y-2"
+       [style.top]="popoverStyle().top"
+       [style.left]="popoverStyle().left"
+       (mouseenter)="cancelHideInfoPopover()"
+       (mouseleave)="scheduleHideInfoPopover()">
+    @if (hoveredAlarm(); as alarm) {
+      <div class="grid grid-cols-2">
+        <div>
+          <div class="font-semibold text-neutral/50 uppercase">Alarm Code</div>
+          <div>{{ alarm.alarmCode }}</div>
+        </div>
+        <div class="flex flex-row justify-end">
+          @if (alarm.ackState == 'ACKNOWLEDGED') {
+            <div class="badge badge-xs badge-info badge-soft badge-outline">{{ alarm.ackState }}</div>
+          } @else {
+            <div class="badge badge-xs badge-neutral badge-soft">{{ alarm.ackState }}</div>
+          }
+        </div>
+      </div>
+      <div>
+        <div class="font-semibold text-neutral/50 uppercase">Location</div>
+        <div class="break-words">{{ alarm.location || '—' }}</div>
+      </div>
+      <div>
+        <div class="font-semibold text-neutral/50 uppercase">Additional Info</div>
+        <div class="break-words">{{ alarm.additionalInfo || '—' }}</div>
+      </div>
+      <div>
+        <div class="font-semibold text-neutral/50 uppercase">Specific Problem</div>
+        <div class="break-words">{{ alarm.specificProblem || '—' }}</div>
+      </div>
+    }
+  </div>
 </div>
-<app-ps-cells [open]="showMissingCellInfoModal" (closed)="closeMissingCellInfoModal()" ></app-ps-cells>
+<app-ps-cells [open]="showMissingCellInfoModal" (closed)="closeMissingCellInfoModal()"></app-ps-cells>

@@ -53,14 +53,7 @@
                [checked]="granularity() === 'busy-hour'"
                (change)="setGranularity($any($event.target).value)"/>
       </div>
-      <div>
-        <select [disabled]="loadingAll()" class="select select-sm ml-auto" [(ngModel)]="standardKpi"
-                (change)="selectKpi(standardKpi()!, rat()!, granularity()!)">
-          @for (kpi of standardKpis; track $index) {
-            <option [value]="kpi.kpiName">{{ kpi.label }}</option>
-          }
-        </select>
-      </div>
+
       <div class="flex flex-row gap-2 items-center">
         <button [disabled]="loadingAll()" #startDateBtn
                 class="input input-bordered input-sm w-auto"
@@ -148,21 +141,32 @@
                       [showSiteLabels]="showSiteLabels"
                       [selectedSite]="selectedSite()!"
                       [selectedBand]="activeBand()"></app-sector-map>
+      <div class="flex flex-col gap-2">
+        <div>
+          <select [disabled]="loadingAll()" class="select select-sm ml-auto" [(ngModel)]="standardKpi"
+                  (change)="selectKpi(standardKpi()!, rat()!, granularity()!)">
+            @for (kpi of standardKpis; track $index) {
+              <option [value]="kpi.kpiName">{{ kpi.label }}</option>
+            }
+          </select>
+        </div>
+        <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
+                             [standardKpiLabel]="extractStandardKpiLabel(standardKpi()!)"
+                             [isAdmin]="isAdmin()"
+                             (isAdminChange)="onLegendTypeChange($event)"
+                             [isThresholdAvailable]="isThresholdAvailable"
+                             (openCellMapLegendEditModal)="openCellMapLegendEditModal()"
+                             [isThresholdEditable]="isThresholdsEditable()"
+                             [isThresholdsCustomizable]="isThresholdsCustomizable()"
+                             (isShowSiteLabelsChange)="onShowSiteLabelsChange($event)"
+                             [bands]="bands"
+                             (activeBandChange)="onActiveBandChange($event)"
 
-      <app-cell-map-legend [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
-                           [standardKpiLabel]="extractStandardKpiLabel(standardKpi()!)"
-                           [isAdmin]="isAdmin()"
-                           (isAdminChange)="onLegendTypeChange($event)"
-                           [isThresholdAvailable]="isThresholdAvailable"
-                           (openCellMapLegendEditModal)="openCellMapLegendEditModal()"
-                           [isThresholdEditable]="isThresholdsEditable()"
-                           [isThresholdsCustomizable]="isThresholdsCustomizable()"
-                           (isShowSiteLabelsChange)="onShowSiteLabelsChange($event)"
-                           [bands]="bands"
-                           (activeBandChange)="onActiveBandChange($event)"
+
+        ></app-cell-map-legend>
+      </div>
 
 
-      ></app-cell-map-legend>
     </div>
   </section>
 </div>

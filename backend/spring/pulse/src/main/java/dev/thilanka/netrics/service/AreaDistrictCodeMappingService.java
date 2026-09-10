@@ -14,4 +14,6 @@ public interface AreaDistrictCodeMappingService {
     List<AreaDistrictCodeMappingDto> createAreaDistrictCodeMappings(List<AreaDistrictCodeMappingDto> dtos);
 
     List<AreaDistrictCodeMappingDto> getAll();
+
+    void deleteAreaDistrictCodeMapping(Long id);
 }

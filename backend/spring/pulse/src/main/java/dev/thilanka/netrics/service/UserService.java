@@ -3,6 +3,8 @@ package dev.thilanka.netrics.service;
 import dev.thilanka.netrics.dto.UserDto;
 import dev.thilanka.netrics.entity.User;
 
+import java.util.List;
+
 public interface UserService {
 
     User createUser(User user);
@@ -14,4 +16,8 @@ public interface UserService {
     User findUserByUsername(String username);
 
     User findByUserId(String userId);
+
+    List<UserDto> getAllRealmUsers();
+
+    UserDto getRealmUserById(String userId);
 }

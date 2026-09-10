@@ -64,7 +64,7 @@ export class PsSiteInfo {
       error: error => {
         console.log("Error exporting site information:");
         console.error(error);
-        this.alertService.error(`Error exporting site information! - ${error.statusText}`);
+        this.alertService.error('Error exporting site information', 'Error', `${error.statusText}`);
         this.loadingAllSitesDownload = false;
       }
     })

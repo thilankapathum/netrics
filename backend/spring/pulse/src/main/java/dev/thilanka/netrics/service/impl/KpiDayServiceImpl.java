@@ -5,7 +5,9 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.district.District;
 import dev.thilanka.netrics.mapper.Mapper;
+import dev.thilanka.netrics.repository.AlarmRepository;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
+import dev.thilanka.netrics.repository.CellMappingRepository;
 import dev.thilanka.netrics.repository.KpiAnomalyRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.*;
@@ -14,17 +16,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class KpiDayServiceImpl implements KpiDayService {
+
+    private static final int MAX_CHAIN_HOPS = 20; // ponytail: hard cap, revisit only if real chains exceed it
 
     //-- Snapshot: Single whole KPI value considering the KPI and Period
     //-- Standard KPI: KPIs like 'E-RAB Setup Success Rate', 'DL Volume (Kbyte)'
@@ -46,6 +54,8 @@ public class KpiDayServiceImpl implements KpiDayService {
     private final BandService bandService;
     private final KpiHourService kpiHourService;
     private final KpiAnomalyRepository kpiAnomalyRepository;
+    private final AlarmRepository alarmRepository;
+    private final CellMappingRepository cellMappingRepository;
 
     @Override
     public boolean checkImproved(String worstOrder, Double difference) {
@@ -302,6 +312,15 @@ public class KpiDayServiceImpl implements KpiDayService {
                 .plusSeconds(granularity.getPlusSeconds());
         LocalDateTime previousStart = preTimestamp.minusDays(dateService.getPeriod(period)).toLocalDate().atStartOfDay();
 
+        // NOTE: unchanged — this overload doesn't merge severity either, so
+        // alarm correlation isn't merged here for consistency. findWorstCells
+        // returns WorstCellsDto directly via constructor projection; its
+        // SELECT list doesn't populate consecutiveBadDays/severity/the 4 new
+        // alarm-correlation fields either, so those come back null here (same
+        // as the pre-existing behavior for consecutiveBadDays/severity).
+        // If this overload needs correlation data too, it would need the
+        // same two-query merge pattern used in the Area/AreaAndBand overloads
+        // below — say if you want that added.
         return kpiDayRepository.findWorstCells(standardKpi.getId(), timestamp, currentStart, preTimestamp, previousStart, rat.getId(), excludeZeroes, granularity.getId());
     }
 
@@ -333,7 +352,11 @@ public class KpiDayServiceImpl implements KpiDayService {
         // Query 2: streaks only for the specific cells returned above — 30-day window
         //          but filtered to just N cell names instead of the whole area
         List<String> cellNames = worstCells.stream()
-                .map(WorstCellsProjection::cellName)
+                .map(WorstCellsProjection::getCellName)
+                .toList();
+
+        List<LocalDateTime> cellTimestamps = worstCells.stream()
+                .map(WorstCellsProjection::getTimestamp)
                 .toList();
 
         Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
@@ -362,20 +385,44 @@ public class KpiDayServiceImpl implements KpiDayService {
                         CellSeverityProjection::severity
                 ));
 
+        // Sibling lookup to severities above — same window/params, separate
+        // query since kpi_values (worst-cells source) carries no
+        // alarm-correlation columns itself. A cell absent from this map
+        // never had a kpi_anomalies row for this window at all (not the
+        // same as "had one, but hasAlarmCorrelation = false").
+        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = alarmRepository.findLiveAlarmCorrelationsForCells(
+                        cellNames.toArray(String[]::new),
+                        cellTimestamps.toArray(LocalDateTime[]::new),
+                        granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellAlarmCorrelationProjection::cellName,
+                        c -> c
+                ));
+
 
         return worstCells.stream()
-                .map(wc -> new WorstCellsDto(
-                        wc.cellName(),
-                        wc.kpiName(),
-                        wc.kpiLabel(),
-                        wc.unit(),
-                        wc.value(),
-                        wc.previousValue(),
-                        wc.difference(),
-                        wc.improved(),
-                        streaks.getOrDefault(wc.cellName(), 0),
-                        severities.get(wc.cellName())
-                ))
+                .map(wc -> {
+                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.getCellName());
+                    return new WorstCellsDto(
+                            wc.getTimestamp(),
+                            wc.getCellName(),
+                            wc.getKpiName(),
+                            wc.getKpiLabel(),
+                            wc.getUnit(),
+                            wc.getValue(),
+                            wc.getPreviousValue(),
+                            wc.getDifference(),
+                            wc.getImproved(),
+                            streaks.getOrDefault(wc.getCellName(), 0),
+                            severities.get(wc.getCellName()),
+                            ac == null ? null : ac.hasAlarmCorrelation(),
+                            ac == null ? null : ac.distinctAlarmDefCount(),
+                            ac == null ? null : ac.totalAlarmOccurrences(),
+                            ac == null ? null : ac.bestMatchLevel()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -406,7 +453,11 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         // Query 2: streaks for the returned cells only — reuses findStreaksForCells unchanged
         List<String> cellNames = worstCells.stream()
-                .map(WorstCellsProjection::cellName)
+                .map(WorstCellsProjection::getCellName)
+                .toList();
+
+        List<LocalDateTime> cellTimestamps = worstCells.stream()
+                .map(WorstCellsProjection::getTimestamp)
                 .toList();
 
         Map<String, Integer> streaks = kpiDayRepository.findStreaksForCells(
@@ -432,20 +483,39 @@ public class KpiDayServiceImpl implements KpiDayService {
                         CellSeverityProjection::severity
                 ));
 
+        Map<String, CellAlarmCorrelationProjection> alarmCorrelations = alarmRepository.findLiveAlarmCorrelationsForCells(
+                        cellNames.toArray(String[]::new),
+                        cellTimestamps.toArray(LocalDateTime[]::new),
+                        granularity.getId()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        CellAlarmCorrelationProjection::cellName,
+                        c -> c
+                ));
+
         // Merge
         return worstCells.stream()
-                .map(wc -> new WorstCellsDto(
-                        wc.cellName(),
-                        wc.kpiName(),
-                        wc.kpiLabel(),
-                        wc.unit(),
-                        wc.value(),
-                        wc.previousValue(),
-                        wc.difference(),
-                        wc.improved(),
-                        streaks.getOrDefault(wc.cellName(), 0),
-                        severities.get(wc.cellName())
-                ))
+                .map(wc -> {
+                    CellAlarmCorrelationProjection ac = alarmCorrelations.get(wc.getCellName());
+                    return new WorstCellsDto(
+                            wc.getTimestamp(),
+                            wc.getCellName(),
+                            wc.getKpiName(),
+                            wc.getKpiLabel(),
+                            wc.getUnit(),
+                            wc.getValue(),
+                            wc.getPreviousValue(),
+                            wc.getDifference(),
+                            wc.getImproved(),
+                            streaks.getOrDefault(wc.getCellName(), 0),
+                            severities.get(wc.getCellName()),
+                            ac == null ? null : ac.hasAlarmCorrelation(),
+                            ac == null ? null : ac.distinctAlarmDefCount(),
+                            ac == null ? null : ac.totalAlarmOccurrences(),
+                            ac == null ? null : ac.bestMatchLevel()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -496,6 +566,12 @@ public class KpiDayServiceImpl implements KpiDayService {
 //        Long periodValue = dateService.getPeriod(period);
 
 
+        List<KpiDataDto> primary = fetchCellData(standardKpi, cellName, rat, granularity, timestamp, startTimestamp);
+        return fillFromAncestors(primary, cellName, standardKpi, rat, granularity, timestamp, startTimestamp);
+    }
+
+    private List<KpiDataDto> fetchCellData(StandardKpi standardKpi, String cellName, Rat rat, Granularity granularity,
+                                            LocalDateTime timestamp, LocalDateTime startTimestamp) {
         if (granularity.getName().equals("hour")) {        //-- Query trend data hourly
             return kpiHourService.getDataByKpiAndCell(standardKpi.getId(), cellName, timestamp, startTimestamp, rat.getId(), granularity.getId());
         } else {
@@ -504,6 +580,50 @@ public class KpiDayServiceImpl implements KpiDayService {
                     .map(mapper::kpiDataToDto)
                     .collect(Collectors.toList());
         }
+    }
+
+    // Immediate-previous-cell first. Depends on CellMappingRepository directly (not CellService/
+    // CellMappingService) to avoid a bean cycle: CellServiceImpl already depends on KpiDayService.
+    private List<String> getAncestorCellNames(String cellName) {
+        List<String> ancestors = new ArrayList<>();
+        String current = cellName;
+
+        for (int hop = 0; hop < MAX_CHAIN_HOPS; hop++) {
+            Optional<CellMapping> mapping = cellMappingRepository.findByNewCell_CellName(current);
+            if (mapping.isEmpty()) {
+                break;
+            }
+            String previousCellName = mapping.get().getPreviousCell().getCellName();
+            ancestors.add(previousCellName);
+            current = previousCellName;
+        }
+
+        return ancestors;
+    }
+
+    // Backfills timestamps missing from `primary` using data from the cell's replacement chain
+    // (immediate previous cell first), relabeled under the requested cell name. No-op when the
+    // cell has no mapping ancestors.
+    private List<KpiDataDto> fillFromAncestors(List<KpiDataDto> primary, String cellName, StandardKpi standardKpi,
+                                                Rat rat, Granularity granularity, LocalDateTime timestamp,
+                                                LocalDateTime startTimestamp) {
+        List<String> ancestors = getAncestorCellNames(cellName);
+        if (ancestors.isEmpty()) {
+            return primary;
+        }
+
+        Set<LocalDateTime> have = primary.stream().map(KpiDataDto::timestamp).collect(Collectors.toSet());
+        List<KpiDataDto> merged = new ArrayList<>(primary);
+        for (String ancestorCellName : ancestors) {
+            List<KpiDataDto> ancestorData = fetchCellData(standardKpi, ancestorCellName, rat, granularity, timestamp, startTimestamp);
+            for (KpiDataDto d : ancestorData) {
+                if (have.add(d.timestamp())) {
+                    merged.add(new KpiDataDto(d.timestamp(), cellName, d.kpiLabel(), d.kpiValue()));
+                }
+            }
+        }
+        merged.sort(Comparator.comparing(KpiDataDto::timestamp));
+        return merged;
     }
 
     @Override
@@ -520,11 +640,41 @@ public class KpiDayServiceImpl implements KpiDayService {
 
         LocalDateTime startTimestamp = dateService.getPreviousDate(timestamp, period).toLocalDate().atStartOfDay();
 
+        List<KpiDataWithOperandsDto> primary = fetchCellDataWithOperands(standardKpi, cellName, rat, granularity, timestamp, startTimestamp);
+        return fillFromAncestorsWithOperands(primary, cellName, standardKpi, rat, granularity, timestamp, startTimestamp);
+    }
+
+    private List<KpiDataWithOperandsDto> fetchCellDataWithOperands(StandardKpi standardKpi, String cellName, Rat rat,
+                                                                    Granularity granularity, LocalDateTime timestamp,
+                                                                    LocalDateTime startTimestamp) {
         if (granularity.getName().equals("hour")) {
             return kpiHourService.getDataByKpiAndCellWithOperands(standardKpi.getId(), cellName, timestamp, startTimestamp, rat.getId(), granularity.getId());
         } else {
-            return kpiDayRepository.findDataByKpiAndCellWithOperands(standardKpi.getId(),timestamp, startTimestamp, cellName, rat.getId(), granularity.getId());
+            return kpiDayRepository.findDataByKpiAndCellWithOperands(standardKpi.getId(), timestamp, startTimestamp, cellName, rat.getId(), granularity.getId());
         }
+    }
+
+    private List<KpiDataWithOperandsDto> fillFromAncestorsWithOperands(List<KpiDataWithOperandsDto> primary, String cellName,
+                                                                        StandardKpi standardKpi, Rat rat, Granularity granularity,
+                                                                        LocalDateTime timestamp, LocalDateTime startTimestamp) {
+        List<String> ancestors = getAncestorCellNames(cellName);
+        if (ancestors.isEmpty()) {
+            return primary;
+        }
+
+        Set<Timestamp> have = primary.stream().map(KpiDataWithOperandsDto::timestamp).collect(Collectors.toSet());
+        List<KpiDataWithOperandsDto> merged = new ArrayList<>(primary);
+        for (String ancestorCellName : ancestors) {
+            List<KpiDataWithOperandsDto> ancestorData = fetchCellDataWithOperands(standardKpi, ancestorCellName, rat, granularity, timestamp, startTimestamp);
+            for (KpiDataWithOperandsDto d : ancestorData) {
+                if (have.add(d.timestamp())) {
+                    merged.add(new KpiDataWithOperandsDto(d.timestamp(), cellName, d.kpiLabel(), d.kpiValue(),
+                            d.numeratorKpiValue(), d.denominatorKpiValue()));
+                }
+            }
+        }
+        merged.sort(Comparator.comparing(KpiDataWithOperandsDto::timestamp));
+        return merged;
     }
 
 

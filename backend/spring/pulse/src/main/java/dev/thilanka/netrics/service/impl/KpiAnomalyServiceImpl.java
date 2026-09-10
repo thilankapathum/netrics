@@ -4,7 +4,6 @@ import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.Area;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
-import dev.thilanka.netrics.entity.StandardKpi;
 import dev.thilanka.netrics.repository.KpiAnomalyRepository;
 import dev.thilanka.netrics.repository.KpiDayRepository;
 import dev.thilanka.netrics.service.*;
@@ -12,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,6 +33,17 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
     private static final Map<String, Integer> SEVERITY_RANK = Map.of(
             "moderate", 1, "high", 2, "critical", 3
     );
+
+    // Valid values for the alarmCorrelation filter param — anything else is
+    // treated as "no filter" (same behavior as null/absent).
+    private static final Set<String> VALID_ALARM_CORRELATION_FILTERS = Set.of("correlated", "uncorrelated");
+
+    private String normalizeAlarmCorrelationFilter(String raw) {
+        if (raw == null || raw.isBlank() || !VALID_ALARM_CORRELATION_FILTERS.contains(raw.toLowerCase())) {
+            return null;
+        }
+        return raw.toLowerCase();
+    }
 
     @Override
     public List<KpiAnomalyDto> getLatestAnomalies(String ratName, String granularityName, String minSeverity) {
@@ -61,7 +72,9 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
     @Override
     @Cacheable(value = "anomalyCells", key = "#period + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
+    @Transactional
     public List<WorstCellsDto> getAllAnomalyCellsByArea(String period, String areaName, String ratName, String granularityName) {
+        kpiAnomalyRepository.setWorkMem64();
 
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
@@ -80,51 +93,64 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         if (anomalyCells.isEmpty()) return List.of();
 
-        // Group by KPI name so streaks are looked up correctly per-KPI, not mixed across KPIs
-        Map<String, List<AnomalyCellsProjection>> byKpi = anomalyCells.stream()
-                .collect(Collectors.groupingBy(AnomalyCellsProjection::kpiName));
-
-        Map<String, Integer> streaks = new HashMap<>();
-        for (Map.Entry<String, List<AnomalyCellsProjection>> entry : byKpi.entrySet()) {
-            StandardKpi standardKpi = standardKpiService.findByKpiName(entry.getKey(), rat);
-            List<String> cellNames = entry.getValue().stream()
-                    .map(AnomalyCellsProjection::cellName)
-                    .toList();
-
-            // Key streaks by "cellName|kpiName" since the same cell can appear under multiple KPIs
-            kpiDayRepository.findStreaksForCells(
-                            standardKpi.getId(), streakStart, currEnd,
-                            cellNames.toArray(String[]::new),
-                            rat.getId(), granularity.getId()
-                    )
-                    .forEach(s -> streaks.put(s.cellName() + "|" + entry.getKey(), s.consecutiveBadDays()));
-        }
+        Map<String, Integer> streaks = fetchStreaks(anomalyCells, streakStart, currEnd, rat.getId(), granularity.getId());
 
         return anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
-                        ac.cellName(),
-                        ac.kpiName(),
-                        ac.kpiLabel(),
-                        ac.unit(),
-                        ac.value(),
-                        ac.previousValue(),
-                        ac.difference(),
-                        ac.improved(),
-                        streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
-                        ac.severity()
+                        ac.getTimestamp(),
+                        ac.getCellName(),
+                        ac.getKpiName(),
+                        ac.getKpiLabel(),
+                        ac.getUnit(),
+                        ac.getValue(),
+                        ac.getPreviousValue(),
+                        ac.getDifference(),
+                        ac.getImproved(),
+                        streaks.getOrDefault(ac.getCellName() + "|" + ac.getStandardKpiId(), 0),
+                        ac.getSeverity(),
+                        ac.getHasAlarmCorrelation(),
+                        ac.getDistinctAlarmDefCount(),
+                        ac.getTotalAlarmOccurrences(),
+                        ac.getBestMatchLevel()
                 ))
                 .collect(Collectors.toList());
     }
 
+    // Batches the "consecutive bad days" streak lookup across every (cellName, standardKpiId) pair
+    // in one query instead of one query per distinct KPI — avoids an N+1 pattern that dominated
+    // worst-cells page latency when a page spans many distinct anomalous KPIs.
+    private record CellKpiPair(String cellName, Long standardKpiId) {}
+
+    private Map<String, Integer> fetchStreaks(List<AnomalyCellsProjection> anomalyCells,
+                                               LocalDateTime streakStart, LocalDateTime currEnd,
+                                               Long ratId, Long granularityId) {
+        List<CellKpiPair> distinctPairs = anomalyCells.stream()
+                .map(ac -> new CellKpiPair(ac.getCellName(), ac.getStandardKpiId()))
+                .distinct()
+                .toList();
+
+        Map<String, Integer> streaks = new HashMap<>();
+        kpiDayRepository.findStreaksForCellKpiPairs(
+                        distinctPairs.stream().map(CellKpiPair::cellName).toArray(String[]::new),
+                        distinctPairs.stream().map(CellKpiPair::standardKpiId).toArray(Long[]::new),
+                        streakStart, currEnd, ratId, granularityId
+                )
+                .forEach(s -> streaks.put(s.cellName() + "|" + s.standardKpiId(), s.consecutiveBadDays()));
+        return streaks;
+    }
+
     @Override
-    @Cacheable(value = "allAnomalyCellsByArea", key = "#period + '_' + #areaName + '_' + #severity + '_' + #kpiName + '_' + #sortBy + '_' + #sortDir + '_' + #page + '_' + #pageSize + '_' + #granularityName + '_' + #ratName")
+    @Cacheable(value = "allAnomalyCellsByArea", key = "#period + '_' + #areaName + '_' + #severity + '_' + #kpiName + '_' + #sortBy + '_' + #sortDir + '_' + #page + '_' + #pageSize + '_' + #alarmCorrelation + '_' + #granularityName + '_' + #ratName")
+    @Transactional
     public PagedResponse<WorstCellsDto> getAllAnomalyCellsByArea(
             String period, String areaName, String ratName, String granularityName,
-            String severity, String kpiName, String sortBy, String sortDir, int page, int pageSize) {
+            String severity, String kpiName, String sortBy, String sortDir, int page, int pageSize, String alarmCorrelation) {
+        kpiAnomalyRepository.setWorkMem64();
 
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
         Area area = areaService.findAreaByName(areaName);
+        String alarmCorrelationFilter = normalizeAlarmCorrelationFilter(alarmCorrelation);
 
         Long standardKpiId = null;
         if (kpiName != null && !kpiName.isBlank() && !kpiName.equalsIgnoreCase("all")) {
@@ -141,7 +167,7 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         LocalDateTime streakStart = currEnd.toLocalDate().minusDays(30).atStartOfDay();
 
         long totalElements = kpiAnomalyRepository.countAnomalyCellsByArea(
-                currStart, currEnd, area.getId(), rat.getId(), granularity.getId(), severity, standardKpiId);
+                currStart, currEnd, area.getId(), rat.getId(), granularity.getId(), severity, standardKpiId, alarmCorrelationFilter);
 
         if (totalElements == 0) {
             return new PagedResponse<>(List.of(), 0, 0, page, pageSize);
@@ -149,33 +175,21 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
 
         List<AnomalyCellsProjection> anomalyCells = kpiAnomalyRepository.findAllAnomalyCellsByAreaPaged(
                 currStart, currEnd, prevStart, prevEnd, area.getId(), rat.getId(), granularity.getId(),
-                severity, standardKpiId, sortBy, sortDir, pageSize, page * pageSize
+                severity, standardKpiId, sortBy, sortDir, pageSize, page * pageSize, alarmCorrelationFilter
         );
 
-        Map<String, List<AnomalyCellsProjection>> byKpi = anomalyCells.stream()
-                .collect(Collectors.groupingBy(AnomalyCellsProjection::kpiName));
-
-        Map<String, Integer> streaks = new HashMap<>();
-        for (Map.Entry<String, List<AnomalyCellsProjection>> entry : byKpi.entrySet()) {
-            StandardKpi standardKpi = standardKpiService.findByKpiName(entry.getKey(), rat);
-            List<String> cellNames = entry.getValue().stream()
-                    .map(AnomalyCellsProjection::cellName)
-                    .toList();
-
-            kpiDayRepository.findStreaksForCells(
-                            standardKpi.getId(), streakStart, currEnd,
-                            cellNames.toArray(String[]::new),
-                            rat.getId(), granularity.getId()
-                    )
-                    .forEach(s -> streaks.put(s.cellName() + "|" + entry.getKey(), s.consecutiveBadDays()));
-        }
+        Map<String, Integer> streaks = fetchStreaks(anomalyCells, streakStart, currEnd, rat.getId(), granularity.getId());
 
         List<WorstCellsDto> content = anomalyCells.stream()
                 .map(ac -> new WorstCellsDto(
-                        ac.cellName(), ac.kpiName(), ac.kpiLabel(), ac.unit(),
-                        ac.value(), ac.previousValue(), ac.difference(), ac.improved(),
-                        streaks.getOrDefault(ac.cellName() + "|" + ac.kpiName(), 0),
-                        ac.severity()
+                        ac.getTimestamp(), ac.getCellName(), ac.getKpiName(), ac.getKpiLabel(), ac.getUnit(),
+                        ac.getValue(), ac.getPreviousValue(), ac.getDifference(), ac.getImproved(),
+                        streaks.getOrDefault(ac.getCellName() + "|" + ac.getStandardKpiId(), 0),
+                        ac.getSeverity(),
+                        ac.getHasAlarmCorrelation(),
+                        ac.getDistinctAlarmDefCount(),
+                        ac.getTotalAlarmOccurrences(),
+                        ac.getBestMatchLevel()
                 ))
                 .collect(Collectors.toList());
 

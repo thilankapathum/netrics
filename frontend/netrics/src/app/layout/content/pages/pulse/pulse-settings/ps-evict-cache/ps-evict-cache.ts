@@ -1,14 +1,13 @@
-import {Component, EventEmitter, Input, Output, signal} from '@angular/core';
-import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {KeycloakProfile} from 'keycloak-js';
-import {AlertService} from '../../../../../../components/alert/alert.service';
-import {AuthService} from '../../../../../../auth/service/auth-service';
-import {SiteService} from '../../../../../../service/pulse/site-service';
-import {CacheService} from '../../../../../../service/pulse/cache-service';
-import {RatDto} from '../../../../../../models/pulse/RatDto';
-import {GranularityDto} from '../../../../../../models/pulse/GranularityDto';
-import {RatService} from '../../../../../../service/pulse/rat-service';
-import {GranularityService} from '../../../../../../service/pulse/granularity-service';
+import { Component, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { KeycloakProfile } from 'keycloak-js';
+import { AlertService } from '../../../../../../components/alert/alert.service';
+import { AuthService } from '../../../../../../auth/service/auth-service';
+import { CacheService } from '../../../../../../service/pulse/cache-service';
+import { RatDto } from '../../../../../../models/pulse/RatDto';
+import { GranularityDto } from '../../../../../../models/pulse/GranularityDto';
+import { RatService } from '../../../../../../service/pulse/rat-service';
+import { GranularityService } from '../../../../../../service/pulse/granularity-service';
 
 @Component({
   selector: 'app-ps-evict-cache',
@@ -21,9 +20,6 @@ import {GranularityService} from '../../../../../../service/pulse/granularity-se
 })
 export class PsEvictCache {
 
-  @Input() open: boolean = false;
-  @Output() closed = new EventEmitter<void>();
-
   userProfile: KeycloakProfile = {};
 
   rat = signal('');
@@ -33,8 +29,8 @@ export class PsEvictCache {
   granularities: GranularityDto[] = [];
 
   isEvictByGranularity = signal<boolean>(false);
-  evictingCache:boolean = false;
-  evictingAllCaches:boolean = false;
+  evictingCache: boolean = false;
+  evictingAllCaches: boolean = false;
 
   constructor(private alertService: AlertService,
               private authService: AuthService,
@@ -45,22 +41,16 @@ export class PsEvictCache {
     this.getAllGranularities();
   }
 
-  onCancel(): void {
-    this.closed.emit();
-    this.isEvictByGranularity.set(false);
-  }
-
   evictCaches() {
     this.evictingCache = true;
     if (this.isEvictByGranularity()) {
       this.cacheService.evictByRatAndGranularity(this.rat(), this.granularity()).subscribe({
         next: result => {
-          console.log(result);
           this.alertService.success(`${result}`);
           this.evictingCache = false;
         }, error: error => {
           console.error(error);
-          this.alertService.error(`Error evicting cache for ${this.rat()}-${this.granularity()} - ${error.statusText}`);
+          this.alertService.error(`Error evicting cache for ${this.rat()}-${this.granularity()}`, 'Error', `${error.statusText}`);
           this.evictingCache = false;
         }
       });
@@ -71,7 +61,7 @@ export class PsEvictCache {
           this.evictingCache = false;
         }, error: error => {
           console.error(error);
-          this.alertService.error(`Error evicting cache for ${this.rat()} - ${error.statusText}`);
+          this.alertService.error(`Error evicting cache for ${this.rat()}`, 'Error', `${error.statusText}`);
           this.evictingCache = false;
         }
       });
@@ -86,10 +76,10 @@ export class PsEvictCache {
         this.evictingAllCaches = false;
       }, error: error => {
         console.error(error);
-        this.alertService.error(`Error evicting caches - ${error.statusText}`);
+        this.alertService.error('Error evicting caches', 'Error', `${error.statusText}`);
         this.evictingAllCaches = false;
       }
-    })
+    });
   }
 
   //================== GETTERS =============================
@@ -98,21 +88,25 @@ export class PsEvictCache {
     this.ratService.getAllRats().subscribe({
       next: data => {
         this.rats = data;
-        this.rat.set(this.rats[0].name!);
+        if (this.rats.length > 0) {
+          this.rat.set(this.rats[0].name!);
+        }
       }, error: err => {
         console.error(err);
         this.alertService.error('Error retrieving RATs');
       }
-    })
+    });
   }
 
   getAllGranularities() {
     this.granularityService.getAllGranularities().subscribe({
       next: data => {
         this.granularities = data;
-        this.granularity.set(this.granularities[0].name!)
+        if (this.granularities.length > 0) {
+          this.granularity.set(this.granularities[0].name!);
+        }
       }
-    })
+    });
   }
 
   //================== FILTERS =========================
@@ -129,13 +123,9 @@ export class PsEvictCache {
 
   async getUserProfile() {
     this.userProfile = await this.authService.getUserProfile();
-    if (this.authService.hasRole('PULSE_CREATE')) {
-      // this.startWorstCellCreationStatusPolling();
-    }
   }
 
   hasAnyRole(roles: string[]) {
     return this.authService.hasAnyRole(roles);
   }
-
 }

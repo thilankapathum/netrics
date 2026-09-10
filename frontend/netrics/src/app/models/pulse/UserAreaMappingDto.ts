@@ -1,4 +1,7 @@
 export interface UserAreaMappingDto{
-  userId:string;
-  areaName:string;
+  id?: number;
+  userId: string;
+  userFullName?: string;
+  areaTypeName?: string;
+  areaName: string;
 }

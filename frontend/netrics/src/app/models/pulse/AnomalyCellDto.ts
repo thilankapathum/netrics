@@ -8,7 +8,11 @@ export interface AnomalyCellDto {
   difference: number;
   improved: number;
   consecutiveBadDays: number;
-  severity: 'critical' | 'high' | 'moderate' | null;
+  severity: string;
+  hasAlarmCorrelation: boolean | null;
+  distinctAlarmDefCount: number | null;
+  totalAlarmOccurrences: number | null;
+  bestMatchLevel: 'CELL' | 'NODE' | null;
 }
 
 export interface PagedResponse<T> {
@@ -19,5 +23,7 @@ export interface PagedResponse<T> {
   pageSize: number;
 }
 
-export type SortField = 'cellName' | 'severity' | 'difference' | 'value';
+export type SortField = 'cellName' | 'value' | 'difference' | 'severity' | 'alarmCorrelation';
 export type SortDir = 'asc' | 'desc';
+
+export type AlarmCorrelationFilter = 'all' | 'correlated' | 'uncorrelated';

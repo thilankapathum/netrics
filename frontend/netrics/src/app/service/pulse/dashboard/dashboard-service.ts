@@ -17,7 +17,7 @@ export class DashboardService {
   }
 
   getTimestamps(kpiName: string, period: string, areaName: string, ratName: string, granularityName: string) {
-    return this.http.get<Array<Date>>(`${this.baseUrl}/timestamps`, {
+    return this.http.get<Array<string>>(`${this.baseUrl}/timestamps`, {
       params: {
         kpiName,
         period,

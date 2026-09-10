@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -89,7 +90,7 @@ public class StandardKpiServiceImpl implements StandardKpiService {
         Rat rat = ratService.findRatByName(ratName);
         return standardKpiRepository
                 .findByLabelAndRat(kpiLabel, rat)
-                .orElseThrow(()-> new ResourceNotFoundException("Standard KPI", "Label", kpiLabel));
+                .orElseThrow(() -> new ResourceNotFoundException("Standard KPI", "Label", kpiLabel));
     }
 
     @Override
@@ -98,10 +99,28 @@ public class StandardKpiServiceImpl implements StandardKpiService {
     }
 
     @Override
+    public List<StandardKpi> findAllStandardKpiByRatWithOperands(Rat rat) {
+        return standardKpiRepository.findAllStandardKpiByRatWithOperands(rat.getId());
+    }
+
+    @Override
     public List<StandardKpiDto> getAllStandardKpiByRat(String ratName) {
         Rat rat = ratService.findRatByName(ratName);
 
         List<StandardKpi> standardKpis = standardKpiRepository.findAllStandardKpiByRat(rat.getId());
-        return standardKpis.stream().map(mapper::standardKpiToDto).toList();
+        return standardKpis.stream()
+                .sorted(Comparator.comparing(StandardKpi::getId))
+                .map(mapper::standardKpiToDto)
+                .toList();
+    }
+
+    @Override
+    public List<StandardKpiDto> getAllStandardKpiByRatWithOperands(String ratName) {
+        Rat rat = ratService.findRatByName(ratName);
+        List<StandardKpi> standardKpis = standardKpiRepository.findAllStandardKpiByRatWithOperands(rat.getId());
+        return standardKpis.stream()
+                .sorted(Comparator.comparing(StandardKpi::getId))
+                .map(mapper::standardKpiToDto)
+                .toList();
     }
 }

@@ -1,94 +1,255 @@
-<dialog #standardKpiModal id="standard_kpi_modal" [class.modal-open]="open" class="modal">
-  <div class="modal-box border border-base-300">
-
-    <h3 class="text-lg font-bold">Create a Standard KPI</h3>
-    <div class="flex flex-col gap-2 pt-4">
-      <div>
-        <label class="input input-sm">
-          KPI Name
-          <input type="text" class="grow" placeholder="rrc_setup_success_rate" />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          KPI Label
-          <input type="text" class="grow" placeholder="RRC Setup Success Rate" />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          Unit
-          <input type="text" class="grow" placeholder="%" />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          Type
-          <input type="text" class="grow" placeholder="standard/numerator/denominator/..." />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          Worst Order
-          <input type="text" class="grow" placeholder="ASC/DESC" />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          Worst Threshold
-          <input type="text" class="grow" placeholder="99" />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          Aggregation
-          <input type="text" class="grow" placeholder="SUM/AVG" />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          Basic KPI
-          <input type="text" class="grow" placeholder="accessibility/retainability/..." />
-                    <span class="badge badge-neutral badge-xs">Optional</span>
-        </label>
-      </div>
-      <div>
-        <label class="input input-sm">
-          RAT
-          <input type="text" class="grow" placeholder="ltefdd/gsm/nr/ltetdd" />
-          <!--          <span class="badge badge-neutral badge-xs">Optional</span>-->
-        </label>
-      </div>
-    </div>
-    <div class="modal-action">
-      <!--      <form method="dialog">-->
-      <form class="flex flex-row gap-2">
-<!--        <button [disabled]="userId() === '' || area() === '' || loadingUserAreaMapping" class="btn btn-outline btn-primary btn-sm" (click)="createUserAreaMapping()">-->
-<!--          <span [hidden]="!loadingUserAreaMapping" class="loading loading-spinner loading-xs"></span>-->
-<!--          <span [hidden]="loadingUserAreaMapping">-->
-<!--            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-<!--              <path d="M17 21.0002L7 21M17 21.0002L17.8031 21C18.921 21 19.48 21 19.9074 20.7822C20.2837 20.5905 20.5905 20.2843 20.7822 19.908C21 19.4806 21 18.921 21 17.8031V9.21955C21 8.77072 21 8.54521 20.9521 8.33105C20.9095 8.14 20.8393 7.95652 20.7432 7.78595C20.6366 7.59674 20.487 7.43055 20.1929 7.10378L17.4377 4.04241C17.0969 3.66374 16.9242 3.47181 16.7168 3.33398C16.5303 3.21 16.3242 3.11858 16.1073 3.06287C15.8625 3 15.5998 3 15.075 3H6.2002C5.08009 3 4.51962 3 4.0918 3.21799C3.71547 3.40973 3.40973 3.71547 3.21799 4.0918C3 4.51962 3 5.08009 3 6.2002V17.8002C3 18.9203 3 19.4796 3.21799 19.9074C3.40973 20.2837 3.71547 20.5905 4.0918 20.7822C4.5192 21 5.07899 21 6.19691 21H7M17 21.0002V17.1969C17 16.079 17 15.5192 16.7822 15.0918C16.5905 14.7155 16.2837 14.4097 15.9074 14.218C15.4796 14 14.9203 14 13.8002 14H10.2002C9.08009 14 8.51962 14 8.0918 14.218C7.71547 14.4097 7.40973 14.7155 7.21799 15.0918C7 15.5196 7 16.0801 7 17.2002V21M15 7H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
-<!--            </svg>-->
-<!--          </span>-->
-<!--          Create-->
-<!--        </button>-->
-        <button class="btn btn-sm" type="button" (click)="onCancel()">
-          Close
-          <span class="text-secondary">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 21L12 12M12 12L3 3M12 12L21.0001 3M12 12L3 21.0001" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-        </button>
-      </form>
-    </div>
+<div class="w-full max-w-5xl flex flex-col">
+  <!-- Header Section -->
+  <div>
+    <h2 class="text-xl font-semibold text-base-content">Standard KPI</h2>
+    <p class="text-xs text-secondary mt-1">
+      Manage and update Standard KPI.
+    </p>
   </div>
-</dialog>
+
+  <!-- Mode Selection Tabs -->
+  <div class="tabs tabs-lift mt-4">
+
+    <!-- Tab: Create -->
+    <input type="radio" name="standard_kpi_mode_tabs" class="tab" aria-label="Create KPI"
+           [checked]="activeTab() === 'CREATE'" (change)="setActiveTab('CREATE')" />
+    <div class="tab-content bg-base-100 border-base-300 p-6">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div class="sm:col-span-2">
+          <div class="label"><span class="label-text font-medium">RAT</span></div>
+          <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+            @for (_rat of rats; track _rat.name) {
+              <input type="radio" name="create_rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
+                     [checked]="createRat() === _rat.name" (change)="selectCreateRat($any($event.target).value)"/>
+            }
+          </div>
+        </div>
+
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text text-xs font-medium">KPI Name</span></div>
+          <input type="text" placeholder="rrc_setup_success_rate" class="input input-bordered input-sm w-full"
+                 [ngModel]="kpiName()" (ngModelChange)="kpiName.set($event)" [disabled]="creatingKpi()" />
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text text-xs font-medium">Label</span></div>
+          <input type="text" placeholder="RRC Setup Success Rate" class="input input-sm input-bordered w-full"
+                 [ngModel]="label()" (ngModelChange)="label.set($event)" [disabled]="creatingKpi()" />
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text text-xs font-medium">Unit</span></div>
+          <input type="text" placeholder="%" class="input input-sm input-bordered w-full"
+                 [ngModel]="unit()" (ngModelChange)="unit.set($event)" [disabled]="creatingKpi()" />
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text text-xs font-medium">Type</span></div>
+          <select class="select select-bordered select-sm w-full"
+                  [ngModel]="type()" (ngModelChange)="onTypeChange($event)" [disabled]="creatingKpi()">
+            @for (t of kpiTypes; track t) {
+              <option [value]="t">{{ t }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Worst Order / Threshold / Aggregation: 'standard' type only -->
+        @if (isStandardType()) {
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text text-xs font-medium">Worst Order</span></div>
+            <select class="select select-sm select-bordered w-full"
+                    [ngModel]="worstOrder()" (ngModelChange)="worstOrder.set($event)" [disabled]="creatingKpi()">
+              <option value="ASC">ASC (lowest value is worst)</option>
+              <option value="DESC">DESC (highest value is worst)</option>
+            </select>
+          </label>
+
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text text-xs font-medium">Threshold</span></div>
+            <input type="number" placeholder="98.5" class="input input-sm input-bordered w-full"
+                   [ngModel]="threshold()" (ngModelChange)="threshold.set($event)" [disabled]="creatingKpi()" />
+          </label>
+
+          <label class="form-control w-full">
+            <div class="label"><span class="label-text text-xs font-medium">Aggregation</span></div>
+            <select class="select select-sm select-bordered w-full"
+                    [ngModel]="aggregation()" (ngModelChange)="aggregation.set($event)" [disabled]="creatingKpi()">
+              <option value="AVG">AVG</option>
+              <option value="SUM">SUM</option>
+<!--              <option value="MAX">MAX</option>-->
+<!--              <option value="MIN">MIN</option>-->
+<!--              <option value="LAST">LAST</option>-->
+<!--              <option value="COUNT">COUNT</option>-->
+            </select>
+          </label>
+        } @else {
+          <div class="sm:col-span-2 text-xs text-base-content/50 flex items-center gap-1.5 -mt-1">
+            <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 16V12M12 8H12.01M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z"/>
+            </svg>
+            Worst Order, Threshold, and Aggregation only apply to 'standard' type KPIs.
+          </div>
+        }
+
+        <label class="form-control w-full sm:col-span-2">
+          <div class="label">
+            <span class="label-text text-xs font-medium">Basic KPI</span>
+            <span class="label-text-alt text-xs text-base-content/50">Optional</span>
+          </div>
+          <select class="select select-sm select-bordered w-full"
+                  [ngModel]="basicKpi()" (ngModelChange)="basicKpi.set($event)"
+                  [disabled]="creatingKpi() || loadingBasicKpis()">
+            <option value="">— None —</option>
+            @for (bk of basicKpis(); track bk.kpiName) {
+              <option [value]="bk.kpiName">{{ bk.label }} ({{ bk.kpiName }})</option>
+            }
+          </select>
+          @if (loadingBasicKpis()) {
+            <div class="label">
+              <span class="label-text-alt flex items-center gap-1.5">
+                <span class="loading loading-spinner loading-xs"></span>
+                Loading Basic KPIs for {{ createRat() }}...
+              </span>
+            </div>
+          }
+        </label>
+
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-8 flex gap-3">
+        <button class="btn btn-primary"
+                [disabled]="creatingKpi() || !isInputsValid() || !hasAnyRole(['PULSE_CREATE'])"
+                (click)="createStandardKpi()">
+          @if (creatingKpi()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          } @else {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 8V16M8 12H16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          }
+          Create KPI
+        </button>
+
+        <button class="btn btn-ghost" type="button" [disabled]="creatingKpi()" (click)="resetForm()">
+          Clear
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Tab: List All -->
+    <input type="radio" name="standard_kpi_mode_tabs" class="tab" aria-label="All Standard KPIs"
+           [checked]="activeTab() === 'LIST'" (change)="setActiveTab('LIST')" />
+    <div class="tab-content bg-base-100 border-base-300 p-6">
+
+      <div class="flex flex-col gap-4">
+
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+            @for (_rat of rats; track _rat.name) {
+              <input type="radio" name="list_rat_tabs" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
+                     [checked]="listRat() === _rat.name" (change)="selectListRat($any($event.target).value)"/>
+            }
+          </div>
+
+          <button class="btn btn-sm" [disabled]="loadingList()" (click)="loadStandardKpis()">
+            @if (loadingList()) {
+              <span class="loading loading-spinner loading-xs"></span>
+            } @else {
+              <svg class="text-base-content/50" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 16H5V21M14 8H19V3M4.58301 9.0034C5.14369 7.61566 6.08244 6.41304 7.29255 5.53223C8.50266 4.65141 9.93686 4.12752 11.4298 4.02051C12.9227 3.9135 14.4147 4.2274 15.7381 4.92661C17.0615 5.62582 18.1612 6.68254 18.9141 7.97612M19.4176 14.9971C18.8569 16.3848 17.9181 17.5874 16.708 18.4682C15.4979 19.3491 14.0652 19.8723 12.5723 19.9793C11.0794 20.0863 9.58606 19.7725 8.2627 19.0732C6.93933 18.374 5.83882 17.3175 5.08594 16.0239" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+            Refresh
+          </button>
+        </div>
+
+        <div class="overflow-x-auto border border-base-300 rounded-xl">
+          <table class="table table-zebra table-xs">
+
+            <thead>
+            <tr class="text-xs uppercase">
+              <th class="max-w-40">KPI Name</th>
+              <th class="max-w-40">Label</th>
+              <th>Unit</th>
+              <th>Type</th>
+              <th>Worst Order</th>
+              <th>Threshold</th>
+              <th>Aggregation</th>
+              <th class="max-w-24">Basic KPI</th>
+            </tr>
+            </thead>
+
+            <tbody>
+              @for (kpi of standardKpis(); track kpi.kpiName) {
+                <tr>
+                  <td class="max-w-40">
+                    <span class="block truncate font-mono text-secondary text-xs" [title]="kpi.kpiName">
+                      {{ kpi.kpiName }}
+                    </span>
+                  </td>
+                  <td class="max-w-40">
+                    <span class="block truncate" [title]="kpi.label">
+                      {{ kpi.label }}
+                    </span>
+                  </td>
+
+                  <td>{{ kpi.unit || '-' }}</td>
+
+                  <td>
+                    <span class="badge badge-xs badge-soft"
+                      [class.badge-success] = "kpi.type === 'standard'"
+                      [class.badge-warning] = "kpi.type === 'numerator'"
+                      [class.badge-error] = "kpi.type === 'denominator'"
+                    >{{ kpi.type }}</span>
+                  </td>
+
+                  <td>
+                    @if (kpi.worstOrder) {
+                      <span
+                        class="badge badge-xs badge-soft badge-outline"
+                        [class.badge-secondary]="kpi.worstOrder === 'DESC'"
+                        [class.badge-info]="kpi.worstOrder === 'ASC'">
+                        {{ kpi.worstOrder }}
+                      </span>
+                    } @else {
+                      -
+                    }
+                  </td>
+
+                  <td>{{ kpi.threshold ?? '-' }}</td>
+
+                  <td>{{ kpi.aggregation || '-' }}</td>
+
+                  <td class="max-w-24">
+                    <span class="block truncate font-mono text-secondary text-xs" [title]="kpi.basicKpi">
+                      {{ kpi.basicKpi || '-' }}
+                    </span>
+                  </td>
+
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="text-center text-base-content/50 py-6">
+                    @if (loadingList()) {
+                      Loading Standard KPIs...
+                    } @else {
+                      No Standard KPIs found for this RAT.
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>

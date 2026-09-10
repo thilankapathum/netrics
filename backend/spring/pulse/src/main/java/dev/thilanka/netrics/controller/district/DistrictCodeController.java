@@ -20,7 +20,7 @@ import java.util.List;
 public class DistrictCodeController {
     private final DistrictCodeService districtCodeService;
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping
     ResponseEntity<List<DistrictCodeDto>> getAll(){
         return new ResponseEntity<>(districtCodeService.getAll(), HttpStatus.OK);

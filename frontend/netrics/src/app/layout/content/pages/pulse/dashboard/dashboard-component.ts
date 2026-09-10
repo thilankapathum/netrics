@@ -24,6 +24,8 @@ import {AuthService} from '../../../../../auth/service/auth-service';
 import {KeycloakProfile} from 'keycloak-js';
 import {PdbCreateCells} from './pdb-create-cells/pdb-create-cells';
 import {PsStandardKpi} from '../pulse-settings/ps-standard-kpi/ps-standard-kpi';
+import {StandardRawKpiMappingService} from '../../../../../service/pulse/standard-raw-kpi-mapping-service';
+import {SharedService} from '../../../../../service/pulse/shared-service';
 
 @Component({
   selector: 'app-dashboard-component',
@@ -36,7 +38,6 @@ import {PsStandardKpi} from '../pulse-settings/ps-standard-kpi/ps-standard-kpi';
     PdbCreateCells,
     PsStandardKpi
   ],
-  providers: [DatePipe],
   templateUrl: './dashboard-component.html',
   styleUrl: './dashboard-component.css'
 })
@@ -48,8 +49,8 @@ export class DashboardComponent implements OnInit {
   areas: AreaDto[] = [];
   area = signal<string | undefined>('')
 
-  timestamps: Date[] = [];
-  timestamp = signal<Date>(new Date());
+  timestamps: string[] = [];
+  timestamp = signal<string>('');
 
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
@@ -74,6 +75,11 @@ export class DashboardComponent implements OnInit {
   kpiTrendData: KpiTrendDto[] = [];
   chartSeries: any = null;
 
+  showOperands = signal<boolean>(false);
+  standardRawKpiMappingAvailable = signal<boolean>(false);
+  loadingStandardRawKpiMapping: boolean = false;
+  selectedKpiName = signal<string>(''); // tracks the KPI currently driving the trend chart
+
   loadingKpiTrend: boolean = false;
   loadingWorstCells: boolean = false;
   excludeZeroes: boolean = false;
@@ -94,21 +100,26 @@ export class DashboardComponent implements OnInit {
               private dashboardService: DashboardService,
               private standardKpiService: StandardkpiService,
               private alertService: AlertService,
-              private datePipe: DatePipe,
               private kpiDayService: KpidayService,
               private chartService: ChartService,
               private worstCellCommentService: WorstCellCommentService,
-              private authService: AuthService
+              private authService: AuthService,
+              private standardRawKpiMappingService: StandardRawKpiMappingService,
+              private sharedService: SharedService
   ) {
   }
 
   ngOnInit(): void {
-    this.getAllStandardKpi(this.selectedRat())
+    if (this.sharedService.returnPage === '/pulse/dashboard') {
+      this.selectedRat.set(this.sharedService.dashboardRat() as 'ltefdd' | 'ltetdd' | 'nr' | 'umts' | 'gsm');
+      this.selectedGranularity.set(this.sharedService.dashboardGranularity() as 'day-average' | 'busy-hour');
+    }
+    this.getAllStandardKpi(this.selectedRat());
     this.getUserProfile();
   }
 
-  loadingAll(){
-    return this.loadingWorstCells || this.loadingKpiTrend;
+  loadingAll() {
+    return this.loadingWorstCells || this.loadingKpiTrend || this.loadingStandardRawKpiMapping;
   }
 
   // ----------- GETTERS ---------------------------
@@ -121,45 +132,78 @@ export class DashboardComponent implements OnInit {
       next: data => {
         this.standardKpis = data;
         if (this.standardKpis.length > 0) {
-          this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
+          if (this.sharedService.returnPage === '/pulse/dashboard' && this.sharedService.dashboardStandardKpi() !== '') {
+            this.selectedStandardKpi.set(this.sharedService.dashboardStandardKpi());
+          } else {
+            this.selectedStandardKpi.set(this.standardKpis[0].kpiName!);
+          }
           this.getAreaTypes();
-          // this.selectKpi(this.selectedStandardKpi(), ratName);    // Getting Worst-cells and Trend-data
         } else {
           this.alertService.error(`KPI are unavailable for the RAT ${ratName}`);
         }
       }, error: error => {
         console.log("Error getAllStandardKpi");
         console.error(error);
-        this.alertService.error(`Error getting Standard KPIs! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Standard KPIs', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
 
   getAreaTypes() {
     this.areaTypeService.getAllAreaTypes().subscribe({
-        next: data => {
-          this.areaTypes = data;
+      next: data => {
+        this.areaTypes = data;
+        if (this.sharedService.returnPage === '/pulse/dashboard' && this.sharedService.dashboardAreaType() !== '') {
+          this.areaType.set(this.sharedService.dashboardAreaType());
+        } else {
           this.areaType.set(this.areaTypes.at(0)?.name);
-          this.getAreasByAreaType(this.areaType()!);
-        }, error: error => {
-          console.log(error);
-          this.alertService.error(`Error getting Area-types! (${error.status}:${error.statusText})`);
         }
+        this.getAreasByAreaType(this.areaType()!);
+      }, error: error => {
+        console.log(error);
+        this.alertService.error('Error getting Area-types', 'Error', `${error.status}:${error.statusText}`);
       }
-    )
+    })
   }
 
   getAreasByAreaType(areaTypeName: string) {
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
-        this.area.set(this.areas.at(0)?.name);
+        const restoring = this.sharedService.returnPage === '/pulse/dashboard';
+
+        if (restoring && this.sharedService.dashboardArea() !== '') {
+          this.area.set(this.sharedService.dashboardArea());
+        } else {
+          this.area.set(this.areas.at(0)?.name);
+        }
+
+        if (restoring) {
+          this.excludeZeroes = this.sharedService.dashboardExcludeZeroes;
+          const savedTimestamp = this.sharedService.dashboardTimestamp();
+          if (savedTimestamp) {
+            this.timestamp.set(savedTimestamp);
+          }
+          this.clearDashboardRestoreState(); // consumed — reset so a normal future visit isn't affected
+        }
+
         this.getTimestamps(this.selectedStandardKpi(), this.selectedPeriod(), this.area()!, this.selectedRat(), this.selectedGranularity());
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Areas! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Areas', 'Error', `${error.status}:${error.statusText}`);
       }
     })
+  }
+
+  private clearDashboardRestoreState(): void {
+    this.sharedService.returnPage = '';
+    this.sharedService.dashboardGranularity.set('day-average');
+    this.sharedService.dashboardRat.set('ltefdd');
+    this.sharedService.dashboardStandardKpi.set('');
+    this.sharedService.dashboardAreaType.set('');
+    this.sharedService.dashboardArea.set('');
+    this.sharedService.dashboardExcludeZeroes = false;
+    this.sharedService.dashboardTimestamp.set(undefined);
   }
 
   getTimestamps(kpiName: string, period: string, areaName: string, ratName: string, granularityName: string) {
@@ -167,7 +211,9 @@ export class DashboardComponent implements OnInit {
       next: data => {
         this.timestamps = data;
 
-        const currentTimestamp = this.timestamps.find(ts => ts === this.timestamp());
+        const currentTimestamp = this.timestamps.find(
+          ts => ts === this.timestamp()
+        );
 
         if (currentTimestamp === undefined) {
           this.timestamp.set(this.timestamps.at(0)!);
@@ -176,7 +222,7 @@ export class DashboardComponent implements OnInit {
         this.getWorstCells(this.timestamp(), this.excludeZeroes);
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Timestamps! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error getting Timestamps', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -209,13 +255,13 @@ export class DashboardComponent implements OnInit {
     this.getWorstCells(this.timestamp(), this.excludeZeroes);
   }
 
-  getWorstCells(date: Date, excludeZeroes: boolean) {
+  getWorstCells(timestamp: string, excludeZeroes: boolean) {
     this.loadingWorstCells = true;
     this.worstCells = [];
     this.selectedWorstCellComments = []
     this.worstCellsAndComments = []
     this.dashboardService.getWorstCellsByKpiAndArea(
-      this.datePipe.transform(date, 'yyyy-MM-dd')!,
+      timestamp,
       this.selectedStandardKpi(),
       this.selectedPeriod(),
       this.area()!,
@@ -230,7 +276,7 @@ export class DashboardComponent implements OnInit {
         }, error: error => {
           console.log(error);
           this.loadingWorstCells = false;
-          this.alertService.error(`Error getting Worst cells! (${error.status}:${error.statusText})`);
+          this.alertService.error('Error getting Worst cells', 'Error', `${error.status}:${error.statusText}`);
         }
       });
   }
@@ -275,7 +321,7 @@ export class DashboardComponent implements OnInit {
         })
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}. (${error.status}:${error.statusText})`);
+        this.alertService.error(`Error getting Comments for ${worstCell.cellName} ${worstCell.kpiLabel}`, 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -303,7 +349,7 @@ export class DashboardComponent implements OnInit {
         this.isAddingComment = false;
         this.openDropdownCellId = null;
         console.log(error);
-        this.alertService.error(`Error creating comment! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error creating comment', 'Error', `${error.status}:${error.statusText}`);
       }
     })
   }
@@ -329,7 +375,7 @@ export class DashboardComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error updating comment! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error updating comment', 'Error', `${error.status}:${error.statusText}`);
         this.isEditingComment = false;
         this.editingCommentId = null;
         this._comment.set('');
@@ -353,7 +399,7 @@ export class DashboardComponent implements OnInit {
 
       }, error: error => {
         console.log(error);
-        this.alertService.error(`Error deleting comment! (${error.status}:${error.statusText})`);
+        this.alertService.error('Error deleting comment', 'Error', `${error.status}:${error.statusText}`);
         this.getAllWorstCellComments(worstCell);
         this.openDropdownCellId = null;
       }
@@ -407,24 +453,32 @@ export class DashboardComponent implements OnInit {
 
   getTrendDataByKpi(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string) {
     this.selectedCell.set(cellName);
+    this.selectedKpiName.set(kpiName);
     this.loadingKpiTrend = true;
     this.kpiTrendData = [];
-    this.getTrendDataByKpiNameAndCell(kpiName, cellName, 'quarter', ratName, granularityName)
+
+    this.getStandardRawKpiMappingAvailable(ratName, kpiName);
+
+    this.getTrendDataByKpiNameAndCell(kpiName, cellName, period, ratName, granularityName)
       .subscribe({
         next: data => {
-          this.chartSeries = this.chartService.buildSeriesKpiDataDto(data);
+          this.chartSeries = this.showOperands()
+            ? this.chartService.buildSeriesKpiDataWithOperandsDto(data)
+            : this.chartService.buildSeriesKpiDataDto(data);
           this.loadingKpiTrend = false;
         }, error: err => {
           this.loadingKpiTrend = false;
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(err);
-          this.alertService.error(`Error getting data! (${err.status}:${err.statusText})`);
+          this.alertService.error('Error getting data', 'Error', `${err.status}:${err.statusText}`);
         }
       })
   }
 
   getTrendDataByKpiNameAndCell(kpiName: string, cellName: string, period: string, ratName: string, granularityName: string): Observable<KpiDataDto[]> {
-    return this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
+    return this.showOperands()
+      ? this.kpiDayService.getDataByKpiAndCellWithOperands(kpiName, cellName, period, ratName, granularityName)
+      : this.kpiDayService.getDataByKpiAndCell(kpiName, cellName, period, ratName, granularityName);
   }
 
   //----------- UTILITY ------------------------------
@@ -462,6 +516,60 @@ export class DashboardComponent implements OnInit {
 
   isTrendDataAvailable() {
     return !(this.chartSeries == null);
+  }
+
+  getStandardRawKpiMappingAvailable(ratName: string, standardKpiName: string) {
+    this.loadingStandardRawKpiMapping = true;
+    this.standardRawKpiMappingService.isMappingAvailable(ratName, standardKpiName).subscribe({
+      next: data => {
+        this.standardRawKpiMappingAvailable.set(data);
+        this.loadingStandardRawKpiMapping = false;
+      }, error: error => {
+        console.error("Error getting standardRawKpiMappingAvailable:", error);
+        this.alertService.error('Standard-Raw-KPI-Mapping retrieval failed', 'Error', `${error.status} ${error.statusText}`);
+        this.loadingStandardRawKpiMapping = false;
+      }
+    })
+  }
+
+  onShowOperandsChange(checked: boolean) {
+    this.showOperands.set(checked);
+    this.getTrendDataByKpi(this.selectedKpiName(), this.selectedCell(), this.selectedKpiTrendPeriod(), this.selectedRat(), this.selectedGranularity());
+  }
+
+  get trendYAxis(): ApexYAxis[] | undefined {
+    if (!this.showOperands()) return undefined;
+    return [
+      {seriesName: 'KPI Value', title: {text: 'KPI Value'}},
+      {seriesName: 'Numerator', opposite: true, title: {text: 'Count'}},
+      {seriesName: 'Denominator', opposite: true, show: false}
+    ];
+  }
+
+  getRouterLinkForCell(): string[] {
+    return ['/pulse/cell'];
+  }
+
+  onCellNavigate(cell: WorstCellsWithLatestDto, event: Event) {
+    event.stopPropagation();
+
+    // Consumed by cell-analysis to auto-load the cell/KPI
+    this.sharedService.selectedGranularity.set(this.selectedGranularity());
+    this.sharedService.selectedRat.set(this.selectedRat());
+    this.sharedService.selectedStandardKpi.set(cell.kpiName!);
+    this.sharedService.selectedCell.set(cell.cellName!);
+
+    // Dedicated copies so dashboard's own filters can be restored on return,
+    // independent of what happens to the general fields above in the meantime
+    this.sharedService.dashboardGranularity.set(this.selectedGranularity());
+    this.sharedService.dashboardRat.set(this.selectedRat());
+    this.sharedService.dashboardStandardKpi.set(cell.kpiName!);
+    this.sharedService.dashboardAreaType.set(this.areaType());
+    this.sharedService.dashboardArea.set(this.area());
+    this.sharedService.dashboardExcludeZeroes = this.excludeZeroes;
+    this.sharedService.dashboardTimestamp.set(this.timestamp());
+
+    this.sharedService.returnPage = '/pulse/dashboard';
   }
 
   //---------- OPEN MODALS ------------------------

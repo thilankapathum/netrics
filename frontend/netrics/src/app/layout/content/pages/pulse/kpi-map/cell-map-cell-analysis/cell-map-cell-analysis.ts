@@ -83,7 +83,7 @@ export class CellMapCellAnalysis {
           this.loadingChart = false;
           console.log("Error getDataByKpiLabelAndCell:");
           console.error(err);
-          this.alertService.error(`KPI Data retrieval failed. ${err.status} ${err.statusText}`);
+          this.alertService.error('KPI Data retrieval failed', 'Error', `${err.status} ${err.statusText}`);
         }
       });
   }

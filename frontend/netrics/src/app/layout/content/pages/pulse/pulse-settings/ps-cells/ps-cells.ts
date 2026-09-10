@@ -47,7 +47,7 @@ export class PsCells {
       error: error => {
         console.log("Error exporting missing cell information:");
         console.error(error);
-        this.alertService.error("Error exporting missing cell information!");
+        this.alertService.error('Error exporting missing cell information', 'Error', `${error.status} ${error.statusText}`);
         this.loadingMissingCellInfoDownload = false;
       }
     })
@@ -68,7 +68,7 @@ export class PsCells {
       error: error => {
         console.log("Error exporting cell information:");
         console.error(error);
-        this.alertService.error(`Error exporting missing cell information! - ${error.statusText}`);
+        this.alertService.error('Error exporting missing cell information', 'Error', `${error.status} ${error.statusText}`);
         this.loadingAllCellsDownload = false;
       }
     })
@@ -111,7 +111,7 @@ export class PsCells {
         console.log("Error exporting missing cell information:");
         console.error(error);
         this.loadingMissingCellInfoUpload = false;
-        this.alertService.error("Error exporting missing cell information!");
+        this.alertService.error('Error exporting missing cell information', 'Error', `${error.status} ${error.statusText}`);
         fileInput.value = '';
       }
     })
@@ -125,7 +125,7 @@ export class PsCells {
       error: error => {
         console.log("Error getCellCountWithMissingInfo:");
         console.error(error);
-        this.alertService.error("Error retrieving Cell count with missing information");
+        this.alertService.error('Error retrieving Cell count with missing information', 'Error', `${error.status} ${error.statusText}`);
       }
     })
   }

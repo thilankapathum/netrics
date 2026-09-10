@@ -150,6 +150,16 @@ span.tsize-48 {
   font-size: 13px;
 }
 
+/* daisyUI reserves a scrollbar-gutter on :root when a modal opens (to avoid
+   reflow) and paints that gutter with the light base-100 background. Since
+   the reserved gutter also shrinks 100%/100vw sizing for the modal backdrop
+   itself, it leaves a light strip visible at the edge. The backdrop already
+   covers the page, so the reflow the gutter guards against is invisible —
+   drop the reservation while a modal is open. */
+:root:has(.modal-open, .modal[open], .modal:target) {
+  scrollbar-gutter: auto;
+}
+
 
 /* Force visibility for debugging */
 /*section, table, tr, td, th, div {*/

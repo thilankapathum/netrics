@@ -36,4 +36,11 @@ public class AreaDistrictCodeMappingController {
     ResponseEntity<List<AreaDistrictCodeMappingDto>> getAll(){
         return ResponseEntity.ok(areaDistrictCodeMappingService.getAll());
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_PULSE_DELETE')")
+    ResponseEntity<Void> deleteAreaDistrictCodeMapping(@PathVariable("id") Long id){
+        areaDistrictCodeMappingService.deleteAreaDistrictCodeMapping(id);
+        return ResponseEntity.noContent().build();
+    }
 }

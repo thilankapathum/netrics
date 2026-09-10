@@ -54,4 +54,6 @@ public interface CellService {
     Integer reloadCellCountWithMissingInfo();
 
     Integer getCellCountWithMissingInfo();
+
+    int updateNodeNamesFromLatestKpiValues();
 }

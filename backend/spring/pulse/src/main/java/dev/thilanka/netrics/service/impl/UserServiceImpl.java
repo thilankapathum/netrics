@@ -7,13 +7,22 @@ import dev.thilanka.netrics.mapper.Mapper;
 import dev.thilanka.netrics.repository.UserRepository;
 import dev.thilanka.netrics.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final Mapper mapper;
+    private final Keycloak keycloakAdminClient;
+
+    @Value("${keycloak.realm-name}")
+    private String realmName;
 
 
     @Override
@@ -59,5 +68,19 @@ public class UserServiceImpl implements UserService {
         return userRepository
                 .findByUserId(userId)
                 .orElseThrow(()-> new ResourceNotFoundException("User", "User ID", userId));
+    }
+
+    @Override
+    public List<UserDto> getAllRealmUsers() {
+        List<UserRepresentation> realmUsers = keycloakAdminClient.realm(realmName).users().list();
+        return realmUsers.stream()
+                .map(u -> new UserDto(u.getId(), u.getFirstName(), u.getLastName(), u.getUsername(), u.getEmail()))
+                .toList();
+    }
+
+    @Override
+    public UserDto getRealmUserById(String userId) {
+        UserRepresentation u = keycloakAdminClient.realm(realmName).users().get(userId).toRepresentation();
+        return new UserDto(u.getId(), u.getFirstName(), u.getLastName(), u.getUsername(), u.getEmail());
     }
 }

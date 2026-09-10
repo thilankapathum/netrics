@@ -24,6 +24,13 @@ public class StandardKpiController {
         return ResponseEntity.ok(standardKpiDtos);
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("operands")
+    public ResponseEntity<List<StandardKpiDto>> getAllStandardKpiByRatWithOperands(@RequestParam("ratName") String ratName) {
+        List<StandardKpiDto> standardKpiDtos = standardKpiService.getAllStandardKpiByRatWithOperands(ratName);
+        return ResponseEntity.ok(standardKpiDtos);
+    }
+
     @PreAuthorize("hasAuthority('ROLE_PULSE_CREATE')")
     @PostMapping
     public ResponseEntity<StandardKpiDto> createStandardKpi(@RequestBody @Valid StandardKpiDto dto) {

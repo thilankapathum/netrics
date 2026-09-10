@@ -27,6 +27,7 @@ export class AnomalyCellsService {
     sortDir: string;
     page: number;
     pageSize: number;
+    alarmCorrelation?: string | null;
   }): Observable<PagedResponse<AnomalyCellDto>> {
     let httpParams = new HttpParams()
       .set('period', params.period)
@@ -40,6 +41,7 @@ export class AnomalyCellsService {
 
     if (params.severity) httpParams = httpParams.set('severity', params.severity);
     if (params.kpiName) httpParams = httpParams.set('kpiName', params.kpiName);
+    if (params.alarmCorrelation) httpParams = httpParams.set('alarmCorrelation', params.alarmCorrelation);
 
     return this.http.get<PagedResponse<AnomalyCellDto>>(`${this.baseUrl}/cells`, {params: httpParams});
   }
