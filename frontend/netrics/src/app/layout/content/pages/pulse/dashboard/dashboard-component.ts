@@ -38,7 +38,6 @@ import {SharedService} from '../../../../../service/pulse/shared-service';
     PdbCreateCells,
     PsStandardKpi
   ],
-  providers: [DatePipe],
   templateUrl: './dashboard-component.html',
   styleUrl: './dashboard-component.css'
 })
@@ -50,8 +49,8 @@ export class DashboardComponent implements OnInit {
   areas: AreaDto[] = [];
   area = signal<string | undefined>('')
 
-  timestamps: Date[] = [];
-  timestamp = signal<Date>(new Date());
+  timestamps: string[] = [];
+  timestamp = signal<string>('');
 
   standardKpis: StandardKpiDto[] = [];
   selectedStandardKpi = signal('');
@@ -101,7 +100,6 @@ export class DashboardComponent implements OnInit {
               private dashboardService: DashboardService,
               private standardKpiService: StandardkpiService,
               private alertService: AlertService,
-              private datePipe: DatePipe,
               private kpiDayService: KpidayService,
               private chartService: ChartService,
               private worstCellCommentService: WorstCellCommentService,
@@ -214,7 +212,7 @@ export class DashboardComponent implements OnInit {
         this.timestamps = data;
 
         const currentTimestamp = this.timestamps.find(
-          ts => new Date(ts).getTime() === new Date(this.timestamp()).getTime()
+          ts => ts === this.timestamp()
         );
 
         if (currentTimestamp === undefined) {
@@ -257,13 +255,13 @@ export class DashboardComponent implements OnInit {
     this.getWorstCells(this.timestamp(), this.excludeZeroes);
   }
 
-  getWorstCells(date: Date, excludeZeroes: boolean) {
+  getWorstCells(timestamp: string, excludeZeroes: boolean) {
     this.loadingWorstCells = true;
     this.worstCells = [];
     this.selectedWorstCellComments = []
     this.worstCellsAndComments = []
     this.dashboardService.getWorstCellsByKpiAndArea(
-      this.datePipe.transform(date, 'yyyy-MM-dd')!,
+      timestamp,
       this.selectedStandardKpi(),
       this.selectedPeriod(),
       this.area()!,

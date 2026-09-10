@@ -149,7 +149,7 @@ public class DateServiceImpl implements DateService {
 
     @Override
     public LocalDateTime extractDateTime(String date) {
-        return null;
+        return LocalDateTime.parse(date, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
     @Override

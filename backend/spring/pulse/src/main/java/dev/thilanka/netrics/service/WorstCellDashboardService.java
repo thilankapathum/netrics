@@ -7,7 +7,6 @@ import dev.thilanka.netrics.entity.AreaType;
 import dev.thilanka.netrics.entity.Granularity;
 import dev.thilanka.netrics.entity.Rat;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,7 @@ public interface WorstCellDashboardService {
 
     List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName, String granularityName);
 
-    List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName, String granularityName);
+    List<String> getTimestamps(String kpiName, String period, String areaName, String ratName, String granularityName);
 
     WorstCellCreationStatusDto getWorstCellCreationStatus();
 

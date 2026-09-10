@@ -28,7 +28,7 @@ export class SharedService {
   dashboardAreaType = signal<string | undefined>('');
   dashboardArea = signal<string | undefined>('');
   dashboardExcludeZeroes: boolean = false;
-  dashboardTimestamp = signal<Date | undefined>(undefined);
+  dashboardTimestamp = signal<string | undefined>(undefined);
 
   //-- Cell Analysis
   selectedCell = signal('');

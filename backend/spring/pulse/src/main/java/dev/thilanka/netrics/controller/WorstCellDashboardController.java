@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +82,7 @@ public class WorstCellDashboardController {
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("timestamps")
-    public List<Timestamp> getTimestamps(
+    public List<String> getTimestamps(
             @RequestParam String kpiName,
             @RequestParam String period,
             @RequestParam String areaName,

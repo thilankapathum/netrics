@@ -18,8 +18,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -222,7 +222,7 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     @Override
     @Cacheable(value = "dashboardWorstCells", key = "#timestamp + '_' + #kpiName + '_' + #period + '_' + #excludeZeroes + '_' + #areaName + '_' + #granularityName + '_' + #ratName")
     public List<WorstCellsWithLatestDto> getWorstCellsByKpiAndArea(String timestamp, String kpiName, String period, boolean excludeZeroes, String areaName, String ratName, String granularityName) {
-        LocalDateTime timestamps = dateService.extractDate(timestamp);
+        LocalDateTime timestamps = dateService.extractDateTime(timestamp);
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
 
@@ -236,13 +236,16 @@ public class WorstCellDashboardServiceImpl implements WorstCellDashboardService 
     }
 
     @Override
-    public List<Timestamp> getTimestamps(String kpiName, String period, String areaName, String ratName, String granularityName) {
+    public List<String> getTimestamps(String kpiName, String period, String areaName, String ratName, String granularityName) {
         Rat rat = ratService.findRatByName(ratName);
         Granularity granularity = granularityService.findGranularityByName(granularityName);
         StandardKpi standardKpi = standardKpiService.findByKpiName(kpiName, rat);
         Area area = areaService.findAreaByName(areaName);
 
-        return worstCellRepository.findTimestamps(period, rat.getId(), standardKpi.getId(), area.getId(), granularity.getId());
+        return worstCellRepository.findTimestamps(period, rat.getId(), standardKpi.getId(), area.getId(), granularity.getId())
+                .stream()
+                .map(timestamp -> timestamp.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .toList();
     }
 
     @Override
