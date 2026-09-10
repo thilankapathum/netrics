@@ -434,6 +434,14 @@ export class UpgradeReview implements OnInit{
     return this.selectedCells().some(c => c.cellName === cellName);
   }
 
+  clearAllCells(): void {
+    this.selectedCells.set([]);
+    this.cellColorMap = {};
+    this.cellSelected.set(false);
+    // Keep selectedKpiNames intact so the next cell picks plot the same KPIs.
+    this.kpiTiles.update(tiles => tiles.map(t => ({...t, series: []})));
+  }
+
   removeCellFromChart(cellName: string): void {
     delete this.cellColorMap[cellName];
     this.selectedCells.update(prev => prev.filter(c => c.cellName !== cellName));
