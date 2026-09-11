@@ -133,6 +133,7 @@ services:
     volumes:
       - ./keycloak/themes:/opt/keycloak/themes
       - ./keycloak/providers:/opt/keycloak/providers
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /auth/health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;" ]
       interval: 30s
@@ -152,6 +153,7 @@ services:
       - --proxy-headers=xforwarded
       - --hostname-url=http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
       - --hostname-admin-url=http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
+      - --import-realm
 
 
   config-server:
