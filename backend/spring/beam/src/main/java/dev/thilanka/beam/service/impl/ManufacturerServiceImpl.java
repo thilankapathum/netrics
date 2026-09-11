@@ -98,6 +98,16 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         return mapper.toManufacturerDto(findByName(manufacturerName));
     }
 
+    @Override
+    public List<Manufacturer> findAll() {
+        return manufacturerRepository.findAll();
+    }
+
+    @Override
+    public List<ManufacturerDto> getAll() {
+        return findAll().stream().map(mapper::toManufacturerDto).toList();
+    }
+
     private Manufacturer dtoToManufacturer(ManufacturerDto dto) {
         return Manufacturer.builder()
                 .name(dto.name())

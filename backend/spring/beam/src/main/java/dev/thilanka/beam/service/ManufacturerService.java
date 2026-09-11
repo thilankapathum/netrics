@@ -26,4 +26,8 @@ public interface ManufacturerService {
     Manufacturer findByName(String manufacturerName);
 
     ManufacturerDto getByName(String manufacturerName);
+
+    List<Manufacturer> findAll();
+
+    List<ManufacturerDto> getAll();
 }

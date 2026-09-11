@@ -36,4 +36,24 @@ public class OperatorController {
     public ResponseEntity<List<OperatorDto>> getAllOperators() {
         return ResponseEntity.ok(operatorService.getAll());
     }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
+    @PutMapping
+    public ResponseEntity<OperatorDto> updateOperator(@RequestBody @Valid OperatorDto dto) {
+        OperatorDto updated = operatorService.updateOperator(dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_DELETE')")
+    @DeleteMapping("{name}")
+    public ResponseEntity<Void> deleteOperator(@PathVariable("name") String name) {
+        operatorService.deleteOperator(name);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
+    @GetMapping("{name}")
+    public ResponseEntity<OperatorDto> getByName(@PathVariable("name") String name) {
+        return ResponseEntity.ok(operatorService.findByOperatorName(name));
+    }
 }

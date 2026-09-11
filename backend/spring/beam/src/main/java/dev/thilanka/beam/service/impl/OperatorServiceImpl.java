@@ -89,7 +89,7 @@ public class OperatorServiceImpl implements OperatorService {
     @Override
     public void deleteOperator(String operatorName) {
         Operator operator = findByName(operatorName);
-//        operatorRepository.delete(operator);
+        operatorRepository.delete(operator);
     }
 
     @Override
