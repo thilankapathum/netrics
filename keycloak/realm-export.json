@@ -958,18 +958,18 @@
       "clientId": "netrics-frontend",
       "name": "",
       "description": "",
-      "rootUrl": "http://172.22.41.77:8000",
-      "adminUrl": "http://172.22.41.77:8000",
-      "baseUrl": "http://172.22.41.77:8000",
+      "rootUrl": "http://netrics.local:8000",
+      "adminUrl": "http://netrics.local:8000",
+      "baseUrl": "http://netrics.local:8000",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "http://172.22.41.77:8000/*"
+        "http://netrics.local:8000/*"
       ],
       "webOrigins": [
-        "http://172.22.41.77:8000"
+        "http://netrics.local:8000"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -982,7 +982,7 @@
       "frontchannelLogout": true,
       "protocol": "openid-connect",
       "attributes": {
-        "post.logout.redirect.uris": "http://172.22.41.77:8000/*",
+        "post.logout.redirect.uris": "http://netrics.local:8000/*",
         "oauth2.device.authorization.grant.enabled": "false",
         "backchannel.logout.revoke.offline.tokens": "false",
         "use.refresh.tokens": "true",
@@ -1019,19 +1019,19 @@
       "clientId": "netrics-gateway",
       "name": "",
       "description": "",
-      "rootUrl": "http://172.22.41.77:8000",
-      "adminUrl": "http://172.22.41.77:8000",
-      "baseUrl": "http://172.22.41.77:8000",
+      "rootUrl": "http://netrics.local:8000",
+      "adminUrl": "http://netrics.local:8000",
+      "baseUrl": "http://netrics.local:8000",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "**********",
       "redirectUris": [
-        "http://172.22.41.77:8000/*"
+        "http://netrics.local:8000/*"
       ],
       "webOrigins": [
-        "http://172.22.41.77:8000"
+        "http://netrics.local:8000"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -1047,7 +1047,7 @@
         "oidc.ciba.grant.enabled": "false",
         "client.secret.creation.time": "1767701364",
         "backchannel.logout.session.required": "true",
-        "post.logout.redirect.uris": "http://172.22.41.77:8000/*",
+        "post.logout.redirect.uris": "http://netrics.local:8000/*",
         "oauth2.device.authorization.grant.enabled": "false",
         "backchannel.logout.revoke.offline.tokens": "false"
       },

@@ -14,6 +14,14 @@ volumes:
   alarm_state:
 
 services:
+  postgres-data-init:
+    image: alpine:3
+    container_name: postgres-data-init
+    volumes:
+      - postgres_data:/data
+    command: ["sh", "-c", "chown -R 1000:1000 /data"]
+    restart: "no"
+
   postgres:
     image: timescale/timescaledb-ha:pg17
     container_name: postgres
@@ -22,6 +30,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB_PULSE}
+      POSTGRES_DB_KEYCLOAK: ${POSTGRES_DB_KEYCLOAK}
+      POSTGRES_DB_BEAM: ${POSTGRES_DB_BEAM}
       PGDATA: /var/lib/postgresql/data
     expose:
       - "${POSTGRES_PORT}"
@@ -32,6 +42,10 @@ services:
       # - public_net
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d
+    depends_on:
+      postgres-data-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pguser -d pulse_db"]
       interval: 10s
