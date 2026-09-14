@@ -1,0 +1,121 @@
+<dialog [class.modal-open]="open()" class="modal w-full">
+  <div class="modal-box max-w-xl">
+    <h3 class="text-lg font-bold mb-2">
+      {{ mode === 'create' ? 'Add' : 'Edit' }} {{ nodeType }}
+    </h3>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'site'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Site Code</legend>
+        <input type="text" class="input input-sm" [disabled]="mode === 'edit'" [(ngModel)]="site.siteCode"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Site Name</legend>
+        <input type="text" class="input input-sm" [(ngModel)]="site.siteName"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Latitude</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="site.latitude"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Longitude</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="site.longitude"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Building Height</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="site.buildingHeight"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Tower Height</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="site.towerHeight"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Operator</legend>
+        <select class="select select-sm" [(ngModel)]="site.operatorName">
+          <option *ngFor="let op of operators" [value]="op.name">{{ op.name }}</option>
+        </select>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Infra Type</legend>
+        <select class="select select-sm" [(ngModel)]="site.infraType">
+          <option *ngFor="let it of infraTypes" [value]="infraTypeOption(it)">{{ infraTypeOption(it) }}</option>
+        </select>
+      </fieldset>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'sector'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Site Code</legend>
+        <p class="label font-semibold">{{ sector.siteCode }}</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Sector Index</legend>
+        <input type="number" class="input input-sm" [disabled]="mode === 'edit'" [(ngModel)]="sector.sectorIndex"/>
+      </fieldset>
+      <fieldset class="fieldset col-span-2" *ngIf="mode === 'edit'">
+        <legend class="fieldset-legend">Sector Name</legend>
+        <p class="label font-semibold">{{ sector.name }}</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Azimuth</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="sector.azimuth"/>
+      </fieldset>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'antenna'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Sector</legend>
+        <p class="label font-semibold">{{ antenna.sectorName }}</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Antenna Index</legend>
+        <input type="number" class="input input-sm" [disabled]="mode === 'edit'" [(ngModel)]="antenna.antennaIndex"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Azimuth</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="antenna.azimuth"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Mechanical Tilt</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="antenna.mechanicalTilt"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Antenna Height</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="antenna.antennaHeight"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Antenna Type</legend>
+        <select class="select select-sm" [(ngModel)]="antenna.antennaTypeName">
+          <option *ngFor="let at of antennaTypes" [value]="at.name">{{ at.name }}</option>
+        </select>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Manufacturer</legend>
+        <select class="select select-sm" [(ngModel)]="antenna.manufacturerName">
+          <option *ngFor="let m of manufacturers" [value]="m.name">{{ m.name }}</option>
+        </select>
+      </fieldset>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'tilt'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Band</legend>
+        <select class="select select-sm" [(ngModel)]="tilt.bandName">
+          <option *ngFor="let b of bands" [value]="b.name">{{ b.name }}</option>
+        </select>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Electrical Tilt</legend>
+        <input type="number" class="input input-sm" [(ngModel)]="tilt.electricalTilt"/>
+      </fieldset>
+    </div>
+
+    <div class="modal-action">
+      <button [disabled]="saving() || !canEdit" class="btn btn-sm btn-primary" (click)="onSave()">
+        <span [hidden]="!saving()" class="loading loading-spinner loading-xs"></span>
+        Save
+      </button>
+      <button class="btn btn-sm" type="button" (click)="onCancel()">Close</button>
+    </div>
+  </div>
+</dialog>

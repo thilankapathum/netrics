@@ -15,6 +15,8 @@ import {KpiMap} from './layout/content/pages/pulse/kpi-map/kpi-map';
 import {UpgradeReview} from './layout/content/pages/pulse/upgrade-review/upgrade-review';
 import {AnomalyCells} from './layout/content/pages/pulse/anomaly-cells/anomaly-cells';
 import {Alarms} from './layout/content/pages/pulse/alarms/alarms';
+import {SiteSearch} from './layout/content/pages/beam/engineering-parameters/site-search/site-search';
+import {SiteTree} from './layout/content/pages/beam/engineering-parameters/site-tree/site-tree';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -93,7 +95,28 @@ export const routes: Routes = [
         ]
       },
       {path: 'surge', component: BeamComponent, canActivate: [authGuard, roleGuard(['SURGE_READ'])]},
-      {path: 'beam', component: BeamComponent, canActivate: [authGuard, roleGuard(['BEAM_READ'])]},
+      {
+        path: 'beam',
+        component: ContentComponent,
+        children: [
+          {
+            path: 'engineering-parameters',
+            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
+            component: SiteSearch
+          },
+          {
+            path: 'engineering-parameters/:siteCode',
+            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
+            component: SiteTree
+          },
+          {
+            path: '',
+            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
+            component: BeamComponent
+          },
+          {path: 'unauthorized', component: UnauthorizedComponent},
+        ]
+      },
       {path: 'mark', component: BeamComponent, canActivate: [authGuard, roleGuard(['MARK_READ'])]},
       {path: 'cortex', component: BeamComponent, canActivate: [authGuard, roleGuard(['CORTEX_READ'])]},
     ]

@@ -1,0 +1,20 @@
+<div class="p-4 max-w-lg mx-auto flex flex-col gap-4">
+  <h2 class="text-lg font-bold">Engineering Parameters — Search Site</h2>
+
+  <div class="dropdown w-full" [class.dropdown-open]="query().length > 1">
+    <input type="search" class="input input-bordered w-full"
+           placeholder="Search by site code or name"
+           [ngModel]="query()"
+           (input)="onSearch($any($event.target).value)"/>
+
+    <ul *ngIf="query().length > 1" class="dropdown-content menu bg-base-100 rounded-box shadow w-full max-h-80 overflow-y-auto z-10">
+      <li *ngIf="results().length === 0" class="text-xs text-neutral/50 p-2">No sites found</li>
+      <li *ngFor="let site of results()">
+        <a (click)="selectSite(site)">
+          <span class="font-semibold">{{ site.siteCode }}</span>
+          <span class="text-neutral/60">{{ site.siteName }}</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>

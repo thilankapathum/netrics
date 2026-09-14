@@ -65,6 +65,11 @@ public class SiteServiceImpl implements SiteService {
     }
 
     @Override
+    public SiteDto getBySiteCode(String siteCode) {
+        return toSiteDto(findBySiteCode(siteCode));
+    }
+
+    @Override
     public List<Site> findAllSites() {
         return siteRepository.findAllByOrderBySiteCodeAsc();
     }

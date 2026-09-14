@@ -49,12 +49,12 @@ public class SiteController {
         return  new ResponseEntity<>(result.siteDto(), HttpStatus.OK);
     }
 
-//    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
-//    @GetMapping
-//    public ResponseEntity<SiteDto> getSiteBySiteCode(@RequestParam("siteCode") String siteCode){
-//        SiteDto dto = siteService.getBySiteCode(siteCode);
-//        return ResponseEntity.ok(dto);
-//    }
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
+    @GetMapping
+    public ResponseEntity<SiteDto> getSiteBySiteCode(@RequestParam("siteCode") String siteCode){
+        SiteDto dto = siteService.getBySiteCode(siteCode);
+        return ResponseEntity.ok(dto);
+    }
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
     @GetMapping("missing/export")
@@ -106,11 +106,4 @@ public class SiteController {
         Integer count = siteService.reloadSiteCountWithMissingInfo();
         return ResponseEntity.ok(count);
     }
-
-//    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
-//    @GetMapping("search")
-//    public ResponseEntity<List<SiteDto>> searchSites(@RequestParam("search") String search){
-//        return ResponseEntity.ok(siteService.searchSites(search));
-//    }
-
 }

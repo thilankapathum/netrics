@@ -40,6 +40,8 @@ public interface SectorRepository extends JpaRepository<Sector, Long> {
 
     Optional<Sector> findByName(String name);
 
+    List<Sector> findBySite_SiteCodeOrderBySectorIndexAsc(String siteCode);
+
     @Query(value = """
                 SELECT * FROM public.sectors
                 WHERE sector_index IS NULL

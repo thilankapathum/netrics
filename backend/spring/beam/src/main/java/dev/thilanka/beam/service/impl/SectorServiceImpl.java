@@ -39,6 +39,12 @@ public class SectorServiceImpl implements SectorService {
     }
 
     @Override
+    public List<SectorDto> getBySiteCode(String siteCode) {
+        return sectorRepository.findBySite_SiteCodeOrderBySectorIndexAsc(siteCode).stream()
+                .map(this::toSectorDto).collect(Collectors.toList());
+    }
+
+    @Override
     public Sector createSector(Sector sector) {
         Sector savedSector = sectorRepository.save(sector);
         eventPublisher.publishSectorEvent(buildSectorEvent("CREATED", savedSector));

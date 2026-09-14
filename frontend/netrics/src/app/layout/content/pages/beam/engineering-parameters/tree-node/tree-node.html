@@ -1,0 +1,42 @@
+<li>
+  <div class="flex items-center gap-1 group">
+    <button type="button"
+            class="w-5 h-5 flex items-center justify-center text-xs shrink-0"
+            [class.invisible]="isLeaf"
+            (click)="toggle()">
+      {{ expanded() ? '▾' : '▸' }}
+    </button>
+
+    <a class="grow flex items-center gap-2 py-1" (click)="onSelect(node)">
+      <span class="badge badge-sm" [class.badge-primary]="node.type === 'site'"
+            [class.badge-secondary]="node.type === 'sector'"
+            [class.badge-accent]="node.type === 'antenna'"
+            [class.badge-ghost]="node.type === 'tilt'">
+        {{ node.type }}
+      </span>
+      <span>{{ node.label }}</span>
+    </a>
+
+    <button *ngIf="canAdd && !isLeaf" type="button"
+            class="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100"
+            title="Add child"
+            (click)="onAddChild(node)">
+      +
+    </button>
+  </div>
+
+  <ul *ngIf="expanded()" class="pl-5 border-l border-base-300">
+    <li *ngIf="loadingChildren()" class="text-xs text-neutral/50 py-1">
+      <span class="loading loading-spinner loading-xs"></span> Loading...
+    </li>
+    <li *ngIf="!loadingChildren() && node.children?.length === 0" class="text-xs text-neutral/50 py-1">
+      No items
+    </li>
+    <app-tree-node *ngFor="let child of node.children"
+                    [node]="child"
+                    [canAdd]="canAdd"
+                    (select)="onSelect($event)"
+                    (addChild)="onAddChild($event)">
+    </app-tree-node>
+  </ul>
+</li>

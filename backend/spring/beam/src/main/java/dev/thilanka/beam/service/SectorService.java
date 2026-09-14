@@ -10,6 +10,8 @@ import java.util.List;
 public interface SectorService {
     Sector findByName(String name);
 
+    List<SectorDto> getBySiteCode(String siteCode);
+
     Sector createSector(Sector sector);
 
     SectorDto createSector(SectorDto dto);

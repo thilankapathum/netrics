@@ -1,0 +1,49 @@
+<div class="p-4 max-w-3xl mx-auto flex flex-col gap-4">
+  <div class="flex items-center gap-2">
+    <a routerLink="/beam/engineering-parameters" class="btn btn-sm btn-ghost">← Search</a>
+    <h2 class="text-lg font-bold">Engineering Parameters</h2>
+  </div>
+
+  <div *ngIf="loading()" class="flex items-center gap-2 text-sm text-neutral/50">
+    <span class="loading loading-spinner loading-xs"></span> Loading site...
+  </div>
+
+  <div *ngIf="!loading() && site()" class="card bg-base-200 border border-base-300 p-4">
+    <ul class="menu p-0">
+      <li>
+        <div class="flex items-center gap-1 group">
+          <a class="grow flex items-center gap-2 py-1" (click)="onSelectSite()">
+            <span class="badge badge-sm badge-primary">site</span>
+            <span class="font-semibold">{{ site()!.siteCode }}</span>
+            <span class="text-sm text-neutral/60">{{ site()!.siteName }}</span>
+          </a>
+          <button *ngIf="canAdd()" type="button" class="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100"
+                  title="Add sector" (click)="onAddSector()">
+            +
+          </button>
+        </div>
+
+        <ul class="pl-5 border-l border-base-300">
+          <li *ngIf="sectorNodes().length === 0" class="text-xs text-neutral/50 py-1">No sectors</li>
+          <app-tree-node *ngFor="let node of sectorNodes()"
+                         [node]="node"
+                         [canAdd]="canAdd()"
+                         (select)="onSelect($event)"
+                         (addChild)="onAddChild($event)">
+          </app-tree-node>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<app-node-edit-modal
+  [open]="modalOpen"
+  [mode]="modalMode"
+  [nodeType]="modalNodeType"
+  [editNode]="editNode"
+  [parentNode]="parentNode"
+  [canEdit]="modalMode === 'create' ? canAdd() : canEdit()"
+  (closed)="onModalClosed()"
+  (saved)="onModalSaved($event)">
+</app-node-edit-modal>
