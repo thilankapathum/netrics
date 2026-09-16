@@ -1,14 +1,18 @@
 package dev.thilanka.beam.service.impl;
 
 import dev.thilanka.beam.common.exception.DataNotChangedException;
+import dev.thilanka.beam.common.exception.DependencyConflictException;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.AntennaTypeDto;
+import dev.thilanka.beam.entity.Antenna;
 import dev.thilanka.beam.entity.AntennaType;
+import dev.thilanka.beam.repository.AntennaRepository;
 import dev.thilanka.beam.repository.AntennaTypeRepository;
 import dev.thilanka.beam.service.AntennaTypeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AntennaTypeServiceImpl implements AntennaTypeService {
     private final AntennaTypeRepository antennaTypeRepository;
+    private final AntennaRepository antennaRepository;
 
     @Override
     public AntennaType createAntennaType(AntennaType antennaType) {
@@ -45,15 +50,18 @@ public class AntennaTypeServiceImpl implements AntennaTypeService {
 
     @Override
     public AntennaType updateAntennaType(AntennaType antennaType) {
-        AntennaType existingAntennaType = findByName(antennaType.getName());
+        AntennaType existingAntennaType = antennaTypeRepository.findById(antennaType.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Antenna-Type", "id", antennaType.getId()));
 
-        if (existingAntennaType.getPortCount() == antennaType.getPortCount()
+        if (existingAntennaType.getName().equals(antennaType.getName())
+                && existingAntennaType.getPortCount() == antennaType.getPortCount()
                 && existingAntennaType.getHeight() == antennaType.getHeight()
                 && existingAntennaType.getWidth() == antennaType.getWidth()
                 && existingAntennaType.isRetAvailability() == antennaType.isRetAvailability()) {
             throw new DataNotChangedException("Antenna-Type", "name", antennaType.getName());
         }
 
+        existingAntennaType.setName(antennaType.getName());
         existingAntennaType.setPortCount(antennaType.getPortCount());
         existingAntennaType.setHeight(antennaType.getHeight());
         existingAntennaType.setWidth(antennaType.getWidth());
@@ -82,9 +90,27 @@ public class AntennaTypeServiceImpl implements AntennaTypeService {
     }
 
     @Override
-    public void deleteAntennaType(String name) {
+    @Transactional
+    public void deleteAntennaType(String name, boolean force) {
         AntennaType antennaType = findByName(name);
-        antennaTypeRepository.delete(antennaType);
+        List<Antenna> dependents = antennaRepository.findByAntennaType_Id(antennaType.getId());
+
+        if (!dependents.isEmpty()) {
+            if (!force) {
+                throw new DependencyConflictException("Antenna-Type", name, dependents.size());
+            }
+            antennaRepository.nullifyAntennaType(antennaType.getId());
+        }
+
+        antennaTypeRepository.deleteByIdNative(antennaType.getId());
+    }
+
+    @Override
+    public List<String> getDependentAntennaLabels(String name) {
+        AntennaType antennaType = findByName(name);
+        return antennaRepository.findByAntennaType_Id(antennaType.getId()).stream()
+                .map(a -> a.getSector().getName() + " / Antenna " + a.getAntennaIndex())
+                .toList();
     }
 
     @Override

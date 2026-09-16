@@ -17,4 +17,12 @@ export class InfraTypeService {
   getAll(): Observable<InfraTypeDto[]> {
     return this.http.get<InfraTypeDto[]>(this.baseUrl);
   }
+
+  create(dto: InfraTypeDto): Observable<InfraTypeDto> {
+    return this.http.post<InfraTypeDto>(this.baseUrl, dto);
+  }
+
+  update(dto: InfraTypeDto): Observable<InfraTypeDto> {
+    return this.http.put<InfraTypeDto>(this.baseUrl, dto);
+  }
 }

@@ -121,6 +121,7 @@ public class InfraTypeServiceImpl implements InfraTypeService {
 
     private InfraType toInfraType(InfraTypeDto dto) {
         return InfraType.builder()
+                .id(dto.id())
                 .legType(dto.legType())
                 .infraType(dto.infraType())
                 .build();

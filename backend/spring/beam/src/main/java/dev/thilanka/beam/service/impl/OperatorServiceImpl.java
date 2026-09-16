@@ -2,14 +2,18 @@ package dev.thilanka.beam.service.impl;
 
 import dev.thilanka.beam.common.Mapper;
 import dev.thilanka.beam.common.exception.DataNotChangedException;
+import dev.thilanka.beam.common.exception.DependencyConflictException;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.OperatorDto;
 import dev.thilanka.beam.entity.Operator;
+import dev.thilanka.beam.entity.Site;
 import dev.thilanka.beam.repository.OperatorRepository;
+import dev.thilanka.beam.repository.SiteRepository;
 import dev.thilanka.beam.service.OperatorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +23,7 @@ import java.util.List;
 @Slf4j
 public class OperatorServiceImpl implements OperatorService {
     private final OperatorRepository operatorRepository;
+    private final SiteRepository siteRepository;
     private final Mapper mapper;
 
     @Override
@@ -50,7 +55,8 @@ public class OperatorServiceImpl implements OperatorService {
 
     @Override
     public Operator updateOperator(Operator operator) {
-        Operator existingOperator = findByName(operator.getName());
+        Operator existingOperator = operatorRepository.findById(operator.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Operator", "id", operator.getId()));
 
         if (existingOperator.getName().equals(operator.getName())) {
             throw new DataNotChangedException("Operator", "name", operator.getName());
@@ -87,9 +93,27 @@ public class OperatorServiceImpl implements OperatorService {
     }
 
     @Override
-    public void deleteOperator(String operatorName) {
+    @Transactional
+    public void deleteOperator(String operatorName, boolean force) {
         Operator operator = findByName(operatorName);
-        operatorRepository.delete(operator);
+
+        List<Site> dependents = siteRepository.findByOperator_Id(operator.getId());
+        if (!dependents.isEmpty()) {
+            if (!force) {
+                throw new DependencyConflictException("Operator", operatorName, dependents.size());
+            }
+            siteRepository.nullifyOperator(operator.getId());
+        }
+
+        operatorRepository.deleteByIdNative(operator.getId());
+    }
+
+    @Override
+    public List<String> getDependentSiteLabels(String operatorName) {
+        Operator operator = findByName(operatorName);
+        return siteRepository.findByOperator_Id(operator.getId()).stream()
+                .map(s -> s.getSiteCode() + " - " + s.getSiteName())
+                .toList();
     }
 
     @Override
@@ -117,6 +141,7 @@ public class OperatorServiceImpl implements OperatorService {
 
     private Operator dtoToOperator(OperatorDto dto) {
         return Operator.builder()
+                .id(dto.id())
                 .name(dto.name())
                 .build();
     }

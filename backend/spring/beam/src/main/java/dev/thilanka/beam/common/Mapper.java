@@ -31,13 +31,13 @@ public class Mapper {
     //--------  OPERATOR  -------------------------
 
     public OperatorDto toOperatorDto(Operator operator) {
-        return new OperatorDto(operator.getName());
+        return new OperatorDto(operator.getId(), operator.getName());
     }
 
     //--------  MANUFACTURER  ---------------------
 
     public ManufacturerDto toManufacturerDto(Manufacturer manufacturer) {
-        return new ManufacturerDto(manufacturer.getName());
+        return new ManufacturerDto(manufacturer.getId(), manufacturer.getName());
     }
 
 }

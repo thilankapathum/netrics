@@ -17,4 +17,20 @@ export class AntennaTypeService {
   getAll(): Observable<AntennaTypeDto[]> {
     return this.http.get<AntennaTypeDto[]>(this.baseUrl);
   }
+
+  create(dto: AntennaTypeDto): Observable<AntennaTypeDto> {
+    return this.http.post<AntennaTypeDto>(this.baseUrl, dto);
+  }
+
+  update(dto: AntennaTypeDto): Observable<AntennaTypeDto> {
+    return this.http.put<AntennaTypeDto>(this.baseUrl, dto);
+  }
+
+  delete(name: string, force = false): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${name}`, {params: {force}});
+  }
+
+  getDependents(name: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/${name}/dependents`);
+  }
 }

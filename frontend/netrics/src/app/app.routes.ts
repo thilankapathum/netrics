@@ -17,6 +17,7 @@ import {AnomalyCells} from './layout/content/pages/pulse/anomaly-cells/anomaly-c
 import {Alarms} from './layout/content/pages/pulse/alarms/alarms';
 import {SiteSearch} from './layout/content/pages/beam/engineering-parameters/site-search/site-search';
 import {SiteTree} from './layout/content/pages/beam/engineering-parameters/site-tree/site-tree';
+import {BeamSettings} from './layout/content/pages/beam/beam-settings/beam-settings';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -108,6 +109,11 @@ export const routes: Routes = [
             path: 'engineering-parameters/:siteCode',
             canActivate: [authGuard, roleGuard(['BEAM_READ'])],
             component: SiteTree
+          },
+          {
+            path: 'settings',
+            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
+            component: BeamSettings
           },
           {
             path: '',

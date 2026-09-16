@@ -1,0 +1,195 @@
+<div class="p-4 max-w-4xl mx-auto flex flex-col gap-4">
+  <h2 class="text-lg font-bold">Beam Settings</h2>
+
+  <div role="tablist" class="tabs tabs-lift">
+    <a role="tab" class="tab" [class.tab-active]="activeTab() === 'antenna-types'" (click)="setTab('antenna-types')">Antenna Types</a>
+    <a role="tab" class="tab" [class.tab-active]="activeTab() === 'infra-types'" (click)="setTab('infra-types')">Infra Types</a>
+    <a role="tab" class="tab" [class.tab-active]="activeTab() === 'manufacturers'" (click)="setTab('manufacturers')">Manufacturers</a>
+    <a role="tab" class="tab" [class.tab-active]="activeTab() === 'operators'" (click)="setTab('operators')">Operators</a>
+  </div>
+
+  <!-- Antenna Types -->
+  <div *ngIf="activeTab() === 'antenna-types'" class="overflow-x-auto border border-base-300 rounded-xl">
+    <table class="table table-zebra table-xs">
+      <thead>
+        <tr class="text-xs uppercase">
+          <th>Name</th>
+          <th>Port Count</th>
+          <th>Height</th>
+          <th>Width</th>
+          <th>RET</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="canCreate()">
+          <td><input class="input input-sm w-full" placeholder="Name" [(ngModel)]="newAntennaType.name"/></td>
+          <td><input type="number" min="1" class="input input-sm w-20" [(ngModel)]="newAntennaType.portCount"/></td>
+          <td><input type="number" class="input input-sm w-20" [(ngModel)]="newAntennaType.height"/></td>
+          <td><input type="number" class="input input-sm w-20" [(ngModel)]="newAntennaType.width"/></td>
+          <td><input type="checkbox" class="checkbox checkbox-sm" [(ngModel)]="newAntennaType.retAvailability"/></td>
+          <td>
+            <button class="btn btn-primary btn-xs" [disabled]="saving() || !newAntennaType.name.trim() || newAntennaType.portCount < 1" (click)="addAntennaType()">Add</button>
+          </td>
+        </tr>
+        <tr *ngFor="let item of antennaTypes()">
+          <ng-container *ngIf="editingAntennaTypeId() === item.id; else viewAntennaType">
+            <td><input class="input input-sm w-full" [(ngModel)]="antennaTypeDraft.name"/></td>
+            <td><input type="number" min="1" class="input input-sm w-20" [(ngModel)]="antennaTypeDraft.portCount"/></td>
+            <td><input type="number" class="input input-sm w-20" [(ngModel)]="antennaTypeDraft.height"/></td>
+            <td><input type="number" class="input input-sm w-20" [(ngModel)]="antennaTypeDraft.width"/></td>
+            <td><input type="checkbox" class="checkbox checkbox-sm" [(ngModel)]="antennaTypeDraft.retAvailability"/></td>
+            <td class="flex gap-1">
+              <button class="btn btn-primary btn-xs" [disabled]="saving() || antennaTypeDraft.portCount < 1" (click)="saveAntennaType()">Save</button>
+              <button class="btn btn-xs" (click)="cancelEditAntennaType()">Cancel</button>
+            </td>
+          </ng-container>
+          <ng-template #viewAntennaType>
+            <td>{{ item.name }}</td>
+            <td>{{ item.portCount }}</td>
+            <td>{{ item.height }}</td>
+            <td>{{ item.width }}</td>
+            <td>{{ item.retAvailability ? 'Yes' : 'No' }}</td>
+            <td class="flex gap-1">
+              <button *ngIf="canEdit()" class="btn btn-ghost btn-xs" (click)="startEditAntennaType(item)">Edit</button>
+              <button *ngIf="canDelete()" class="btn btn-ghost btn-xs text-error" (click)="deleteAntennaType(item)">Delete</button>
+            </td>
+          </ng-template>
+        </tr>
+        <tr *ngIf="antennaTypes().length === 0">
+          <td colspan="6" class="text-center text-xs text-neutral/50 py-4">No antenna types</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Infra Types -->
+  <div *ngIf="activeTab() === 'infra-types'" class="overflow-x-auto border border-base-300 rounded-xl">
+    <table class="table table-zebra table-xs">
+      <thead>
+        <tr class="text-xs uppercase">
+          <th>Infra Type</th>
+          <th>Leg Type</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="canCreate()">
+          <td><input class="input input-sm w-full" placeholder="Infra Type" [(ngModel)]="newInfraType.infraType"/></td>
+          <td><input class="input input-sm w-full" placeholder="Leg Type" [(ngModel)]="newInfraType.legType"/></td>
+          <td>
+            <button class="btn btn-primary btn-xs" [disabled]="saving() || !newInfraType.infraType.trim() || !newInfraType.legType.trim()" (click)="addInfraType()">Add</button>
+          </td>
+        </tr>
+        <tr *ngFor="let item of infraTypes()">
+          <ng-container *ngIf="editingInfraTypeId() === item.id; else viewInfraType">
+            <td><input class="input input-sm w-full" [(ngModel)]="infraTypeDraft.infraType"/></td>
+            <td><input class="input input-sm w-full" [(ngModel)]="infraTypeDraft.legType"/></td>
+            <td class="flex gap-1">
+              <button class="btn btn-primary btn-xs" [disabled]="saving()" (click)="saveInfraType()">Save</button>
+              <button class="btn btn-xs" (click)="cancelEditInfraType()">Cancel</button>
+            </td>
+          </ng-container>
+          <ng-template #viewInfraType>
+            <td>{{ item.infraType }}</td>
+            <td>{{ item.legType }}</td>
+            <td>
+              <button *ngIf="canEdit()" class="btn btn-ghost btn-xs" (click)="startEditInfraType(item)">Edit</button>
+            </td>
+          </ng-template>
+        </tr>
+        <tr *ngIf="infraTypes().length === 0">
+          <td colspan="3" class="text-center text-xs text-neutral/50 py-4">No infra types</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Manufacturers -->
+  <div *ngIf="activeTab() === 'manufacturers'" class="overflow-x-auto border border-base-300 rounded-xl">
+    <table class="table table-zebra table-xs">
+      <thead>
+        <tr class="text-xs uppercase">
+          <th>Name</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="canCreate()">
+          <td><input class="input input-sm w-full" placeholder="Name" [(ngModel)]="newManufacturer.name"/></td>
+          <td>
+            <button class="btn btn-primary btn-xs" [disabled]="saving() || !newManufacturer.name.trim()" (click)="addManufacturer()">Add</button>
+          </td>
+        </tr>
+        <tr *ngFor="let item of manufacturers()">
+          <ng-container *ngIf="editingManufacturerId() === item.id; else viewManufacturer">
+            <td><input class="input input-sm w-full" [(ngModel)]="manufacturerDraft.name"/></td>
+            <td class="flex gap-1">
+              <button class="btn btn-primary btn-xs" [disabled]="saving()" (click)="saveManufacturer()">Save</button>
+              <button class="btn btn-xs" (click)="cancelEditManufacturer()">Cancel</button>
+            </td>
+          </ng-container>
+          <ng-template #viewManufacturer>
+            <td>{{ item.name }}</td>
+            <td class="flex gap-1">
+              <button *ngIf="canEdit()" class="btn btn-ghost btn-xs" (click)="startEditManufacturer(item)">Edit</button>
+              <button *ngIf="canDelete()" class="btn btn-ghost btn-xs text-error" (click)="deleteManufacturer(item)">Delete</button>
+            </td>
+          </ng-template>
+        </tr>
+        <tr *ngIf="manufacturers().length === 0">
+          <td colspan="2" class="text-center text-xs text-neutral/50 py-4">No manufacturers</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Operators -->
+  <div *ngIf="activeTab() === 'operators'" class="overflow-x-auto border border-base-300 rounded-xl">
+    <table class="table table-zebra table-xs">
+      <thead>
+        <tr class="text-xs uppercase">
+          <th>Name</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="canCreate()">
+          <td><input class="input input-sm w-full" placeholder="Name" [(ngModel)]="newOperator.name"/></td>
+          <td>
+            <button class="btn btn-primary btn-xs" [disabled]="saving() || !newOperator.name.trim()" (click)="addOperator()">Add</button>
+          </td>
+        </tr>
+        <tr *ngFor="let item of operators()">
+          <ng-container *ngIf="editingOperatorId() === item.id; else viewOperator">
+            <td><input class="input input-sm w-full" [(ngModel)]="operatorDraft.name"/></td>
+            <td class="flex gap-1">
+              <button class="btn btn-primary btn-xs" [disabled]="saving()" (click)="saveOperator()">Save</button>
+              <button class="btn btn-xs" (click)="cancelEditOperator()">Cancel</button>
+            </td>
+          </ng-container>
+          <ng-template #viewOperator>
+            <td>{{ item.name }}</td>
+            <td class="flex gap-1">
+              <button *ngIf="canEdit()" class="btn btn-ghost btn-xs" (click)="startEditOperator(item)">Edit</button>
+              <button *ngIf="canDelete()" class="btn btn-ghost btn-xs text-error" (click)="deleteOperator(item)">Delete</button>
+            </td>
+          </ng-template>
+        </tr>
+        <tr *ngIf="operators().length === 0">
+          <td colspan="2" class="text-center text-xs text-neutral/50 py-4">No operators</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-delete-confirm-modal
+  [open]="deleteModalOpen"
+  [itemLabel]="deleteItemLabel()"
+  [dependents]="deleteDependents()"
+  [loadingDependents]="deleteLoadingDependents()"
+  [deleting]="deletingInProgress()"
+  (closed)="onDeleteModalClosed()"
+  (confirmed)="onDeleteConfirmed($event)">
+</app-delete-confirm-modal>

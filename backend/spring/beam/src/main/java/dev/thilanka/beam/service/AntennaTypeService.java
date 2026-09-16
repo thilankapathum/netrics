@@ -19,7 +19,9 @@ public interface AntennaTypeService {
 
     List<AntennaTypeDto> updateAntennaTypes(List<AntennaTypeDto> dtos);
 
-    void deleteAntennaType(String name);
+    void deleteAntennaType(String name, boolean force);
+
+    List<String> getDependentAntennaLabels(String name);
 
     AntennaType findByName(String name);
 

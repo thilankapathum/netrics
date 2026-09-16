@@ -17,4 +17,20 @@ export class OperatorService {
   getAll(): Observable<OperatorDto[]> {
     return this.http.get<OperatorDto[]>(this.baseUrl);
   }
+
+  create(dto: OperatorDto): Observable<OperatorDto> {
+    return this.http.post<OperatorDto>(this.baseUrl, dto);
+  }
+
+  update(dto: OperatorDto): Observable<OperatorDto> {
+    return this.http.put<OperatorDto>(this.baseUrl, dto);
+  }
+
+  delete(name: string, force = false): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${name}`, {params: {force}});
+  }
+
+  getDependents(name: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/${name}/dependents`);
+  }
 }

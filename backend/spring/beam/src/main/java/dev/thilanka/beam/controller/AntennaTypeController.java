@@ -40,9 +40,16 @@ public class AntennaTypeController {
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_DELETE')")
     @DeleteMapping("{name}")
-    public ResponseEntity<Void> deleteAntennaType(@PathVariable("name") String name) {
-        antennaTypeService.deleteAntennaType(name);
+    public ResponseEntity<Void> deleteAntennaType(@PathVariable("name") String name,
+                                                   @RequestParam(defaultValue = "false") boolean force) {
+        antennaTypeService.deleteAntennaType(name, force);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
+    @GetMapping("{name}/dependents")
+    public ResponseEntity<List<String>> getDependents(@PathVariable("name") String name) {
+        return ResponseEntity.ok(antennaTypeService.getDependentAntennaLabels(name));
     }
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")

@@ -40,9 +40,16 @@ public class ManufacturerController {
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_DELETE')")
     @DeleteMapping("{name}")
-    public ResponseEntity<ManufacturerDto> deleteManufacturer(@PathVariable("name") String name) {
-        ManufacturerDto deleted = manufacturerService.deleteManufacturerDto(name);
+    public ResponseEntity<ManufacturerDto> deleteManufacturer(@PathVariable("name") String name,
+                                                                @RequestParam(defaultValue = "false") boolean force) {
+        ManufacturerDto deleted = manufacturerService.deleteManufacturerDto(name, force);
         return ResponseEntity.ok(deleted);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
+    @GetMapping("{name}/dependents")
+    public ResponseEntity<List<String>> getDependents(@PathVariable("name") String name) {
+        return ResponseEntity.ok(manufacturerService.getDependentAntennaLabels(name));
     }
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
