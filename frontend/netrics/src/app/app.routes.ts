@@ -15,6 +15,7 @@ import {KpiMap} from './layout/content/pages/pulse/kpi-map/kpi-map';
 import {UpgradeReview} from './layout/content/pages/pulse/upgrade-review/upgrade-review';
 import {AnomalyCells} from './layout/content/pages/pulse/anomaly-cells/anomaly-cells';
 import {Alarms} from './layout/content/pages/pulse/alarms/alarms';
+import {Assistant} from './layout/content/pages/pulse/assistant/assistant';
 import {SiteSearch} from './layout/content/pages/beam/engineering-parameters/site-search/site-search';
 import {SiteTree} from './layout/content/pages/beam/engineering-parameters/site-tree/site-tree';
 import {BeamSettings} from './layout/content/pages/beam/beam-settings/beam-settings';
@@ -66,6 +67,11 @@ export const routes: Routes = [
             path: 'alarms',
             canActivate: [authGuard, roleGuard(['PULSE_READ'])],
             component: Alarms
+          },
+          {
+            path: 'assistant',
+            canActivate: [authGuard, roleGuard(['PULSE_ASSISTANT'])],
+            component: Assistant
           },
           {
             path: 'dashboard',

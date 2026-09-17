@@ -171,7 +171,7 @@ services:
 
 
   config-server:
-    image: thilankaw/netrics/config-server:0.0.6
+    image: thilankaw/netrics/config-server:0.0.7
     environment:
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
@@ -249,7 +249,7 @@ services:
       - "keycloak.local:${DOMAIN_IP}"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.2.7
+    image: thilankaw/netrics/pulse:0.2.8
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -261,6 +261,9 @@ services:
       - DISCOVERY_HOST=${DISCOVERY_HOST}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - ASSISTANT_ENABLED=${ASSISTANT_ENABLED:-false}
+      - OLLAMA_URL=${OLLAMA_URL:-http://localhost:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
       - KEYCLOAK_HOST=${KEYCLOAK_HOST}
       - KEYCLOAK_PORT=${KEYCLOAK_PORT}
       - DOMAIN_IP=${DOMAIN_IP}
@@ -281,6 +284,7 @@ services:
       - "9012"
     networks:
       - private_net
+      - public_net
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:9012/actuator/health" ]
       interval: 10s
@@ -297,7 +301,7 @@ services:
         condition: service_healthy
 
   beam:
-    image: thilankaw/netrics/beam:0.0.2
+    image: thilankaw/netrics/beam:0.0.3
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -417,7 +421,7 @@ services:
       - /home/ftpuser/apps/netrics/alarms/oss/u2020:/data/incoming/u2020
 
   frontend:
-    image: thilankaw/netrics/frontend:0.1.7
+    image: thilankaw/netrics/frontend:0.1.8
     container_name: frontend
     expose:
       - "80"

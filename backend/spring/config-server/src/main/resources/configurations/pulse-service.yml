@@ -87,3 +87,18 @@ management:
       show-details: never   # don’t leak DB status, etc.
   server:
     port: 9012
+
+netrics:
+  assistant:
+    enabled: ${ASSISTANT_ENABLED:true}
+    ollama-url: ${OLLAMA_URL:http://172.19.144.22:11434}
+    model: ${OLLAMA_MODEL:qwen3:8b}
+    timeout-seconds: 60
+    max-concurrency: 4          # keep in line with OLLAMA_NUM_PARALLEL on the model host
+    rate-limit-per-minute: 10
+    rate-limit-per-day: 200
+    max-rows: 50
+    summarize: true             # second LLM call for a 1-2 sentence summary; false = rows only, half the LLM load
+#    kpi-aliases:               # user phrasing -> KPI label/name; keys are matched case/punctuation-insensitively
+#      erab drop: E-RAB Drop Rate
+#      rrc ssr: RRC Setup Success Rate

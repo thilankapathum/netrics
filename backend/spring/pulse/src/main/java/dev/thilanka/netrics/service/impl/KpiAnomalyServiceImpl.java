@@ -81,6 +81,9 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         Area area = areaService.findAreaByName(areaName);
 
         LocalDateTime latestDate = kpiDayRepository.getLatestDate(rat.getId(), granularity.getId());
+        if (latestDate == null) {
+            return List.of();
+        }
         LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
         LocalDateTime currEnd = currStart.plusSeconds(granularity.getPlusSeconds());
 
@@ -158,6 +161,9 @@ public class KpiAnomalyServiceImpl implements KpiAnomalyService {
         }
 
         LocalDateTime latestDate = kpiAnomalyRepository.getLatestDate(rat.getId(), granularity.getId());
+        if (latestDate == null) {   // anomaly detection hasn't produced anything for this RAT/granularity yet
+            return new PagedResponse<>(List.of(), 0, 0, page, pageSize);
+        }
         LocalDateTime currStart = latestDate.toLocalDate().atStartOfDay();
         LocalDateTime currEnd = currStart.plusSeconds(granularity.getPlusSeconds());
 

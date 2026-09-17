@@ -174,6 +174,26 @@
             </div>
           </div>
         </a>
+
+        <!-- Ask Pulse -->
+        <a routerLink="pulse/assistant"
+           [class.pointer-events-none]="!hasAnyRole(['PULSE_ASSISTANT'])"
+           [class.opacity-50]="!hasAnyRole(['PULSE_ASSISTANT'])"
+           class="card bg-base-100 border border-base-300 hover:border-primary/50 transition-all cursor-pointer group text-left">
+          <div class="card-body p-4 flex-row gap-4 items-center">
+            <div class="shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M8 10H16M8 14H13M21 12C21 16.9706 16.9706 21 12 21C10.4003 21 8.89804 20.5826 7.59634 19.8508L3 21L4.14916 16.4036C3.41738 15.102 3 13.5997 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-base-content">Ask Pulse</h3>
+              <p class="text-xs text-base-content/60 mt-0.5 leading-snug">Ask network KPI questions in plain language.</p>
+            </div>
+          </div>
+        </a>
       </div>
     </div>
 
