@@ -3,7 +3,9 @@ import {DatePipe, DecimalPipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 import {AssistantService} from '../../../../../service/pulse/assistant-service';
-import {AssistantResponseDto} from '../../../../../models/pulse/AssistantDto';
+import {AssistantResponseDto, AssistantSiteInfo} from '../../../../../models/pulse/AssistantDto';
+import {AlarmsDto, CellAlarmDto} from '../../../../../models/pulse/alarms/AlarmDto';
+import {CellDto} from '../../../../../models/pulse/CellDto';
 import {AnomalyCellDto} from '../../../../../models/pulse/AnomalyCellDto';
 import {KpiTrendDto} from '../../../../../models/pulse/KpiTrendDto';
 import {KpiDataDto} from '../../../../../models/pulse/KpiDataDto';
@@ -29,6 +31,8 @@ export class Assistant {
     'Abnormal RRC setup success rates in Region 1',
     'E-RAB drop rate trend for Colombo over the last month',
     'Critical anomalies in Galle',
+    'Is there any active alarm on site GLAHA4?',
+    'Show site info for GLAHA4',
   ];
 
   turns = signal<ChatTurn[]>([]);
@@ -78,7 +82,9 @@ export class Assistant {
 
   interpretedAs(r: AssistantResponseDto): string[] {
     const p = r.params ?? {};
-    return [p['kpiLabel'], p['cell'], p['area'], p['rat'], p['period'], p['granularity'], p['severity'],
+    const status = p['status'] === 'UNCLEARED' ? 'active' : p['status'] === 'CLEARED' ? 'cleared' : undefined;
+    return [p['kpiLabel'], p['site'] ? `site ${p['site']}` : undefined, p['cell'], p['area'], p['rat'], p['period'],
+      p['granularity'], p['severity'], status,
       p['limit'] ? `top ${p['limit']}` : undefined]
       .filter((v): v is string => !!v);
   }
@@ -93,6 +99,35 @@ export class Assistant {
 
   cellKpiRows(r: AssistantResponseDto): KpiDataDto[] {
     return r.rows as KpiDataDto[];
+  }
+
+  alarmRows(r: AssistantResponseDto): (AlarmsDto | CellAlarmDto)[] {
+    return r.rows as (AlarmsDto | CellAlarmDto)[];
+  }
+
+  alarmCell(a: AlarmsDto | CellAlarmDto): string | undefined {
+    return 'cellName' in a ? a.cellName : a.parsedCellName;
+  }
+
+  siteInfo(r: AssistantResponseDto): AssistantSiteInfo {
+    return r.rows[0] as AssistantSiteInfo;
+  }
+
+  cellInfo(r: AssistantResponseDto): CellDto {
+    return r.rows[0] as CellDto;
+  }
+
+  alarmSeverityClass(severity: string): string {
+    switch (severity) {
+      case 'CRITICAL':
+        return 'bg-error';
+      case 'MAJOR':
+        return 'bg-warning';
+      case 'MINOR':
+        return 'bg-warning opacity-50';
+      default:
+        return 'bg-info';
+    }
   }
 
   snapshot(r: AssistantResponseDto): BasicKpiSnapshot {

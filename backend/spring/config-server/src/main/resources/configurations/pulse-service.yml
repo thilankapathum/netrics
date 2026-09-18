@@ -98,6 +98,7 @@ netrics:
     rate-limit-per-minute: 10
     rate-limit-per-day: 200
     max-rows: 50
+    all-areas-name: All Districts   # area used to scope site alarm queries for unrestricted users
     summarize: true             # second LLM call for a 1-2 sentence summary; false = rows only, half the LLM load
 #    kpi-aliases:               # user phrasing -> KPI label/name; keys are matched case/punctuation-insensitively
 #      erab drop: E-RAB Drop Rate

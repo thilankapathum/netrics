@@ -1,10 +1,13 @@
 package dev.thilanka.netrics.assistant;
 
 import dev.thilanka.netrics.entity.Area;
+import dev.thilanka.netrics.entity.Cell;
 import dev.thilanka.netrics.entity.Rat;
 import dev.thilanka.netrics.repository.AreaRepository;
 import dev.thilanka.netrics.repository.BasicKpiRepository;
+import dev.thilanka.netrics.repository.CellRepository;
 import dev.thilanka.netrics.repository.RatRepository;
+import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.repository.StandardKpiRepository;
 import lombok.Getter;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -43,20 +46,27 @@ public class EntityResolver {
     private static final Duration CATALOG_TTL = Duration.ofHours(1);
     private static final Map<String, String> RAT_ALIASES = Map.of("2g", "gsm", "3g", "umts", "4g", "lte", "5g", "nr");
     private static final int MAX_OPTIONS = 10;
+    private static final String SITE_CODE_PATTERN = "[A-Z0-9_-]{2,20}";
+    static final String CELL_NAME_PATTERN = "[A-Za-z0-9_.-]{1,64}";
 
     private final StandardKpiRepository standardKpiRepository;
     private final BasicKpiRepository basicKpiRepository;
     private final AreaRepository areaRepository;
     private final RatRepository ratRepository;
+    private final SiteRepository siteRepository;
+    private final CellRepository cellRepository;
     private final Environment environment;
     private volatile Catalog catalog;
 
     public EntityResolver(StandardKpiRepository standardKpiRepository, BasicKpiRepository basicKpiRepository,
-                          AreaRepository areaRepository, RatRepository ratRepository, Environment environment) {
+                          AreaRepository areaRepository, RatRepository ratRepository, SiteRepository siteRepository,
+                          CellRepository cellRepository, Environment environment) {
         this.standardKpiRepository = standardKpiRepository;
         this.basicKpiRepository = basicKpiRepository;
         this.areaRepository = areaRepository;
         this.ratRepository = ratRepository;
+        this.siteRepository = siteRepository;
+        this.cellRepository = cellRepository;
         this.environment = environment;
     }
 
@@ -147,6 +157,25 @@ public class EntityResolver {
         if (hits.size() == 1) return hits.get(0);
         if (hits.isEmpty()) throw new ClarificationNeeded("I couldn't find an area named '" + input + "'.", areas);
         throw new ClarificationNeeded("Which area did you mean?", hits);
+    }
+
+    /** Exact site code, verified against the DB (unique index lookup). */
+    public String resolveSite(String input) {
+        if (input == null) throw new ClarificationNeeded("Which site? Please give the site code, e.g. GLAHA4.", List.of());
+        String code = input.trim().toUpperCase(Locale.ROOT);
+        if (!code.matches(SITE_CODE_PATTERN) || siteRepository.findBySiteCode(code).isEmpty()) {
+            throw new ClarificationNeeded("I couldn't find a site with code '" + input + "'.", List.of());
+        }
+        return code;
+    }
+
+    /** Existing cell, verified against the DB. */
+    public Cell resolveCell(String input) {
+        if (input == null || !input.trim().matches(CELL_NAME_PATTERN)) {
+            throw new ClarificationNeeded("Please give the exact cell name.", List.of());
+        }
+        return cellRepository.findByCellName(input.trim())
+                .orElseThrow(() -> new ClarificationNeeded("I couldn't find a cell named '" + input + "'.", List.of()));
     }
 
     public String resolvePeriod(String input) {

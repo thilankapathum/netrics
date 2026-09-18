@@ -161,6 +161,109 @@
                           </tbody>
                         </table>
                       }
+                      @case ('get_alarms') {
+                        <table class="table table-xs">
+                          <thead>
+                          <tr><th>Time</th><th>Node</th><th>Cell</th><th>Severity</th><th>Alarm</th><th>Type</th><th>State</th><th>Source</th></tr>
+                          </thead>
+                          <tbody>
+                            @for (a of alarmRows(r); track a.alarmId + a.nodeName + a.occurrenceTime) {
+                              <tr>
+                                <td class="whitespace-nowrap">{{ a.occurrenceTime | date: 'yyyy-MM-dd HH:mm' }}</td>
+                                <td>{{ a.nodeName }}</td>
+                                <td>{{ alarmCell(a) || '—' }}</td>
+                                <td>
+                                  <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full shrink-0" [class]="alarmSeverityClass(a.severity)"></span>
+                                    <span class="capitalize">{{ a.severity.toLowerCase() }}</span>
+                                  </div>
+                                </td>
+                                <td>{{ a.alarmName }}</td>
+                                <td>{{ a.alarmType }}</td>
+                                <td>
+                                  <span class="badge badge-soft badge-xs" [class]="a.clearState === 'UNCLEARED' ? 'badge-error' : 'badge-success'">
+                                    {{ a.clearState === 'UNCLEARED' ? 'Active' : 'Cleared' }}
+                                  </span>
+                                  @if (a.ackState === 'ACKNOWLEDGED') {
+                                    <span class="badge badge-ghost badge-xs ml-1">Ack</span>
+                                  }
+                                </td>
+                                <td>{{ a.alarmSource }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('get_site_info') {
+                        @let info = siteInfo(r);
+                        @let eng = info.engineering;
+                        <div class="p-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                          <span><span class="text-base-content/50">Site:</span> <b>{{ info.site.siteCode }}</b> · {{ info.site.siteName }}</span>
+                          <span><span class="text-base-content/50">Location:</span> {{ info.site.latitude | number: '1.5-5' }}, {{ info.site.longitude | number: '1.5-5' }}</span>
+                          @if (eng) {
+                            <span><span class="text-base-content/50">Operator:</span> {{ eng.site.operatorName || '—' }}</span>
+                            <span><span class="text-base-content/50">Infra:</span> {{ eng.site.infraType || '—' }}</span>
+                            <span><span class="text-base-content/50">Tower / building:</span> {{ eng.site.towerHeight ?? '—' }} m / {{ eng.site.buildingHeight ?? '—' }} m</span>
+                          }
+                        </div>
+
+                        <table class="table table-xs">
+                          <thead><tr><th>Cell</th><th>RAT</th><th>Band</th><th>Carrier</th><th>Sector</th><th>Azimuth</th><th>Node</th></tr></thead>
+                          <tbody>
+                            @for (c of info.cells; track c.cellName) {
+                              <tr>
+                                <td>{{ c.cellName }}</td><td>{{ c.ratName }}</td><td>{{ c.bandName }}</td><td>{{ c.carrierName }}</td>
+                                <td>{{ c.sectorName }}</td><td>{{ c.azimuth ?? '—' }}</td><td>{{ c.nodeName }}</td>
+                              </tr>
+                            } @empty {
+                              <tr><td colspan="7" class="text-base-content/50">No cells recorded for this site.</td></tr>
+                            }
+                          </tbody>
+                        </table>
+
+                        @if (eng) {
+                          <table class="table table-xs mt-2">
+                            <thead><tr><th>Sector</th><th>Antenna</th><th>Type</th><th>Azimuth</th><th>Height</th><th>M-tilt</th><th>E-tilts (band)</th></tr></thead>
+                            <tbody>
+                              @for (s of eng.sectors; track s.sector.name) {
+                                @for (a of s.antennas; track a.antenna.id) {
+                                  <tr>
+                                    <td>{{ s.sector.name }}</td>
+                                    <td>#{{ a.antenna.antennaIndex }}</td>
+                                    <td>{{ a.antenna.antennaTypeName }}</td>
+                                    <td>{{ a.antenna.azimuth }}</td>
+                                    <td>{{ a.antenna.antennaHeight }} m</td>
+                                    <td>{{ a.antenna.mechanicalTilt }}°</td>
+                                    <td>
+                                      @for (t of a.electricalTilts; track t.id) {
+                                        <span class="badge badge-ghost badge-xs mr-1">{{ t.electricalTilt }}° ({{ t.bandName }})</span>
+                                      }
+                                    </td>
+                                  </tr>
+                                } @empty {
+                                  <tr><td>{{ s.sector.name }}</td><td colspan="6" class="text-base-content/50">No antennas recorded.</td></tr>
+                                }
+                              }
+                            </tbody>
+                          </table>
+                        } @else {
+                          <p class="text-xs text-base-content/50 p-2">Engineering parameters are not available (no Beam access, or Beam is unreachable).</p>
+                        }
+                      }
+                      @case ('get_cell_info') {
+                        @let c = cellInfo(r);
+                        <table class="table table-xs">
+                          <tbody>
+                          <tr><th>Cell</th><td>{{ c.cellName }}</td></tr>
+                          <tr><th>Site</th><td>{{ c.siteCode }}</td></tr>
+                          <tr><th>Node</th><td>{{ c.nodeName }}</td></tr>
+                          <tr><th>RAT</th><td>{{ c.ratName }}</td></tr>
+                          <tr><th>Band / carrier</th><td>{{ c.bandName }} / {{ c.carrierName }}</td></tr>
+                          <tr><th>Sector</th><td>{{ c.sectorName }}</td></tr>
+                          <tr><th>Azimuth / beamwidth</th><td>{{ c.azimuth ?? '—' }} / {{ c.beamwidth ?? '—' }}</td></tr>
+                          </tbody>
+                        </table>
+                      }
                     }
                   </div>
                 }
