@@ -11,6 +11,8 @@ import dev.thilanka.netrics.service.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,11 @@ public class ReportJobServiceImpl implements ReportJobService {
     private final CsvService csvService;
     private final ObjectMapper objectMapper;
 
+    // Self-reference through the Spring proxy so @Async applies (a direct this-call bypasses it)
+    @Lazy
+    @Autowired
+    private ReportJobService self;
+
     private static final Path REPORTS_DIR = Path.of(System.getProperty("java.io.tmpdir"), "netrics-reports");
 
     @FunctionalInterface
@@ -53,12 +60,12 @@ public class ReportJobServiceImpl implements ReportJobService {
                 "ratName", ratName, "granularityName", granularityName,
                 "standardKpiName", standardKpiName, "startDate", startDate,
                 "endDate", endDate, "areaName", areaName));
-        generateSiteWiseReportAsync(job.getId(), ratName, granularityName, standardKpiName, startDate, endDate, areaName);
+        self.generateSiteWiseReportAsync(job.getId(), ratName, granularityName, standardKpiName, startDate, endDate, areaName);
         return job.getId();
     }
 
     @Override
-    @Async
+    @Async("reportTaskExecutor")
     public void generateSiteWiseReportAsync(UUID jobId, String ratName, String granularityName, String standardKpiName, String startDate, String endDate, String areaName) {
         runJob(jobId, () -> {
             Rat rat = ratService.findRatByName(ratName);
@@ -82,12 +89,12 @@ public class ReportJobServiceImpl implements ReportJobService {
                 "ratName", ratName, "granularityName", granularityName,
                 "standardKpiNames", standardKpiNames, "startDate", startDate,
                 "endDate", endDate, "areaName", areaName));
-        generateSiteWiseMultiKpiReportAsync(job.getId(), ratName, granularityName, standardKpiNames, startDate, endDate, areaName);
+        self.generateSiteWiseMultiKpiReportAsync(job.getId(), ratName, granularityName, standardKpiNames, startDate, endDate, areaName);
         return job.getId();
     }
 
     @Override
-    @Async
+    @Async("reportTaskExecutor")
     public void generateSiteWiseMultiKpiReportAsync(UUID jobId, String ratName, String granularityName, List<String> standardKpiNames, String startDate, String endDate, String areaName) {
         runJob(jobId, () -> {
             Rat rat = ratService.findRatByName(ratName);
