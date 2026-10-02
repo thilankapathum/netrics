@@ -60,6 +60,8 @@ export class SidebarComponent implements OnInit {
           icon: ICON('M8 10H16M8 14H13M21 12C21 16.9706 16.9706 21 12 21C10.4003 21 8.89804 20.5826 7.59634 19.8508L3 21L4.14916 16.4036C3.41738 15.102 3 13.5997 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z')},
         {label: 'Upgrade Review', route: '/pulse/upgrade-review', roles: ['PULSE_READ'],
           icon: ICON('M4 17H16M4 12H13M4 7H10M18 13V5M15 8L18 5L21 8')},
+        {label: 'Trend Analysis', route: '/pulse/trend-analysis', roles: ['PULSE_READ'],
+          icon: ICON('M3 17L9 11L13 15L21 7M21 7H15M21 7V13')},
         {label: 'Spatial Analysis', route: '/pulse/map', roles: ['PULSE_READ'],
           icon: ICON('M3 12H8M3 12C3 16.9706 7.02944 21 12 21M3 12C3 7.02944 7.02944 3 12 3M8 12H16M8 12C8 16.9706 9.79086 21 12 21M8 12C8 7.02944 9.79086 3 12 3M16 12H21M16 12C16 7.02944 14.2091 3 12 3M16 12C16 16.9706 14.2091 21 12 21M21 12C21 7.02944 16.9706 3 12 3M21 12C21 16.9706 16.9706 21 12 21')}
       ]

@@ -155,6 +155,22 @@
           </div>
         </a>
 
+        <!-- Trend Analysis -->
+        <a routerLink="pulse/trend-analysis"
+           [class.pointer-events-none]="!hasAnyRole(['PULSE_READ'])"
+           [class.opacity-50]="!hasAnyRole(['PULSE_READ'])"
+           class="card bg-base-100 border border-base-300 hover:border-primary/50 transition-all cursor-pointer group text-left">
+          <div class="card-body p-4 flex-row gap-4 items-center">
+            <div class="shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17L9 11L13 15L21 7M21 7H15M21 7V13" /></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-base-content">Trend Analysis</h3>
+              <p class="text-xs text-base-content/60 mt-0.5 leading-snug">Compare KPI trends across areas, KPIs and bands.</p>
+            </div>
+          </div>
+        </a>
+
         <!-- Spatial Analysis -->
         <a routerLink="pulse/map"
            [class.pointer-events-none]="!hasAnyRole(['PULSE_READ'])"

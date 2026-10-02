@@ -13,6 +13,7 @@ import {KpiReports} from './layout/content/pages/pulse/kpi-reports/kpi-reports';
 import {PulseSettings} from './layout/content/pages/pulse/pulse-settings/pulse-settings';
 import {KpiMap} from './layout/content/pages/pulse/kpi-map/kpi-map';
 import {UpgradeReview} from './layout/content/pages/pulse/upgrade-review/upgrade-review';
+import {TrendAnalysis} from './layout/content/pages/pulse/trend-analysis/trend-analysis';
 import {AnomalyCells} from './layout/content/pages/pulse/anomaly-cells/anomaly-cells';
 import {Alarms} from './layout/content/pages/pulse/alarms/alarms';
 import {Assistant} from './layout/content/pages/pulse/assistant/assistant';
@@ -57,6 +58,11 @@ export const routes: Routes = [
             path: 'upgrade-review',
             canActivate: [authGuard, roleGuard(['PULSE_READ'])],
             component: UpgradeReview
+          },
+          {
+            path: 'trend-analysis',
+            canActivate: [authGuard, roleGuard(['PULSE_READ'])],
+            component: TrendAnalysis
           },
           {
             path: 'anomaly',
