@@ -13,6 +13,8 @@ import {GranularityDto} from '../../../../../../models/pulse/GranularityDto';
 import {KpiReportService} from '../../../../../../service/pulse/kpi-reports/kpi-report-service';
 import {StandardKpiDto} from '../../../../../../models/pulse/StandardKpiDto';
 import {StandardkpiService} from '../../../../../../service/pulse/ltefdd/standardkpi.service';
+import {UserAreaService} from '../../../../../../service/pulse/user-area-service';
+import {AuthService} from '../../../../../../auth/service/auth-service';
 
 @Component({
   selector: 'app-site-wise-report-by-kpis-and-date',
@@ -49,6 +51,8 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
 
   area = signal<string | undefined>('');
   areas: AreaDto[] = [];
+  /** The user's assigned area: the default selection on first load only. */
+  private userArea?: AreaDto;
 
   granularity = signal('');
   granularities: GranularityDto[] = [];
@@ -90,10 +94,12 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
               private areaTypeService: AreaTypeService,
               private granularityService: GranularityService,
               private kpiReportService: KpiReportService,
-              private standardKpiService: StandardkpiService) {
+              private standardKpiService: StandardkpiService,
+              private userAreaService: UserAreaService,
+              private authService: AuthService) {
     this.getAllGranularities();
     this.getAllRats();
-    this.getAllAreaTypes();
+    this.loadUserArea();
   }
 
   ngOnDestroy() {
@@ -156,12 +162,34 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
     })
   }
 
+  /** Load the user's assigned area (same as the pulse pages), then the area filters defaulting to it. */
+  async loadUserArea() {
+    this.loadingAreaTypes = true;
+    try {
+      const profile = await this.authService.getUserProfile();
+      this.userAreaService.findByUserId(profile.id!).subscribe({
+        next: data => {
+          this.userArea = data ?? undefined;
+          this.getAllAreaTypes();
+        }, error: error => {
+          // No assigned area (or lookup failed): fall back to the first area
+          console.log(error);
+          this.getAllAreaTypes();
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      this.getAllAreaTypes();
+    }
+  }
+
   getAllAreaTypes() {
     this.loadingAreaTypes = true;
     this.areaTypeService.getAllAreaTypes().subscribe({
         next: data => {
           this.areaTypes = data;
-          this.areaType.set(this.areaTypes[0].name!);
+          const userType = this.userArea?.areaTypeName;
+          this.areaType.set(this.areaTypes.some(at => at.name === userType) ? userType : this.areaTypes[0].name!);
           this.getAreasByAreaType(this.areaType()!);
           this.loadingAreaTypes = false;
         }, error: error => {
@@ -178,7 +206,9 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
     this.areaService.getAreasByAreaTypes(areaTypeName).subscribe({
       next: data => {
         this.areas = data;
-        this.area.set(this.areas.at(0)?.name);
+        const userAreaName = this.userArea?.name;
+        this.area.set(this.areas.some(a => a.name === userAreaName) ? userAreaName : this.areas.at(0)?.name);
+        this.userArea = undefined;   // Only the first load defaults to the user's area
         this.loadingAreas = false;
       }, error: error => {
         console.log(error);
