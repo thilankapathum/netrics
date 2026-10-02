@@ -76,6 +76,29 @@ public class KpiReportController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PostMapping("export/site-multi-kpi-date/jobs")
+    public ResponseEntity<ReportJobStatusDto> submitSiteWiseMultiKpiReportJob(
+            @RequestParam String ratName,
+            @RequestParam String granularityName,
+            @RequestParam List<String> standardKpiNames,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            @RequestParam String areaName,
+            Authentication authentication) {
+
+        if (standardKpiNames.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        UUID jobId = reportJobService.submitSiteWiseMultiKpiReportJob(
+                ratName, granularityName, standardKpiNames, startDate, endDate, areaName,
+                authentication != null ? authentication.getName() : "ANONYMOUS");
+
+        return ResponseEntity.accepted()
+                .body(new ReportJobStatusDto(jobId, ReportJobStatus.PENDING, null, null));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
     @GetMapping("jobs/{jobId}")
     public ResponseEntity<ReportJobStatusDto> getJobStatus(@PathVariable UUID jobId) {
         ReportJob job = reportJobService.getJob(jobId);

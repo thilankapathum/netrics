@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.apache.kafka.common.utils.Sanitizer.sanitize;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -43,24 +41,18 @@ public class ReportJobServiceImpl implements ReportJobService {
 
     private static final Path REPORTS_DIR = Path.of(System.getProperty("java.io.tmpdir"), "netrics-reports");
 
+    @FunctionalInterface
+    private interface ReportWriter {
+        /** Writes the report into REPORTS_DIR and returns the file name. */
+        String write() throws Exception;
+    }
+
     @Override
     public UUID submitSiteWiseReportJob(String ratName, String granularityName, String standardKpiName, String startDate, String endDate, String areaName, String requestedBy) {
-        ReportJob job = new ReportJob();
-        job.setReportType("SITE_KPI_DATE");
-        job.setRequestedBy(requestedBy);
-        job.setStatus(ReportJobStatus.PENDING);
-
-        Map<String, String> params = Map.of(
+        ReportJob job = createJob("SITE_KPI_DATE", requestedBy, Map.of(
                 "ratName", ratName, "granularityName", granularityName,
                 "standardKpiName", standardKpiName, "startDate", startDate,
-                "endDate", endDate, "areaName", areaName);
-        try {
-            job.setParamsJson(objectMapper.writeValueAsString(params));
-        } catch (JsonProcessingException e) {
-            log.warn("Could not serialize job params", e);
-        }
-
-        job = reportJobRepository.save(job);
+                "endDate", endDate, "areaName", areaName));
         generateSiteWiseReportAsync(job.getId(), ratName, granularityName, standardKpiName, startDate, endDate, areaName);
         return job.getId();
     }
@@ -68,44 +60,51 @@ public class ReportJobServiceImpl implements ReportJobService {
     @Override
     @Async
     public void generateSiteWiseReportAsync(UUID jobId, String ratName, String granularityName, String standardKpiName, String startDate, String endDate, String areaName) {
-        ReportJob job = reportJobRepository.findById(jobId).orElseThrow();
-        job.setStatus(ReportJobStatus.PROCESSING);
-        reportJobRepository.save(job);
-
-        try {
-            Files.createDirectories(REPORTS_DIR);
-
+        runJob(jobId, () -> {
             Rat rat = ratService.findRatByName(ratName);
             Granularity granularity = granularityService.findGranularityByName(granularityName);
             StandardKpi standardKpi = standardKpiService.findByKpiName(standardKpiName, rat);
-            LocalDateTime startTs = dateService.extractDate(startDate).toLocalDate().atStartOfDay();
-            LocalDateTime endTs = dateService.extractDate(endDate).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
-            Area area = areaService.findAreaByName(areaName);
-
-            List<SiteKpiReportDto> data = kpiDayRepository.getSiteWiseReportByKpiAndDate(
-                    rat.getId(), granularity.getId(), standardKpi.getId(), startTs, endTs, area.getId());
+            List<SiteKpiReportDto> data = querySiteWiseReport(rat, granularity, List.of(standardKpi), startDate, endDate, areaName);
 
             String fileName = String.format("%s_%s_%s_%s_%s.csv",
                     sanitize(standardKpiName), sanitize(areaName), sanitize(ratName),
                     sanitize(granularityName), jobId);
-            Path filePath = REPORTS_DIR.resolve(fileName);
-
-            try (Writer writer = Files.newBufferedWriter(filePath)) {
+            try (Writer writer = Files.newBufferedWriter(REPORTS_DIR.resolve(fileName))) {
                 csvService.writeSiteWiseReportByKpiAndDateToCsv(data, writer);
             }
+            return fileName;
+        });
+    }
 
-            job.setFilePath(filePath.toString());
-            job.setFileName(fileName);
-            job.setStatus(ReportJobStatus.COMPLETED);
-            job.setCompletedAt(LocalDateTime.now());
-            reportJobRepository.save(job);
+    @Override
+    public UUID submitSiteWiseMultiKpiReportJob(String ratName, String granularityName, List<String> standardKpiNames, String startDate, String endDate, String areaName, String requestedBy) {
+        ReportJob job = createJob("SITE_MULTI_KPI_DATE", requestedBy, Map.of(
+                "ratName", ratName, "granularityName", granularityName,
+                "standardKpiNames", standardKpiNames, "startDate", startDate,
+                "endDate", endDate, "areaName", areaName));
+        generateSiteWiseMultiKpiReportAsync(job.getId(), ratName, granularityName, standardKpiNames, startDate, endDate, areaName);
+        return job.getId();
+    }
 
-        } catch (Exception e) {
-            log.error("Report job {} failed", jobId, e);
-            job.setStatus(ReportJobStatus.FAILED);
-            job.setErrorMessage(e.getMessage());
-            reportJobRepository.save(job);
-        }
+    @Override
+    @Async
+    public void generateSiteWiseMultiKpiReportAsync(UUID jobId, String ratName, String granularityName, List<String> standardKpiNames, String startDate, String endDate, String areaName) {
+        runJob(jobId, () -> {
+            Rat rat = ratService.findRatByName(ratName);
+            Granularity granularity = granularityService.findGranularityByName(granularityName);
+            List<StandardKpi> kpis = standardKpiNames.stream()
+                    .distinct()
+                    .map(name -> standardKpiService.findByKpiName(name, rat))
+                    .toList();
+            List<SiteKpiReportDto> data = querySiteWiseReport(rat, granularity, kpis, startDate, endDate, areaName);
+
+            String fileName = String.format("MultiKPI_%s_%s_%s_%s.csv",
+                    sanitize(areaName), sanitize(ratName), sanitize(granularityName), jobId);
+            try (Writer writer = Files.newBufferedWriter(REPORTS_DIR.resolve(fileName))) {
+                csvService.writeSiteWiseReportByKpisAndDateToCsv(data, kpis, writer);
+            }
+            return fileName;
+        });
     }
 
     @Override
@@ -127,6 +126,50 @@ public class ReportJobServiceImpl implements ReportJobService {
             }
             reportJobRepository.delete(job);
         }
+    }
+
+    private ReportJob createJob(String reportType, String requestedBy, Map<String, Object> params) {
+        ReportJob job = new ReportJob();
+        job.setReportType(reportType);
+        job.setRequestedBy(requestedBy);
+        job.setStatus(ReportJobStatus.PENDING);
+        try {
+            job.setParamsJson(objectMapper.writeValueAsString(params));
+        } catch (JsonProcessingException e) {
+            log.warn("Could not serialize job params", e);
+        }
+        return reportJobRepository.save(job);
+    }
+
+    private void runJob(UUID jobId, ReportWriter reportWriter) {
+        ReportJob job = reportJobRepository.findById(jobId).orElseThrow();
+        job.setStatus(ReportJobStatus.PROCESSING);
+        reportJobRepository.save(job);
+
+        try {
+            Files.createDirectories(REPORTS_DIR);
+            String fileName = reportWriter.write();
+
+            job.setFilePath(REPORTS_DIR.resolve(fileName).toString());
+            job.setFileName(fileName);
+            job.setStatus(ReportJobStatus.COMPLETED);
+            job.setCompletedAt(LocalDateTime.now());
+            reportJobRepository.save(job);
+
+        } catch (Exception e) {
+            log.error("Report job {} failed", jobId, e);
+            job.setStatus(ReportJobStatus.FAILED);
+            job.setErrorMessage(e.getMessage());
+            reportJobRepository.save(job);
+        }
+    }
+
+    private List<SiteKpiReportDto> querySiteWiseReport(Rat rat, Granularity granularity, List<StandardKpi> kpis, String startDate, String endDate, String areaName) {
+        LocalDateTime startTs = dateService.extractDate(startDate).toLocalDate().atStartOfDay();
+        LocalDateTime endTs = dateService.extractDate(endDate).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
+        Area area = areaService.findAreaByName(areaName);
+        return kpiDayRepository.getSiteWiseReportByKpiAndDate(
+                rat.getId(), granularity.getId(), kpis.stream().map(StandardKpi::getId).toList(), startTs, endTs, area.getId());
     }
 
     private String sanitize(String input) {

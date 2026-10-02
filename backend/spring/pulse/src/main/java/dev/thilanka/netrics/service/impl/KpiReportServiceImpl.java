@@ -32,6 +32,6 @@ public class KpiReportServiceImpl implements KpiReportService {
         LocalDateTime endTimestamp = dateService.extractDate(endDate).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
         Area area = areaService.findAreaByName(areaName);
 
-        return kpiDayRepository.getSiteWiseReportByKpiAndDate(rat.getId(), granularity.getId(), standardKpi.getId(), startTimestamp,endTimestamp, area.getId());
+        return kpiDayRepository.getSiteWiseReportByKpiAndDate(rat.getId(), granularity.getId(), List.of(standardKpi.getId()), startTimestamp,endTimestamp, area.getId());
     }
 }

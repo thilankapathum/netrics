@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import {SiteWiseReportByKpiAndDate} from './site-wise-report-by-kpi-and-date/site-wise-report-by-kpi-and-date';
+import {SiteWiseReportByKpisAndDate} from './site-wise-report-by-kpis-and-date/site-wise-report-by-kpis-and-date';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
 
@@ -7,6 +8,7 @@ import {RouterLink} from '@angular/router';
   selector: 'app-kpi-reports',
   imports: [
     SiteWiseReportByKpiAndDate,
+    SiteWiseReportByKpisAndDate,
     ReactiveFormsModule,
     RouterLink
   ],

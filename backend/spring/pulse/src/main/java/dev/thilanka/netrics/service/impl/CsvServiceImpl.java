@@ -13,10 +13,10 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 
+import dev.thilanka.netrics.entity.StandardKpi;
+
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -365,5 +365,38 @@ public class CsvServiceImpl implements CsvService {
             throw new FileProcessingException("Failed to write CSV", e);
         }
 
+    }
+
+    @Override
+    public void writeSiteWiseReportByKpisAndDateToCsv(List<SiteKpiReportDto> dtos, List<StandardKpi> kpis, Writer writer) {
+        List<String> headers = new ArrayList<>();
+        headers.add(SiteKpiReportHeader.DATE.getHeader());
+        headers.add(SiteKpiReportHeader.SITE_CODE.getHeader());
+        kpis.forEach(kpi -> headers.add(kpi.getLabel()));
+        headers.add(SiteKpiReportHeader.CONCAT_BANDS.getHeader());
+
+        // One row per (date, site, bands); one column per KPI
+        Map<List<Object>, Map<String, Double>> pivot = new LinkedHashMap<>();
+        for (SiteKpiReportDto dto : dtos) {
+            pivot.computeIfAbsent(Arrays.asList(dto.timestamp(), dto.siteCode(), dto.concatBands()), k -> new HashMap<>())
+                    .put(dto.kpiName(), dto.kpiValue());
+        }
+
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(headers.toArray(String[]::new))
+                .get();
+
+        try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
+            for (Map.Entry<List<Object>, Map<String, Double>> row : pivot.entrySet()) {
+                List<Object> record = new ArrayList<>();
+                record.add(row.getKey().get(0));
+                record.add(row.getKey().get(1));
+                kpis.forEach(kpi -> record.add(row.getValue().get(kpi.getKpiName())));
+                record.add(row.getKey().get(2));
+                printer.printRecord(record);
+            }
+        } catch (IOException e) {
+            throw new FileProcessingException("Failed to write CSV", e);
+        }
     }
 }

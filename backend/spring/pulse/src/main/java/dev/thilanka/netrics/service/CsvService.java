@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.service;
 
 import dev.thilanka.netrics.dto.*;
+import dev.thilanka.netrics.entity.StandardKpi;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,4 +33,6 @@ public interface CsvService {
     void writeSectorImportResultToCsv(List<SectorCsvImportResultDto> results, Writer writer);
 
     void writeSiteWiseReportByKpiAndDateToCsv(List<SiteKpiReportDto> dtos, Writer writer) throws IOException;
+
+    void writeSiteWiseReportByKpisAndDateToCsv(List<SiteKpiReportDto> dtos, List<StandardKpi> kpis, Writer writer);
 }

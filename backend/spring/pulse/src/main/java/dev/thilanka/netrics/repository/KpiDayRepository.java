@@ -1069,7 +1069,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
             WHERE kv.rat_id = :ratId
               AND kv.granularity_id = :granularityId
-              AND kv.standard_kpi_id = :standardKpiId
+              AND kv.standard_kpi_id IN (:standardKpiIds)
               AND kv.timestamp BETWEEN :startTimestamp AND :endTimestamp
               AND adcm.area_id = :areaId
             GROUP BY
@@ -1078,9 +1078,10 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                 bc.concat_bands,
                 skpi.aggregation,
             	skpi.label,
-            	skpi.kpi_name;
+            	skpi.kpi_name
+            ORDER BY 1, 2;
             """, nativeQuery = true)
-    List<SiteKpiReportDto> getSiteWiseReportByKpiAndDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId, @Param("standardKpiId") Long standardKpiId, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp, @Param("areaId") Long areaId);
+    List<SiteKpiReportDto> getSiteWiseReportByKpiAndDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId, @Param("standardKpiIds") List<Long> standardKpiIds, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp, @Param("areaId") Long areaId);
 
 
     @Modifying
