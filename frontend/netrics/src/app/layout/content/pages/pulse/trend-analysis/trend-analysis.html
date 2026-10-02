@@ -1,4 +1,5 @@
-<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-3 h-[calc(100vh-3rem)] min-h-[480px]" [attr.aria-busy]="busy()">
+<fieldset class="contents" [disabled]="busy()">
 
   <!-- ── Top navigation bar ──────────────────────────────────────── -->
   <nav class="flex flex-row flex-wrap gap-3 items-center">
@@ -12,30 +13,31 @@
     <!-- Chart type -->
     <div class="tabs tabs-box tabs-xs border border-base-300">
       @for (t of chartTypes; track t.value) {
-        <input type="radio" name="ta_chart_type" class="tab" [attr.aria-label]="t.label"
+        <input type="radio" [disabled]="busy()" name="ta_chart_type" class="tab" [attr.aria-label]="t.label"
                [checked]="chartType() === t.value" (change)="setChartType(t.value)"/>
       }
     </div>
 
     <!-- RAT -->
-    <select class="select select-sm w-32 text-xs" [ngModel]="rat()" (ngModelChange)="setRat($event)">
+    <div class="tabs tabs-box tabs-xs border border-base-300">
       @for (r of rats(); track r.name) {
-        <option [value]="r.name">{{ r.label }}</option>
+        <input type="radio" [disabled]="busy()" name="ta_rat" class="tab" [attr.aria-label]="r.label"
+               [checked]="rat() === r.name" (change)="setRat(r.name!)"/>
       }
-    </select>
+    </div>
 
     <!-- Granularity -->
     <div class="tabs tabs-box tabs-xs border border-base-300">
-      <input type="radio" name="ta_granularity" class="tab text-primary" aria-label="Day Average"
+      <input type="radio" [disabled]="busy()" name="ta_granularity" class="tab text-primary" aria-label="Day Average"
              [checked]="granularity() === 'day-average'" (change)="granularity.set('day-average')"/>
-      <input type="radio" name="ta_granularity" class="tab text-error" aria-label="Busy Hour"
+      <input type="radio" [disabled]="busy()" name="ta_granularity" class="tab text-error" aria-label="Busy Hour"
              [checked]="granularity() === 'busy-hour'" (change)="granularity.set('busy-hour')"/>
     </div>
 
     <!-- Period -->
     <div class="tabs tabs-box tabs-xs border border-base-300">
       @for (p of periods; track p) {
-        <input type="radio" name="ta_period" class="tab capitalize" [attr.aria-label]="p"
+        <input type="radio" [disabled]="busy()" name="ta_period" class="tab capitalize" [attr.aria-label]="p"
                [checked]="period() === p" (change)="period.set(p)"/>
       }
     </div>
@@ -67,31 +69,32 @@
         }
       </select>
     }
-
-    @if (loading()) {
-      <span class="loading loading-spinner loading-sm text-primary"></span>
-    }
   </div>
 
-  <div class="grid sm:grid-cols-[1fr_240px] gap-4">
+  <div class="grid flex-1 min-h-0 gap-3 grid-rows-[minmax(0,1fr)_auto] sm:grid-rows-1 sm:grid-cols-[minmax(0,1fr)_240px]">
 
     <!-- ── Chart ─────────────────────────────────────────────────── -->
-    <div class="border border-base-300 rounded-xl bg-base-100 p-3 min-w-0">
+    <div #chartCard class="relative border border-base-300 rounded-xl bg-base-100 p-3 min-w-0 min-h-0 overflow-hidden">
       @if (specs().length === 0 && !loading()) {
         <p class="text-xs text-secondary p-4">
           @switch (chartType()) {
             @case ('m_kpi') { Select one or more KPIs from the list on the right. }
-            @case ('m_band') { {{ bands().length ? 'Select a KPI and area to plot trends.' : 'No bands configured for this RAT.' }} }
-            @default { Select a KPI and area to plot trends. }
+            @case ('m_band') { {{ bands().length ? 'Tick one or more bands on the right to plot trends.' : 'No bands configured for this RAT.' }} }
+            @default { Tick one or more areas on the right to plot trends. }
           }
         </p>
-      } @else {
-        <app-linechart [chartSeries]="series()" [yaxisOverride]="yaxis()" [chartHeight]="420"></app-linechart>
+      } @else if (chartHeight() > 0) {
+        <app-linechart [chartSeries]="series()" [yaxisOverride]="yaxis()" [chartHeight]="chartHeight()"></app-linechart>
+      }
+      @if (busy()) {
+        <div class="absolute inset-0 grid place-items-center bg-base-100/60">
+          <span class="loading loading-spinner loading-md text-primary" aria-label="Loading trends"></span>
+        </div>
       }
     </div>
 
     <!-- ── Right panel ───────────────────────────────────────────── -->
-    <div class="border border-base-300 bg-base-100 p-3 rounded-md max-h-[480px] overflow-y-auto">
+    <div class="border border-base-300 bg-base-100 p-3 rounded-xl min-h-0 max-h-48 sm:max-h-none overflow-y-auto">
       @if (chartType() === 'm_kpi') {
         <p class="text-xs text-secondary font-medium mb-1">Standard KPIs</p>
         <p class="text-[10px] text-base-content/50 mb-2">
@@ -116,15 +119,16 @@
             <button class="btn btn-xs btn-ghost" (click)="setAllSeries(false)">None</button>
           </div>
         </div>
-        @for (name of toggleNames(); track name) {
+        @for (it of toggleItems(); track it.key) {
           <label class="label cursor-pointer gap-2 py-1 w-full">
             <input type="checkbox" class="checkbox checkbox-xs"
-                   [checked]="!hidden().has(name)" (change)="toggleSeries(name)"/>
-            <span class="text-xs grow" [style.color]="colorOf(name)">● <span class="text-base-content">{{ name }}</span></span>
-            @if (noData().has(name)) { <span class="text-[10px] text-base-content/40">no data</span> }
+                   [checked]="isSelected(it.key)" (change)="toggleSeries(it.key)"/>
+            <span class="text-xs grow" [style.color]="colorAt($index)">● <span class="text-base-content">{{ it.name }}</span></span>
+            @if (noData().has(it.name)) { <span class="text-[10px] text-base-content/40">no data</span> }
           </label>
         }
       }
     </div>
   </div>
+</fieldset>
 </div>

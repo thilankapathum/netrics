@@ -1,8 +1,8 @@
-import {Component, computed, DestroyRef, inject, OnInit, signal} from '@angular/core';
+import {Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild} from '@angular/core';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {FormsModule} from '@angular/forms';
 import {RouterLink} from '@angular/router';
-import {catchError, forkJoin, map, Observable, of, switchMap, tap} from 'rxjs';
+import {catchError, finalize, forkJoin, map, Observable, of, switchMap, tap} from 'rxjs';
 import {Linechart} from '../../../../../components/charts/linechart/linechart/linechart';
 import {AlertService} from '../../../../../components/alert/alert.service';
 import {AuthService} from '../../../../../auth/service/auth-service';
@@ -28,7 +28,8 @@ export interface TrendSeriesSpec {
   unit: string;
   areaName: string;
   bandName?: string;
-  name: string;   // legend / toggle key
+  name: string;   // legend
+  color: string;  // fixed per item so colours don't shift as selection changes
 }
 
 type ChartType = 'm_area' | 'm_kpi' | 'm_band';
@@ -84,10 +85,23 @@ export class TrendAnalysis implements OnInit {
 
   bands = signal<BandDto[]>([]);
 
-  /** Series names toggled off by the user (client-side only, no refetch). */
-  hidden = signal<Set<string>>(new Set());
+  /** Only ticked items are fetched; each list starts with its first item ticked. */
+  selectedAreas = signal<Set<string>>(new Set());
+  selectedBands = signal<Set<string>>(new Set());
+
+  /** Loaded trends keyed by request, so ticking another item only fetches that one. */
+  // ponytail: unbounded for the page's lifetime; fine for a few hundred series, add LRU if it grows.
+  private cache = new Map<string, KpiTrendDto[]>();
 
   loading = signal(false);
+  /** In-flight lookup requests (RATs, KPIs, bands, area types, areas). */
+  private pending = signal(0);
+  /** Filters stay disabled until lookups and the trend fetch have settled. */
+  busy = computed(() => this.loading() || this.pending() > 0);
+
+  /** Chart fills its card; height follows the card so the page never scrolls vertically. */
+  @ViewChild('chartCard', {static: true}) chartCard!: ElementRef<HTMLElement>;
+  chartHeight = signal(0);
   private results = signal<{ spec: TrendSeriesSpec; data: KpiTrendDto[] }[]>([]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -101,37 +115,48 @@ export class TrendAnalysis implements OnInit {
 
   specs = computed<TrendSeriesSpec[]>(() => {
     const rat = this.rat();
-    const spec = (k: StandardKpiDto | undefined, areaName: string, name: string, bandName?: string) =>
-      ({ratName: rat, kpiName: k!.kpiName!, unit: k!.unit ?? '', areaName, bandName, name});
+    const spec = (k: StandardKpiDto, areaName: string, name: string, i: number, bandName?: string): TrendSeriesSpec =>
+      ({ratName: rat, kpiName: k.kpiName!, unit: k.unit ?? '', areaName, bandName, name, color: PALETTE[i % PALETTE.length]});
     const kpi = this.kpiByName().get(this.kpiName());
+    const area = this.areaName();
 
     switch (this.chartType()) {
       case 'm_area':
-        return kpi ? this.areas().map(a => spec(kpi, a.name!, a.name!)) : [];
+        return !kpi ? [] : this.areas().flatMap((a, i) =>
+          this.selectedAreas().has(a.name!) ? [spec(kpi, a.name!, a.name!, i)] : []);
       case 'm_kpi':
-        return this.areaName()
-          ? [...this.kpiNames()].filter(n => this.kpiByName().has(n))
-            .map(n => spec(this.kpiByName().get(n), this.areaName(), this.kpiByName().get(n)!.label!))
-          : [];
+        return !area ? [] : this.standardKpis().flatMap((k, i) =>
+          this.kpiNames().has(k.kpiName!) ? [spec(k, area, k.label!, i)] : []);
       case 'm_band':
-        return kpi && this.areaName() ? this.bands().map(b => spec(kpi, this.areaName(), `Band ${b.name}`, b.name!)) : [];
+        return !kpi || !area ? [] : this.bands().flatMap((b, i) =>
+          this.selectedBands().has(b.name!) ? [spec(kpi, area, this.bandLabel(b), i, b.name!)] : []);
     }
   });
 
-  /** Toggle chips for modes where the user picks lines after fetching. */
-  toggleNames = computed(() => this.chartType() === 'm_kpi' ? [] : this.specs().map(s => s.name));
+  /** Tick list for Multi-Area / Multi-Band. */
+  toggleItems = computed(() => {
+    switch (this.chartType()) {
+      case 'm_area': return this.areas().map(a => ({key: a.name!, name: a.name!}));
+      case 'm_band': return this.bands().map(b => ({key: b.name!, name: this.bandLabel(b)}));
+      default: return [];
+    }
+  });
+  private selection = computed(() => this.chartType() === 'm_band' ? this.selectedBands : this.selectedAreas);
+
+  bandLabel(b: BandDto) { return `Band ${b.name}`; }
+  colorAt(i: number) { return PALETTE[i % PALETTE.length]; }
 
   series = computed(() => this.results()
-    .map((r, i) => ({
+    .map(r => ({
       name: r.spec.name,
       unit: r.spec.unit,
-      color: PALETTE[i % PALETTE.length],
+      color: r.spec.color,
       data: r.data
         .map(d => ({x: new Date(d.timestamp!).getTime(), y: d.kpiValue == null ? null : Math.round(d.kpiValue * 100) / 100}))
         .sort((a, b) => a.x - b.x)
     }))
     // Empty series must not reach ApexCharts: morphing an empty path on update throws "parser Error" and hangs the renderer.
-    .filter(s => s.data.length > 0 && !this.hidden().has(s.name)));
+    .filter(s => s.data.length > 0));
 
   noData = computed(() => new Set(this.results().filter(r => r.data.length === 0).map(r => r.spec.name)));
 
@@ -146,11 +171,6 @@ export class TrendAnalysis implements OnInit {
       labels
     }));
   });
-
-  colorOf(name: string): string {
-    const i = this.results().findIndex(r => r.spec.name === name);
-    return PALETTE[(i < 0 ? 0 : i) % PALETTE.length];
-  }
 
   constructor() {
     // Refetch whenever the specs or global filters change; switchMap drops stale responses.
@@ -170,13 +190,21 @@ export class TrendAnalysis implements OnInit {
   }
 
   private fetch(s: TrendSeriesSpec, gran: string, period: string): Observable<KpiTrendDto[]> {
-    return s.bandName
+    const key = [s.ratName, s.kpiName, s.areaName, s.bandName ?? '', gran, period].join('|');
+    const hit = this.cache.get(key);
+    if (hit) return of(hit);
+    return (s.bandName
       ? this.kpidayService.getDataByKpiAreaAndBand(s.kpiName, period, s.areaName, s.ratName, gran, s.bandName)
-      : this.kpidayService.getDataByKpiAndArea(s.kpiName, period, s.areaName, s.ratName, gran);
+      : this.kpidayService.getDataByKpiAndArea(s.kpiName, period, s.areaName, s.ratName, gran))
+      .pipe(tap(d => this.cache.set(key, d)));
   }
 
   ngOnInit(): void {
-    this.ratService.getAllRats().subscribe({
+    const ro = new ResizeObserver(([e]) => this.chartHeight.set(Math.floor(e.contentRect.height)));
+    ro.observe(this.chartCard.nativeElement);
+    this.destroyRef.onDestroy(() => ro.disconnect());
+
+    this.track(this.ratService.getAllRats()).subscribe({
       next: d => this.rats.set(d),
       error: e => this.fail('Retrieving RATs failed', e)
     });
@@ -187,7 +215,6 @@ export class TrendAnalysis implements OnInit {
   // ── Filter handlers ───────────────────────────────────────────────────────
   setChartType(t: ChartType) {
     this.chartType.set(t);
-    this.hidden.set(new Set());
   }
 
   setRat(rat: string) {
@@ -197,7 +224,6 @@ export class TrendAnalysis implements OnInit {
 
   setAreaType(name: string) {
     this.areaType.set(name);
-    this.hidden.set(new Set());
     this.loadAreas(name);
   }
 
@@ -213,44 +239,53 @@ export class TrendAnalysis implements OnInit {
     return units.size >= 2 && !units.has(k.unit ?? '');
   }
 
-  toggleSeries(name: string) {
-    const next = new Set(this.hidden());
-    next.has(name) ? next.delete(name) : next.add(name);
-    this.hidden.set(next);
+  isSelected(key: string) {
+    return this.selection()().has(key);
   }
 
-  setAllSeries(visible: boolean) {
-    this.hidden.set(visible ? new Set() : new Set(this.toggleNames()));
+  toggleSeries(key: string) {
+    const next = new Set(this.selection()());
+    next.has(key) ? next.delete(key) : next.add(key);
+    this.selection().set(next);
+  }
+
+  setAllSeries(all: boolean) {
+    this.selection().set(new Set(all ? this.toggleItems().map(i => i.key) : []));
   }
 
   // ── Loaders ───────────────────────────────────────────────────────────────
   /** KPIs and bands depend on RAT; keep selections that still exist. */
   private loadRatScoped() {
     const rat = this.rat();
-    this.standardKpiService.getAllStandardKpi(rat).subscribe({
+    this.track(this.standardKpiService.getAllStandardKpi(rat)).subscribe({
       next: kpis => {
         const names = new Set(kpis.map(k => k.kpiName));
         this.standardKpis.set(kpis);
         if (!names.has(this.kpiName())) this.kpiName.set(kpis[0]?.kpiName ?? '');
-        this.kpiNames.set(new Set([...this.kpiNames()].filter(n => names.has(n))));
+        this.kpiNames.set(keepOrFirst(this.kpiNames(), kpis.map(k => k.kpiName!)));
       },
       error: e => this.fail('Retrieving KPIs failed', e)
     });
-    this.bandService.getByRatName(rat).subscribe({
-      next: b => this.bands.set(b),
+    this.track(this.bandService.getByRatName(rat)).subscribe({
+      next: b => {
+        this.bands.set(b);
+        this.selectedBands.set(keepOrFirst(this.selectedBands(), b.map(x => x.name!)));
+      },
       error: e => this.fail('Retrieving bands failed', e)
     });
   }
 
   private async loadAreaTypesAndUserArea() {
     let userArea: AreaDto | undefined;
+    this.pending.update(n => n + 1);
     try {
       const profile = await this.authService.getUserProfile();
       userArea = await new Promise<AreaDto | undefined>(res =>
         this.userAreaService.findByUserId(profile.id!).subscribe({next: res, error: () => res(undefined)}));
     } catch { /* no assigned area: fall back to first area type */ }
+    this.pending.update(n => n - 1);
 
-    this.areaTypeService.getAllAreaTypes().subscribe({
+    this.track(this.areaTypeService.getAllAreaTypes()).subscribe({
       next: types => {
         this.areaTypes.set(types);
         const type = userArea?.areaTypeName ?? types[0]?.name ?? '';
@@ -263,10 +298,11 @@ export class TrendAnalysis implements OnInit {
 
   private loadAreas(areaType: string, preferred?: string) {
     if (!areaType) return;
-    this.areaService.getAreasByAreaTypes(areaType).subscribe({
+    this.track(this.areaService.getAreasByAreaTypes(areaType)).subscribe({
       next: areas => {
         const enabled = areas.filter(a => a.enabled !== false);
         this.areas.set(enabled);
+        this.selectedAreas.set(keepOrFirst(this.selectedAreas(), enabled.map(a => a.name!)));
         const keep = [preferred, this.areaName()].find(n => n && enabled.some(a => a.name === n));
         this.areaName.set(keep ?? enabled[0]?.name ?? '');
       },
@@ -274,7 +310,18 @@ export class TrendAnalysis implements OnInit {
     });
   }
 
+  private track<T>(o: Observable<T>): Observable<T> {
+    this.pending.update(n => n + 1);
+    return o.pipe(finalize(() => this.pending.update(n => n - 1)));
+  }
+
   private fail(title: string, e: any) {
     this.alertService.error(title, 'Error', `${e.status} ${e.statusText}`);
   }
+}
+
+/** Keep still-valid selections; if none survive, start with just the first item (fast first load). */
+function keepOrFirst(current: Set<string>, available: string[]): Set<string> {
+  const kept = available.filter(n => current.has(n));
+  return new Set(kept.length ? kept : available.slice(0, 1));
 }
