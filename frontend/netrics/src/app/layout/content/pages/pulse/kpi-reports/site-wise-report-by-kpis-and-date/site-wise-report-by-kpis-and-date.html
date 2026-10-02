@@ -1,155 +1,155 @@
-<div class="p-4 border border-base-300 rounded-xl bg-base-100 flex flex-col gap-2">
-  <h2 class="text-md font-semibold">Site-wise multi-KPI report by date</h2>
-  <nav class="flex flex-row flex-wrap gap-2 items-center">
-    <div>
-      <div class="tabs tabs-box tabs-xs border border-base-300">
+<section class="card bg-base-100 border border-base-300 min-w-0" aria-labelledby="multi-kpi-report-title">
+  <header class="px-5 pt-4 pb-3 border-b border-base-300">
+    <h2 id="multi-kpi-report-title" class="text-base font-semibold">Site-wise multi-KPI report</h2>
+    <p class="text-xs text-secondary mt-0.5">Several KPIs side by side, with a row for each site and day.</p>
+  </header>
+
+  <!-- Fixed-width fields: changing a value never reflows the card -->
+  <div class="px-5 py-4 grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-4 gap-y-3">
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">RAT</legend>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-full flex-nowrap overflow-x-auto" role="radiogroup" aria-label="RAT">
         @for (_rat of rats; track $index) {
-          <input [disabled]="loadingAll()" type="radio" name="rat_tabs_multi" class="tab" [value]="_rat.name" aria-label="{{_rat.label}}"
+          <input [disabled]="loadingAll()" type="radio" name="rat_tabs_multi" class="tab flex-1" [value]="_rat.name" aria-label="{{_rat.label}}"
                  [checked]="rat() === _rat.name" (change)="selectRat($any($event.target).value)"/>
         }
       </div>
-    </div>
+    </fieldset>
 
-    <div class="dropdown">
-      <div tabindex="0" role="button" class="select select-sm" [class.select-disabled]="loadingAll()">
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">KPIs</legend>
+      <button type="button" class="select select-sm w-full" [disabled]="loadingAll()"
+              popovertarget="multi-kpi-picker" style="anchor-name:--multi-kpi-picker">
         @if (loadingStandardKpis) {
           <span class="loading loading-spinner loading-xs"></span>
         } @else {
-          {{ selectedKpis().length ? selectedKpis().length + ' KPI(s) selected' : 'Select KPIs' }}
+          <span class="truncate" [class.text-secondary]="!selectedKpis().length">
+            {{ selectedKpis().length ? selectedKpis().length + ' selected' : 'Select KPIs' }}
+          </span>
         }
-      </div>
-      <div tabindex="0" class="dropdown-content z-10 mt-1 w-80 p-2 bg-base-100 border border-base-300 rounded-box shadow-lg flex flex-col gap-2">
-        <div class="flex flex-row gap-2 items-center">
-          <input type="text" class="input input-sm grow" placeholder="Filter KPIs"
+      </button>
+      <!-- Top-layer popover: opening it never adds page scroll -->
+      <div popover id="multi-kpi-picker" class="dropdown w-80 max-w-[calc(100vw-2rem)] p-2 bg-base-100 border border-base-300 rounded-box shadow-lg"
+           style="position-anchor:--multi-kpi-picker" (toggle)="kpiFilter.set('')">
+        <div class="flex items-center gap-2 mb-1">
+          <input type="search" class="input input-sm grow" placeholder="Search KPIs" aria-label="Search KPIs"
                  [ngModel]="kpiFilter()" (ngModelChange)="kpiFilter.set($event)"/>
-          <button class="btn btn-ghost btn-xs" [disabled]="!selectedKpis().length" (click)="selectedKpis.set([])">Clear</button>
+          <button type="button" class="btn btn-ghost btn-xs" [disabled]="!selectedKpis().length" (click)="selectedKpis.set([])">Clear</button>
         </div>
-        <ul class="max-h-72 overflow-y-auto flex flex-col">
+        <ul class="max-h-72 overflow-y-auto">
           @for (kpi of filteredKpis(); track kpi.kpiName) {
             <li>
-              <label class="label text-sm w-full py-1 cursor-pointer">
-                <input type="checkbox" class="checkbox checkbox-xs"
+              <label class="flex items-center gap-2 px-2 py-1.5 rounded-field text-sm cursor-pointer hover:bg-base-200">
+                <input type="checkbox" class="checkbox checkbox-xs checkbox-primary"
                        [checked]="selectedKpis().includes(kpi.kpiName!)"
                        (change)="toggleKpi(kpi.kpiName!, $any($event.target).checked)"/>
-                {{ kpi.label }}
+                <span class="min-w-0">{{ kpi.label }}</span>
               </label>
             </li>
           } @empty {
-            <li class="text-xs text-secondary p-1">No KPIs</li>
+            <li class="text-xs text-secondary px-2 py-1.5">No KPIs match “{{ kpiFilter() }}”.</li>
           }
         </ul>
       </div>
-    </div>
+    </fieldset>
 
-    <div class="flex flex-row join">
-      <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="areaType"
-              (change)="selectAreaType(areaType()!)">
-        @for (at of areaTypes; track at.name) {
-          <option [value]="at.name">{{ at.name }}</option>
-        }
-      </select>
-      <select [disabled]="loadingAll()" class="select select-sm border join-item w-auto" [(ngModel)]="area">
-        @for (ar of areas; track ar.name) {
-          <option [value]="ar.name">{{ ar.name }}</option>
-        }
-      </select>
-    </div>
-    <div class="tabs tabs-box tabs-xs border border-base-300">
-      @for (gran of granularities; track gran.name) {
-        <input [disabled]="loadingAll()" type="radio" name="granularity_tabs_multi" class="tab" [value]="gran.name"
-               aria-label="{{gran.label}}"
-               [checked]="granularity() === gran.name"
-               (change)="selectGranularity($any($event.target).value)"/>
-      }
-    </div>
-    <div class="flex flex-row gap-2 items-center">
-      <button class="input input-bordered input-sm w-auto"
-              popovertarget="cally-popover-start-multi" id="cally-start-multi"
-              style="anchor-name:--cally-start-multi">
-        <svg class="text-secondary" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 8H20M4 8V16.8002C4 17.9203 4 18.4801 4.21799 18.9079C4.40973 19.2842 4.71547 19.5905 5.0918 19.7822C5.5192 20 6.07899 20 7.19691 20H16.8031C17.921 20 18.48 20 18.9074 19.7822C19.2837 19.5905 19.5905 19.2842 19.7822 18.9079C20 18.4805 20 17.9215 20 16.8036V8M4 8V7.2002C4 6.08009 4 5.51962 4.21799 5.0918C4.40973 4.71547 4.71547 4.40973 5.0918 4.21799C5.51962 4 6.08009 4 7.2002 4H8M20 8V7.19691C20 6.07899 20 5.5192 19.7822 5.0918C19.5905 4.71547 19.2837 4.40973 18.9074 4.21799C18.4796 4 17.9203 4 16.8002 4H16M8 4H16M8 4V2M16 4V2M11.75 16C11.8881 16 12 15.8881 12 15.75V12.25C12 12.1119 11.8881 12 11.75 12H8.25C8.11193 12 8 12.1119 8 12.25V15.75C8 15.8881 8.11193 16 8.25 16H11.75Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        {{ startDate() || 'Pick start date' }}
-      </button>
-
-      <p>to</p>
-      <div popover
-           id="cally-popover-start-multi" class="dropdown bg-base-100 rounded-box shadow-lg" style="position-anchor:--cally-start-multi">
-        <calendar-date class="cally bg-base-100 border border-base-300 shadow-lg rounded-box"
-                       (change)="onStartDateChange($event)">
-          <svg aria-label="Previous" class="fill-current w-4 h-4" slot="previous" xmlns="http://www.w3.org/2000/svg"
-               viewBox="0 0 24 24">
-            <path d="M15.75 19.5 8.25 12l7.5-7.5"></path>
-          </svg>
-          <svg aria-label="Next" class="fill-current w-4 h-4" slot="next" xmlns="http://www.w3.org/2000/svg"
-               viewBox="0 0 24 24">
-            <path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
-          </svg>
-          <calendar-month></calendar-month>
-        </calendar-date>
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">Area</legend>
+      <div class="join w-full">
+        <select [disabled]="loadingAll()" class="select select-sm join-item w-2/5 min-w-0" [(ngModel)]="areaType"
+                (change)="selectAreaType(areaType()!)" aria-label="Area type">
+          @for (at of areaTypes; track at.name) {
+            <option [value]="at.name">{{ at.name }}</option>
+          }
+        </select>
+        <select [disabled]="loadingAll()" class="select select-sm join-item w-3/5 min-w-0" [(ngModel)]="area" aria-label="Area">
+          @for (ar of areas; track ar.name) {
+            <option [value]="ar.name">{{ ar.name }}</option>
+          }
+        </select>
       </div>
+    </fieldset>
 
-      <button class="input input-bordered input-sm w-auto"
-              popovertarget="cally-popover-end-multi" id="cally-end-multi"
-              style="anchor-name:--cally-end-multi">
-        <svg class="text-secondary" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 8H20M4 8V16.8002C4 17.9203 4 18.4801 4.21799 18.9079C4.40973 19.2842 4.71547 19.5905 5.0918 19.7822C5.5192 20 6.07899 20 7.19691 20H16.8031C17.921 20 18.48 20 18.9074 19.7822C19.2837 19.5905 19.5905 19.2842 19.7822 18.9079C20 18.4805 20 17.9215 20 16.8036V8M4 8V7.2002C4 6.08009 4 5.51962 4.21799 5.0918C4.40973 4.71547 4.71547 4.40973 5.0918 4.21799C5.51962 4 6.08009 4 7.2002 4H8M20 8V7.19691C20 6.07899 20 5.5192 19.7822 5.0918C19.5905 4.71547 19.2837 4.40973 18.9074 4.21799C18.4796 4 17.9203 4 16.8002 4H16M8 4H16M8 4V2M16 4V2M11.75 16C11.8881 16 12 15.8881 12 15.75V12.25C12 12.1119 11.8881 12 11.75 12H8.25C8.11193 12 8 12.1119 8 12.25V15.75C8 15.8881 8.11193 16 8.25 16H11.75Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        {{ endDate() || 'Pick end date' }}
-      </button>
-      <div popover
-           id="cally-popover-end-multi" class="dropdown bg-base-100 rounded-box shadow-lg" style="position-anchor:--cally-end-multi">
-        <calendar-date class="cally bg-base-100 border border-base-300 shadow-lg rounded-box"
-                       (change)="onEndDateChange($event)">
-          <svg aria-label="Previous" class="fill-current w-4 h-4" slot="previous" xmlns="http://www.w3.org/2000/svg"
-               viewBox="0 0 24 24">
-            <path d="M15.75 19.5 8.25 12l7.5-7.5"></path>
-          </svg>
-          <svg aria-label="Next" class="fill-current w-4 h-4" slot="next" xmlns="http://www.w3.org/2000/svg"
-               viewBox="0 0 24 24">
-            <path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
-          </svg>
-          <calendar-month></calendar-month>
-        </calendar-date>
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">Granularity</legend>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-full flex-nowrap overflow-x-auto" role="radiogroup" aria-label="Granularity">
+        @for (gran of granularities; track gran.name) {
+          <input [disabled]="loadingAll()" type="radio" name="granularity_tabs_multi" class="tab flex-1" [value]="gran.name"
+                 aria-label="{{gran.label}}"
+                 [checked]="granularity() === gran.name"
+                 (change)="selectGranularity($any($event.target).value)"/>
+        }
       </div>
-    </div>
+    </fieldset>
 
-    <div class="tooltip text-xs ml-auto" [attr.data-tip]="tooltipMessage()">
-      @switch (jobStatus()) {
-        @case ('IDLE') {
-          <button [disabled]="invalidRange() || !selectedKpis().length" class="btn btn-primary btn-outline btn-sm" (click)="startReportJob()">
-            Generate Report
-          </button>
-        }
-        @case ('PENDING') {
-          <button class="btn btn-outline btn-sm" disabled>
-            <span class="loading loading-spinner loading-xs"></span> Queued...
-          </button>
-        }
-        @case ('PROCESSING') {
-          <button class="btn btn-outline btn-sm" disabled>
-            <span class="loading loading-spinner loading-xs"></span> Generating...
-          </button>
-        }
-        @case ('COMPLETED') {
-          <button class="btn btn-success btn-sm" [disabled]="downloadingFile()" (click)="downloadReadyFile()">
-            @if (downloadingFile()) {
-              <span class="loading loading-dots loading-xs"></span> Preparing...
-            } @else {
-              Download
-            }
-          </button>
-        }
-        @case ('FAILED') {
-          <button class="btn btn-error btn-outline btn-sm" (click)="startReportJob()">
-            Retry
-          </button>
-        }
-      }
-    </div>
-  </nav>
-  <div class="flex flex-col gap-1 mt-2">
-    <p class="text-secondary text-xs">Downloads a CSV file containing measurements of the selected KPIs for the chosen RAT, Area, and Date range, aggregated by the chosen granularity.</p>
-    <p class="text-secondary text-xs">The file includes the columns Date, Site ID, one column per selected KPI, and Bands</p>
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">Date range</legend>
+      <button type="button" class="input input-sm w-full justify-start gap-2 cursor-pointer"
+              popovertarget="multi-kpi-report-dates" style="anchor-name:--multi-kpi-report-dates">
+        <svg class="text-secondary shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 8H20M8 4V2M16 4V2M6 4H18C19.1 4 20 4.9 20 6V18C20 19.1 19.1 20 18 20H6C4.9 20 4 19.1 4 18V6C4 4.9 4.9 4 6 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="truncate" [class.text-secondary]="!startDate()">
+          {{ startDate() ? startDate() + ' to ' + endDate() : 'Select dates' }}
+        </span>
+      </button>
+      <div #dateMenu popover id="multi-kpi-report-dates" class="dropdown bg-base-100 rounded-box shadow-lg"
+           style="position-anchor:--multi-kpi-report-dates">
+        <calendar-range class="cally bg-base-100 border border-base-300 rounded-box" months="2" [attr.max]="today"
+                        (change)="onDateRangeChange($event); dateMenu.hidePopover()">
+          <svg aria-label="Previous" class="fill-current w-4 h-4" slot="previous" viewBox="0 0 24 24"><path d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
+          <svg aria-label="Next" class="fill-current w-4 h-4" slot="next" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
+          <div class="flex flex-wrap gap-4 justify-center">
+            <calendar-month></calendar-month>
+            <calendar-month offset="1"></calendar-month>
+          </div>
+        </calendar-range>
+      </div>
+    </fieldset>
   </div>
-</div>
+
+  <footer class="px-5 py-3 border-t border-base-300 bg-base-200/40 rounded-b-box flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div class="min-w-0 flex-1 flex flex-col gap-1.5">
+      <!-- Live preview of the CSV header, KPI columns in selection order -->
+      <div class="flex flex-wrap items-center gap-1" aria-label="CSV columns">
+        <span class="text-xs text-secondary mr-1">Columns</span>
+        <span class="badge badge-sm badge-ghost">Date</span>
+        <span class="badge badge-sm badge-ghost">Site ID</span>
+        @for (kpi of selectedKpiDtos(); track kpi.kpiName) {
+          <span class="badge badge-sm badge-primary badge-soft gap-1 max-w-56">
+            <span class="truncate" [title]="kpi.label">{{ kpi.label }}</span>
+            <button type="button" class="cursor-pointer opacity-60 hover:opacity-100" [attr.aria-label]="'Remove ' + kpi.label"
+                    (click)="toggleKpi(kpi.kpiName!, false)">✕</button>
+          </span>
+        } @empty {
+          <span class="badge badge-sm badge-dash text-secondary">KPI columns</span>
+        }
+        <span class="badge badge-sm badge-ghost">Bands</span>
+      </div>
+      <p class="text-xs min-h-4 truncate" aria-live="polite"
+         [class.text-secondary]="jobStatus() !== 'FAILED'" [class.text-error]="jobStatus() === 'FAILED'">
+        {{ statusText() }}
+      </p>
+    </div>
+
+    @switch (jobStatus()) {
+      @case ('COMPLETED') {
+        <button class="btn btn-success btn-sm" [disabled]="downloadingFile()" (click)="downloadReadyFile()">
+          @if (downloadingFile()) { <span class="loading loading-spinner loading-xs"></span> }
+          Download CSV
+        </button>
+      }
+      @case ('PENDING') {
+        <button class="btn btn-sm" disabled><span class="loading loading-spinner loading-xs"></span> Queued</button>
+      }
+      @case ('PROCESSING') {
+        <button class="btn btn-sm" disabled><span class="loading loading-spinner loading-xs"></span> Generating</button>
+      }
+      @default {
+        <button class="btn btn-primary btn-sm" [disabled]="!!blocker()" (click)="startReportJob()">
+          {{ jobStatus() === 'FAILED' ? 'Try again' : 'Generate report' }}
+        </button>
+      }
+    }
+  </footer>
+</section>
