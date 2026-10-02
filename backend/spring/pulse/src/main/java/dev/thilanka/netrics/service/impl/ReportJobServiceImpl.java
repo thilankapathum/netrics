@@ -2,10 +2,13 @@ package dev.thilanka.netrics.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.thilanka.netrics.common.exception.BusinessValidationException;
+import dev.thilanka.netrics.dto.CellKpiReportDto;
 import dev.thilanka.netrics.dto.SiteKpiReportDto;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.enums.ReportJobStatus;
 import dev.thilanka.netrics.repository.KpiDayRepository;
+import dev.thilanka.netrics.repository.KpiHourRepository;
 import dev.thilanka.netrics.repository.ReportJobRepository;
 import dev.thilanka.netrics.service.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,15 +19,20 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +41,8 @@ public class ReportJobServiceImpl implements ReportJobService {
 
     private final ReportJobRepository reportJobRepository;
     private final KpiDayRepository kpiDayRepository;
+    private final KpiHourRepository kpiHourRepository;
+    private final PlatformTransactionManager transactionManager;
     private final RatService ratService;
     private final GranularityService granularityService;
     private final StandardKpiService standardKpiService;
@@ -47,6 +57,9 @@ public class ReportJobServiceImpl implements ReportJobService {
     private ReportJobService self;
 
     private static final Path REPORTS_DIR = Path.of(System.getProperty("java.io.tmpdir"), "netrics-reports");
+
+    /** Inclusive day limit for cell-wise exports (cell-level data is large). */
+    static final int CELL_WISE_MAX_DAYS = 31;
 
     @FunctionalInterface
     private interface ReportWriter {
@@ -115,6 +128,64 @@ public class ReportJobServiceImpl implements ReportJobService {
     }
 
     @Override
+    public UUID submitCellWiseReportJob(String ratName, String granularityName, List<String> standardKpiNames, String startDate, String endDate, String areaName, String requestedBy) {
+        validateCellWiseRange(startDate, endDate);
+        ReportJob job = createJob("CELL_MULTI_KPI_DATE", requestedBy, Map.of(
+                "ratName", ratName, "granularityName", granularityName,
+                "standardKpiNames", standardKpiNames, "startDate", startDate,
+                "endDate", endDate, "areaName", areaName));
+        self.generateCellWiseReportAsync(job.getId(), ratName, granularityName, standardKpiNames, startDate, endDate, areaName);
+        return job.getId();
+    }
+
+    @Override
+    @Async("reportTaskExecutor")
+    public void generateCellWiseReportAsync(UUID jobId, String ratName, String granularityName, List<String> standardKpiNames, String startDate, String endDate, String areaName) {
+        runJob(jobId, () -> {
+            Rat rat = ratService.findRatByName(ratName);
+            Granularity granularity = granularityService.findGranularityByName(granularityName);
+            List<StandardKpi> kpis = standardKpiNames.stream()
+                    .distinct()
+                    .map(name -> standardKpiService.findByKpiName(name, rat))
+                    .toList();
+            List<Long> kpiIds = kpis.stream().map(StandardKpi::getId).toList();
+            LocalDateTime startTs = startTimestamp(startDate);
+            LocalDateTime endTs = endTimestamp(endDate, granularity);
+            Long areaId = areaService.findAreaByName(areaName).getId();
+
+            String fileName = String.format("CellKPI_%s_%s_%s_%s.csv",
+                    sanitize(areaName), sanitize(ratName), sanitize(granularityName), jobId);
+
+            // Streaming needs an open read-only transaction; kept separate from the job-status saves
+            TransactionTemplate readOnlyTx = new TransactionTemplate(transactionManager);
+            readOnlyTx.setReadOnly(true);
+            readOnlyTx.executeWithoutResult(status -> {
+                //-- Hourly granularity lives in the hourly KPI table
+                try (Stream<CellKpiReportDto> rows = granularity.getName().equals("hour")
+                        ? kpiHourRepository.streamCellWiseReport(rat.getId(), granularity.getId(), kpiIds, startTs, endTs, areaId)
+                        : kpiDayRepository.streamCellWiseReport(rat.getId(), granularity.getId(), kpiIds, startTs, endTs, areaId);
+                     Writer writer = Files.newBufferedWriter(REPORTS_DIR.resolve(fileName))) {
+                    csvService.writeCellWiseReportByKpisAndDateToCsv(rows, kpis, writer);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            return fileName;
+        });
+    }
+
+    /** Rejects inverted ranges and ranges longer than {@link #CELL_WISE_MAX_DAYS} days (inclusive). */
+    void validateCellWiseRange(String startDate, String endDate) {
+        long days = ChronoUnit.DAYS.between(startTimestamp(startDate), startTimestamp(endDate)) + 1;
+        if (days < 1) {
+            throw new BusinessValidationException("End date must be on or after the start date.");
+        }
+        if (days > CELL_WISE_MAX_DAYS) {
+            throw new BusinessValidationException("Cell-wise exports are limited to " + CELL_WISE_MAX_DAYS + " days. Select a shorter date range.");
+        }
+    }
+
+    @Override
     public ReportJob getJob(UUID jobId) {
         return reportJobRepository.findById(jobId)
                 .orElseThrow(() -> new EntityNotFoundException("Report job not found: " + jobId));
@@ -172,11 +243,18 @@ public class ReportJobServiceImpl implements ReportJobService {
     }
 
     private List<SiteKpiReportDto> querySiteWiseReport(Rat rat, Granularity granularity, List<StandardKpi> kpis, String startDate, String endDate, String areaName) {
-        LocalDateTime startTs = dateService.extractDate(startDate).toLocalDate().atStartOfDay();
-        LocalDateTime endTs = dateService.extractDate(endDate).toLocalDate().atStartOfDay().plusSeconds(granularity.getPlusSeconds());
         Area area = areaService.findAreaByName(areaName);
         return kpiDayRepository.getSiteWiseReportByKpiAndDate(
-                rat.getId(), granularity.getId(), kpis.stream().map(StandardKpi::getId).toList(), startTs, endTs, area.getId());
+                rat.getId(), granularity.getId(), kpis.stream().map(StandardKpi::getId).toList(),
+                startTimestamp(startDate), endTimestamp(endDate, granularity), area.getId());
+    }
+
+    private LocalDateTime startTimestamp(String date) {
+        return dateService.extractDate(date).toLocalDate().atStartOfDay();
+    }
+
+    private LocalDateTime endTimestamp(String date, Granularity granularity) {
+        return startTimestamp(date).plusSeconds(granularity.getPlusSeconds());
     }
 
     private String sanitize(String input) {

@@ -18,6 +18,12 @@ public interface ReportJobService {
     void generateSiteWiseMultiKpiReportAsync(UUID jobId, String ratName, String granularityName,
                                              List<String> standardKpiNames, String startDate, String endDate, String areaName);
 
+    UUID submitCellWiseReportJob(String ratName, String granularityName, List<String> standardKpiNames,
+                                 String startDate, String endDate, String areaName, String requestedBy);
+
+    void generateCellWiseReportAsync(UUID jobId, String ratName, String granularityName,
+                                     List<String> standardKpiNames, String startDate, String endDate, String areaName);
+
     ReportJob getJob(UUID jobId);
 
     void cleanupOldJobs();

@@ -17,6 +17,7 @@ import dev.thilanka.netrics.entity.StandardKpi;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -398,5 +399,43 @@ public class CsvServiceImpl implements CsvService {
         } catch (IOException e) {
             throw new FileProcessingException("Failed to write CSV", e);
         }
+    }
+
+    @Override
+    public void writeCellWiseReportByKpisAndDateToCsv(Stream<CellKpiReportDto> rows, List<StandardKpi> kpis, Writer writer) {
+        List<String> headers = new ArrayList<>(List.of("Timestamp", "Site ID", "Cell", "Band"));
+        kpis.forEach(kpi -> headers.add(kpi.getLabel()));
+
+        CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
+                .setHeader(headers.toArray(String[]::new))
+                .get();
+
+        // Rows arrive ordered by (timestamp, cell): buffer one cell-timestamp at a time, print when the key changes
+        try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
+            CellKpiReportDto current = null;
+            Map<String, Double> values = new HashMap<>();
+            for (Iterator<CellKpiReportDto> it = rows.iterator(); it.hasNext(); ) {
+                CellKpiReportDto dto = it.next();
+                if (current != null && !(current.timestamp().equals(dto.timestamp()) && current.cellName().equals(dto.cellName()))) {
+                    printCellRow(printer, current, values, kpis);
+                    values.clear();
+                }
+                current = dto;
+                values.put(dto.kpiName(), dto.kpiValue());
+            }
+            if (current != null) printCellRow(printer, current, values, kpis);
+        } catch (IOException e) {
+            throw new FileProcessingException("Failed to write CSV", e);
+        }
+    }
+
+    private void printCellRow(CSVPrinter printer, CellKpiReportDto key, Map<String, Double> values, List<StandardKpi> kpis) throws IOException {
+        List<Object> record = new ArrayList<>(List.of(key.timestamp(), nullToEmpty(key.siteCode()), key.cellName(), nullToEmpty(key.bandName())));
+        kpis.forEach(kpi -> record.add(values.get(kpi.getKpiName())));
+        printer.printRecord(record);
+    }
+
+    private static String nullToEmpty(String s) {
+        return s == null ? "" : s;
     }
 }

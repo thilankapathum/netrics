@@ -1,7 +1,12 @@
-<section class="card bg-base-100 border border-base-300 min-w-0" aria-labelledby="multi-kpi-report-title">
+<section class="card bg-base-100 border border-base-300 min-w-0" [attr.aria-labelledby]="'kpis-report-title-' + level()">
   <header class="px-5 pt-4 pb-3 border-b border-base-300">
-    <h2 id="multi-kpi-report-title" class="text-base font-semibold">Site-wise multi-KPI report</h2>
-    <p class="text-xs text-secondary mt-0.5">Several KPIs side by side, with a row for each site and day.</p>
+    @if (level() === 'cell') {
+      <h2 [id]="'kpis-report-title-' + level()" class="text-base font-semibold">Cell-wise multi-KPI report</h2>
+      <p class="text-xs text-secondary mt-0.5">Several KPIs side by side, with a row for each cell and timestamp. Values are taken as reported, without aggregation.</p>
+    } @else {
+      <h2 [id]="'kpis-report-title-' + level()" class="text-base font-semibold">Site-wise multi-KPI report</h2>
+      <p class="text-xs text-secondary mt-0.5">Several KPIs side by side, with a row for each site and day.</p>
+    }
   </header>
 
   <!-- Fixed-width fields: changing a value never reflows the card -->
@@ -10,7 +15,7 @@
       <legend class="fieldset-legend pt-0 text-xs">RAT</legend>
       <div class="tabs tabs-box tabs-xs border border-base-300 w-full flex-nowrap overflow-x-auto" role="radiogroup" aria-label="RAT">
         @for (_rat of rats; track $index) {
-          <input [disabled]="loadingAll()" type="radio" name="rat_tabs_multi" class="tab flex-1" [value]="_rat.name" aria-label="{{_rat.label}}"
+          <input [disabled]="loadingAll()" type="radio" [name]="'rat_tabs_' + level()" class="tab flex-1" [value]="_rat.name" aria-label="{{_rat.label}}"
                  [checked]="rat() === _rat.name" (change)="selectRat($any($event.target).value)"/>
         }
       </div>
@@ -19,7 +24,7 @@
     <fieldset class="fieldset p-0 min-w-0">
       <legend class="fieldset-legend pt-0 text-xs">KPIs</legend>
       <button type="button" class="select select-sm w-full" [disabled]="loadingAll()"
-              popovertarget="multi-kpi-picker" style="anchor-name:--multi-kpi-picker">
+              [attr.popovertarget]="'kpi-picker-' + level()" [attr.style]="'anchor-name:--kpi-picker-' + level()">
         @if (loadingStandardKpis) {
           <span class="loading loading-spinner loading-xs"></span>
         } @else {
@@ -29,8 +34,8 @@
         }
       </button>
       <!-- Top-layer popover: opening it never adds page scroll -->
-      <div popover id="multi-kpi-picker" class="dropdown w-80 max-w-[calc(100vw-2rem)] p-2 bg-base-100 border border-base-300 rounded-box shadow-lg"
-           style="position-anchor:--multi-kpi-picker" (toggle)="kpiFilter.set('')">
+      <div popover [id]="'kpi-picker-' + level()" class="dropdown w-80 max-w-[calc(100vw-2rem)] p-2 bg-base-100 border border-base-300 rounded-box shadow-lg"
+           [attr.style]="'position-anchor:--kpi-picker-' + level()" (toggle)="kpiFilter.set('')">
         <div class="flex items-center gap-2 mb-1">
           <input type="search" class="input input-sm grow" placeholder="Search KPIs" aria-label="Search KPIs"
                  [ngModel]="kpiFilter()" (ngModelChange)="kpiFilter.set($event)"/>
@@ -74,7 +79,7 @@
       <legend class="fieldset-legend pt-0 text-xs">Granularity</legend>
       <div class="tabs tabs-box tabs-xs border border-base-300 w-full flex-nowrap overflow-x-auto" role="radiogroup" aria-label="Granularity">
         @for (gran of granularities; track gran.name) {
-          <input [disabled]="loadingAll()" type="radio" name="granularity_tabs_multi" class="tab flex-1" [value]="gran.name"
+          <input [disabled]="loadingAll()" type="radio" [name]="'granularity_tabs_' + level()" class="tab flex-1" [value]="gran.name"
                  aria-label="{{gran.label}}"
                  [checked]="granularity() === gran.name"
                  (change)="selectGranularity($any($event.target).value)"/>
@@ -85,7 +90,7 @@
     <fieldset class="fieldset p-0 min-w-0">
       <legend class="fieldset-legend pt-0 text-xs">Date range</legend>
       <button type="button" class="input input-sm w-full justify-start gap-2 cursor-pointer"
-              popovertarget="multi-kpi-report-dates" style="anchor-name:--multi-kpi-report-dates">
+              [attr.popovertarget]="'kpis-report-dates-' + level()" [attr.style]="'anchor-name:--kpis-report-dates-' + level()">
         <svg class="text-secondary shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M4 8H20M8 4V2M16 4V2M6 4H18C19.1 4 20 4.9 20 6V18C20 19.1 19.1 20 18 20H6C4.9 20 4 19.1 4 18V6C4 4.9 4.9 4 6 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -93,9 +98,10 @@
           {{ startDate() ? startDate() + ' to ' + endDate() : 'Select dates' }}
         </span>
       </button>
-      <div #dateMenu popover id="multi-kpi-report-dates" class="dropdown bg-base-100 rounded-box shadow-lg"
-           style="position-anchor:--multi-kpi-report-dates">
+      <div #dateMenu popover [id]="'kpis-report-dates-' + level()" class="dropdown bg-base-100 rounded-box shadow-lg"
+           [attr.style]="'position-anchor:--kpis-report-dates-' + level()">
         <calendar-range class="cally bg-base-100 border border-base-300 rounded-box" months="2" [attr.max]="today"
+                        (rangestart)="onDateRangeStart($event)"
                         (change)="onDateRangeChange($event); dateMenu.hidePopover()">
           <svg aria-label="Previous" class="fill-current w-4 h-4" slot="previous" viewBox="0 0 24 24"><path d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
           <svg aria-label="Next" class="fill-current w-4 h-4" slot="next" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
@@ -105,6 +111,9 @@
           </div>
         </calendar-range>
       </div>
+      @if (level() === 'cell') {
+        <p class="label text-xs" [class.text-error]="rangeDays() > cellMaxDays">Up to {{ cellMaxDays }} days for cell-wise exports.</p>
+      }
     </fieldset>
   </div>
 
@@ -113,8 +122,14 @@
       <!-- Live preview of the CSV header, KPI columns in selection order -->
       <div class="flex flex-wrap items-center gap-1" aria-label="CSV columns">
         <span class="text-xs text-secondary mr-1">Columns</span>
-        <span class="badge badge-sm badge-ghost">Date</span>
-        <span class="badge badge-sm badge-ghost">Site ID</span>
+        @if (level() === 'cell') {
+          @for (col of ['Timestamp', 'Site ID', 'Cell', 'Band']; track col) {
+            <span class="badge badge-sm badge-ghost">{{ col }}</span>
+          }
+        } @else {
+          <span class="badge badge-sm badge-ghost">Date</span>
+          <span class="badge badge-sm badge-ghost">Site ID</span>
+        }
         @for (kpi of selectedKpiDtos(); track kpi.kpiName) {
           <span class="badge badge-sm badge-primary badge-soft gap-1 max-w-56">
             <span class="truncate" [title]="kpi.label">{{ kpi.label }}</span>
@@ -124,7 +139,9 @@
         } @empty {
           <span class="badge badge-sm badge-dash text-secondary">KPI columns</span>
         }
-        <span class="badge badge-sm badge-ghost">Bands</span>
+        @if (level() === 'site') {
+          <span class="badge badge-sm badge-ghost">Bands</span>
+        }
       </div>
       <p class="text-xs min-h-4 truncate" aria-live="polite"
          [class.text-secondary]="jobStatus() !== 'FAILED'" [class.text-error]="jobStatus() === 'FAILED'">

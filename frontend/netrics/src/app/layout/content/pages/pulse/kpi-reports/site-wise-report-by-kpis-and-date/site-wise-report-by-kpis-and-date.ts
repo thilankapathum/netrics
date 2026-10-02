@@ -1,4 +1,4 @@
-import {Component, computed, CUSTOM_ELEMENTS_SCHEMA, OnDestroy, signal} from '@angular/core';
+import {Component, computed, CUSTOM_ELEMENTS_SCHEMA, input, OnDestroy, signal} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {interval, Subscription, switchMap, takeWhile} from 'rxjs';
 import {AlertService} from '../../../../../../components/alert/alert.service';
@@ -24,6 +24,10 @@ import {StandardkpiService} from '../../../../../../service/pulse/ltefdd/standar
   host: {class: 'block min-w-0'},
 })
 export class SiteWiseReportByKpisAndDate implements OnDestroy {
+
+  /** 'site': aggregated per site and day. 'cell': raw kpi_value per cell and timestamp, max 31 days. */
+  level = input<'site' | 'cell'>('site');
+  readonly cellMaxDays = 31;
 
   rat = signal('');
   rats: RatDto[] = [];
@@ -73,6 +77,12 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
   private pollSub?: Subscription;
 
   readonly today = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+
+  /** Inclusive number of days in the selected range (0 when incomplete). */
+  rangeDays = computed(() => {
+    if (this.invalidRange()) return 0;
+    return Math.round((new Date(this.endDate()).getTime() - new Date(this.startDate()).getTime()) / 86_400_000) + 1;
+  });
 
   constructor(private alertService: AlertService,
               private areaService: AreaService,
@@ -209,6 +219,15 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
     const [start, end] = (event.target.value as string).split('/');
     this.startDate.set(start ?? '');
     this.endDate.set(end ?? '');
+    event.target.isDateDisallowed = () => false;
+  }
+
+  /** Cell-wise: once a start day is picked, grey out days that would exceed the 31-day limit. */
+  onDateRangeStart(event: any) {
+    if (this.level() !== 'cell') return;
+    const start: Date = event.detail;
+    const last = new Date(start.getTime() + (this.cellMaxDays - 1) * 86_400_000);
+    event.target.isDateDisallowed = (d: Date) => d < start || d > last;
   }
 
   startReportJob() {
@@ -221,14 +240,22 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
     this.jobFileName.set(null);
     this.jobError.set(null);
 
-    this.kpiReportService.submitSiteWiseMultiKpiReportJob(
-      this.rat(), this.granularity(), this.selectedKpis(), this.startDate(), this.endDate(), this.area()!
-    ).subscribe({
+    const submit = this.level() === 'cell'
+      ? this.kpiReportService.submitCellWiseReportJob.bind(this.kpiReportService)
+      : this.kpiReportService.submitSiteWiseMultiKpiReportJob.bind(this.kpiReportService);
+
+    submit(this.rat(), this.granularity(), this.selectedKpis(), this.startDate(), this.endDate(), this.area()!).subscribe({
       next: (res) => {
         this.jobId.set(res.jobId);
         this.pollJobStatus(res.jobId);
       },
       error: (error) => {
+        if (error.status === 400 && error.error?.message) {
+          // Validation rejected by the backend (e.g. cell-wise range over 31 days): show it in the status line
+          this.jobStatus.set('FAILED');
+          this.jobError.set(error.error.message);
+          return;
+        }
         this.jobStatus.set('IDLE');
         this.alertService.error('Error starting report job', 'Error', `${error.status} ${error.statusText}`);
       }
@@ -285,6 +312,9 @@ export class SiteWiseReportByKpisAndDate implements OnDestroy {
   /** Why the report can't be generated yet; '' when it can. */
   blocker = computed(() => {
     if (this.invalidRange()) return 'Select a date range to generate the report.';
+    if (this.level() === 'cell' && this.rangeDays() > this.cellMaxDays) {
+      return `Cell-wise exports are limited to ${this.cellMaxDays} days. Select a shorter date range.`;
+    }
     if (!this.selectedKpis().length) return 'Select at least one KPI to generate the report.';
     return '';
   });
