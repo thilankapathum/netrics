@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { PulseSettingUserAreaMapping } from './pulse-setting-user-area-mapping/pulse-setting-user-area-mapping';
 import { PsStandardKpi } from './ps-standard-kpi/ps-standard-kpi';
 import { PsCells } from './ps-cells/ps-cells';
-import { PsCreateSite } from './ps-create-site/ps-create-site';
 import { PsEvictCache } from './ps-evict-cache/ps-evict-cache';
 import { PsSiteInfo } from './ps-site-info/ps-site-info';
 import { PsSectorInfo } from './ps-sector-info/ps-sector-info';
@@ -25,7 +24,6 @@ export type SettingsView =
   | 'CELL_INFO'
   | 'CELL_MAPPING'
   | 'SECTOR_INFO'
-  | 'CREATE_SITE'
   | 'SITE_INFO'
   | 'STANDARD_KPI'
   | 'KPI_SOURCE_MAPPING'
@@ -43,7 +41,6 @@ export type SettingsView =
     PsStandardKpi,
     PsKpiSourceMapping,
     PsCellSettings,
-    PsCreateSite,
     PsEvictCache,
     PsSectorInfo,
     PsSiteManagement,
@@ -58,7 +55,6 @@ export type SettingsView =
 })
 export class PulseSettings {
 
-  // Track the currently active view instead of multiple modal states
   activeView = signal<SettingsView>(null);
 
   missingCellInfoCount = signal(0);
@@ -72,6 +68,9 @@ export class PulseSettings {
     private siteService: SiteService,
     private authService: AuthService,
   ) {
+    // Open on the first section this user can access
+    this.activeView.set(this.hasAnyRole(['PULSE_DELETE']) ? 'CACHE' : 'antenna-types');
+
     if (this.hasAnyRole(['PULSE_DELETE'])) {
       this.getCellCountWithMissingInfo();
       this.getSectorCountWithMissingInfo();

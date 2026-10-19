@@ -18,6 +18,8 @@ export class PsSiteManagement {
   loadingMissingSiteInfoUpload: boolean = false;
   loadingMissingSiteInfoDownload: boolean = false;
   loadingAllSitesDownload: boolean = false;
+  activeTab = signal<'INFO' | 'CREATE'>('INFO');
+
   creatingSite = signal<boolean>(false);
   creatingSites = signal<boolean>(false);
   createMultipleSites = signal<boolean>(false);

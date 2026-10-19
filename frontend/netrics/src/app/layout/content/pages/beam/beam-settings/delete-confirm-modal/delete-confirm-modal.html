@@ -1,41 +1,41 @@
 <dialog [class.modal-open]="open()" class="modal w-full">
   <div class="modal-box max-w-md">
-    <h3 class="text-lg font-bold mb-2">Delete {{ itemLabel }}</h3>
+    <h3 class="text-base font-semibold">Delete {{ itemLabel }}?</h3>
 
-    <div *ngIf="loadingDependents" class="flex items-center gap-2 text-sm text-neutral/50 py-4">
-      <span class="loading loading-spinner loading-xs"></span> Checking dependencies...
+    <div *ngIf="loadingDependents" class="flex items-center gap-2 text-sm text-base-content/50 py-4">
+      <span class="loading loading-spinner loading-xs"></span> Checking where this is used…
     </div>
 
     <div *ngIf="!loadingDependents && !hasDependents" class="py-2">
-      <p class="text-sm">Are you sure you want to delete <strong>{{ itemLabel }}</strong>? This cannot be undone.</p>
+      <p class="text-sm text-base-content/80"><strong>{{ itemLabel }}</strong> will be permanently deleted.</p>
     </div>
 
     <div *ngIf="hasDependents" class="py-2 flex flex-col gap-3">
-      <div role="alert" class="alert alert-warning text-sm">
+      <div role="alert" class="alert alert-warning alert-soft text-xs">
         <span>{{ itemLabel }} is used by {{ dependents.length }} item(s). Deleting it will clear this reference on those items.</span>
       </div>
 
-      <ul class="text-xs list-disc list-inside max-h-32 overflow-y-auto bg-base-200 rounded-lg p-2">
+      <ul class="text-xs list-disc list-inside max-h-32 overflow-y-auto bg-base-200 rounded-lg p-3">
         <li *ngFor="let dep of dependents.slice(0, 10)">{{ dep }}</li>
         <li *ngIf="dependents.length > 10">...and {{ dependents.length - 10 }} more</li>
       </ul>
 
       <fieldset class="fieldset">
-        <legend class="fieldset-legend">Type <span class="font-mono font-bold">{{ confirmCode }}</span> to confirm force delete</legend>
-        <input type="text" class="input input-sm w-full" [(ngModel)]="typedCode" placeholder="{{ confirmCode }}"/>
+        <legend class="fieldset-legend text-xs">Type <span class="font-mono font-bold">{{ confirmCode }}</span> to confirm</legend>
+        <input type="text" class="input input-sm w-full font-mono" [(ngModel)]="typedCode" placeholder="{{ confirmCode }}" aria-label="Confirmation code"/>
       </fieldset>
     </div>
 
     <div class="modal-action">
+      <button class="btn btn-sm btn-ghost" type="button" (click)="onCancel()">Cancel</button>
       <button *ngIf="!hasDependents" [disabled]="loadingDependents || deleting" class="btn btn-sm btn-error" (click)="onConfirmDelete()">
         <span [hidden]="!deleting" class="loading loading-spinner loading-xs"></span>
         Delete
       </button>
       <button *ngIf="hasDependents" [disabled]="!codeMatches || deleting" class="btn btn-sm btn-error" (click)="onForceDelete()">
         <span [hidden]="!deleting" class="loading loading-spinner loading-xs"></span>
-        Force Delete
+        Delete anyway
       </button>
-      <button class="btn btn-sm" type="button" (click)="onCancel()">Cancel</button>
     </div>
   </div>
 </dialog>

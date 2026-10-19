@@ -17,11 +17,11 @@ import {DeleteConfirmModal} from './delete-confirm-modal/delete-confirm-modal';
 export type Tab = 'antenna-types' | 'infra-types' | 'manufacturers' | 'operators';
 type DeletableTab = 'antenna-types' | 'manufacturers' | 'operators';
 
-const TAB_TITLES: Record<Tab, string> = {
-  'antenna-types': 'Antenna Types',
-  'infra-types': 'Infra Types',
-  'manufacturers': 'Manufacturers',
-  'operators': 'Operators'
+const TAB_INFO: Record<Tab, { title: string, description: string }> = {
+  'antenna-types': {title: 'Antenna Types', description: 'Antenna models you can pick when editing Site Parameters.'},
+  'infra-types': {title: 'Infra Types', description: 'Infrastructure and leg type combinations you can pick when editing Site Parameters.'},
+  'manufacturers': {title: 'Manufacturers', description: 'Equipment manufacturers you can pick when editing Site Parameters.'},
+  'operators': {title: 'Operators', description: 'Operators you can pick when editing Site Parameters.'}
 };
 
 const emptyAntennaType: AntennaTypeDto = {name: '', portCount: 0, height: 0, width: 0, retAvailability: false};
@@ -40,7 +40,7 @@ export class BeamSettings implements OnInit {
   tab = input<Tab | null>(null);
   activeTab = signal<Tab>('antenna-types');
   currentTab = computed(() => this.tab() ?? this.activeTab());
-  tabTitles = TAB_TITLES;
+  tabInfo = TAB_INFO;
 
   antennaTypes = signal<AntennaTypeDto[]>([]);
   infraTypes = signal<InfraTypeDto[]>([]);
