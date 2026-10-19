@@ -19,7 +19,6 @@ import {Alarms} from './layout/content/pages/pulse/alarms/alarms';
 import {Assistant} from './layout/content/pages/pulse/assistant/assistant';
 import {SiteSearch} from './layout/content/pages/beam/engineering-parameters/site-search/site-search';
 import {SiteTree} from './layout/content/pages/beam/engineering-parameters/site-tree/site-tree';
-import {BeamSettings} from './layout/content/pages/beam/beam-settings/beam-settings';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -96,7 +95,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings',
-            canActivate: [authGuard, roleGuard(['PULSE_DELETE'])],
+            canActivate: [authGuard, roleGuard(['PULSE_DELETE', 'BEAM_READ'])],
             component: PulseSettings
           },
           {
@@ -122,11 +121,7 @@ export const routes: Routes = [
             canActivate: [authGuard, roleGuard(['BEAM_READ'])],
             component: SiteTree
           },
-          {
-            path: 'settings',
-            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
-            component: BeamSettings
-          },
+          {path: 'settings', redirectTo: '/pulse/settings'},
           {
             path: '',
             canActivate: [authGuard, roleGuard(['BEAM_READ'])],

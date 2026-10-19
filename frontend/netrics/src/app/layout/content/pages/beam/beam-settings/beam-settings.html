@@ -1,7 +1,8 @@
-<div class="p-4 max-w-4xl mx-auto flex flex-col gap-4">
-  <h2 class="text-lg font-bold">Beam Settings</h2>
+<div class="flex flex-col gap-4" [class]="tab() ? '' : 'p-4 max-w-4xl mx-auto'">
+  <h3 *ngIf="tab()" class="text-lg font-semibold">{{ tabTitles[currentTab()] }}</h3>
+  <h2 *ngIf="!tab()" class="text-lg font-bold">Beam Settings</h2>
 
-  <div role="tablist" class="tabs tabs-lift">
+  <div *ngIf="!tab()" role="tablist" class="tabs tabs-lift">
     <a role="tab" class="tab" [class.tab-active]="activeTab() === 'antenna-types'" (click)="setTab('antenna-types')">Antenna Types</a>
     <a role="tab" class="tab" [class.tab-active]="activeTab() === 'infra-types'" (click)="setTab('infra-types')">Infra Types</a>
     <a role="tab" class="tab" [class.tab-active]="activeTab() === 'manufacturers'" (click)="setTab('manufacturers')">Manufacturers</a>
@@ -9,7 +10,7 @@
   </div>
 
   <!-- Antenna Types -->
-  <div *ngIf="activeTab() === 'antenna-types'" class="overflow-x-auto border border-base-300 rounded-xl">
+  <div *ngIf="currentTab() === 'antenna-types'" class="overflow-x-auto border border-base-300 rounded-xl">
     <table class="table table-zebra table-xs">
       <thead>
         <tr class="text-xs uppercase">
@@ -64,7 +65,7 @@
   </div>
 
   <!-- Infra Types -->
-  <div *ngIf="activeTab() === 'infra-types'" class="overflow-x-auto border border-base-300 rounded-xl">
+  <div *ngIf="currentTab() === 'infra-types'" class="overflow-x-auto border border-base-300 rounded-xl">
     <table class="table table-zebra table-xs">
       <thead>
         <tr class="text-xs uppercase">
@@ -106,7 +107,7 @@
   </div>
 
   <!-- Manufacturers -->
-  <div *ngIf="activeTab() === 'manufacturers'" class="overflow-x-auto border border-base-300 rounded-xl">
+  <div *ngIf="currentTab() === 'manufacturers'" class="overflow-x-auto border border-base-300 rounded-xl">
     <table class="table table-zebra table-xs">
       <thead>
         <tr class="text-xs uppercase">
@@ -145,7 +146,7 @@
   </div>
 
   <!-- Operators -->
-  <div *ngIf="activeTab() === 'operators'" class="overflow-x-auto border border-base-300 rounded-xl">
+  <div *ngIf="currentTab() === 'operators'" class="overflow-x-auto border border-base-300 rounded-xl">
     <table class="table table-zebra table-xs">
       <thead>
         <tr class="text-xs uppercase">

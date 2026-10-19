@@ -87,8 +87,7 @@ export class SidebarComponent implements OnInit {
     {
       label: 'Administration',
       items: [
-        {label: 'Pulse Settings', route: '/pulse/settings', roles: ['PULSE_DELETE'], icon: GEAR_ICON},
-        {label: 'Beam Settings', route: '/beam/settings', roles: ['BEAM_READ'], icon: GEAR_ICON}
+        {label: 'Settings', route: '/pulse/settings', roles: ['PULSE_DELETE', 'BEAM_READ'], icon: GEAR_ICON}
       ]
     },
     // {

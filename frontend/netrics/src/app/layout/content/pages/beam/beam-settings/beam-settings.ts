@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, OnInit, computed, input, signal} from '@angular/core';
 import {Observable} from 'rxjs';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -14,8 +14,15 @@ import {ManufacturerDto} from '../../../../../models/beam/ManufacturerDto';
 import {OperatorDto} from '../../../../../models/beam/OperatorDto';
 import {DeleteConfirmModal} from './delete-confirm-modal/delete-confirm-modal';
 
-type Tab = 'antenna-types' | 'infra-types' | 'manufacturers' | 'operators';
+export type Tab = 'antenna-types' | 'infra-types' | 'manufacturers' | 'operators';
 type DeletableTab = 'antenna-types' | 'manufacturers' | 'operators';
+
+const TAB_TITLES: Record<Tab, string> = {
+  'antenna-types': 'Antenna Types',
+  'infra-types': 'Infra Types',
+  'manufacturers': 'Manufacturers',
+  'operators': 'Operators'
+};
 
 const emptyAntennaType: AntennaTypeDto = {name: '', portCount: 0, height: 0, width: 0, retAvailability: false};
 const emptyInfraType: InfraTypeDto = {infraType: '', legType: ''};
@@ -29,7 +36,11 @@ const emptyOperator: OperatorDto = {name: ''};
   styleUrl: './beam-settings.css'
 })
 export class BeamSettings implements OnInit {
+  // When set (e.g. embedded in Pulse Settings), shows only this tab without the page header and tab bar
+  tab = input<Tab | null>(null);
   activeTab = signal<Tab>('antenna-types');
+  currentTab = computed(() => this.tab() ?? this.activeTab());
+  tabTitles = TAB_TITLES;
 
   antennaTypes = signal<AntennaTypeDto[]>([]);
   infraTypes = signal<InfraTypeDto[]>([]);

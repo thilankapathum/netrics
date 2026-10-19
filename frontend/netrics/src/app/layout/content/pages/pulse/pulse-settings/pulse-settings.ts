@@ -17,6 +17,8 @@ import {PsKpiSourceMapping} from './ps-kpi-source-mapping/ps-kpi-source-mapping'
 import {PsStandardRawKpiMapping} from './ps-standard-raw-kpi-mapping/ps-standard-raw-kpi-mapping';
 import {PsCellMapping} from './ps-cell-mapping/ps-cell-mapping';
 import {PsAreaManagement} from './ps-area-management/ps-area-management';
+import {BeamSettings, Tab as BeamSettingsTab} from '../../beam/beam-settings/beam-settings';
+import {AuthService} from '../../../../../auth/service/auth-service';
 
 export type SettingsView =
   | 'CACHE'
@@ -30,6 +32,7 @@ export type SettingsView =
   | 'STANDARD_RAW_KPI_MAPPING'
   | 'USER_AREA_MAPPING'
   | 'AREA_MANAGEMENT'
+  | BeamSettingsTab
   | null;
 
 @Component({
@@ -47,7 +50,8 @@ export type SettingsView =
     PsKpiSourceMapping,
     PsStandardRawKpiMapping,
     PsCellMapping,
-    PsAreaManagement
+    PsAreaManagement,
+    BeamSettings
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'
@@ -66,10 +70,21 @@ export class PulseSettings {
     private alertService: AlertService,
     private sectorService: SectorService,
     private siteService: SiteService,
+    private authService: AuthService,
   ) {
-    this.getCellCountWithMissingInfo();
-    this.getSectorCountWithMissingInfo();
-    this.getSiteCountWithMissingInfo();
+    if (this.hasAnyRole(['PULSE_DELETE'])) {
+      this.getCellCountWithMissingInfo();
+      this.getSectorCountWithMissingInfo();
+      this.getSiteCountWithMissingInfo();
+    }
+  }
+
+  hasAnyRole(roles: string[]) {
+    return this.authService.hasAnyRole(roles);
+  }
+
+  isBeamView(view: SettingsView): view is BeamSettingsTab {
+    return view === 'antenna-types' || view === 'infra-types' || view === 'manufacturers' || view === 'operators';
   }
 
   setActiveView(view: SettingsView) {
