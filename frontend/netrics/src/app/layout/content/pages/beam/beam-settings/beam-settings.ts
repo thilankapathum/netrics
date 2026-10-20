@@ -107,7 +107,7 @@ export class BeamSettings implements OnInit {
   private loadAntennaTypes(): void {
     this.antennaTypeService.getAll().subscribe({
       next: data => this.antennaTypes.set(data),
-      error: err => this.alertService.error('Failed to load antenna types', 'Error', `${err.status} ${err.statusText}`)
+      error: err => this.alertService.httpError('Failed to load antenna types', err)
     });
   }
 
@@ -139,7 +139,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to update antenna type', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to update antenna type', err);
       }
     });
   }
@@ -165,7 +165,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to create antenna type', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to create antenna type', err);
       }
     });
   }
@@ -183,7 +183,7 @@ export class BeamSettings implements OnInit {
   private loadInfraTypes(): void {
     this.infraTypeService.getAll().subscribe({
       next: data => this.infraTypes.set(data),
-      error: err => this.alertService.error('Failed to load infra types', 'Error', `${err.status} ${err.statusText}`)
+      error: err => this.alertService.httpError('Failed to load infra types', err)
     });
   }
 
@@ -211,7 +211,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to update infra type', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to update infra type', err);
       }
     });
   }
@@ -233,7 +233,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to create infra type', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to create infra type', err);
       }
     });
   }
@@ -243,7 +243,7 @@ export class BeamSettings implements OnInit {
   private loadManufacturers(): void {
     this.manufacturerService.getAll().subscribe({
       next: data => this.manufacturers.set(data),
-      error: err => this.alertService.error('Failed to load manufacturers', 'Error', `${err.status} ${err.statusText}`)
+      error: err => this.alertService.httpError('Failed to load manufacturers', err)
     });
   }
 
@@ -271,7 +271,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to update manufacturer', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to update manufacturer', err);
       }
     });
   }
@@ -293,7 +293,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to create manufacturer', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to create manufacturer', err);
       }
     });
   }
@@ -311,7 +311,7 @@ export class BeamSettings implements OnInit {
   private loadOperators(): void {
     this.operatorService.getAll().subscribe({
       next: data => this.operators.set(data),
-      error: err => this.alertService.error('Failed to load operators', 'Error', `${err.status} ${err.statusText}`)
+      error: err => this.alertService.httpError('Failed to load operators', err)
     });
   }
 
@@ -339,7 +339,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to update operator', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to update operator', err);
       }
     });
   }
@@ -361,7 +361,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.saving.set(false);
-        this.alertService.error('Failed to create operator', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to create operator', err);
       }
     });
   }
@@ -396,7 +396,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.deleteLoadingDependents.set(false);
-        this.alertService.error('Failed to check dependencies', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to check dependencies', err);
       }
     });
   }
@@ -426,7 +426,7 @@ export class BeamSettings implements OnInit {
       },
       error: err => {
         this.deletingInProgress.set(false);
-        this.alertService.error('Failed to delete', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to delete', err);
       }
     });
   }

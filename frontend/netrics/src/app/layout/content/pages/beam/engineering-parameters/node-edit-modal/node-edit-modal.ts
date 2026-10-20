@@ -1,5 +1,5 @@
 import {Component, effect, EventEmitter, Input, OnInit, Output, signal} from '@angular/core';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, NgForm} from '@angular/forms';
 import {CommonModule} from '@angular/common';
 import {AlertService} from '../../../../../../components/alert/alert.service';
 import {SiteService} from '../../../../../../service/beam/site-service';
@@ -41,8 +41,11 @@ export class NodeEditModal implements OnInit {
 
   site: SiteDto = {siteCode: ''};
   sector: SectorDto = {name: ''};
-  antenna: AntennaDto = {antennaIndex: 0, sectorName: ''};
-  tilt: ElectricalTiltDto = {electricalTilt: 0, antennaId: 0, bandName: ''};
+  antenna: AntennaDto = {sectorName: ''};
+  tilt: ElectricalTiltDto = {antennaId: 0, bandName: ''};
+
+  /** Indexes already used by siblings of the sector/antenna being created */
+  takenIndexes: number[] = [];
 
   operators: OperatorDto[] = [];
   infraTypes: InfraTypeDto[] = [];
@@ -87,18 +90,33 @@ export class NodeEditModal implements OnInit {
       if (this.nodeType === 'antenna') this.antenna = {...this.editNode.data as AntennaDto};
       if (this.nodeType === 'tilt') this.tilt = {...this.editNode.data as ElectricalTiltDto};
     } else {
+      this.takenIndexes = [];
       if (this.nodeType === 'site') this.site = {siteCode: ''};
       if (this.nodeType === 'sector') {
         const siteCode = (this.parentNode?.data as SiteDto).siteCode;
         this.sector = {name: '', sectorIndex: undefined, azimuth: undefined, siteCode};
+        this.sectorService.getBySiteCode(siteCode).subscribe({
+          next: sectors => {
+            this.takenIndexes = sectors.map(s => s.sectorIndex!);
+            this.sector.sectorIndex = this.nextFreeIndex();
+          },
+          error: err => this.alertService.httpError('Failed to load existing sectors', err)
+        });
       }
       if (this.nodeType === 'antenna') {
         const sectorName = (this.parentNode?.data as SectorDto).name;
-        this.antenna = {antennaIndex: 0, sectorName};
+        this.antenna = {sectorName, antennaTypeName: '', manufacturerName: ''};
+        this.antennaService.getBySectorName(sectorName).subscribe({
+          next: antennas => {
+            this.takenIndexes = antennas.map(a => a.antennaIndex!);
+            this.antenna.antennaIndex = this.nextFreeIndex();
+          },
+          error: err => this.alertService.httpError('Failed to load existing antennas', err)
+        });
       }
       if (this.nodeType === 'tilt') {
         const antennaId = (this.parentNode?.data as AntennaDto).id!;
-        this.tilt = {electricalTilt: 0, antennaId, bandName: ''};
+        this.tilt = {electricalTilt: undefined, antennaId, bandName: ''};
       }
     }
   }
@@ -108,9 +126,25 @@ export class NodeEditModal implements OnInit {
     this.closed.emit();
   }
 
-  onSave(): void {
+  private nextFreeIndex(): number {
+    return Math.max(0, ...this.takenIndexes) + 1;
+  }
+
+  /** Duplicate sector/antenna index check (create only; index is read-only on edit) */
+  indexTaken(): boolean {
+    if (this.mode !== 'create') return false;
+    const index = this.nodeType === 'sector' ? this.sector.sectorIndex
+      : this.nodeType === 'antenna' ? this.antenna.antennaIndex : undefined;
+    return index != null && this.takenIndexes.includes(index);
+  }
+
+  onSave(form: NgForm): void {
     if (!this.canEdit) {
       this.alertService.error('Unauthorized to modify Engineering Parameters');
+      return;
+    }
+    if (form.invalid || this.indexTaken()) {
+      form.control.markAllAsTouched();
       return;
     }
 
@@ -193,7 +227,7 @@ export class NodeEditModal implements OnInit {
   private onError(err: any, action: string): void {
     this.saving.set(false);
     console.error(err);
-    this.alertService.error(`Error trying to ${action}`, 'Error', `${err.status} ${err.statusText}`);
+    this.alertService.httpError(`Error trying to ${action}`, err);
   }
 
   infraTypeOption(infraType: InfraTypeDto): string {

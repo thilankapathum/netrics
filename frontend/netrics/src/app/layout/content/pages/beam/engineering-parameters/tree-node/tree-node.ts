@@ -50,7 +50,7 @@ export class TreeNode {
           this.loadingChildren.set(false);
         },
         error: err => {
-          this.alertService.error('Failed to load antennas', 'Error', `${err.status} ${err.statusText}`);
+          this.alertService.httpError('Failed to load antennas', err);
           this.loadingChildren.set(false);
         }
       });
@@ -62,7 +62,7 @@ export class TreeNode {
           this.loadingChildren.set(false);
         },
         error: err => {
-          this.alertService.error('Failed to load electrical tilts', 'Error', `${err.status} ${err.statusText}`);
+          this.alertService.httpError('Failed to load electrical tilts', err);
           this.loadingChildren.set(false);
         }
       });

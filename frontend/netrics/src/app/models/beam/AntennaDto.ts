@@ -1,6 +1,6 @@
 export interface AntennaDto {
   id?: number;
-  antennaIndex: number;
+  antennaIndex?: number;
   azimuth?: number;
   mechanicalTilt?: number;
   antennaHeight?: number;

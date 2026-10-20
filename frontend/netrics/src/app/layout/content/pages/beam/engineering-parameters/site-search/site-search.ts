@@ -51,7 +51,7 @@ export class SiteSearch implements OnInit, OnDestroy {
   private performSearch(term: string): void {
     this.siteService.searchSites(term).pipe(takeUntil(this.destroy$)).subscribe({
       next: data => this.results.set(data),
-      error: err => this.alertService.error('Site search failed', 'Error', `${err.status} ${err.statusText}`)
+      error: err => this.alertService.httpError('Site search failed', err)
     });
   }
 

@@ -58,7 +58,7 @@ export class SiteTree implements OnInit {
       },
       error: err => {
         this.loading.set(false);
-        this.alertService.error(`Site ${siteCode} not found`, 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError(`Failed to load site ${siteCode}`, err);
       }
     });
   }
@@ -71,7 +71,7 @@ export class SiteTree implements OnInit {
       },
       error: err => {
         this.loading.set(false);
-        this.alertService.error('Failed to load sectors', 'Error', `${err.status} ${err.statusText}`);
+        this.alertService.httpError('Failed to load sectors', err);
       }
     });
   }
@@ -129,9 +129,9 @@ export class SiteTree implements OnInit {
     // create
     if (this.modalNodeType === 'sector') {
       this.sectorNodes.update(nodes => [...nodes, node]);
-    } else if (this.parentNode) {
-      const children = this.parentNode.children ?? [];
-      this.parentNode.children = [...children, node];
+    } else if (this.parentNode?.children) {
+      // Unloaded (undefined) children stay lazy, so the next expand fetches the full list incl. the new node
+      this.parentNode.children = [...this.parentNode.children, node];
     }
   }
 }
