@@ -238,9 +238,11 @@
   [editNode]="editNode"
   [parentNode]="parentNode"
   [contextSite]="site()"
+  [canDelete]="canDelete()"
   [canEdit]="modalMode === 'create' ? canAdd() : canEdit()"
   (closed)="onModalClosed()"
-  (saved)="onModalSaved($event)">
+  (saved)="onModalSaved($event)"
+  (deleted)="onModalDeleted()">
 </app-node-edit-modal>
 
 <!-- Offered after a sector's azimuth changes -->

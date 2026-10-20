@@ -125,6 +125,10 @@ export class SiteTree implements OnInit {
     return this.authService.hasAnyRole(['BEAM_UPDATE']);
   }
 
+  canDelete(): boolean {
+    return this.authService.hasAnyRole(['BEAM_DELETE']);
+  }
+
   // ponytail: one request per sector and per antenna; add a site-level aggregate endpoint if sites grow large
   private load(): void {
     const siteCode = this.siteCode();
@@ -262,6 +266,11 @@ export class SiteTree implements OnInit {
     this.modalMode = 'create';
     this.modalNodeType = nodeType;
     this.modalOpen.set(true);
+  }
+
+  onModalDeleted(): void {
+    this.modalOpen.set(false);
+    this.load();
   }
 
   onModalClosed(): void {

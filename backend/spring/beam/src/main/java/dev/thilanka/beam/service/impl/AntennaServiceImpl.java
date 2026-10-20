@@ -1,6 +1,7 @@
 package dev.thilanka.beam.service.impl;
 
 import dev.thilanka.beam.common.Mapper;
+import dev.thilanka.beam.common.exception.BusinessValidationException;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.AntennaDto;
 import dev.thilanka.beam.entity.Antenna;
@@ -102,8 +103,14 @@ public class AntennaServiceImpl implements AntennaService {
 
     @Override
     public AntennaDto deleteAntenna(AntennaDto dto) {
-        Antenna antenna = dtoToAntenna(dto);
-        return mapper.toAntennaDto(deleteAntenna(antenna));
+        if (dto.id() == null) {
+            throw new BusinessValidationException("Antenna id is required to delete an antenna");
+        }
+        // by id only: legacy rows may lack a type/manufacturer, which dtoToAntenna can't resolve
+        Antenna antenna = findById(dto.id());
+        AntennaDto deleted = mapper.toAntennaDto(antenna);
+        antennaRepository.delete(antenna); // cascades to its electrical tilts
+        return deleted;
     }
 
     @Override

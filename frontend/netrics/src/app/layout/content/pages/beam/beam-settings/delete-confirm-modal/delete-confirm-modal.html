@@ -23,7 +23,7 @@
 
     <div *ngIf="hasDependents && allowForce" class="py-2 flex flex-col gap-3">
       <div role="alert" class="alert alert-warning alert-soft text-xs">
-        <span>{{ itemLabel }} is used by {{ dependents.length }} item(s). Deleting it will clear this reference on those items.</span>
+        <span>{{ dependentsNote || itemLabel + ' is used by ' + dependents.length + ' item(s). Deleting it will clear this reference on those items.' }}</span>
       </div>
 
       <ul class="text-xs list-disc list-inside max-h-32 overflow-y-auto bg-base-200 rounded-lg p-3">
@@ -45,7 +45,7 @@
       </button>
       <button *ngIf="hasDependents && allowForce" [disabled]="!codeMatches || deleting" class="btn btn-sm btn-error" (click)="onForceDelete()">
         <span [hidden]="!deleting" class="loading loading-spinner loading-xs"></span>
-        Delete anyway
+        {{ forceLabel }}
       </button>
     </div>
   </div>

@@ -16,6 +16,9 @@ export class DeleteConfirmModal {
   @Input() deleting = false;
   // false: items in use can't be deleted at all (no "Delete anyway")
   @Input() allowForce = true;
+  /** Overrides the warning shown above the dependents list when allowForce is on */
+  @Input() dependentsNote = '';
+  @Input() forceLabel = 'Delete anyway';
 
   @Output() closed = new EventEmitter<void>();
   @Output() confirmed = new EventEmitter<{ force: boolean }>();

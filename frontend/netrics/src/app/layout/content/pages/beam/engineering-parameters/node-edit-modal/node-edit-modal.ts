@@ -1,5 +1,6 @@
 import {Component, effect, EventEmitter, Input, OnInit, Output, signal} from '@angular/core';
 import {FormsModule, NgForm} from '@angular/forms';
+import {Observable} from 'rxjs';
 import {CommonModule} from '@angular/common';
 import {AlertService} from '../../../../../../components/alert/alert.service';
 import {SiteService} from '../../../../../../service/beam/site-service';
@@ -20,11 +21,12 @@ import {InfraTypeDto} from '../../../../../../models/beam/InfraTypeDto';
 import {AntennaTypeDto} from '../../../../../../models/beam/AntennaTypeDto';
 import {ManufacturerDto} from '../../../../../../models/beam/ManufacturerDto';
 import {BeamBandDto} from '../../../../../../models/beam/BeamBandDto';
+import {DeleteConfirmModal} from '../../beam-settings/delete-confirm-modal/delete-confirm-modal';
 import {antennaToNode, NodeType, sectorToNode, tiltToNode, TreeNodeVm} from '../tree-node.model';
 
 @Component({
   selector: 'app-node-edit-modal',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, DeleteConfirmModal],
   templateUrl: './node-edit-modal.html',
   styleUrl: './node-edit-modal.css'
 })
@@ -37,9 +39,11 @@ export class NodeEditModal implements OnInit {
   @Input() canEdit = false;
   /** Site the node belongs to; used to pre-fill new antennas */
   @Input() contextSite?: SiteDto;
+  @Input() canDelete = false;
 
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<TreeNodeVm>();
+  @Output() deleted = new EventEmitter<void>();
 
   site: SiteDto = {siteCode: ''};
   sector: SectorDto = {name: ''};
@@ -56,6 +60,12 @@ export class NodeEditModal implements OnInit {
   bands: BeamBandDto[] = [];
 
   saving = signal(false);
+
+  deleteOpen = signal(false);
+  deleting = signal(false);
+  loadingDependents = signal(false);
+  /** Tilts removed along with the antenna being deleted */
+  deleteDependents: string[] = [];
   private initialized = false;
 
   constructor(private alertService: AlertService,
@@ -238,6 +248,58 @@ export class NodeEditModal implements OnInit {
     this.saving.set(false);
     console.error(err);
     this.alertService.httpError(`Error trying to ${action}`, err);
+  }
+
+  /** Antennas and tilts can be deleted from their edit dialog; sites and sectors can't */
+  canDeleteNode(): boolean {
+    return this.canDelete && this.mode === 'edit' && (this.nodeType === 'antenna' || this.nodeType === 'tilt');
+  }
+
+  deleteLabel(): string {
+    return this.nodeType === 'antenna'
+      ? `antenna ${this.antenna.antennaIndex} on ${this.antenna.sectorName}`
+      : `${this.tilt.bandName} electrical tilt (${this.tilt.electricalTilt}°)`;
+  }
+
+  onDeleteClick(): void {
+    this.deleteDependents = [];
+    this.deleteOpen.set(true);
+    if (this.nodeType !== 'antenna') return;
+
+    this.loadingDependents.set(true);
+    this.electricalTiltService.getByAntennaId(this.antenna.id!).subscribe({
+      next: tilts => {
+        this.deleteDependents = tilts.map(t => `${t.bandName} electrical tilt: ${t.electricalTilt}°`);
+        this.loadingDependents.set(false);
+      },
+      error: err => {
+        this.loadingDependents.set(false);
+        this.deleteOpen.set(false);
+        this.alertService.httpError('Failed to load electrical tilts for this antenna', err);
+      }
+    });
+  }
+
+  onDeleteConfirmed(): void {
+    const label = this.deleteLabel();
+    const request: Observable<unknown> = this.nodeType === 'antenna'
+      ? this.antennaService.deleteAntenna(this.antenna)
+      : this.electricalTiltService.deleteElectricalTilt(this.tilt.id!);
+
+    this.deleting.set(true);
+    request.subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.deleteOpen.set(false);
+        this.alertService.success(`Deleted ${label}`);
+        this.initialized = false;
+        this.deleted.emit();
+      },
+      error: err => {
+        this.deleting.set(false);
+        this.alertService.httpError(`Failed to delete ${label}`, err);
+      }
+    });
   }
 
   infraTypeOption(infraType: InfraTypeDto): string {
