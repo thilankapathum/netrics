@@ -1,3 +1,5 @@
+import {AuditDto} from './AuditDto';
+
 export interface AntennaDto {
   id?: number;
   antennaIndex?: number;
@@ -7,4 +9,5 @@ export interface AntennaDto {
   antennaTypeName?: string;
   sectorName: string;
   manufacturerName?: string;
+  audit?: AuditDto;
 }

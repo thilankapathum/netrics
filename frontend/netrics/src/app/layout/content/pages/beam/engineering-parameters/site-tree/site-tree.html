@@ -5,6 +5,13 @@
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
 </ng-template>
 <ng-template #empty><span class="text-base-content/30">—</span></ng-template>
+<!-- last change: relative time with the exact time on hover; a dot marks changes in the last 24 h -->
+<ng-template #changed let-c>
+  <span *ngIf="c" class="inline-flex items-center gap-1.5 text-xs text-secondary whitespace-nowrap">
+    <span *ngIf="c.recent" class="w-1.5 h-1.5 rounded-full bg-primary shrink-0" title="Changed in the last 24 hours"></span>
+    <span><time [attr.title]="c.absolute">{{ c.verb }} {{ c.relative }}</time><ng-container *ngIf="c.by"> by {{ c.by }}</ng-container></span>
+  </span>
+</ng-template>
 
 <div class="flex flex-col gap-3">
   <nav class="flex flex-row flex-wrap gap-3 items-center">
@@ -41,14 +48,15 @@
           <ng-container *ngFor="let sv of sectors()">
             <g *ngIf="sv.sector.azimuth != null"
                class="transition-opacity"
+               [style.--sector]="'var(--sector-' + sectorSlot(sv.sector) + ')'"
                [class.opacity-30]="highlighted() && highlighted() !== sv.sector.name">
               <path [attr.d]="wedge(sv.sector.azimuth!)"
-                    class="stroke-accent" stroke-width="0.6" stroke-linejoin="round"
-                    [ngClass]="highlighted() === sv.sector.name ? 'fill-accent/45' : 'fill-accent/20'"/>
+                    class="sector-wedge" stroke-width="0.6" stroke-linejoin="round"
+                    [class.is-active]="highlighted() === sv.sector.name"/>
               <line *ngFor="let av of sv.antennas"
                     [attr.x2]="polar(av.antenna.azimuth ?? sv.sector.azimuth!, roseRadius)[0]"
                     [attr.y2]="polar(av.antenna.azimuth ?? sv.sector.azimuth!, roseRadius)[1]"
-                    class="stroke-accent" stroke-width="1.2" stroke-linecap="round"/>
+                    class="sector-beam" stroke-width="1.2" stroke-linecap="round"/>
               <text [attr.x]="polar(sv.sector.azimuth!, 31)[0]" [attr.y]="polar(sv.sector.azimuth!, 31)[1]"
                     dy="2" text-anchor="middle" font-size="6" font-weight="700" class="fill-base-content">
                 {{ sv.sector.sectorIndex }}
@@ -64,6 +72,7 @@
           <div class="min-w-0">
             <h1 class="text-2xl font-semibold tracking-tight tabular-nums">{{ s.siteCode }}</h1>
             <p class="text-sm text-secondary truncate">{{ s.siteName || 'Unnamed site' }}</p>
+            <div class="mt-1"><ng-container *ngTemplateOutlet="changed; context: {$implicit: change(s.audit)}"/></div>
           </div>
           <button *ngIf="canEdit()" type="button" class="btn btn-sm" (click)="onEditSite()">
             <ng-container *ngTemplateOutlet="editIcon"/> Edit site
@@ -121,20 +130,22 @@
       </div>
 
       <article *ngFor="let sv of sectors()"
-               class="border-t border-base-300 px-5 py-4 transition-colors"
-               [ngClass]="{'bg-accent/5': highlighted() === sv.sector.name}"
+               class="sector-row border-t border-base-300 px-5 py-4 transition-colors"
+               [style.--sector]="'var(--sector-' + sectorSlot(sv.sector) + ')'"
+               [class.is-active]="highlighted() === sv.sector.name"
                (mouseenter)="highlighted.set(sv.sector.name)"
                (mouseleave)="highlighted.set(null)"
                (focusin)="highlighted.set(sv.sector.name)"
                (focusout)="highlighted.set(null)">
         <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <span class="w-7 h-7 rounded-full bg-accent/15 text-accent font-bold text-xs flex items-center justify-center tabular-nums"
+          <span class="sector-marker w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center tabular-nums"
                 aria-hidden="true">{{ sv.sector.sectorIndex }}</span>
           <h3 class="font-semibold tabular-nums">{{ sv.sector.name }}</h3>
           <span class="text-xs text-secondary tabular-nums">
             Azimuth
             <span class="font-semibold text-base-content"><ng-container *ngIf="sv.sector.azimuth != null; else empty">{{ sv.sector.azimuth }}°</ng-container></span>
           </span>
+          <ng-container *ngTemplateOutlet="changed; context: {$implicit: change(sv.sector.audit)}"/>
           <span class="grow"></span>
           <button *ngIf="canEdit()" type="button" class="btn btn-ghost btn-xs" (click)="onEditSector(sv)"
                   [attr.aria-label]="'Edit sector ' + sv.sector.name">
@@ -160,6 +171,7 @@
                 <th>Type</th>
                 <th>Manufacturer</th>
                 <th>Electrical tilt by band</th>
+                <th>Last change</th>
                 <th class="w-10"><span class="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -176,13 +188,16 @@
                     <ng-container *ngFor="let t of av.tilts">
                       <button *ngIf="canEdit(); else tiltChip" type="button"
                               class="badge badge-sm badge-outline border-base-300 gap-1 cursor-pointer hover:border-primary"
-                              [attr.aria-label]="'Edit electrical tilt for band ' + t.bandName"
+                              [attr.title]="changeText(t.audit)"
+                              [attr.aria-label]="'Edit electrical tilt for band ' + t.bandName + '. ' + changeText(t.audit)"
                               (click)="onEditTilt(t)">
+                        <span *ngIf="change(t.audit)?.recent" class="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true"></span>
                         <span class="text-secondary">{{ t.bandName }}</span>
                         <span class="font-semibold">{{ t.electricalTilt ?? '—' }}°</span>
                       </button>
                       <ng-template #tiltChip>
-                        <span class="badge badge-sm badge-outline border-base-300 gap-1">
+                        <span class="badge badge-sm badge-outline border-base-300 gap-1" [attr.title]="changeText(t.audit)">
+                          <span *ngIf="change(t.audit)?.recent" class="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true"></span>
                           <span class="text-secondary">{{ t.bandName }}</span>
                           <span class="font-semibold">{{ t.electricalTilt ?? '—' }}°</span>
                         </span>
@@ -195,6 +210,11 @@
                       <ng-container *ngTemplateOutlet="addIcon"/>
                     </button>
                   </div>
+                </td>
+                <td>
+                  <ng-container *ngIf="change(av.antenna.audit) as c; else empty">
+                    <ng-container *ngTemplateOutlet="changed; context: {$implicit: c}"/>
+                  </ng-container>
                 </td>
                 <td class="text-right">
                   <button *ngIf="canEdit()" type="button" class="btn btn-ghost btn-xs btn-square" title="Edit antenna"
@@ -217,7 +237,40 @@
   [nodeType]="modalNodeType"
   [editNode]="editNode"
   [parentNode]="parentNode"
+  [contextSite]="site()"
   [canEdit]="modalMode === 'create' ? canAdd() : canEdit()"
   (closed)="onModalClosed()"
-  (saved)="onModalSaved()">
+  (saved)="onModalSaved($event)">
 </app-node-edit-modal>
+
+<!-- Offered after a sector's azimuth changes -->
+<dialog class="modal" [class.modal-open]="cascade()" aria-labelledby="cascade-title">
+  <div *ngIf="cascade() as c" class="modal-box max-w-md">
+    <h3 id="cascade-title" class="text-base font-semibold">Update antenna azimuths?</h3>
+    <p class="text-xs text-secondary mt-1">
+      Sector {{ c.sectorName }} now points at {{ c.to }}°<ng-container *ngIf="c.from != null"> (was {{ c.from }}°)</ng-container>.
+      <ng-container *ngIf="c.from != null">Selected antennas rotate by {{ rotation(c) }} so they keep their offset from the sector.</ng-container>
+      <ng-container *ngIf="c.from == null">Selected antennas are set to {{ c.to }}°.</ng-container>
+    </p>
+
+    <ul class="mt-4 border border-base-300 rounded-xl divide-y divide-base-300">
+      <li *ngFor="let item of c.items">
+        <label class="flex items-center gap-3 px-3 py-2 cursor-pointer tabular-nums">
+          <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" [(ngModel)]="item.checked"/>
+          <span class="font-semibold grow">Antenna {{ item.antenna.antennaIndex }}</span>
+          <span class="text-secondary">{{ item.antenna.azimuth ?? '—' }}°</span>
+          <svg class="w-3.5 h-3.5 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="to"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <span class="font-semibold w-10 text-right">{{ item.to }}°</span>
+        </label>
+      </li>
+    </ul>
+
+    <div class="modal-action">
+      <button type="button" class="btn btn-sm" [disabled]="cascading()" (click)="cascade.set(null)">Keep antenna azimuths</button>
+      <button type="button" class="btn btn-sm btn-primary" [disabled]="cascading() || selectedCount(c) === 0" (click)="applyCascade()">
+        <span [hidden]="!cascading()" class="loading loading-spinner loading-xs"></span>
+        Update {{ selectedCount(c) }} {{ selectedCount(c) === 1 ? 'antenna' : 'antennas' }}
+      </button>
+    </div>
+  </div>
+</dialog>

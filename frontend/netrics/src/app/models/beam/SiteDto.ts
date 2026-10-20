@@ -1,3 +1,5 @@
+import {AuditDto} from './AuditDto';
+
 export interface SiteDto {
   siteCode: string;
   siteName?: string;
@@ -7,4 +9,5 @@ export interface SiteDto {
   towerHeight?: number;
   operatorName?: string;
   infraType?: string;
+  audit?: AuditDto;
 }

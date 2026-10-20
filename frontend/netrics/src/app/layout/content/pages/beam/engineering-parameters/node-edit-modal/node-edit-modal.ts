@@ -35,6 +35,8 @@ export class NodeEditModal implements OnInit {
   @Input() editNode?: TreeNodeVm;
   @Input() parentNode?: TreeNodeVm;
   @Input() canEdit = false;
+  /** Site the node belongs to; used to pre-fill new antennas */
+  @Input() contextSite?: SiteDto;
 
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<TreeNodeVm>();
@@ -104,8 +106,16 @@ export class NodeEditModal implements OnInit {
         });
       }
       if (this.nodeType === 'antenna') {
-        const sectorName = (this.parentNode?.data as SectorDto).name;
-        this.antenna = {sectorName, antennaTypeName: '', manufacturerName: ''};
+        const sector = this.parentNode?.data as SectorDto;
+        const sectorName = sector.name;
+        // antenna usually points with the sector and sits on top of the structure; user can adjust
+        const heights = [this.contextSite?.towerHeight, this.contextSite?.buildingHeight].filter((h): h is number => h != null);
+        this.antenna = {
+          sectorName, antennaTypeName: '', manufacturerName: '',
+          azimuth: sector.azimuth,
+          mechanicalTilt: 0,
+          antennaHeight: heights.length ? heights.reduce((a, b) => a + b, 0) : undefined
+        };
         this.antennaService.getBySectorName(sectorName).subscribe({
           next: antennas => {
             this.takenIndexes = antennas.map(a => a.antennaIndex!);

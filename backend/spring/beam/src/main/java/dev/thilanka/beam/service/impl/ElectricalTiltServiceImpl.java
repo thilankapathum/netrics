@@ -1,6 +1,7 @@
 package dev.thilanka.beam.service.impl;
 
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
+import dev.thilanka.beam.dto.AuditDto;
 import dev.thilanka.beam.dto.ElectricalTiltDto;
 import dev.thilanka.beam.entity.Antenna;
 import dev.thilanka.beam.entity.BeamBand;
@@ -109,7 +110,8 @@ public class ElectricalTiltServiceImpl implements ElectricalTiltService {
                 electricalTilt.getId(),
                 electricalTilt.getElectricalTilt(),
                 electricalTilt.getAntenna().getId(),
-                electricalTilt.getBand().getName()
+                electricalTilt.getBand().getName(),
+                AuditDto.of(electricalTilt)
         );
     }
 

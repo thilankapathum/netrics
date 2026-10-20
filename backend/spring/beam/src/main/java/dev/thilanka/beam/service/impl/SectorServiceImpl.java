@@ -3,6 +3,7 @@ package dev.thilanka.beam.service.impl;
 import dev.thilanka.beam.common.GeoUtils;
 import dev.thilanka.beam.common.enums.CsvImportStatus;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
+import dev.thilanka.beam.dto.AuditDto;
 import dev.thilanka.beam.dto.SectorCsvImportResultDto;
 import dev.thilanka.beam.dto.SectorDto;
 import dev.thilanka.beam.dto.SectorEvent;
@@ -203,7 +204,8 @@ public class SectorServiceImpl implements SectorService {
                 sector.getSectorIndex(),
                 sector.getName(),
                 sector.getAzimuth(),
-                sector.getSite().getSiteCode()
+                sector.getSite().getSiteCode(),
+                AuditDto.of(sector)
         );
     }
 }

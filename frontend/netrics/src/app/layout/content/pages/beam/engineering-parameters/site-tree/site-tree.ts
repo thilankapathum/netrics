@@ -1,5 +1,6 @@
 import {Component, OnInit, signal} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {catchError, forkJoin, map, Observable, of, switchMap} from 'rxjs';
 import {SiteService} from '../../../../../../service/beam/site-service';
@@ -12,6 +13,8 @@ import {SiteDto} from '../../../../../../models/beam/SiteDto';
 import {SectorDto} from '../../../../../../models/beam/SectorDto';
 import {AntennaDto} from '../../../../../../models/beam/AntennaDto';
 import {ElectricalTiltDto} from '../../../../../../models/beam/ElectricalTiltDto';
+import {AuditDto} from '../../../../../../models/beam/AuditDto';
+import {UserService} from '../../../../../../service/pulse/user-service';
 import {antennaToNode, NodeType, sectorToNode, tiltToNode, TreeNodeVm} from '../tree-node.model';
 import {NodeEditModal} from '../node-edit-modal/node-edit-modal';
 
@@ -27,13 +30,40 @@ interface SectorVm {
   failed?: boolean;
 }
 
+export interface ChangeVm {
+  verb: 'Edited' | 'Added';
+  relative: string;
+  absolute: string;
+  /** "First L.", or null when the user can't be resolved */
+  by: string | null;
+  recent: boolean;
+}
+
+interface CascadeItem {
+  antenna: AntennaDto;
+  to: number;
+  checked: boolean;
+}
+
+interface Cascade {
+  sectorName: string;
+  from: number | null;
+  to: number;
+  items: CascadeItem[];
+}
+
 /** Nominal half-power beamwidth drawn on the azimuth rose */
 const BEAMWIDTH = 65;
 const ROSE_RADIUS = 42;
+/** Distinct sector colours (see site-tree.css); colour follows the sector index so sector 1 always looks the same */
+const SECTOR_COLOURS = 6;
+const RECENT_MS = 24 * 3600 * 1000;
+const SYSTEM_USERS = ['SYSTEM', 'ANONYMOUS'];
+const relativeFormat = new Intl.RelativeTimeFormat('en', {numeric: 'auto'});
 
 @Component({
   selector: 'app-site-tree',
-  imports: [CommonModule, RouterLink, NodeEditModal],
+  imports: [CommonModule, FormsModule, RouterLink, NodeEditModal],
   templateUrl: './site-tree.html',
   styleUrl: './site-tree.css'
 })
@@ -50,6 +80,12 @@ export class SiteTree implements OnInit {
   editNode?: TreeNodeVm;
   parentNode?: TreeNodeVm;
 
+  cascade = signal<Cascade | null>(null);
+  cascading = signal(false);
+
+  /** Keycloak sub -> "First L." */
+  private userNames = new Map<string, string>();
+
   readonly roseRadius = ROSE_RADIUS;
 
   constructor(private route: ActivatedRoute,
@@ -58,7 +94,8 @@ export class SiteTree implements OnInit {
               private antennaService: AntennaService,
               private electricalTiltService: ElectricalTiltService,
               private alertService: AlertService,
-              private authService: AuthService) {
+              private authService: AuthService,
+              private userService: UserService) {
   }
 
   ngOnInit(): void {
@@ -66,6 +103,18 @@ export class SiteTree implements OnInit {
     this.siteCode.set(siteCode);
     this.loading.set(true);
     this.load();
+    this.loadUserNames();
+  }
+
+  // names come from the realm user list in pulse; without PULSE_READ we just show the time
+  private loadUserNames(): void {
+    this.userService.getAllUsers().pipe(catchError(() => of([]))).subscribe(users => {
+      this.userNames = new Map(users.map(u => [u.userId,
+        [u.firstName, u.lastName?.charAt(0) ? u.lastName.charAt(0) + '.' : ''].filter(Boolean).join(' ') || u.username]));
+      // re-render with names
+      this.sectors.update(s => [...s]);
+      this.site.update(s => s && {...s});
+    });
   }
 
   canAdd(): boolean {
@@ -115,6 +164,42 @@ export class SiteTree implements OnInit {
   /** forkJoin that emits [] for an empty list instead of completing silently */
   private all<T>(requests: Observable<T>[]): Observable<T[]> {
     return requests.length ? forkJoin(requests) : of([]);
+  }
+
+  sectorSlot(sector: SectorDto): number {
+    return ((sector.sectorIndex ?? 1) - 1) % SECTOR_COLOURS + 1;
+  }
+
+  /** Last change to an item; imported rows nobody has touched since return null to keep the sheet quiet */
+  change(audit?: AuditDto): ChangeVm | null {
+    const edited = !!audit?.lastModifiedAt;
+    const at = edited ? audit!.lastModifiedAt : audit?.createdAt;
+    const user = edited ? audit!.lastModifiedBy : audit?.createdBy;
+    if (!at || (!edited && SYSTEM_USERS.includes(user ?? ''))) return null;
+
+    const date = new Date(at);
+    return {
+      verb: edited ? 'Edited' : 'Added',
+      relative: this.relative(date),
+      absolute: date.toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'}),
+      by: SYSTEM_USERS.includes(user ?? '') ? 'System' : this.userNames.get(user ?? '') ?? null,
+      recent: Date.now() - date.getTime() < RECENT_MS
+    };
+  }
+
+  /** Plain-text form of change() for tooltips and labels */
+  changeText(audit?: AuditDto): string {
+    const c = this.change(audit);
+    return c ? `${c.verb} ${c.relative}${c.by ? ' by ' + c.by : ''} (${c.absolute})` : '';
+  }
+
+  private relative(date: Date): string {
+    const ago = (Date.now() - date.getTime()) / 1000;
+    if (ago < 60) return 'just now';
+    if (ago < 3600) return relativeFormat.format(-Math.round(ago / 60), 'minute');
+    if (ago < 86400) return relativeFormat.format(-Math.round(ago / 3600), 'hour');
+    if (ago < 86400 * 30) return relativeFormat.format(-Math.round(ago / 86400), 'day');
+    return 'on ' + date.toLocaleDateString(undefined, {dateStyle: 'medium'});
   }
 
   antennaCount(): number {
@@ -183,9 +268,61 @@ export class SiteTree implements OnInit {
     this.modalOpen.set(false);
   }
 
-  onModalSaved(): void {
+  onModalSaved(node: TreeNodeVm): void {
     this.modalOpen.set(false);
     // re-read the site so the sheet and the rose always reflect what the server stored
     this.load();
+
+    if (this.modalMode === 'edit' && node.type === 'sector') {
+      this.offerAzimuthCascade(this.editNode!.data as SectorDto, node.data as SectorDto);
+    }
+  }
+
+  /** Sector azimuth changed: offer to rotate its antennas by the same amount */
+  private offerAzimuthCascade(before: SectorDto, after: SectorDto): void {
+    const sv = this.sectors().find(s => s.sector.name === after.name);
+    if (after.azimuth == null || before.azimuth === after.azimuth || !sv?.antennas.length) return;
+
+    const from = before.azimuth ?? null;
+    const rotate = (azimuth?: number) => from == null || azimuth == null
+      ? after.azimuth!
+      : ((azimuth + after.azimuth! - from) % 360 + 360) % 360;
+
+    this.cascade.set({
+      sectorName: after.name,
+      from,
+      to: after.azimuth,
+      items: sv.antennas.map(a => ({antenna: a.antenna, to: rotate(a.antenna.azimuth), checked: true}))
+    });
+  }
+
+  rotation(c: Cascade): string {
+    if (c.from == null) return '';
+    const delta = ((c.to - c.from + 540) % 360) - 180;
+    return (delta > 0 ? '+' : '') + delta + '°';
+  }
+
+  selectedCount(c: Cascade): number {
+    return c.items.filter(i => i.checked).length;
+  }
+
+  applyCascade(): void {
+    const c = this.cascade()!;
+    const selected = c.items.filter(i => i.checked);
+    this.cascading.set(true);
+
+    forkJoin(selected.map(i => this.antennaService.updateAntenna({...i.antenna, azimuth: i.to}).pipe(
+      map(() => true),
+      catchError(err => {
+        this.alertService.httpError(`Failed to update antenna ${i.antenna.antennaIndex}`, err);
+        return of(false);
+      })
+    ))).subscribe(results => {
+      const updated = results.filter(Boolean).length;
+      if (updated) this.alertService.success(`Updated azimuth on ${updated} ${updated === 1 ? 'antenna' : 'antennas'}`);
+      this.cascading.set(false);
+      this.cascade.set(null);
+      this.load();
+    });
   }
 }

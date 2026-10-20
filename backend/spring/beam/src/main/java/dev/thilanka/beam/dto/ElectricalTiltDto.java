@@ -4,6 +4,7 @@ public record ElectricalTiltDto(
         Long id,
         byte electricalTilt,
         Long antennaId,
-        String bandName
+        String bandName,
+        AuditDto audit
 ) {
 }
