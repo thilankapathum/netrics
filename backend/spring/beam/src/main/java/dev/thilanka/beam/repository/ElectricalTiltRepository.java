@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ElectricalTiltRepository extends JpaRepository<ElectricalTilt,Long> {
     List<ElectricalTilt> findByAntennaId(Long antennaId);
+
+    long countByBand_Name(String bandName);
 }

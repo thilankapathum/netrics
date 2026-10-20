@@ -70,6 +70,11 @@
                 Cell Mapping
               </a>
             </li>
+            <li>
+              <a [class]="activeView() === 'BANDS' ? 'bg-primary/10 text-primary font-semibold' : ''" (click)="setActiveView('BANDS')" class="flex justify-between">
+                Bands
+              </a>
+            </li>
           </ul>
         </li>
       }
@@ -177,6 +182,9 @@
       }
       @case ('CELL_MAPPING') {
         <app-ps-cell-mapping></app-ps-cell-mapping>
+      }
+      @case ('BANDS') {
+        <app-ps-bands></app-ps-bands>
       }
       @case ('STANDARD_KPI') {
         <app-ps-standard-kpi></app-ps-standard-kpi>

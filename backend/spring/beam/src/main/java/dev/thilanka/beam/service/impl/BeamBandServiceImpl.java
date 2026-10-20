@@ -4,6 +4,7 @@ import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.BeamBandDto;
 import dev.thilanka.beam.entity.BeamBand;
 import dev.thilanka.beam.repository.BeamBandRepository;
+import dev.thilanka.beam.repository.ElectricalTiltRepository;
 import dev.thilanka.beam.service.BeamBandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BeamBandServiceImpl implements BeamBandService {
     private final BeamBandRepository beamBandRepository;
+    private final ElectricalTiltRepository electricalTiltRepository;
 
 
     @Override
@@ -36,6 +38,11 @@ public class BeamBandServiceImpl implements BeamBandService {
     @Override
     public List<BeamBandDto> getAll() {
         return findAll().stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public long countTilts(String name) {
+        return electricalTiltRepository.countByBand_Name(name);
     }
 
     BeamBandDto toDto(BeamBand band) {

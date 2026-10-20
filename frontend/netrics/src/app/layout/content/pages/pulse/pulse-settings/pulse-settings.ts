@@ -17,12 +17,14 @@ import {PsStandardRawKpiMapping} from './ps-standard-raw-kpi-mapping/ps-standard
 import {PsCellMapping} from './ps-cell-mapping/ps-cell-mapping';
 import {PsAreaManagement} from './ps-area-management/ps-area-management';
 import {BeamSettings, Tab as BeamSettingsTab} from '../../beam/beam-settings/beam-settings';
+import {PsBands} from './ps-bands/ps-bands';
 import {AuthService} from '../../../../../auth/service/auth-service';
 
 export type SettingsView =
   | 'CACHE'
   | 'CELL_INFO'
   | 'CELL_MAPPING'
+  | 'BANDS'
   | 'SECTOR_INFO'
   | 'SITE_INFO'
   | 'STANDARD_KPI'
@@ -48,7 +50,8 @@ export type SettingsView =
     PsStandardRawKpiMapping,
     PsCellMapping,
     PsAreaManagement,
-    BeamSettings
+    BeamSettings,
+    PsBands
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'

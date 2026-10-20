@@ -44,6 +44,24 @@ public class BandController {
         return ResponseEntity.ok(bandService.getByName(name));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PutMapping("{name}")
+    public ResponseEntity<BandDto> updateBand(@PathVariable("name") String name, @RequestBody @Valid BandDto dto){
+        return ResponseEntity.ok(bandService.updateBand(name, dto));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_DELETE')")
+    @DeleteMapping("{name}")
+    public ResponseEntity<BandDto> deleteBand(@PathVariable("name") String name){
+        return ResponseEntity.ok(bandService.deleteBand(name));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("{name}/dependents")
+    public ResponseEntity<List<String>> getDependents(@PathVariable("name") String name){
+        return ResponseEntity.ok(bandService.getDependents(name));
+    }
+
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("rat")
     public ResponseEntity<List<BandDto>> getByRatName(@RequestParam("ratName")String ratName){

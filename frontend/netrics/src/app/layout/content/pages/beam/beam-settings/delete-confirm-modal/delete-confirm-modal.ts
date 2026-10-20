@@ -14,6 +14,8 @@ export class DeleteConfirmModal {
   @Input() dependents: string[] = [];
   @Input() loadingDependents = false;
   @Input() deleting = false;
+  // false: items in use can't be deleted at all (no "Delete anyway")
+  @Input() allowForce = true;
 
   @Output() closed = new EventEmitter<void>();
   @Output() confirmed = new EventEmitter<{ force: boolean }>();

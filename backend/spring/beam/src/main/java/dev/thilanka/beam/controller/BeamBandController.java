@@ -21,6 +21,13 @@ public class BeamBandController {
         return ResponseEntity.ok(beamBandService.getByName(name));
     }
 
+    // Called by pulse (relayed JWT) before deleting a band, so pulse admins without BEAM_READ are allowed too
+    @PreAuthorize("hasAnyAuthority('ROLE_BEAM_READ', 'ROLE_PULSE_READ')")
+    @GetMapping("{name}/usage")
+    public ResponseEntity<Long> getUsage(@PathVariable("name") String name) {
+        return ResponseEntity.ok(beamBandService.countTilts(name));
+    }
+
     @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @GetMapping
     public ResponseEntity<List<BeamBandDto>> getAll() {

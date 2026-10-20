@@ -1,6 +1,7 @@
 package dev.thilanka.netrics.assistant;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.thilanka.netrics.common.exception.ExternalServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
@@ -31,6 +32,25 @@ public class BeamClient {
                 HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build());
         factory.setReadTimeout(Duration.ofSeconds(5));
         this.restClient = builder.clone().baseUrl(beamUrl).requestFactory(factory).build();
+    }
+
+    /** @return number of beam electrical tilts using the band; throws when beam can't answer, so callers fail closed. */
+    public long bandTiltCount(String bandName) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof Jwt jwt)) {
+            throw new ExternalServiceException("beam-service", "no user token to relay");
+        }
+        try {
+            Long count = restClient.get()
+                    .uri("/api/v1/beam/bands/{name}/usage", bandName)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt.getTokenValue())
+                    .retrieve()
+                    .body(Long.class);
+            if (count == null) throw new ExternalServiceException("beam-service", "empty band usage response");
+            return count;
+        } catch (RestClientException e) {
+            throw new ExternalServiceException("beam-service", e);
+        }
     }
 
     /** @return site -> sectors -> antennas -> electrical tilts, or null when beam is unavailable or denies access. */
