@@ -1,40 +1,214 @@
-<div class="p-4 max-w-3xl mx-auto flex flex-col gap-4">
-  <div class="flex items-center gap-2">
-    <a routerLink="/beam/engineering-parameters" class="btn btn-sm btn-ghost">← Search</a>
-    <h2 class="text-lg font-bold">Engineering Parameters</h2>
+<ng-template #editIcon>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+</ng-template>
+<ng-template #addIcon>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+</ng-template>
+<ng-template #empty><span class="text-base-content/30">—</span></ng-template>
+
+<div class="flex flex-col gap-3">
+  <nav class="flex flex-row flex-wrap gap-3 items-center">
+    <div class="breadcrumbs text-xs text-secondary grow-1">
+      <ul>
+        <li><a routerLink="/">Home</a></li>
+        <li><a routerLink="/beam/engineering-parameters">Site Parameters</a></li>
+        <li class="font-bold">{{ siteCode() }}</li>
+      </ul>
+    </div>
+  </nav>
+
+  <div *ngIf="loading()" class="flex items-center gap-2 text-xs text-secondary py-6">
+    <span class="loading loading-spinner loading-xs"></span> Loading {{ siteCode() }}…
   </div>
 
-  <div *ngIf="loading()" class="flex items-center gap-2 text-sm text-neutral/50">
-    <span class="loading loading-spinner loading-xs"></span> Loading site...
+  <div *ngIf="!loading() && !site()" class="bg-base-100 border border-base-300 rounded-xl p-5 text-sm">
+    <p class="font-semibold">Site {{ siteCode() }} couldn’t be loaded.</p>
+    <p class="text-xs text-secondary mt-1">It may not exist in the inventory yet. <a routerLink="/beam/engineering-parameters" class="link link-primary">Search for another site</a></p>
   </div>
 
-  <div *ngIf="!loading() && site()" class="card bg-base-200 border border-base-300 p-4">
-    <ul class="menu p-0">
-      <li>
-        <div class="flex items-center gap-1 group">
-          <a class="grow flex items-center gap-2 py-1" (click)="onSelectSite()">
-            <span class="badge badge-sm badge-primary">site</span>
-            <span class="font-semibold">{{ site()!.siteCode }}</span>
-            <span class="text-sm text-neutral/60">{{ site()!.siteName }}</span>
-          </a>
-          <button *ngIf="canAdd()" type="button" class="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100"
-                  title="Add sector" (click)="onAddSector()">
-            +
+  <ng-container *ngIf="!loading() && site() as s">
+    <!-- SITE HEADER -->
+    <section class="bg-base-100 border border-base-300 rounded-xl p-5 flex flex-col sm:flex-row gap-6 sm:items-center">
+      <figure class="shrink-0 self-center">
+        <svg class="w-36 h-36" viewBox="-50 -50 100 100" role="img"
+             [attr.aria-label]="'Sector azimuths for ' + s.siteCode">
+          <circle r="42" class="fill-base-200 stroke-base-300" stroke-width="0.6"/>
+          <circle r="28" class="fill-none stroke-base-300" stroke-width="0.4"/>
+          <circle r="14" class="fill-none stroke-base-300" stroke-width="0.4"/>
+          <path d="M0 -42V42M-42 0H42" class="stroke-base-300" stroke-width="0.4"/>
+          <text y="-44.5" text-anchor="middle" class="fill-secondary" font-size="6" font-weight="600">N</text>
+
+          <ng-container *ngFor="let sv of sectors()">
+            <g *ngIf="sv.sector.azimuth != null"
+               class="transition-opacity"
+               [class.opacity-30]="highlighted() && highlighted() !== sv.sector.name">
+              <path [attr.d]="wedge(sv.sector.azimuth!)"
+                    class="stroke-accent" stroke-width="0.6" stroke-linejoin="round"
+                    [ngClass]="highlighted() === sv.sector.name ? 'fill-accent/45' : 'fill-accent/20'"/>
+              <line *ngFor="let av of sv.antennas"
+                    [attr.x2]="polar(av.antenna.azimuth ?? sv.sector.azimuth!, roseRadius)[0]"
+                    [attr.y2]="polar(av.antenna.azimuth ?? sv.sector.azimuth!, roseRadius)[1]"
+                    class="stroke-accent" stroke-width="1.2" stroke-linecap="round"/>
+              <text [attr.x]="polar(sv.sector.azimuth!, 31)[0]" [attr.y]="polar(sv.sector.azimuth!, 31)[1]"
+                    dy="2" text-anchor="middle" font-size="6" font-weight="700" class="fill-base-content">
+                {{ sv.sector.sectorIndex }}
+              </text>
+            </g>
+          </ng-container>
+          <circle r="1.6" class="fill-base-content"/>
+        </svg>
+      </figure>
+
+      <div class="flex flex-col gap-4 grow min-w-0">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="text-2xl font-semibold tracking-tight tabular-nums">{{ s.siteCode }}</h1>
+            <p class="text-sm text-secondary truncate">{{ s.siteName || 'Unnamed site' }}</p>
+          </div>
+          <button *ngIf="canEdit()" type="button" class="btn btn-sm" (click)="onEditSite()">
+            <ng-container *ngTemplateOutlet="editIcon"/> Edit site
           </button>
         </div>
 
-        <ul class="pl-5 border-l border-base-300">
-          <li *ngIf="sectorNodes().length === 0" class="text-xs text-neutral/50 py-1">No sectors</li>
-          <app-tree-node *ngFor="let node of sectorNodes()"
-                         [node]="node"
-                         [canAdd]="canAdd()"
-                         (select)="onSelect($event)"
-                         (addChild)="onAddChild($event)">
-          </app-tree-node>
-        </ul>
-      </li>
-    </ul>
-  </div>
+        <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 tabular-nums">
+          <div>
+            <dt class="text-xs text-secondary">Coordinates</dt>
+            <dd class="font-medium">
+              <ng-container *ngIf="s.latitude != null && s.longitude != null; else empty">
+                {{ s.latitude | number:'1.5-5' }}, {{ s.longitude | number:'1.5-5' }}
+              </ng-container>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-secondary">Building height</dt>
+            <dd class="font-medium"><ng-container *ngIf="s.buildingHeight != null; else empty">{{ s.buildingHeight }} m</ng-container></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-secondary">Tower height</dt>
+            <dd class="font-medium"><ng-container *ngIf="s.towerHeight != null; else empty">{{ s.towerHeight }} m</ng-container></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-secondary">Operator</dt>
+            <dd class="font-medium"><ng-container *ngIf="s.operatorName; else empty">{{ s.operatorName }}</ng-container></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-secondary">Infra type</dt>
+            <dd class="font-medium"><ng-container *ngIf="s.infraType; else empty">{{ s.infraType }}</ng-container></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-secondary">Equipment</dt>
+            <dd class="font-medium">{{ sectors().length }} {{ sectors().length === 1 ? 'sector' : 'sectors' }}, {{ antennaCount() }} {{ antennaCount() === 1 ? 'antenna' : 'antennas' }}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- SECTORS -->
+    <section class="bg-base-100 border border-base-300 rounded-xl">
+      <header class="flex items-center justify-between gap-3 px-5 py-3">
+        <div>
+          <h2 class="text-base font-semibold">Sectors</h2>
+          <p class="text-xs text-secondary">Antennas and their electrical tilts per band. Hover a sector to find it on the azimuth rose.</p>
+        </div>
+        <button *ngIf="canAdd()" type="button" class="btn btn-sm btn-primary shrink-0" (click)="onAddSector()">
+          <ng-container *ngTemplateOutlet="addIcon"/> Add sector
+        </button>
+      </header>
+
+      <div *ngIf="sectors().length === 0" class="border-t border-base-300 px-5 py-10 text-center">
+        <p class="text-sm">This site has no sectors yet.</p>
+        <p *ngIf="canAdd()" class="text-xs text-secondary mt-1">Add a sector to start recording its antennas and tilts.</p>
+      </div>
+
+      <article *ngFor="let sv of sectors()"
+               class="border-t border-base-300 px-5 py-4 transition-colors"
+               [ngClass]="{'bg-accent/5': highlighted() === sv.sector.name}"
+               (mouseenter)="highlighted.set(sv.sector.name)"
+               (mouseleave)="highlighted.set(null)"
+               (focusin)="highlighted.set(sv.sector.name)"
+               (focusout)="highlighted.set(null)">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span class="w-7 h-7 rounded-full bg-accent/15 text-accent font-bold text-xs flex items-center justify-center tabular-nums"
+                aria-hidden="true">{{ sv.sector.sectorIndex }}</span>
+          <h3 class="font-semibold tabular-nums">{{ sv.sector.name }}</h3>
+          <span class="text-xs text-secondary tabular-nums">
+            Azimuth
+            <span class="font-semibold text-base-content"><ng-container *ngIf="sv.sector.azimuth != null; else empty">{{ sv.sector.azimuth }}°</ng-container></span>
+          </span>
+          <span class="grow"></span>
+          <button *ngIf="canEdit()" type="button" class="btn btn-ghost btn-xs" (click)="onEditSector(sv)"
+                  [attr.aria-label]="'Edit sector ' + sv.sector.name">
+            <ng-container *ngTemplateOutlet="editIcon"/> Edit
+          </button>
+          <button *ngIf="canAdd()" type="button" class="btn btn-ghost btn-xs" (click)="onAddAntenna(sv)"
+                  [attr.aria-label]="'Add antenna to ' + sv.sector.name">
+            <ng-container *ngTemplateOutlet="addIcon"/> Antenna
+          </button>
+        </div>
+
+        <p *ngIf="sv.failed" class="text-xs text-error mt-3 pl-11">Antennas for this sector couldn’t be loaded. Reload the page to try again.</p>
+        <p *ngIf="!sv.failed && sv.antennas.length === 0" class="text-xs text-secondary mt-3 pl-11">No antennas on this sector yet.</p>
+
+        <div *ngIf="sv.antennas.length > 0" class="overflow-x-auto rounded-xl border border-base-300 mt-3">
+          <table class="table table-xs table-zebra tabular-nums">
+            <thead>
+              <tr>
+                <th>Antenna</th>
+                <th class="text-right">Azimuth</th>
+                <th class="text-right">Mech. tilt</th>
+                <th class="text-right">Height</th>
+                <th>Type</th>
+                <th>Manufacturer</th>
+                <th>Electrical tilt by band</th>
+                <th class="w-10"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let av of sv.antennas">
+                <td class="font-semibold">{{ av.antenna.antennaIndex }}</td>
+                <td class="text-right"><ng-container *ngIf="av.antenna.azimuth != null; else empty">{{ av.antenna.azimuth }}°</ng-container></td>
+                <td class="text-right"><ng-container *ngIf="av.antenna.mechanicalTilt != null; else empty">{{ av.antenna.mechanicalTilt }}°</ng-container></td>
+                <td class="text-right"><ng-container *ngIf="av.antenna.antennaHeight != null; else empty">{{ av.antenna.antennaHeight }} m</ng-container></td>
+                <td><ng-container *ngIf="av.antenna.antennaTypeName; else empty">{{ av.antenna.antennaTypeName }}</ng-container></td>
+                <td><ng-container *ngIf="av.antenna.manufacturerName; else empty">{{ av.antenna.manufacturerName }}</ng-container></td>
+                <td>
+                  <div class="flex flex-wrap items-center gap-1">
+                    <ng-container *ngFor="let t of av.tilts">
+                      <button *ngIf="canEdit(); else tiltChip" type="button"
+                              class="badge badge-sm badge-outline border-base-300 gap-1 cursor-pointer hover:border-primary"
+                              [attr.aria-label]="'Edit electrical tilt for band ' + t.bandName"
+                              (click)="onEditTilt(t)">
+                        <span class="text-secondary">{{ t.bandName }}</span>
+                        <span class="font-semibold">{{ t.electricalTilt ?? '—' }}°</span>
+                      </button>
+                      <ng-template #tiltChip>
+                        <span class="badge badge-sm badge-outline border-base-300 gap-1">
+                          <span class="text-secondary">{{ t.bandName }}</span>
+                          <span class="font-semibold">{{ t.electricalTilt ?? '—' }}°</span>
+                        </span>
+                      </ng-template>
+                    </ng-container>
+                    <span *ngIf="av.tilts.length === 0 && !canAdd()" class="text-base-content/30">—</span>
+                    <button *ngIf="canAdd()" type="button" class="btn btn-ghost btn-xs btn-square"
+                            title="Add electrical tilt" [attr.aria-label]="'Add electrical tilt to antenna ' + av.antenna.antennaIndex"
+                            (click)="onAddTilt(av)">
+                      <ng-container *ngTemplateOutlet="addIcon"/>
+                    </button>
+                  </div>
+                </td>
+                <td class="text-right">
+                  <button *ngIf="canEdit()" type="button" class="btn btn-ghost btn-xs btn-square" title="Edit antenna"
+                          [attr.aria-label]="'Edit antenna ' + av.antenna.antennaIndex" (click)="onEditAntenna(av)">
+                    <ng-container *ngTemplateOutlet="editIcon"/>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </ng-container>
 </div>
 
 <app-node-edit-modal
@@ -45,5 +219,5 @@
   [parentNode]="parentNode"
   [canEdit]="modalMode === 'create' ? canAdd() : canEdit()"
   (closed)="onModalClosed()"
-  (saved)="onModalSaved($event)">
+  (saved)="onModalSaved()">
 </app-node-edit-modal>
