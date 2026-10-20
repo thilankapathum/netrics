@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.service;
 
+import dev.thilanka.netrics.dto.CellAzimuthUpdateDto;
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.CellNameDto;
@@ -38,6 +39,12 @@ public interface CellService {
     List<CellNameDto> searchCell(String cellName);
 
     List<CellNameDto> getCellsBySector(String sectorName, String ratName);
+
+    List<CellDto> getCellsBySectorName(String sectorName);
+
+    List<String> getAllCellNamesBySectorName(String sectorName);
+
+    List<CellDto> updateAzimuths(CellAzimuthUpdateDto dto);
 
     List<CellDto> createLatestCells(String ratName, String granularityName);
 

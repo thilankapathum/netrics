@@ -140,7 +140,7 @@
       <button *ngIf="canDeleteNode()" type="button" class="btn btn-sm btn-ghost text-error mr-auto"
               [disabled]="saving()" (click)="onDeleteClick()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7H20M10 11V17M14 11V17M5 7L6 19A2 2 0 0 0 8 21H16A2 2 0 0 0 18 19L19 7M9 7V4A1 1 0 0 1 10 3H14A1 1 0 0 1 15 4V7"/></svg>
-        Delete {{ nodeType === 'tilt' ? 'tilt' : 'antenna' }}
+        Delete {{ nodeType }}
       </button>
       <button type="submit" [disabled]="saving() || !canEdit || f.invalid || indexTaken()" class="btn btn-sm btn-primary">
         <span [hidden]="!saving()" class="loading loading-spinner loading-xs"></span>
@@ -160,6 +160,7 @@
   [deleting]="deleting()"
   [dependentsNote]="'Its ' + deleteDependents.length + ' electrical ' + (deleteDependents.length === 1 ? 'tilt' : 'tilts') + ' will be deleted with it.'"
   forceLabel="Delete antenna and tilts"
+  [allowForce]="nodeType === 'antenna'"
   (closed)="deleteOpen.set(false)"
   (confirmed)="onDeleteConfirmed()">
 </app-delete-confirm-modal>

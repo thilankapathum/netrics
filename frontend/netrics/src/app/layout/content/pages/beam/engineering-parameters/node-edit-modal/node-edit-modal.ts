@@ -250,12 +250,13 @@ export class NodeEditModal implements OnInit {
     this.alertService.httpError(`Error trying to ${action}`, err);
   }
 
-  /** Antennas and tilts can be deleted from their edit dialog; sites and sectors can't */
+  /** Sectors, antennas and tilts can be deleted from their edit dialog; the site can't */
   canDeleteNode(): boolean {
-    return this.canDelete && this.mode === 'edit' && (this.nodeType === 'antenna' || this.nodeType === 'tilt');
+    return this.canDelete && this.mode === 'edit' && this.nodeType !== 'site';
   }
 
   deleteLabel(): string {
+    if (this.nodeType === 'sector') return `sector ${this.sector.name}`;
     return this.nodeType === 'antenna'
       ? `antenna ${this.antenna.antennaIndex} on ${this.antenna.sectorName}`
       : `${this.tilt.bandName} electrical tilt (${this.tilt.electricalTilt}°)`;
@@ -264,6 +265,22 @@ export class NodeEditModal implements OnInit {
   onDeleteClick(): void {
     this.deleteDependents = [];
     this.deleteOpen.set(true);
+    if (this.nodeType === 'sector') {
+      // anything listed here blocks the delete (allowForce is off for sectors)
+      this.loadingDependents.set(true);
+      this.sectorService.getDependents(this.sector.name).subscribe({
+        next: dependents => {
+          this.deleteDependents = dependents;
+          this.loadingDependents.set(false);
+        },
+        error: err => {
+          this.loadingDependents.set(false);
+          this.deleteOpen.set(false);
+          this.alertService.httpError('Failed to check what uses this sector', err);
+        }
+      });
+      return;
+    }
     if (this.nodeType !== 'antenna') return;
 
     this.loadingDependents.set(true);
@@ -282,9 +299,11 @@ export class NodeEditModal implements OnInit {
 
   onDeleteConfirmed(): void {
     const label = this.deleteLabel();
-    const request: Observable<unknown> = this.nodeType === 'antenna'
-      ? this.antennaService.deleteAntenna(this.antenna)
-      : this.electricalTiltService.deleteElectricalTilt(this.tilt.id!);
+    const request: Observable<unknown> = this.nodeType === 'sector'
+      ? this.sectorService.deleteSector(this.sector.name)
+      : this.nodeType === 'antenna'
+        ? this.antennaService.deleteAntenna(this.antenna)
+        : this.electricalTiltService.deleteElectricalTilt(this.tilt.id!);
 
     this.deleting.set(true);
     request.subscribe({

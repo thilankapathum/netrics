@@ -35,4 +35,9 @@ public interface SectorService {
     Integer reloadSectorCountWithMissingInfo();
 
     Integer getSectorCountWithMissingInfo();
+
+    /** Beam antennas and pulse cells that keep the sector from being deleted */
+    List<String> getDependents(String name);
+
+    void deleteSector(String name);
 }

@@ -15,6 +15,8 @@ import {AntennaDto} from '../../../../../../models/beam/AntennaDto';
 import {ElectricalTiltDto} from '../../../../../../models/beam/ElectricalTiltDto';
 import {AuditDto} from '../../../../../../models/beam/AuditDto';
 import {UserService} from '../../../../../../service/pulse/user-service';
+import {CellService} from '../../../../../../service/pulse/cell-service';
+import {CellDto} from '../../../../../../models/pulse/CellDto';
 import {antennaToNode, NodeType, sectorToNode, tiltToNode, TreeNodeVm} from '../tree-node.model';
 import {NodeEditModal} from '../node-edit-modal/node-edit-modal';
 
@@ -45,11 +47,20 @@ interface CascadeItem {
   checked: boolean;
 }
 
+interface CascadeCell {
+  cell: CellDto;
+  checked: boolean;
+}
+
 interface Cascade {
   sectorName: string;
   from: number | null;
   to: number;
   items: CascadeItem[];
+  /** Pulse cells on the sector; set to the sector azimuth (not rotated) */
+  cells: CascadeCell[];
+  /** Why cells aren't listed (no Pulse access, or they failed to load) */
+  cellsNote?: string;
 }
 
 /** Nominal half-power beamwidth drawn on the azimuth rose */
@@ -95,7 +106,8 @@ export class SiteTree implements OnInit {
               private electricalTiltService: ElectricalTiltService,
               private alertService: AlertService,
               private authService: AuthService,
-              private userService: UserService) {
+              private userService: UserService,
+              private cellService: CellService) {
   }
 
   ngOnInit(): void {
@@ -117,15 +129,16 @@ export class SiteTree implements OnInit {
     });
   }
 
-  canAdd(): boolean {
-    return this.authService.hasAnyRole(['BEAM_CREATE']);
+  /** BEAM_READ: edit the site and sectors; add, edit and delete antennas and tilts */
+  canRead(): boolean {
+    return this.authService.hasAnyRole(['BEAM_READ']);
   }
 
-  canEdit(): boolean {
+  canAddSector(): boolean {
     return this.authService.hasAnyRole(['BEAM_UPDATE']);
   }
 
-  canDelete(): boolean {
+  canDeleteSector(): boolean {
     return this.authService.hasAnyRole(['BEAM_DELETE']);
   }
 
@@ -287,21 +300,34 @@ export class SiteTree implements OnInit {
     }
   }
 
-  /** Sector azimuth changed: offer to rotate its antennas by the same amount */
+  /** Sector azimuth changed: offer to rotate its antennas and to point its Pulse cells the same way */
   private offerAzimuthCascade(before: SectorDto, after: SectorDto): void {
+    if (after.azimuth == null || before.azimuth === after.azimuth) return;
+
     const sv = this.sectors().find(s => s.sector.name === after.name);
-    if (after.azimuth == null || before.azimuth === after.azimuth || !sv?.antennas.length) return;
-
     const from = before.azimuth ?? null;
+    const to = after.azimuth;
     const rotate = (azimuth?: number) => from == null || azimuth == null
-      ? after.azimuth!
-      : ((azimuth + after.azimuth! - from) % 360 + 360) % 360;
+      ? to
+      : ((azimuth + to - from) % 360 + 360) % 360;
+    const items = (sv?.antennas ?? []).map(a => ({antenna: a.antenna, to: rotate(a.antenna.azimuth), checked: true}));
 
-    this.cascade.set({
-      sectorName: after.name,
-      from,
-      to: after.azimuth,
-      items: sv.antennas.map(a => ({antenna: a.antenna, to: rotate(a.antenna.azimuth), checked: true}))
+    const open = (cells: CellDto[], cellsNote?: string) => {
+      if (!items.length && !cells.length && !cellsNote) return;
+      this.cascade.set({
+        sectorName: after.name, from, to, items, cellsNote,
+        // cells already pointing the new way start unchecked
+        cells: cells.map(cell => ({cell, checked: cell.azimuth !== to}))
+      });
+    };
+
+    if (!this.authService.hasAnyRole(['PULSE_READ']) || !this.authService.hasAnyRole(['PULSE_UPDATE'])) {
+      open([], items.length ? 'Cell azimuths need Pulse edit access, so cells aren’t listed.' : undefined);
+      return;
+    }
+    this.cellService.getBySectorName(after.name).subscribe({
+      next: cells => open(cells),
+      error: () => open([], 'Cells on this sector couldn’t be loaded, so they aren’t listed.')
     });
   }
 
@@ -312,23 +338,39 @@ export class SiteTree implements OnInit {
   }
 
   selectedCount(c: Cascade): number {
-    return c.items.filter(i => i.checked).length;
+    return c.items.filter(i => i.checked).length + c.cells.filter(i => i.checked).length;
   }
 
   applyCascade(): void {
     const c = this.cascade()!;
-    const selected = c.items.filter(i => i.checked);
+    const antennas = c.items.filter(i => i.checked);
+    const cellNames = c.cells.filter(i => i.checked).map(i => i.cell.cellName);
     this.cascading.set(true);
 
-    forkJoin(selected.map(i => this.antennaService.updateAntenna({...i.antenna, azimuth: i.to}).pipe(
-      map(() => true),
+    // each side reports its own failure; one failing doesn't block the other
+    const antennaUpdates = antennas.map(i => this.antennaService.updateAntenna({...i.antenna, azimuth: i.to}).pipe(
+      map(() => 1),
       catchError(err => {
         this.alertService.httpError(`Failed to update antenna ${i.antenna.antennaIndex}`, err);
-        return of(false);
+        return of(0);
       })
-    ))).subscribe(results => {
-      const updated = results.filter(Boolean).length;
-      if (updated) this.alertService.success(`Updated azimuth on ${updated} ${updated === 1 ? 'antenna' : 'antennas'}`);
+    ));
+    const cellUpdate = cellNames.length
+      ? this.cellService.updateAzimuths(cellNames, c.to).pipe(
+        map(cells => cells.length),
+        catchError(err => {
+          this.alertService.httpError('Failed to update cell azimuths', err);
+          return of(0);
+        }))
+      : of(0);
+
+    forkJoin({antennas: this.all(antennaUpdates), cells: cellUpdate}).subscribe(({antennas, cells}) => {
+      const updatedAntennas = antennas.reduce((a, b) => a + b, 0);
+      const parts = [
+        updatedAntennas ? `${updatedAntennas} ${updatedAntennas === 1 ? 'antenna' : 'antennas'}` : '',
+        cells ? `${cells} ${cells === 1 ? 'cell' : 'cells'}` : ''
+      ].filter(Boolean);
+      if (parts.length) this.alertService.success(`Updated azimuth on ${parts.join(' and ')}`);
       this.cascading.set(false);
       this.cascade.set(null);
       this.load();

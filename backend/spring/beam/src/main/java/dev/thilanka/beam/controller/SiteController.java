@@ -45,7 +45,7 @@ public class SiteController {
         return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @PutMapping
     public ResponseEntity<SiteDto> updateSite(@RequestBody @Valid SiteDto dto){
         SiteUpdateResult result = siteService.updateSite(dto);

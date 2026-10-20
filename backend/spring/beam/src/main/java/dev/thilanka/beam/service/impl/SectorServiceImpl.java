@@ -1,6 +1,8 @@
 package dev.thilanka.beam.service.impl;
 
 import dev.thilanka.beam.common.GeoUtils;
+import dev.thilanka.beam.common.PulseClient;
+import dev.thilanka.beam.common.exception.DependencyConflictException;
 import dev.thilanka.beam.common.enums.CsvImportStatus;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.AuditDto;
@@ -10,6 +12,7 @@ import dev.thilanka.beam.dto.SectorEvent;
 import dev.thilanka.beam.dto.SectorUpdateResult;
 import dev.thilanka.beam.entity.Sector;
 import dev.thilanka.beam.entity.Site;
+import dev.thilanka.beam.repository.AntennaRepository;
 import dev.thilanka.beam.repository.SectorRepository;
 import dev.thilanka.beam.service.BeamEventPublisher;
 import dev.thilanka.beam.service.SectorService;
@@ -30,6 +33,8 @@ public class SectorServiceImpl implements SectorService {
     private final BeamEventPublisher eventPublisher;
     private final SiteService siteService;
     private final GeoUtils geoUtils;
+    private final AntennaRepository antennaRepository;
+    private final PulseClient pulseClient;
 
     Integer sectorCountWithMissingInfo = 0;
 
@@ -43,6 +48,28 @@ public class SectorServiceImpl implements SectorService {
     public List<SectorDto> getBySiteCode(String siteCode) {
         return sectorRepository.findBySite_SiteCodeOrderBySectorIndexAsc(siteCode).stream()
                 .map(this::toSectorDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getDependents(String name) {
+        Sector sector = findByName(name);
+        List<String> dependents = new ArrayList<>();
+        antennaRepository.findBySectorId(sector.getId())
+                .forEach(a -> dependents.add("Antenna " + a.getAntennaIndex()));
+        // pulse cells hold an FK to pulse's copy of the sector, so its DELETED sync would fail while any remain
+        pulseClient.sectorCellNames(name).forEach(cell -> dependents.add("Cell " + cell));
+        return dependents;
+    }
+
+    @Override
+    public void deleteSector(String name) {
+        List<String> dependents = getDependents(name);
+        if (!dependents.isEmpty()) {
+            throw new DependencyConflictException("Sector", name, dependents.size());
+        }
+        Sector sector = findByName(name);
+        sectorRepository.delete(sector);
+        eventPublisher.publishSectorEvent(buildSectorEvent("DELETED", sector));
     }
 
     @Override

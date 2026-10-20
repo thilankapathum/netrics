@@ -265,14 +265,14 @@
       </div>
     </div>
 
-    <div [hidden]="!hasAnyRole(['PULSE_DELETE', 'BEAM_READ'])" class="flex flex-col gap-2">
+    <div [hidden]="!hasAnyRole(['PULSE_DELETE', 'BEAM_DELETE'])" class="flex flex-col gap-2">
       <span class="text-xs text-neutral/50">Administration</span>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
 
         <!-- Settings Card -->
         <a routerLink="pulse/settings"
-           [hidden]="!hasAnyRole(['PULSE_DELETE', 'BEAM_READ'])"
+           [hidden]="!hasAnyRole(['PULSE_DELETE', 'BEAM_DELETE'])"
            class="card bg-base-100 border border-base-300 hover:border-secondary/50 transition-all cursor-pointer group text-left">
           <div class="card-body p-4 flex-row gap-4 items-center">
             <div class="shrink-0 h-10 w-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">

@@ -17,7 +17,7 @@ import java.util.List;
 public class AntennaController {
     private final AntennaService antennaService;
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_CREATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @PostMapping
     public ResponseEntity<AntennaDto> createAntenna(@RequestBody @Valid AntennaDto dto) {
         AntennaDto saved = antennaService.createAntenna(dto);
@@ -31,14 +31,14 @@ public class AntennaController {
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @PutMapping
     public ResponseEntity<AntennaDto> updateAntenna(@RequestBody @Valid AntennaDto dto) {
         AntennaDto updated = antennaService.updateAntenna(dto);
         return ResponseEntity.ok(updated);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_DELETE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @DeleteMapping
     public ResponseEntity<AntennaDto> deleteAntenna(@RequestBody @Valid AntennaDto dto) {
         AntennaDto deleted = antennaService.deleteAntenna(dto);

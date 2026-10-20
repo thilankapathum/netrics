@@ -95,7 +95,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings',
-            canActivate: [authGuard, roleGuard(['PULSE_DELETE', 'BEAM_READ'])],
+            canActivate: [authGuard, roleGuard(['PULSE_DELETE', 'BEAM_DELETE'])],
             component: PulseSettings
           },
           {

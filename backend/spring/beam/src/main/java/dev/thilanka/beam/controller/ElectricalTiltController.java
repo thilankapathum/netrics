@@ -17,7 +17,7 @@ import java.util.List;
 public class ElectricalTiltController {
     private final ElectricalTiltService electricalTiltService;
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_CREATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @PostMapping
     public ResponseEntity<ElectricalTiltDto> createElectricalTilt(@RequestBody @Valid ElectricalTiltDto dto) {
         ElectricalTiltDto saved = electricalTiltService.createElectricalTilt(dto);
@@ -31,14 +31,14 @@ public class ElectricalTiltController {
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @PutMapping
     public ResponseEntity<ElectricalTiltDto> updateElectricalTilt(@RequestBody @Valid ElectricalTiltDto dto) {
         ElectricalTiltDto updated = electricalTiltService.updateElectricalTilt(dto);
         return ResponseEntity.ok(updated);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_DELETE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteElectricalTilt(@PathVariable("id") Long id) {
         electricalTiltService.deleteElectricalTilt(id);

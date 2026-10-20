@@ -74,7 +74,7 @@
             <p class="text-sm text-secondary truncate">{{ s.siteName || 'Unnamed site' }}</p>
             <div class="mt-1"><ng-container *ngTemplateOutlet="changed; context: {$implicit: change(s.audit)}"/></div>
           </div>
-          <button *ngIf="canEdit()" type="button" class="btn btn-sm" (click)="onEditSite()">
+          <button *ngIf="canRead()" type="button" class="btn btn-sm" (click)="onEditSite()">
             <ng-container *ngTemplateOutlet="editIcon"/> Edit site
           </button>
         </div>
@@ -119,14 +119,14 @@
           <h2 class="text-base font-semibold">Sectors</h2>
           <p class="text-xs text-secondary">Antennas and their electrical tilts per band. Hover a sector to find it on the azimuth rose.</p>
         </div>
-        <button *ngIf="canAdd()" type="button" class="btn btn-sm btn-primary shrink-0" (click)="onAddSector()">
+        <button *ngIf="canAddSector()" type="button" class="btn btn-sm btn-primary shrink-0" (click)="onAddSector()">
           <ng-container *ngTemplateOutlet="addIcon"/> Add sector
         </button>
       </header>
 
       <div *ngIf="sectors().length === 0" class="border-t border-base-300 px-5 py-10 text-center">
         <p class="text-sm">This site has no sectors yet.</p>
-        <p *ngIf="canAdd()" class="text-xs text-secondary mt-1">Add a sector to start recording its antennas and tilts.</p>
+        <p *ngIf="canAddSector()" class="text-xs text-secondary mt-1">Add a sector to start recording its antennas and tilts.</p>
       </div>
 
       <article *ngFor="let sv of sectors()"
@@ -147,11 +147,11 @@
           </span>
           <ng-container *ngTemplateOutlet="changed; context: {$implicit: change(sv.sector.audit)}"/>
           <span class="grow"></span>
-          <button *ngIf="canEdit()" type="button" class="btn btn-ghost btn-xs" (click)="onEditSector(sv)"
+          <button *ngIf="canRead()" type="button" class="btn btn-ghost btn-xs" (click)="onEditSector(sv)"
                   [attr.aria-label]="'Edit sector ' + sv.sector.name">
             <ng-container *ngTemplateOutlet="editIcon"/> Edit
           </button>
-          <button *ngIf="canAdd()" type="button" class="btn btn-ghost btn-xs" (click)="onAddAntenna(sv)"
+          <button *ngIf="canRead()" type="button" class="btn btn-ghost btn-xs" (click)="onAddAntenna(sv)"
                   [attr.aria-label]="'Add antenna to ' + sv.sector.name">
             <ng-container *ngTemplateOutlet="addIcon"/> Antenna
           </button>
@@ -186,7 +186,7 @@
                 <td>
                   <div class="flex flex-wrap items-center gap-1">
                     <ng-container *ngFor="let t of av.tilts">
-                      <button *ngIf="canEdit(); else tiltChip" type="button"
+                      <button *ngIf="canRead(); else tiltChip" type="button"
                               class="badge badge-sm badge-outline border-base-300 gap-1 cursor-pointer hover:border-primary"
                               [attr.title]="changeText(t.audit)"
                               [attr.aria-label]="'Edit electrical tilt for band ' + t.bandName + '. ' + changeText(t.audit)"
@@ -203,8 +203,8 @@
                         </span>
                       </ng-template>
                     </ng-container>
-                    <span *ngIf="av.tilts.length === 0 && !canAdd()" class="text-base-content/30">—</span>
-                    <button *ngIf="canAdd()" type="button" class="btn btn-ghost btn-xs btn-square"
+                    <span *ngIf="av.tilts.length === 0 && !canRead()" class="text-base-content/30">—</span>
+                    <button *ngIf="canRead()" type="button" class="btn btn-ghost btn-xs btn-square"
                             title="Add electrical tilt" [attr.aria-label]="'Add electrical tilt to antenna ' + av.antenna.antennaIndex"
                             (click)="onAddTilt(av)">
                       <ng-container *ngTemplateOutlet="addIcon"/>
@@ -217,7 +217,7 @@
                   </ng-container>
                 </td>
                 <td class="text-right">
-                  <button *ngIf="canEdit()" type="button" class="btn btn-ghost btn-xs btn-square" title="Edit antenna"
+                  <button *ngIf="canRead()" type="button" class="btn btn-ghost btn-xs btn-square" title="Edit antenna"
                           [attr.aria-label]="'Edit antenna ' + av.antenna.antennaIndex" (click)="onEditAntenna(av)">
                     <ng-container *ngTemplateOutlet="editIcon"/>
                   </button>
@@ -238,8 +238,8 @@
   [editNode]="editNode"
   [parentNode]="parentNode"
   [contextSite]="site()"
-  [canDelete]="canDelete()"
-  [canEdit]="modalMode === 'create' ? canAdd() : canEdit()"
+  [canDelete]="modalNodeType === 'sector' ? canDeleteSector() : canRead()"
+  [canEdit]="modalMode === 'create' && modalNodeType === 'sector' ? canAddSector() : canRead()"
   (closed)="onModalClosed()"
   (saved)="onModalSaved($event)"
   (deleted)="onModalDeleted()">
@@ -247,31 +247,55 @@
 
 <!-- Offered after a sector's azimuth changes -->
 <dialog class="modal" [class.modal-open]="cascade()" aria-labelledby="cascade-title">
-  <div *ngIf="cascade() as c" class="modal-box max-w-md">
-    <h3 id="cascade-title" class="text-base font-semibold">Update antenna azimuths?</h3>
+  <div *ngIf="cascade() as c" class="modal-box max-w-lg">
+    <h3 id="cascade-title" class="text-base font-semibold">Update azimuths?</h3>
     <p class="text-xs text-secondary mt-1">
       Sector {{ c.sectorName }} now points at {{ c.to }}°<ng-container *ngIf="c.from != null"> (was {{ c.from }}°)</ng-container>.
-      <ng-container *ngIf="c.from != null">Selected antennas rotate by {{ rotation(c) }} so they keep their offset from the sector.</ng-container>
-      <ng-container *ngIf="c.from == null">Selected antennas are set to {{ c.to }}°.</ng-container>
     </p>
 
-    <ul class="mt-4 border border-base-300 rounded-xl divide-y divide-base-300">
-      <li *ngFor="let item of c.items">
-        <label class="flex items-center gap-3 px-3 py-2 cursor-pointer tabular-nums">
-          <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" [(ngModel)]="item.checked"/>
-          <span class="font-semibold grow">Antenna {{ item.antenna.antennaIndex }}</span>
-          <span class="text-secondary">{{ item.antenna.azimuth ?? '—' }}°</span>
-          <svg class="w-3.5 h-3.5 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="to"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          <span class="font-semibold w-10 text-right">{{ item.to }}°</span>
-        </label>
-      </li>
-    </ul>
+    <ng-container *ngIf="c.items.length">
+      <h4 class="text-sm font-semibold mt-4">Antennas</h4>
+      <p class="text-xs text-secondary">
+        <ng-container *ngIf="c.from != null">Rotate by {{ rotation(c) }} so they keep their offset from the sector.</ng-container>
+        <ng-container *ngIf="c.from == null">Set to {{ c.to }}°.</ng-container>
+      </p>
+      <ul class="mt-2 border border-base-300 rounded-xl divide-y divide-base-300">
+        <li *ngFor="let item of c.items">
+          <label class="flex items-center gap-3 px-3 py-2 cursor-pointer tabular-nums">
+            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" [(ngModel)]="item.checked"/>
+            <span class="font-semibold grow">Antenna {{ item.antenna.antennaIndex }}</span>
+            <span class="text-secondary">{{ item.antenna.azimuth ?? '—' }}°</span>
+            <svg class="w-3.5 h-3.5 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="to"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <span class="font-semibold w-10 text-right">{{ item.to }}°</span>
+          </label>
+        </li>
+      </ul>
+    </ng-container>
+
+    <ng-container *ngIf="c.cells.length">
+      <h4 class="text-sm font-semibold mt-4">Cells</h4>
+      <p class="text-xs text-secondary">Set to {{ c.to }}° to match the sector.</p>
+      <ul class="mt-2 border border-base-300 rounded-xl divide-y divide-base-300 max-h-64 overflow-y-auto">
+        <li *ngFor="let item of c.cells">
+          <label class="flex items-center gap-3 px-3 py-2 cursor-pointer tabular-nums">
+            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" [(ngModel)]="item.checked"/>
+            <span class="font-semibold grow truncate">{{ item.cell.cellName }}</span>
+            <span class="text-xs text-secondary">{{ item.cell.bandName }}</span>
+            <span class="text-secondary">{{ item.cell.azimuth ?? '—' }}°</span>
+            <svg class="w-3.5 h-3.5 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="to"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <span class="font-semibold w-10 text-right">{{ c.to }}°</span>
+          </label>
+        </li>
+      </ul>
+    </ng-container>
+
+    <p *ngIf="c.cellsNote" class="text-xs text-secondary mt-3">{{ c.cellsNote }}</p>
 
     <div class="modal-action">
-      <button type="button" class="btn btn-sm" [disabled]="cascading()" (click)="cascade.set(null)">Keep antenna azimuths</button>
+      <button type="button" class="btn btn-sm" [disabled]="cascading()" (click)="cascade.set(null)">Keep current azimuths</button>
       <button type="button" class="btn btn-sm btn-primary" [disabled]="cascading() || selectedCount(c) === 0" (click)="applyCascade()">
         <span [hidden]="!cascading()" class="loading loading-spinner loading-xs"></span>
-        Update {{ selectedCount(c) }} {{ selectedCount(c) === 1 ? 'antenna' : 'antennas' }}
+        Update {{ selectedCount(c) }} {{ selectedCount(c) === 1 ? 'item' : 'items' }}
       </button>
     </div>
   </div>

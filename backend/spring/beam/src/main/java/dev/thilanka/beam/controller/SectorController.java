@@ -25,7 +25,7 @@ public class SectorController {
     private final SectorService sectorService;
     private final CsvService csvService;
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_CREATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
     @PostMapping
     public ResponseEntity<SectorDto> createSector(@RequestBody @Valid SectorDto sectorDto) {
         return ResponseEntity.ok(sectorService.createSector(sectorDto));
@@ -37,7 +37,20 @@ public class SectorController {
         return ResponseEntity.ok(sectorService.createSectors(sectorDtos));
     }
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
+    @GetMapping("{name}/dependents")
+    public ResponseEntity<List<String>> getDependents(@PathVariable("name") String name) {
+        return ResponseEntity.ok(sectorService.getDependents(name));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_DELETE')")
+    @DeleteMapping("{name}")
+    public ResponseEntity<Void> deleteSector(@PathVariable("name") String name) {
+        sectorService.deleteSector(name);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @PutMapping
     public ResponseEntity<SectorDto> updateSector(@RequestBody @Valid SectorDto sectorDto) {
         return ResponseEntity.ok(sectorService.updateSector(sectorDto).sectorDto());
