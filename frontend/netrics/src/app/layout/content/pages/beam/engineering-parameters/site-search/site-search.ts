@@ -7,10 +7,11 @@ import {debounceTime, takeUntil} from 'rxjs/operators';
 import {SiteService} from '../../../../../../service/pulse/site-service';
 import {AlertService} from '../../../../../../components/alert/alert.service';
 import {SiteDto} from '../../../../../../models/pulse/SiteDto';
+import {EpExport} from '../ep-export/ep-export';
 
 @Component({
   selector: 'app-site-search',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, EpExport],
   templateUrl: './site-search.html',
   styleUrl: './site-search.css'
 })

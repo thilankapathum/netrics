@@ -19,6 +19,7 @@ import {CellService} from '../../../../../../service/pulse/cell-service';
 import {CellDto} from '../../../../../../models/pulse/CellDto';
 import {antennaToNode, NodeType, sectorToNode, tiltToNode, TreeNodeVm} from '../tree-node.model';
 import {NodeEditModal} from '../node-edit-modal/node-edit-modal';
+import {EpExport} from '../ep-export/ep-export';
 
 interface AntennaVm {
   antenna: AntennaDto;
@@ -74,7 +75,7 @@ const relativeFormat = new Intl.RelativeTimeFormat('en', {numeric: 'auto'});
 
 @Component({
   selector: 'app-site-tree',
-  imports: [CommonModule, FormsModule, RouterLink, NodeEditModal],
+  imports: [CommonModule, FormsModule, RouterLink, NodeEditModal, EpExport],
   templateUrl: './site-tree.html',
   styleUrl: './site-tree.css'
 })

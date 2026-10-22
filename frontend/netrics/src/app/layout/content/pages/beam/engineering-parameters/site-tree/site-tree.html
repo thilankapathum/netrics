@@ -22,6 +22,7 @@
         <li class="font-bold">{{ siteCode() }}</li>
       </ul>
     </div>
+    <app-ep-export *ngIf="site()" [siteCode]="siteCode()"/>
   </nav>
 
   <div *ngIf="loading()" class="flex items-center gap-2 text-xs text-secondary py-6">
