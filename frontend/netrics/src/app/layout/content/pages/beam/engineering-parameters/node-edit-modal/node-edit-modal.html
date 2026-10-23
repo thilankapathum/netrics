@@ -114,6 +114,18 @@
         </select>
         <p class="validator-hint hidden">Manufacturer is required</p>
       </fieldset>
+      <label class="col-span-2 flex items-start gap-3 rounded-box border p-3 mt-1 cursor-pointer"
+             [class.border-base-300]="!antenna.retAvailable" [class.border-info]="antenna.retAvailable">
+        <input type="checkbox" name="retAvailable" class="toggle toggle-sm toggle-primary mt-0.5"
+               [(ngModel)]="antenna.retAvailable" (ngModelChange)="onRetChange($event)"/>
+        <span class="flex flex-col gap-0.5">
+          <span class="text-sm font-semibold">Remote electrical tilt (RET)</span>
+          <span class="text-xs text-base-content/60">Electrical tilt is set remotely through OSS.</span>
+        </span>
+      </label>
+      <div *ngIf="retRemovedTilts.length" role="alert" class="col-span-2 alert alert-warning alert-soft text-xs">
+        Saving removes {{ retRemovedTilts.length }} manual {{ retRemovedTilts.length === 1 ? 'tilt' : 'tilts' }}: {{ retRemovedTilts.join(', ') }}.
+      </div>
     </div>
 
     <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'tilt'">

@@ -1,5 +1,6 @@
 package dev.thilanka.beam.service.impl;
 
+import dev.thilanka.beam.common.exception.BusinessValidationException;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.AuditDto;
 import dev.thilanka.beam.dto.ElectricalTiltDto;
@@ -117,6 +118,9 @@ public class ElectricalTiltServiceImpl implements ElectricalTiltService {
 
     private ElectricalTilt toEntity(ElectricalTiltDto dto) {
         Antenna antenna = antennaService.findById(dto.antennaId());
+        if (antenna.isRetAvailable()) {
+            throw new BusinessValidationException("Antenna uses RET; its electrical tilt is set remotely in OSS");
+        }
         BeamBand band = beamBandService.findByName(dto.bandName());
 
         return ElectricalTilt.builder()

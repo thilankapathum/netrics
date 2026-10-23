@@ -39,7 +39,7 @@ public class EngineeringParameterOverviewServiceImpl implements EngineeringParam
                             + "WHERE NOT EXISTS (SELECT 1 FROM antennas a WHERE a.sector_id = s.id)"),
             new GapQuery("antennasWithoutTilts", "Antennas without electrical tilts",
                     "SELECT si.site_code FROM antennas a JOIN sectors s ON s.id = a.sector_id JOIN area_sites si ON si.id = s.site_id "
-                            + "WHERE NOT EXISTS (SELECT 1 FROM electrical_tilts et WHERE et.antenna_id = a.id)"),
+                            + "WHERE NOT a.ret_available AND NOT EXISTS (SELECT 1 FROM electrical_tilts et WHERE et.antenna_id = a.id)"),
             new GapQuery("sectorAzimuthMissing", "Sectors with no azimuth",
                     "SELECT si.site_code FROM sectors s JOIN area_sites si ON si.id = s.site_id WHERE s.azimuth IS NULL"),
             new GapQuery("towerHeightMissing", "Sites with no tower height",

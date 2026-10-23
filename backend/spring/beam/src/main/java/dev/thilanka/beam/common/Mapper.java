@@ -23,6 +23,7 @@ public class Mapper {
                 antenna.getAzimuth(),
                 antenna.getMechanicalTilt(),
                 antenna.getAntennaHeight(),
+                antenna.isRetAvailable(),
                 // antenna_type_id / manufacturer_id are nullable (legacy rows)
                 antenna.getAntennaType() == null ? null : antenna.getAntennaType().getName(),
                 antenna.getSector().getName(),

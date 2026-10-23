@@ -44,6 +44,10 @@ public class Antenna extends AuditEntity {
     @Min(0)
     private short antennaHeight;
 
+    // Electrical tilt is set remotely (RET) and read from OSS; no manual electrical tilts
+    @Column(nullable = false)
+    private boolean retAvailable;
+
     @ManyToOne
     @JoinColumn(name = "antenna_type_id")
     private AntennaType antennaType;

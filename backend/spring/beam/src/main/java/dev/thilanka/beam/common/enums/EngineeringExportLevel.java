@@ -42,7 +42,8 @@ public enum EngineeringExportLevel {
                     {"manufacturer", "m.name"},
                     {"antenna_azimuth", "a.azimuth"},
                     {"mechanical_tilt", "a.mechanical_tilt"},
-                    {"antenna_height", "a.antenna_height"}
+                    {"antenna_height", "a.antenna_height"},
+                    {"ret_available", "a.ret_available"}
             },
             """
                     LEFT JOIN antennas a ON a.sector_id = sc.id

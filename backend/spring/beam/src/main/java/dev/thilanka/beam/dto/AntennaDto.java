@@ -6,6 +6,7 @@ public record AntennaDto(
         short azimuth,
         short mechanicalTilt,
         short antennaHeight,
+        boolean retAvailable,
         String antennaTypeName,
         String sectorName,
         String manufacturerName,

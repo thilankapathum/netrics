@@ -66,6 +66,8 @@ export class NodeEditModal implements OnInit {
   loadingDependents = signal(false);
   /** Tilts removed along with the antenna being deleted */
   deleteDependents: string[] = [];
+  /** Manual tilts that saving with RET on will remove */
+  retRemovedTilts: string[] = [];
   private initialized = false;
 
   constructor(private alertService: AlertService,
@@ -96,6 +98,7 @@ export class NodeEditModal implements OnInit {
   }
 
   private initForm(): void {
+    this.retRemovedTilts = [];
     if (this.mode === 'edit' && this.editNode) {
       if (this.nodeType === 'site') this.site = {...this.editNode.data as SiteDto};
       if (this.nodeType === 'sector') this.sector = {...this.editNode.data as SectorDto};
@@ -124,6 +127,7 @@ export class NodeEditModal implements OnInit {
           sectorName, antennaTypeName: '', manufacturerName: '',
           azimuth: sector.azimuth,
           mechanicalTilt: 0,
+          retAvailable: false,
           antennaHeight: heights.length ? heights.reduce((a, b) => a + b, 0) : undefined
         };
         this.antennaService.getBySectorName(sectorName).subscribe({
@@ -144,6 +148,20 @@ export class NodeEditModal implements OnInit {
   onCancel(): void {
     this.initialized = false;
     this.closed.emit();
+  }
+
+  /** Turning RET on for an existing antenna: list the manual tilts the save will remove */
+  onRetChange(on: boolean): void {
+    this.retRemovedTilts = [];
+    if (!on || this.mode !== 'edit') return;
+
+    this.electricalTiltService.getByAntennaId(this.antenna.id!).subscribe({
+      next: tilts => {
+        // toggle may have been switched back off while loading
+        if (this.antenna.retAvailable) this.retRemovedTilts = tilts.map(t => `${t.bandName} ${t.electricalTilt}°`);
+      },
+      error: err => this.alertService.httpError('Failed to load electrical tilts for this antenna', err)
+    });
   }
 
   private nextFreeIndex(): number {

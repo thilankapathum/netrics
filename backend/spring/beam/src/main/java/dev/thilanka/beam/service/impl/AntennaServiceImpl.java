@@ -9,6 +9,7 @@ import dev.thilanka.beam.entity.AntennaType;
 import dev.thilanka.beam.entity.Sector;
 import dev.thilanka.beam.entity.Manufacturer;
 import dev.thilanka.beam.repository.AntennaRepository;
+import dev.thilanka.beam.repository.ElectricalTiltRepository;
 import dev.thilanka.beam.service.AntennaService;
 import dev.thilanka.beam.service.AntennaTypeService;
 import dev.thilanka.beam.service.SectorService;
@@ -16,6 +17,7 @@ import dev.thilanka.beam.service.ManufacturerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AntennaServiceImpl implements AntennaService {
     private final AntennaRepository antennaRepository;
+    // repository, not ElectricalTiltService: that service already depends on AntennaService
+    private final ElectricalTiltRepository electricalTiltRepository;
     private final AntennaTypeService antennaTypeService;
     private final SectorService sectorService;
     private final ManufacturerService manufacturerService;
@@ -59,6 +63,7 @@ public class AntennaServiceImpl implements AntennaService {
     }
 
     @Override
+    @Transactional
     public Antenna updateAntenna(Antenna antenna) {
         Antenna existingAntenna = antennaRepository.findById(antenna.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Antenna", "id", antenna.getId()));
@@ -70,6 +75,12 @@ public class AntennaServiceImpl implements AntennaService {
         existingAntenna.setAntennaType(antenna.getAntennaType());
         existingAntenna.setSector(antenna.getSector());
         existingAntenna.setManufacturer(antenna.getManufacturer());
+        existingAntenna.setRetAvailable(antenna.isRetAvailable());
+
+        // RET antennas carry no manual tilts; entity deletes so each removal is audit-logged
+        if (antenna.isRetAvailable()) {
+            electricalTiltRepository.deleteAll(electricalTiltRepository.findByAntennaId(antenna.getId()));
+        }
 
         return antennaRepository.save(existingAntenna);
     }
@@ -147,6 +158,7 @@ public class AntennaServiceImpl implements AntennaService {
                 .azimuth(dto.azimuth())
                 .mechanicalTilt(dto.mechanicalTilt())
                 .antennaHeight(dto.antennaHeight())
+                .retAvailable(dto.retAvailable())
                 .antennaType(antennaType)
                 .sector(sector)
                 .manufacturer(manufacturer)

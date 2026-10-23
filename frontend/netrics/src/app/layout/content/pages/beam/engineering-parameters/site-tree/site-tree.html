@@ -185,7 +185,7 @@
                 <td><ng-container *ngIf="av.antenna.antennaTypeName; else empty">{{ av.antenna.antennaTypeName }}</ng-container></td>
                 <td><ng-container *ngIf="av.antenna.manufacturerName; else empty">{{ av.antenna.manufacturerName }}</ng-container></td>
                 <td>
-                  <div class="flex flex-wrap items-center gap-1">
+                  <div *ngIf="!av.antenna.retAvailable; else retChip" class="flex flex-wrap items-center gap-1">
                     <ng-container *ngFor="let t of av.tilts">
                       <button *ngIf="canRead(); else tiltChip" type="button"
                               class="badge badge-sm badge-outline border-base-300 gap-1 cursor-pointer hover:border-primary"
@@ -211,6 +211,13 @@
                       <ng-container *ngTemplateOutlet="addIcon"/>
                     </button>
                   </div>
+                  <!-- RET: tilt lives in OSS, so there is nothing to record or add here -->
+                  <ng-template #retChip>
+                    <span class="badge badge-sm badge-info badge-soft gap-1" title="Electrical tilt is set remotely (RET). Check OSS for the current value.">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2"/><circle cx="12" cy="12" r="2"/></svg>
+                      RET<span class="sr-only">: electrical tilt set remotely, check OSS</span>
+                    </span>
+                  </ng-template>
                 </td>
                 <td>
                   <ng-container *ngIf="change(av.antenna.audit) as c; else empty">
