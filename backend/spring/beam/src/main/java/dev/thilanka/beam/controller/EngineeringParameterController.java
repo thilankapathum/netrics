@@ -42,8 +42,8 @@ public class EngineeringParameterController {
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @GetMapping("overview")
-    public EngineeringOverviewDto overview() {
-        return overviewService.overview();
+    public EngineeringOverviewDto overview(@RequestParam("areaName") String areaName) {
+        return overviewService.overview(areaName);
     }
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")

@@ -42,6 +42,15 @@ public class PulseClient {
 
     /** @return names of pulse cells on the sector; throws when pulse can't answer, so callers fail closed. */
     public List<String> sectorCellNames(String sectorName) {
+        return getStrings("/api/v1/pulse/sectors/{name}/cells", sectorName);
+    }
+
+    /** @return codes of the sites with a cell in the pulse area; throws when pulse can't answer. */
+    public List<String> areaSiteCodes(String areaName) {
+        return getStrings("/api/v1/pulse/areas/{name}/site-codes", areaName);
+    }
+
+    private List<String> getStrings(String path, Object... uriVariables) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof Jwt jwt)) {
             throw new ExternalServiceException("pulse-service", "no user token to relay");
@@ -51,13 +60,13 @@ public class PulseClient {
             throw new ExternalServiceException("pulse-service", "no instance registered");
         }
         try {
-            List<String> cells = restClient.get()
-                    .uri(pulse.getUri() + "/api/v1/pulse/sectors/{name}/cells", sectorName)
+            List<String> body = restClient.get()
+                    .uri(pulse.getUri() + path, uriVariables)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt.getTokenValue())
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
-            if (cells == null) throw new ExternalServiceException("pulse-service", "empty sector cells response");
-            return cells;
+            if (body == null) throw new ExternalServiceException("pulse-service", "empty response from " + path);
+            return body;
         } catch (RestClientException e) {
             throw new ExternalServiceException("pulse-service", e);
         }

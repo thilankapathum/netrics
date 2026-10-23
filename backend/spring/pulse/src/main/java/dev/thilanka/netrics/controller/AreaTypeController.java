@@ -24,7 +24,7 @@ public class AreaTypeController {
         return new ResponseEntity<>(savedAreaType, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @PreAuthorize("hasAnyAuthority('ROLE_PULSE_READ', 'ROLE_BEAM_READ')")
     @GetMapping
     ResponseEntity<List<AreaTypeDto>> getAll(){
         List<AreaTypeDto> dtos = areaTypeService.getAll();

@@ -5,6 +5,7 @@ import dev.thilanka.netrics.dto.AreaDto;
 import dev.thilanka.netrics.entity.Area;
 import dev.thilanka.netrics.entity.AreaType;
 import dev.thilanka.netrics.repository.AreaRepository;
+import dev.thilanka.netrics.repository.SiteRepository;
 import dev.thilanka.netrics.service.AreaService;
 import dev.thilanka.netrics.service.AreaTypeService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.List;
 public class AreaServiceImpl implements AreaService {
     private final AreaRepository areaRepository;
     private final AreaTypeService areaTypeService;
+    private final SiteRepository siteRepository;
 
     @Override
     public AreaDto createArea(AreaDto areaDto) {
@@ -83,5 +85,11 @@ public class AreaServiceImpl implements AreaService {
     public List<AreaDto> getEnabledAreasByAreaType(String areaTypeName) {
         List<Area> areas = findEnabledAreasByAreaType(areaTypeName);
         return areas.stream().map(a -> new AreaDto(a.getName(),a.isEnabled(),a.getAreaType().getName())).toList();
+    }
+
+    @Override
+    public List<String> getSiteCodes(String areaName) {
+        findAreaByName(areaName); // unknown area -> 404 rather than an empty list
+        return siteRepository.findSiteCodesByAreaName(areaName);
     }
 }

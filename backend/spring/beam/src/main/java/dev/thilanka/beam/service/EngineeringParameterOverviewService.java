@@ -7,8 +7,8 @@ import java.util.List;
 
 public interface EngineeringParameterOverviewService {
 
-    /** Network-wide counts, breakdowns and data gaps for the Site Parameters landing page */
-    EngineeringOverviewDto overview();
+    /** Counts, breakdowns and data gaps over the sites in a pulse area, for the Site Parameters landing page */
+    EngineeringOverviewDto overview(String areaName);
 
     /** Latest changes to sites, sectors, antennas and tilts, newest first */
     List<OperationLogDto> changes(int page, int size);

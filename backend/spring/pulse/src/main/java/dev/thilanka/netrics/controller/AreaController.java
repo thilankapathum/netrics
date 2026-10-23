@@ -39,9 +39,15 @@ public class AreaController {
     }
 
     @GetMapping("area-type")
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @PreAuthorize("hasAnyAuthority('ROLE_PULSE_READ', 'ROLE_BEAM_READ')")
     ResponseEntity<List<AreaDto>> getAreasByAreaType(@RequestParam("areaTypeName") String areaTypeName){
         List<AreaDto> areaDtos = areaService.getEnabledAreasByAreaType(areaTypeName);
         return ResponseEntity.ok(areaDtos);
+    }
+
+    @GetMapping("{name}/site-codes")
+    @PreAuthorize("hasAnyAuthority('ROLE_PULSE_READ', 'ROLE_BEAM_READ')")
+    ResponseEntity<List<String>> getSiteCodes(@PathVariable("name") String name){
+        return ResponseEntity.ok(areaService.getSiteCodes(name));
     }
 }

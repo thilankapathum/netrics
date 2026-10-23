@@ -58,17 +58,36 @@
 
   <!-- INVENTORY -->
   <section class="bg-base-100 border border-base-300 rounded-xl p-5" aria-labelledby="inventory-title">
-    <h2 id="inventory-title" class="text-base font-semibold">Inventory</h2>
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <h2 id="inventory-title" class="text-base font-semibold">Inventory</h2>
+      <div class="flex items-center gap-2">
+        <span *ngIf="reloading() || loadingAreas()" class="loading loading-spinner loading-xs text-secondary"></span>
+        <!-- same area filter as the Worst cells page -->
+        <div class="join">
+          <select class="select select-sm border join-item w-auto" aria-label="Area type"
+                  [disabled]="loadingAreas() || !areaTypes().length"
+                  [ngModel]="areaType()" (ngModelChange)="selectAreaType($event)">
+            <option *ngFor="let at of areaTypes()" [value]="at.name">{{ at.name }}</option>
+          </select>
+          <select class="select select-sm border join-item w-auto" aria-label="Area"
+                  [disabled]="loadingAreas() || !areas().length"
+                  [ngModel]="area()" (ngModelChange)="selectArea($event)">
+            <option *ngFor="let ar of areas()" [value]="ar.name">{{ ar.name }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
     <div *ngIf="overviewState() === 'loading'" class="flex flex-col gap-3 mt-4" aria-busy="true">
       <div class="skeleton h-10 w-full"></div>
       <div class="skeleton h-24 w-full"></div>
     </div>
     <p *ngIf="overviewState() === 'failed'" class="text-xs text-secondary mt-2">
-      Couldn’t load the inventory. Reload the page to try again.
+      {{ overviewError() }} Reload the page to try again.
     </p>
 
-    <ng-container *ngIf="overviewState() === 'ready'">
+    <div *ngIf="overviewState() === 'ready'" class="transition-opacity" [class.opacity-50]="reloading()"
+         [attr.aria-busy]="reloading()">
       <!-- the hierarchy as one chain; each link counts parents missing the next level -->
       <ol class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-0 mt-4">
         <ng-container *ngFor="let level of chain()">
@@ -105,14 +124,16 @@
           </ul>
         </div>
       </div>
-    </ng-container>
+    </div>
   </section>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
     <!-- GAPS -->
     <section class="bg-base-100 border border-base-300 rounded-xl p-5" aria-labelledby="gaps-title">
       <h2 id="gaps-title" class="text-base font-semibold">Needs attention</h2>
-      <p class="text-xs text-secondary mt-0.5">Missing parameters across the network. Open a site to fill them in.</p>
+      <p class="text-xs text-secondary mt-0.5">
+        Missing parameters in {{ area() || 'the selected area' }}. Open a site to fill them in.
+      </p>
 
       <div *ngIf="overviewState() === 'loading'" class="flex flex-col gap-2 mt-4" aria-busy="true">
         <div class="skeleton h-8 w-full"></div>
@@ -123,7 +144,8 @@
         Couldn’t load missing parameters. Reload the page to try again.
       </p>
 
-      <ul *ngIf="overview() as o" class="mt-3 divide-y divide-base-300">
+      <ul *ngIf="overviewState() === 'ready' && overview() as o" class="mt-3 divide-y divide-base-300 transition-opacity"
+          [class.opacity-50]="reloading()" [attr.aria-busy]="reloading()">
         <li *ngFor="let g of o.gaps" [id]="'gap-' + g.key">
           <details *ngIf="g.count > 0; else none" class="group" [open]="openGap() === g.key" (toggle)="onGapToggle(g.key, $event)">
             <summary class="flex items-center gap-2 py-2.5 cursor-pointer list-none text-sm hover:text-primary">
@@ -157,7 +179,7 @@
     <!-- RECENT CHANGES -->
     <section class="bg-base-100 border border-base-300 rounded-xl p-5" aria-labelledby="changes-title">
       <h2 id="changes-title" class="text-base font-semibold">Recent changes</h2>
-      <p class="text-xs text-secondary mt-0.5">Edits to sites, sectors, antennas and tilts, newest first.</p>
+      <p class="text-xs text-secondary mt-0.5">Edits to sites, sectors, antennas and tilts across the network, newest first.</p>
 
       <div *ngIf="changesState() === 'loading'" class="flex flex-col gap-3 mt-4" aria-busy="true">
         <div class="skeleton h-9 w-full"></div>

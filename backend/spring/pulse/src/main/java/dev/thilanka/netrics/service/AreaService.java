@@ -25,4 +25,7 @@ public interface AreaService {
     List<AreaDto> getAreasByAreaType(String areaTypeName);
 
     List<AreaDto> getEnabledAreasByAreaType(String areaTypeName);
+
+    /** Codes of the sites with at least one cell in the area */
+    List<String> getSiteCodes(String areaName);
 }

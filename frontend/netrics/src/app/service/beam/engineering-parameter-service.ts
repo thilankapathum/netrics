@@ -23,8 +23,9 @@ export class EngineeringParameterService {
     return this.http.get(`${this.baseUrl}/export`, {params, responseType: 'blob'});
   }
 
-  overview(): Observable<EngineeringOverviewDto> {
-    return this.http.get<EngineeringOverviewDto>(`${this.baseUrl}/overview`);
+  /** Inventory over the sites in a pulse area */
+  overview(areaName: string): Observable<EngineeringOverviewDto> {
+    return this.http.get<EngineeringOverviewDto>(`${this.baseUrl}/overview`, {params: {areaName}});
   }
 
   /** Latest site/sector/antenna/tilt changes, newest first */

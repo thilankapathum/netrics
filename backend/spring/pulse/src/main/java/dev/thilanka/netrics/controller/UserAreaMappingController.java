@@ -26,7 +26,7 @@ public class UserAreaMappingController {
         return new ResponseEntity<>(savedUserAreaMapping, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @PreAuthorize("hasAnyAuthority('ROLE_PULSE_READ', 'ROLE_BEAM_READ')")
     @GetMapping
     ResponseEntity<AreaDto> getAreaByUserId(@RequestParam("userId") String userId){
         return ResponseEntity.ok(userAreaMappingService.getAreaByUserId(userId));

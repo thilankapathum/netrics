@@ -1,5 +1,6 @@
 package dev.thilanka.beam.service.impl;
 
+import dev.thilanka.beam.common.PulseClient;
 import dev.thilanka.beam.dto.EngineeringOverviewDto;
 import dev.thilanka.beam.dto.EngineeringOverviewDto.Breakdowns;
 import dev.thilanka.beam.dto.EngineeringOverviewDto.Counts;
@@ -23,23 +24,26 @@ public class EngineeringParameterOverviewServiceImpl implements EngineeringParam
     static final int GAP_SAMPLE = 20;
     static final int MAX_PAGE_SIZE = 50;
 
+    /** Every overview query starts with this, so it only sees the sites in the selected area */
+    private static final String AREA_SITES = "WITH area_sites AS (SELECT * FROM sites WHERE site_code = ANY(?)) ";
+
     /** Each gap query selects one {@code site_code} per offending row */
     private record GapQuery(String key, String label, String sql) {
     }
 
     private static final List<GapQuery> GAPS = List.of(
             new GapQuery("sitesWithoutSectors", "Sites without sectors",
-                    "SELECT si.site_code FROM sites si WHERE NOT EXISTS (SELECT 1 FROM sectors s WHERE s.site_id = si.id)"),
+                    "SELECT si.site_code FROM area_sites si WHERE NOT EXISTS (SELECT 1 FROM sectors s WHERE s.site_id = si.id)"),
             new GapQuery("sectorsWithoutAntennas", "Sectors without antennas",
-                    "SELECT si.site_code FROM sectors s JOIN sites si ON si.id = s.site_id "
+                    "SELECT si.site_code FROM sectors s JOIN area_sites si ON si.id = s.site_id "
                             + "WHERE NOT EXISTS (SELECT 1 FROM antennas a WHERE a.sector_id = s.id)"),
             new GapQuery("antennasWithoutTilts", "Antennas without electrical tilts",
-                    "SELECT si.site_code FROM antennas a JOIN sectors s ON s.id = a.sector_id JOIN sites si ON si.id = s.site_id "
+                    "SELECT si.site_code FROM antennas a JOIN sectors s ON s.id = a.sector_id JOIN area_sites si ON si.id = s.site_id "
                             + "WHERE NOT EXISTS (SELECT 1 FROM electrical_tilts et WHERE et.antenna_id = a.id)"),
             new GapQuery("sectorAzimuthMissing", "Sectors with no azimuth",
-                    "SELECT si.site_code FROM sectors s JOIN sites si ON si.id = s.site_id WHERE s.azimuth IS NULL"),
+                    "SELECT si.site_code FROM sectors s JOIN area_sites si ON si.id = s.site_id WHERE s.azimuth IS NULL"),
             new GapQuery("towerHeightMissing", "Sites with no tower height",
-                    "SELECT si.site_code FROM sites si WHERE si.tower_height IS NULL")
+                    "SELECT si.site_code FROM area_sites si WHERE si.tower_height IS NULL")
     );
 
     /*
@@ -71,22 +75,33 @@ public class EngineeringParameterOverviewServiceImpl implements EngineeringParam
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final PulseClient pulseClient;
 
     // ponytail: no cache, these are aggregates over a few thousand rows; add @Cacheable if it shows in slow logs
     @Override
-    public EngineeringOverviewDto overview() {
-        Counts counts = jdbcTemplate.queryForObject("""
-                SELECT (SELECT count(*) FROM sites), (SELECT count(*) FROM sectors),
-                       (SELECT count(*) FROM antennas), (SELECT count(*) FROM electrical_tilts)
-                """, (rs, i) -> new Counts(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4)));
+    public EngineeringOverviewDto overview(String areaName) {
+        // area membership lives in pulse (area -> district codes -> cells -> sites)
+        String[] siteCodes = pulseClient.areaSiteCodes(areaName).toArray(String[]::new);
+
+        Counts counts = jdbcTemplate.queryForObject(AREA_SITES + """
+                SELECT (SELECT count(*) FROM area_sites),
+                       (SELECT count(*) FROM sectors s JOIN area_sites si ON si.id = s.site_id),
+                       (SELECT count(*) FROM antennas a JOIN sectors s ON s.id = a.sector_id
+                                                        JOIN area_sites si ON si.id = s.site_id),
+                       (SELECT count(*) FROM electrical_tilts et JOIN antennas a ON a.id = et.antenna_id
+                                                                 JOIN sectors s ON s.id = a.sector_id
+                                                                 JOIN area_sites si ON si.id = s.site_id)
+                """, (rs, i) -> new Counts(rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4)), (Object) siteCodes);
 
         Breakdowns breakdowns = new Breakdowns(
-                groups("SELECT o.name AS name FROM sites si LEFT JOIN operators o ON o.id = si.operator_id"),
-                groups("SELECT it.infra_type AS name FROM sites si LEFT JOIN infra_types it ON it.id = si.infra_type_id"),
-                groups("SELECT b.name AS name FROM electrical_tilts et LEFT JOIN bands b ON b.id = et.band_id"),
-                groups("SELECT m.name AS name FROM antennas a LEFT JOIN manufacturers m ON m.id = a.manufacturer_id"));
+                groups(siteCodes, "SELECT o.name AS name FROM area_sites si LEFT JOIN operators o ON o.id = si.operator_id"),
+                groups(siteCodes, "SELECT it.infra_type AS name FROM area_sites si LEFT JOIN infra_types it ON it.id = si.infra_type_id"),
+                groups(siteCodes, "SELECT b.name AS name FROM electrical_tilts et LEFT JOIN bands b ON b.id = et.band_id "
+                        + "JOIN antennas a ON a.id = et.antenna_id JOIN sectors s ON s.id = a.sector_id JOIN area_sites si ON si.id = s.site_id"),
+                groups(siteCodes, "SELECT m.name AS name FROM antennas a LEFT JOIN manufacturers m ON m.id = a.manufacturer_id "
+                        + "JOIN sectors s ON s.id = a.sector_id JOIN area_sites si ON si.id = s.site_id"));
 
-        List<Gap> gaps = GAPS.stream().map(this::gap).toList();
+        List<Gap> gaps = GAPS.stream().map(q -> gap(siteCodes, q)).toList();
         return new EngineeringOverviewDto(counts, breakdowns, gaps);
     }
 
@@ -105,20 +120,20 @@ public class EngineeringParameterOverviewServiceImpl implements EngineeringParam
     }
 
     /** {@code select} returns one {@code name} per row; nulls group as "Not set" */
-    private List<NameCount> groups(String select) {
+    private List<NameCount> groups(String[] siteCodes, String select) {
         return jdbcTemplate.query(
-                "SELECT COALESCE(name, 'Not set') AS name, count(*) AS n FROM (" + select + ") g GROUP BY 1 ORDER BY n DESC, 1",
-                (rs, i) -> new NameCount(rs.getString("name"), rs.getLong("n")));
+                AREA_SITES + "SELECT COALESCE(name, 'Not set') AS name, count(*) AS n FROM (" + select + ") g GROUP BY 1 ORDER BY n DESC, 1",
+                (rs, i) -> new NameCount(rs.getString("name"), rs.getLong("n")), (Object) siteCodes);
     }
 
-    private Gap gap(GapQuery q) {
+    private Gap gap(String[] siteCodes, GapQuery q) {
         return jdbcTemplate.queryForObject(
-                "SELECT count(*) AS n, (array_agg(DISTINCT site_code ORDER BY site_code))[1:" + GAP_SAMPLE + "] AS codes FROM ("
+                AREA_SITES + "SELECT count(*) AS n, (array_agg(DISTINCT site_code ORDER BY site_code))[1:" + GAP_SAMPLE + "] AS codes FROM ("
                         + q.sql() + ") g",
                 (rs, i) -> {
                     Array codes = rs.getArray("codes");
-                    List<String> siteCodes = codes == null ? List.of() : Arrays.asList((String[]) codes.getArray());
-                    return new Gap(q.key(), q.label(), rs.getLong("n"), siteCodes);
-                });
+                    List<String> sample = codes == null ? List.of() : Arrays.asList((String[]) codes.getArray());
+                    return new Gap(q.key(), q.label(), rs.getLong("n"), sample);
+                }, (Object) siteCodes);
     }
 }

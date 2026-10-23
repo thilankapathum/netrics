@@ -56,4 +56,14 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
     );
 
     void deleteBySiteCode(String siteCode);
+
+    /** A site is in an area when any of its cells sits in one of the area's district codes */
+    @Query(value = """
+            SELECT DISTINCT si.site_code FROM sites si
+            JOIN cells c ON c.site_id = si.id
+            JOIN area_district_code_mapping m ON m.district_code_id = c.district_code_id
+            JOIN areas a ON a.id = m.area_id
+            WHERE a.name = :areaName AND si.site_code IS NOT NULL
+            """, nativeQuery = true)
+    List<String> findSiteCodesByAreaName(@Param("areaName") String areaName);
 }
