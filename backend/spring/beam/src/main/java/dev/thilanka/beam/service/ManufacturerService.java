@@ -19,11 +19,17 @@ public interface ManufacturerService {
 
     List<ManufacturerDto> updateManufacturers(List<ManufacturerDto> dtos);
 
-    Manufacturer deleteManufacturer(String manufacturerName);
+    Manufacturer deleteManufacturer(String manufacturerName, boolean force);
 
-    ManufacturerDto deleteManufacturerDto(String manufacturerName);
+    ManufacturerDto deleteManufacturerDto(String manufacturerName, boolean force);
+
+    List<String> getDependentAntennaLabels(String manufacturerName);
 
     Manufacturer findByName(String manufacturerName);
 
     ManufacturerDto getByName(String manufacturerName);
+
+    List<Manufacturer> findAll();
+
+    List<ManufacturerDto> getAll();
 }

@@ -11,10 +11,16 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface CellRepository extends JpaRepository<Cell, Long> {
 
     Optional<Cell> findByCellName(String cellName);
+
+    long countByBand_Id(Long bandId);
+
+    /** Every cell referencing the sector (incl. mapped-previous cells), i.e. all rows its FK covers */
+    List<Cell> findBySector_Name(String sectorName);
 
     @Query("SELECT c FROM Cell c WHERE c.id NOT IN (SELECT cm.previousCell.id FROM CellMapping cm)")
     List<Cell> findAllExcludingMappedPrevious();
@@ -99,4 +105,43 @@ public interface CellRepository extends JpaRepository<Cell, Long> {
             """, nativeQuery = true)
     int updateNodeNamesFromKpiValues(@Param("startOfDay") LocalDateTime startOfDay,
                                      @Param("endOfDay") LocalDateTime endOfDay);
+
+    @Query(value = """
+            SELECT c.cell_name, c.node_name, r.label AS rat_name, s.site_code, b.name AS band_name,
+            c.azimuth, c.beamwidth, c.is_multi_beam, carr.name AS carrier_name, sec.name AS sector_name
+            FROM public.cells c
+            	JOIN sites s ON c.site_id = s.id
+            	LEFT JOIN rat r ON c.rat_id = r.id
+            	LEFT JOIN bands b ON c.band_id = b.id
+            	LEFT JOIN carriers carr ON c.carrier_id = carr.id
+            	LEFT JOIN sectors sec ON c.sector_id = sec.id
+            WHERE s.site_code = :siteCode
+                AND c.id NOT IN (SELECT previous_cell_id FROM cell_mappings)
+            ORDER BY c.cell_name ASC
+            """, nativeQuery = true)
+    List<CellDto> findCellsBySiteCode(@Param("siteCode") String siteCode);
+
+    @Query(value = """
+            SELECT c.cell_name, c.node_name, r.label AS rat_name, s.site_code, b.name AS band_name,
+            c.azimuth, c.beamwidth, c.is_multi_beam, carr.name AS carrier_name, sec.name AS sector_name
+            FROM public.cells c
+            	JOIN sectors sec ON c.sector_id = sec.id
+            	LEFT JOIN sites s ON c.site_id = s.id
+            	LEFT JOIN rat r ON c.rat_id = r.id
+            	LEFT JOIN bands b ON c.band_id = b.id
+            	LEFT JOIN carriers carr ON c.carrier_id = carr.id
+            WHERE sec.name = :sectorName
+                AND c.id NOT IN (SELECT previous_cell_id FROM cell_mappings)
+            ORDER BY c.cell_name ASC
+            """, nativeQuery = true)
+    List<CellDto> findCellsBySectorName(@Param("sectorName") String sectorName);
+
+    @Query(value = """
+            SELECT DISTINCT c.district_code_id
+            FROM cells c
+                JOIN sites s ON c.site_id = s.id
+            WHERE s.site_code = :siteCode
+                AND c.district_code_id IS NOT NULL
+            """, nativeQuery = true)
+    Set<Long> findDistrictCodeIdsBySiteCode(@Param("siteCode") String siteCode);
 }

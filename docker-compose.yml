@@ -14,6 +14,14 @@ volumes:
   alarm_state:
 
 services:
+  postgres-data-init:
+    image: alpine:3
+    container_name: postgres-data-init
+    volumes:
+      - postgres_data:/data
+    command: ["sh", "-c", "chown -R 1000:1000 /data"]
+    restart: "no"
+
   postgres:
     image: timescale/timescaledb-ha:pg17
     container_name: postgres
@@ -22,6 +30,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB_PULSE}
+      POSTGRES_DB_KEYCLOAK: ${POSTGRES_DB_KEYCLOAK}
+      POSTGRES_DB_BEAM: ${POSTGRES_DB_BEAM}
       PGDATA: /var/lib/postgresql/data
     expose:
       - "${POSTGRES_PORT}"
@@ -32,6 +42,10 @@ services:
       # - public_net
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d
+    depends_on:
+      postgres-data-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pguser -d pulse_db"]
       interval: 10s
@@ -133,6 +147,7 @@ services:
     volumes:
       - ./keycloak/themes:/opt/keycloak/themes
       - ./keycloak/providers:/opt/keycloak/providers
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /auth/health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;" ]
       interval: 30s
@@ -152,10 +167,11 @@ services:
       - --proxy-headers=xforwarded
       - --hostname-url=http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
       - --hostname-admin-url=http://${DOMAIN_IP}:${FRONTEND_PORT}/auth
+      - --import-realm
 
 
   config-server:
-    image: thilankaw/netrics/config-server:0.0.6
+    image: thilankaw/netrics/config-server:0.0.7
     environment:
       - CONFIG_SERVER_HOST=${CONFIG_SERVER_HOST}
       - DISCOVERY_HOST=${DISCOVERY_HOST}
@@ -233,7 +249,7 @@ services:
       - "keycloak.local:${DOMAIN_IP}"
 
   pulse:
-    image: thilankaw/netrics/pulse:0.2.7
+    image: thilankaw/netrics/pulse:0.2.8
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -245,6 +261,9 @@ services:
       - DISCOVERY_HOST=${DISCOVERY_HOST}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - ASSISTANT_ENABLED=${ASSISTANT_ENABLED:-false}
+      - OLLAMA_URL=${OLLAMA_URL:-http://localhost:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
       - KEYCLOAK_HOST=${KEYCLOAK_HOST}
       - KEYCLOAK_PORT=${KEYCLOAK_PORT}
       - DOMAIN_IP=${DOMAIN_IP}
@@ -265,6 +284,7 @@ services:
       - "9012"
     networks:
       - private_net
+      - public_net
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:9012/actuator/health" ]
       interval: 10s
@@ -281,7 +301,7 @@ services:
         condition: service_healthy
 
   beam:
-    image: thilankaw/netrics/beam:0.0.2
+    image: thilankaw/netrics/beam:0.0.3
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -401,7 +421,7 @@ services:
       - /home/ftpuser/apps/netrics/alarms/oss/u2020:/data/incoming/u2020
 
   frontend:
-    image: thilankaw/netrics/frontend:0.1.7
+    image: thilankaw/netrics/frontend:0.1.8
     container_name: frontend
     expose:
       - "80"

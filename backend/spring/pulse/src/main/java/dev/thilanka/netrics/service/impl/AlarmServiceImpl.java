@@ -30,8 +30,7 @@ public class AlarmServiceImpl implements AlarmService {
 
     @Override
     public List<CellAlarmDto> getAlarmsByCell(String cellName, String period) {
-        LocalDateTime startTime = dateService.getStartDate(LocalDateTime.now(), period);
-        return alarmRepository.getAlarmsByCell(cellName, startTime);
+        return alarmRepository.getAlarmsByCell(cellName, windowStart(period));
     }
 
     @Override
@@ -43,7 +42,7 @@ public class AlarmServiceImpl implements AlarmService {
 
     @Override
     public PagedResponse<AlarmsDto> getAlarms(AlarmFilter filter, int page, int size) {
-        LocalDateTime startTime = dateService.getStartDate(LocalDateTime.now(), filter.period());
+        LocalDateTime startTime = windowStart(filter.period());
         int safePage = Math.max(page, 0);
         int safeSize = size <= 0 ? 25 : Math.min(size, 200);
         long offset = (long) safePage * safeSize;
@@ -64,5 +63,11 @@ public class AlarmServiceImpl implements AlarmService {
 
         log.info("Alarms query: {} results, page {}/{}", total, safePage, totalPages);
         return new PagedResponse<>(content, total, totalPages, safePage, safeSize);
+    }
+
+    // Calendar-day window: "day" = since today's midnight, "week" = the last 7 calendar days.
+    // getStartDate alone returns now() for "day" (0 days back), which matched almost no alarms.
+    private LocalDateTime windowStart(String period) {
+        return dateService.getStartDate(LocalDateTime.now(), period).toLocalDate().atStartOfDay();
     }
 }

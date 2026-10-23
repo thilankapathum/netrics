@@ -3,8 +3,10 @@ package dev.thilanka.beam.controller;
 
 import dev.thilanka.beam.dto.SiteCsvImportResultDto;
 import dev.thilanka.beam.dto.SiteDto;
+import dev.thilanka.beam.dto.SiteEngineeringSummaryDto;
 import dev.thilanka.beam.dto.SiteUpdateResult;
 import dev.thilanka.beam.service.CsvService;
+import dev.thilanka.beam.service.SiteEngineeringSummaryService;
 import dev.thilanka.beam.service.SiteService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -26,6 +28,7 @@ import java.util.List;
 public class SiteController {
     private final SiteService siteService;
     private final CsvService csvService;
+    private final SiteEngineeringSummaryService siteEngineeringSummaryService;
 
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_CREATE')")
@@ -42,19 +45,25 @@ public class SiteController {
         return new ResponseEntity<>(savedDtos,HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
     @PutMapping
     public ResponseEntity<SiteDto> updateSite(@RequestBody @Valid SiteDto dto){
         SiteUpdateResult result = siteService.updateSite(dto);
         return  new ResponseEntity<>(result.siteDto(), HttpStatus.OK);
     }
 
-//    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
-//    @GetMapping
-//    public ResponseEntity<SiteDto> getSiteBySiteCode(@RequestParam("siteCode") String siteCode){
-//        SiteDto dto = siteService.getBySiteCode(siteCode);
-//        return ResponseEntity.ok(dto);
-//    }
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
+    @GetMapping("engineering-summary")
+    public ResponseEntity<SiteEngineeringSummaryDto> getEngineeringSummary(@RequestParam("siteCode") String siteCode){
+        return ResponseEntity.ok(siteEngineeringSummaryService.getBySiteCode(siteCode));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
+    @GetMapping
+    public ResponseEntity<SiteDto> getSiteBySiteCode(@RequestParam("siteCode") String siteCode){
+        SiteDto dto = siteService.getBySiteCode(siteCode);
+        return ResponseEntity.ok(dto);
+    }
 
     @PreAuthorize("hasAuthority('ROLE_BEAM_UPDATE')")
     @GetMapping("missing/export")
@@ -106,11 +115,4 @@ public class SiteController {
         Integer count = siteService.reloadSiteCountWithMissingInfo();
         return ResponseEntity.ok(count);
     }
-
-//    @PreAuthorize("hasAuthority('ROLE_BEAM_READ')")
-//    @GetMapping("search")
-//    public ResponseEntity<List<SiteDto>> searchSites(@RequestParam("search") String search){
-//        return ResponseEntity.ok(siteService.searchSites(search));
-//    }
-
 }

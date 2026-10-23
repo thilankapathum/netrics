@@ -1,0 +1,166 @@
+<dialog [class.modal-open]="open()" class="modal w-full">
+  <form class="modal-box max-w-xl" #f="ngForm" (ngSubmit)="onSave(f)">
+    <h3 class="text-lg font-bold mb-2">
+      {{ mode === 'create' ? 'Add' : 'Edit' }} {{ nodeType }}
+    </h3>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'site'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Site Code</legend>
+        <input type="text" class="input input-sm" name="siteCode" [disabled]="mode === 'edit'" [(ngModel)]="site.siteCode"/>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Site Name *</legend>
+        <input type="text" class="input input-sm validator" name="siteName" required [(ngModel)]="site.siteName"/>
+        <p class="validator-hint hidden">Site name is required</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Latitude</legend>
+        <input type="number" class="input input-sm validator" name="latitude" min="-90" max="90" step="any" [(ngModel)]="site.latitude"/>
+        <p class="validator-hint hidden">Must be between -90 and 90</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Longitude</legend>
+        <input type="number" class="input input-sm validator" name="longitude" min="-180" max="180" step="any" [(ngModel)]="site.longitude"/>
+        <p class="validator-hint hidden">Must be between -180 and 180</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Building Height</legend>
+        <input type="number" class="input input-sm validator" name="buildingHeight" min="0" max="32767" step="1" pattern="\d+" [(ngModel)]="site.buildingHeight"/>
+        <p class="validator-hint hidden">Whole number, 0 or more</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Tower Height</legend>
+        <input type="number" class="input input-sm validator" name="towerHeight" min="0" max="32767" step="1" pattern="\d+" [(ngModel)]="site.towerHeight"/>
+        <p class="validator-hint hidden">Whole number, 0 or more</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Operator</legend>
+        <select class="select select-sm" name="operatorName" [(ngModel)]="site.operatorName">
+          <option *ngFor="let op of operators" [value]="op.name">{{ op.name }}</option>
+        </select>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Infra Type</legend>
+        <select class="select select-sm" name="infraType" [(ngModel)]="site.infraType">
+          <option *ngFor="let it of infraTypes" [value]="infraTypeOption(it)">{{ infraTypeOption(it) }}</option>
+        </select>
+      </fieldset>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'sector'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Site Code</legend>
+        <p class="label font-semibold">{{ sector.siteCode }}</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Sector Index *</legend>
+        <input type="number" class="input input-sm validator" name="sectorIndex" required min="1" step="1" pattern="\d+"
+               [class.input-error]="indexTaken()" [disabled]="mode === 'edit'" [(ngModel)]="sector.sectorIndex"/>
+        <p class="validator-hint hidden">Whole number, 1 or more</p>
+        <p class="label text-error" *ngIf="indexTaken()">Sector {{ sector.sectorIndex }} already exists on this site</p>
+      </fieldset>
+      <fieldset class="fieldset col-span-2" *ngIf="mode === 'edit'">
+        <legend class="fieldset-legend">Sector Name</legend>
+        <p class="label font-semibold">{{ sector.name }}</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Azimuth</legend>
+        <input type="number" class="input input-sm validator" name="sectorAzimuth" min="0" max="360" step="1" pattern="\d+" [(ngModel)]="sector.azimuth"/>
+        <p class="validator-hint hidden">Whole number, 0 to 360</p>
+      </fieldset>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'antenna'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Sector</legend>
+        <p class="label font-semibold">{{ antenna.sectorName }}</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Antenna Index *</legend>
+        <input type="number" class="input input-sm validator" name="antennaIndex" required min="1" max="127" step="1" pattern="\d+"
+               [class.input-error]="indexTaken()" [disabled]="mode === 'edit'" [(ngModel)]="antenna.antennaIndex"/>
+        <p class="validator-hint hidden">Whole number, 1 to 127</p>
+        <p class="label text-error" *ngIf="indexTaken()">Antenna {{ antenna.antennaIndex }} already exists in this sector</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Azimuth *</legend>
+        <input type="number" class="input input-sm validator" name="antennaAzimuth" required min="0" max="360" step="1" pattern="\d+" [(ngModel)]="antenna.azimuth"/>
+        <p class="validator-hint hidden">Whole number, 0 to 360</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Mechanical Tilt *</legend>
+        <input type="number" class="input input-sm validator" name="mechanicalTilt" required min="-90" max="90" step="1" pattern="-?\d+" [(ngModel)]="antenna.mechanicalTilt"/>
+        <p class="validator-hint hidden">Whole number, -90 to 90</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Antenna Height</legend>
+        <input type="number" class="input input-sm validator" name="antennaHeight" min="0" max="1000" step="1" pattern="\d+" [(ngModel)]="antenna.antennaHeight"/>
+        <p class="validator-hint hidden">Whole number, 0 to 1000</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Antenna Type *</legend>
+        <select class="select select-sm validator" name="antennaTypeName" required [(ngModel)]="antenna.antennaTypeName">
+          <option value="" disabled>Select antenna type</option>
+          <option *ngFor="let at of antennaTypes" [value]="at.name">{{ at.name }}</option>
+        </select>
+        <p class="validator-hint hidden">Antenna type is required</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Manufacturer *</legend>
+        <select class="select select-sm validator" name="manufacturerName" required [(ngModel)]="antenna.manufacturerName">
+          <option value="" disabled>Select manufacturer</option>
+          <option *ngFor="let m of manufacturers" [value]="m.name">{{ m.name }}</option>
+        </select>
+        <p class="validator-hint hidden">Manufacturer is required</p>
+      </fieldset>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 gap-x-4 p-2" *ngIf="nodeType === 'tilt'">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Band *</legend>
+        <select class="select select-sm validator" name="bandName" required [(ngModel)]="tilt.bandName">
+          <option value="" disabled>Select band</option>
+          <option *ngFor="let b of bands" [value]="b.name">{{ b.name }}</option>
+        </select>
+        <p class="validator-hint hidden">Band is required</p>
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Electrical Tilt *</legend>
+        <input type="number" class="input input-sm validator" name="electricalTilt" required min="-90" max="90" step="1" pattern="-?\d+" [(ngModel)]="tilt.electricalTilt"/>
+        <p class="validator-hint hidden">Whole number, -90 to 90</p>
+      </fieldset>
+    </div>
+
+    <p class="text-xs text-base-content/60 px-2" *ngIf="canEdit && (f.invalid || indexTaken())">
+      Fill in the required fields (*) with valid values to save.
+    </p>
+
+    <div class="modal-action">
+      <button *ngIf="canDeleteNode()" type="button" class="btn btn-sm btn-ghost text-error mr-auto"
+              [disabled]="saving()" (click)="onDeleteClick()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7H20M10 11V17M14 11V17M5 7L6 19A2 2 0 0 0 8 21H16A2 2 0 0 0 18 19L19 7M9 7V4A1 1 0 0 1 10 3H14A1 1 0 0 1 15 4V7"/></svg>
+        Delete {{ nodeType }}
+      </button>
+      <button type="submit" [disabled]="saving() || !canEdit || f.invalid || indexTaken()" class="btn btn-sm btn-primary">
+        <span [hidden]="!saving()" class="loading loading-spinner loading-xs"></span>
+        Save
+      </button>
+      <button class="btn btn-sm" type="button" (click)="onCancel()">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- after the edit dialog in the DOM so it stacks on top -->
+<app-delete-confirm-modal
+  [open]="deleteOpen"
+  [itemLabel]="deleteLabel()"
+  [dependents]="deleteDependents"
+  [loadingDependents]="loadingDependents()"
+  [deleting]="deleting()"
+  [dependentsNote]="'Its ' + deleteDependents.length + ' electrical ' + (deleteDependents.length === 1 ? 'tilt' : 'tilts') + ' will be deleted with it.'"
+  forceLabel="Delete antenna and tilts"
+  [allowForce]="nodeType === 'antenna'"
+  (closed)="deleteOpen.set(false)"
+  (confirmed)="onDeleteConfirmed()">
+</app-delete-confirm-modal>

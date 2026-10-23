@@ -116,8 +116,8 @@ public class CsvServiceImpl implements CsvService {
                         dataTypeUtils.parseShort(record.get(SiteCsvHeader.BUILDING_HEIGHT.getHeader())),
                         dataTypeUtils.parseShort(record.get(SiteCsvHeader.TOWER_HEIGHT.getHeader())),
                         record.get(SiteCsvHeader.OPERATOR_NAME.getHeader()),
-                        record.get(SiteCsvHeader.INFRA_TYPE_NAME.getHeader())
-
+                        record.get(SiteCsvHeader.INFRA_TYPE_NAME.getHeader()),
+                        null
                 );
                 siteDtos.add(dto);
             }
@@ -145,7 +145,8 @@ public class CsvServiceImpl implements CsvService {
                         dataTypeUtils.parseInteger(record.get(SectorCsvHeader.SECTOR_INDEX.getHeader())),
                         record.get(SectorCsvHeader.SECTOR_NAME.getHeader()),
                         dataTypeUtils.parseInteger(record.get(SectorCsvHeader.AZIMUTH.getHeader())),
-                        record.get(SectorCsvHeader.SITE_CODE.getHeader())
+                        record.get(SectorCsvHeader.SITE_CODE.getHeader()),
+                        null
                 );
                 sectorDtos.add(dto);
             }

@@ -26,6 +26,22 @@ export class BandService {
     return this.http.get<Array<BandDto>>(`${this.baseUrl}`);
   }
 
+  create(dto: BandDto): Observable<BandDto> {
+    return this.http.post<BandDto>(this.baseUrl, dto);
+  }
+
+  update(name: string, dto: BandDto): Observable<BandDto> {
+    return this.http.put<BandDto>(`${this.baseUrl}/${encodeURIComponent(name)}`, dto);
+  }
+
+  delete(name: string): Observable<BandDto> {
+    return this.http.delete<BandDto>(`${this.baseUrl}/${encodeURIComponent(name)}`);
+  }
+
+  getDependents(name: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/${encodeURIComponent(name)}/dependents`);
+  }
+
   getBandsByRatName(ratName: string) {
     return this.http.get<BandDto[]>(`${this.baseUrl}/rat`,{params: {ratName}});
   }

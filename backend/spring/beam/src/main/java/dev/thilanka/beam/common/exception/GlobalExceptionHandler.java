@@ -1,11 +1,14 @@
 package dev.thilanka.beam.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -13,6 +16,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -110,11 +114,85 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException ex, HttpServletRequest request) {
+        String correlationId = getOrGenerateCorrelationId(request);
+
+        List<ErrorResponse.FieldError> fieldErrors = ex.getConstraintViolations()
+                .stream()
+                .map(violation -> ErrorResponse.FieldError.builder()
+                        .field(violation.getPropertyPath().toString())
+                        .message(violation.getMessage())
+                        .rejectedValue(violation.getInvalidValue())
+                        .build())
+                .collect(Collectors.toList());
+
+        log.warn("Constraint violation [{}]: {} errors - Path: {}", correlationId, fieldErrors.size(), request.getRequestURI());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("Input Validation Failed")
+                .errorCode("VALIDATION_ERROR")
+                .path(request.getRequestURI())
+                .correlationId(correlationId)
+                .fieldErrors(fieldErrors)
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // Entity validation during flush-at-commit (updates) arrives wrapped in a TransactionSystemException
+    @ExceptionHandler(TransactionSystemException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionSystemException(TransactionSystemException ex, HttpServletRequest request) {
+        if (ex.getMostSpecificCause() instanceof ConstraintViolationException cve) {
+            return handleConstraintViolationException(cve, request);
+        }
+        return handleGlobalException(ex, request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        String correlationId = getOrGenerateCorrelationId(request);
+
+        log.warn("Unreadable request [{}]: {} - Path: {}", correlationId, ex.getMessage(), request.getRequestURI());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Malformed request or value out of range")
+                .errorCode("BAD_REQUEST_BODY")
+                .path(request.getRequestURI())
+                .correlationId(correlationId)
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    private static final Map<String, String> CONSTRAINT_MESSAGES = Map.of(
+            "uq_antennas_sector_antenna_index", "An antenna with this index already exists in the sector",
+            "uq_sectors_site_sector_index", "A sector with this index already exists on the site",
+            "uq_sectors_name", "A sector with this index already exists on the site",
+            "uq_sites_site_code", "A site with this site code already exists"
+    );
+
+    private String constraintMessage(DataIntegrityViolationException ex) {
+        String cause = String.valueOf(ex.getMostSpecificCause().getMessage());
+        return CONSTRAINT_MESSAGES.entrySet().stream()
+                .filter(entry -> cause.contains(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(cause.contains("chk_")
+                        ? "Value out of allowed range"
+                        : "Data integrity violation due to possible duplicate values");
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex, HttpServletRequest request) {
         String correlationId = getOrGenerateCorrelationId(request);
 
-        String message = "Data integrity violation due to possible duplicate values";
+        String message = constraintMessage(ex);
 
         log.warn("Data Integrity Violation [{}]: {} - Path: {}", correlationId, ex.getMessage(), request.getRequestURI());
 

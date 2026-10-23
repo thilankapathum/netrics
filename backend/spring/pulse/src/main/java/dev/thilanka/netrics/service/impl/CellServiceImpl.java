@@ -308,6 +308,26 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    public List<CellDto> getCellsBySectorName(String sectorName) {
+        return cellRepository.findCellsBySectorName(sectorName);
+    }
+
+    @Override
+    public List<String> getAllCellNamesBySectorName(String sectorName) {
+        return cellRepository.findBySector_Name(sectorName).stream().map(Cell::getCellName).toList();
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "mapCellTiles", allEntries = true)
+    public List<CellDto> updateAzimuths(CellAzimuthUpdateDto dto) {
+        // load-and-save (not a bulk UPDATE) so audit fields and the audit log are recorded
+        List<Cell> cells = dto.cellNames().stream().map(this::findByCellName).toList();
+        cells.forEach(cell -> cell.setAzimuth(dto.azimuth()));
+        return cellRepository.saveAll(cells).stream().map(mapper::cellToDto).toList();
+    }
+
+    @Override
     public CellDto getByCellName(String cellName) {
         Cell cell = findByCellName(cellName);
         return mapper.cellToDto(cell);

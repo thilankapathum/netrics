@@ -17,6 +17,8 @@ public interface SiteService {
 
     Site findBySiteCode(String siteCode);
 
+    SiteDto getBySiteCode(String siteCode);
+
     List<Site> findAllSites();
 
     List<SiteDto> getAllSites();

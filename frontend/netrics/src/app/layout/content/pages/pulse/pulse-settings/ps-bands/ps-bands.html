@@ -1,0 +1,85 @@
+<div class="flex flex-col gap-4 w-full max-w-5xl">
+
+  <div>
+    <h2 class="text-base font-semibold text-base-content">Bands</h2>
+    <p class="text-xs text-secondary mt-0.5">Frequency bands assigned to cells, carriers and electrical tilts. Changes sync to Site Parameters automatically.</p>
+  </div>
+
+  <ng-template #editIcon>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+  </ng-template>
+  <ng-template #deleteIcon>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7H20M10 11V17M14 11V17M5 7L6 19A2 2 0 0 0 8 21H16A2 2 0 0 0 18 19L19 7M9 7V4A1 1 0 0 1 10 3H14A1 1 0 0 1 15 4V7"/></svg>
+  </ng-template>
+
+  <div class="overflow-x-auto rounded-xl border border-base-300">
+    <table class="table table-xs table-zebra">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th class="w-28">Number</th>
+          <th class="w-28">Unit</th>
+          <th class="w-24"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (canCreate()) {
+          <tr class="bg-base-200/40">
+            <td><input class="input input-xs w-full" placeholder="New band, e.g. 700" aria-label="Name" [(ngModel)]="newBand.name"/></td>
+            <td><input type="number" min="1" class="input input-xs w-20" placeholder="28" aria-label="Number" [(ngModel)]="newBand.number"/></td>
+            <td><input class="input input-xs w-20" aria-label="Unit" [(ngModel)]="newBand.unit"/></td>
+            <td class="text-right">
+              <button class="btn btn-primary btn-xs" [disabled]="saving() || !isValid(newBand)" (click)="add()">Add</button>
+            </td>
+          </tr>
+        }
+        @for (item of bands(); track item.name) {
+          <tr>
+            @if (editingName() === item.name) {
+              <td><input class="input input-xs w-full" aria-label="Name" [(ngModel)]="draft.name" (keydown.escape)="cancelEdit()"/></td>
+              <td><input type="number" min="1" class="input input-xs w-20" aria-label="Number" [(ngModel)]="draft.number" (keydown.escape)="cancelEdit()"/></td>
+              <td><input class="input input-xs w-20" aria-label="Unit" [(ngModel)]="draft.unit" (keydown.escape)="cancelEdit()"/></td>
+              <td class="text-right whitespace-nowrap">
+                <button class="btn btn-primary btn-xs" [disabled]="saving() || !isValid(draft)" (click)="save()">Save</button>
+                <button class="btn btn-ghost btn-xs" (click)="cancelEdit()">Cancel</button>
+              </td>
+            } @else {
+              <td class="font-medium">{{ item.name }}</td>
+              <td>{{ item.number }}</td>
+              <td>{{ item.unit }}</td>
+              <td class="text-right whitespace-nowrap">
+                @if (canEdit()) {
+                  <button class="btn btn-ghost btn-xs btn-square" title="Edit" [attr.aria-label]="'Edit band ' + item.name" (click)="startEdit(item)"><ng-container *ngTemplateOutlet="editIcon"/></button>
+                }
+                @if (canDelete()) {
+                  <button class="btn btn-ghost btn-xs btn-square text-error" title="Delete" [attr.aria-label]="'Delete band ' + item.name" (click)="openDelete(item)"><ng-container *ngTemplateOutlet="deleteIcon"/></button>
+                }
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="text-center text-xs text-base-content/50 py-6">
+              @if (loading()) {
+                <span class="loading loading-spinner loading-xs"></span>
+              } @else {
+                No bands yet. Add the first one above.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-delete-confirm-modal
+  [open]="deleteModalOpen"
+  [itemLabel]="deleteItemLabel()"
+  [dependents]="deleteDependents()"
+  [loadingDependents]="deleteLoadingDependents()"
+  [deleting]="deletingInProgress()"
+  [allowForce]="false"
+  (closed)="deleteModalOpen.set(false)"
+  (confirmed)="onDeleteConfirmed()">
+</app-delete-confirm-modal>

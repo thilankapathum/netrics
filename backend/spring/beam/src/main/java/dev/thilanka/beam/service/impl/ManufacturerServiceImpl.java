@@ -2,14 +2,18 @@ package dev.thilanka.beam.service.impl;
 
 import dev.thilanka.beam.common.Mapper;
 import dev.thilanka.beam.common.exception.DataNotChangedException;
+import dev.thilanka.beam.common.exception.DependencyConflictException;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.ManufacturerDto;
+import dev.thilanka.beam.entity.Antenna;
 import dev.thilanka.beam.entity.Manufacturer;
+import dev.thilanka.beam.repository.AntennaRepository;
 import dev.thilanka.beam.repository.ManufacturerRepository;
 import dev.thilanka.beam.service.ManufacturerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ManufacturerServiceImpl implements ManufacturerService {
     private final ManufacturerRepository manufacturerRepository;
+    private final AntennaRepository antennaRepository;
     private final Mapper mapper;
 
     @Override
@@ -48,7 +53,8 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     @Override
     public Manufacturer updateManufacturer(Manufacturer manufacturer) {
 
-        Manufacturer existingManufacturer = findByName(manufacturer.getName());
+        Manufacturer existingManufacturer = manufacturerRepository.findById(manufacturer.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Manufacturer", "id", manufacturer.getId()));
         if (existingManufacturer.getName().equals(manufacturer.getName())) {
             throw new DataNotChangedException("Manufacturer", "name", manufacturer.getName());
         }
@@ -73,18 +79,33 @@ public class ManufacturerServiceImpl implements ManufacturerService {
     }
 
     @Override
-    public Manufacturer deleteManufacturer(String manufacturerName) {
+    @Transactional
+    public Manufacturer deleteManufacturer(String manufacturerName, boolean force) {
         Manufacturer existingManufacturer = findByName(manufacturerName);
-        if (existingManufacturer == null) {
-            return null;
+
+        List<Antenna> dependents = antennaRepository.findByManufacturer_Id(existingManufacturer.getId());
+        if (!dependents.isEmpty()) {
+            if (!force) {
+                throw new DependencyConflictException("Manufacturer", manufacturerName, dependents.size());
+            }
+            antennaRepository.nullifyManufacturer(existingManufacturer.getId());
         }
-        manufacturerRepository.delete(existingManufacturer);
+
+        manufacturerRepository.deleteByIdNative(existingManufacturer.getId());
         return existingManufacturer;
     }
 
     @Override
-    public ManufacturerDto deleteManufacturerDto(String manufacturerName) {
-        return mapper.toManufacturerDto(deleteManufacturer(manufacturerName));
+    public ManufacturerDto deleteManufacturerDto(String manufacturerName, boolean force) {
+        return mapper.toManufacturerDto(deleteManufacturer(manufacturerName, force));
+    }
+
+    @Override
+    public List<String> getDependentAntennaLabels(String manufacturerName) {
+        Manufacturer manufacturer = findByName(manufacturerName);
+        return antennaRepository.findByManufacturer_Id(manufacturer.getId()).stream()
+                .map(a -> a.getSector().getName() + " / Antenna " + a.getAntennaIndex())
+                .toList();
     }
 
     @Override
@@ -98,8 +119,19 @@ public class ManufacturerServiceImpl implements ManufacturerService {
         return mapper.toManufacturerDto(findByName(manufacturerName));
     }
 
+    @Override
+    public List<Manufacturer> findAll() {
+        return manufacturerRepository.findAll();
+    }
+
+    @Override
+    public List<ManufacturerDto> getAll() {
+        return findAll().stream().map(mapper::toManufacturerDto).toList();
+    }
+
     private Manufacturer dtoToManufacturer(ManufacturerDto dto) {
         return Manufacturer.builder()
+                .id(dto.id())
                 .name(dto.name())
                 .build();
     }

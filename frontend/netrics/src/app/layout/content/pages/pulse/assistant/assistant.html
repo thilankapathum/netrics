@@ -1,0 +1,304 @@
+<div class="flex flex-col gap-3 h-[calc(100vh-3rem)]">
+  <nav class="breadcrumbs text-xs text-secondary shrink-0">
+    <ul>
+      <li><a routerLink="/">Home</a></li>
+      <li class="font-bold">Ask Pulse</li>
+    </ul>
+  </nav>
+
+  <!-- Conversation -->
+  <div #conversation class="flex-1 overflow-y-auto bg-base-100 rounded-lg p-4 flex flex-col gap-4">
+    @if (turns().length === 0) {
+      <div class="m-auto max-w-xl text-center flex flex-col gap-3">
+        <h2 class="text-lg font-semibold text-secondary">Ask about your network</h2>
+        <p class="text-xs text-base-content/60">
+          Ask about worst cells, KPI anomalies, KPI trends, area KPI summaries or a single cell's KPI.
+          Results come straight from Netrics data; the short summary is AI-generated.
+        </p>
+        <div class="flex flex-wrap justify-center gap-2">
+          @for (example of examples; track example) {
+            <button type="button" class="btn btn-xs btn-outline btn-secondary font-normal" (click)="ask(example)">
+              {{ example }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    @for (turn of turns(); track $index) {
+      <div class="chat chat-end">
+        <div class="chat-bubble chat-bubble-primary text-sm whitespace-pre-wrap">{{ turn.question }}</div>
+      </div>
+
+      <div class="chat chat-start">
+        <div class="chat-bubble bg-base-200 text-base-content text-sm w-full max-w-full">
+          @if (turn.loading) {
+            <span class="loading loading-dots loading-sm"></span>
+          } @else if (turn.error) {
+            <span class="text-error">{{ turn.error }}</span>
+          } @else if (turn.response; as r) {
+            @switch (r.status) {
+              @case ('REFUSED') {
+                <p>{{ r.message }}</p>
+              }
+              @case ('CLARIFY') {
+                <p>{{ r.message }}</p>
+                @if (r.options.length > 0) {
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    @for (option of r.options; track option) {
+                      <button type="button" class="btn btn-xs btn-outline" [disabled]="busy()"
+                              (click)="chooseOption(turn, option)">{{ option }}</button>
+                    }
+                  </div>
+                }
+              }
+              @case ('ANSWER') {
+                <div class="flex flex-wrap items-center gap-1 mb-2">
+                  <span class="text-xs text-base-content/50">Interpreted as:</span>
+                  @for (chip of interpretedAs(r); track chip) {
+                    <span class="badge badge-soft badge-secondary badge-xs">{{ chip }}</span>
+                  }
+                </div>
+
+                @if (r.summary) {
+                  <div class="text-xs mb-2 p-2 rounded bg-base-100 border border-base-300">
+                    <span class="badge badge-ghost badge-xs mr-1">AI summary</span>{{ r.summary }}
+                  </div>
+                }
+
+                @if (r.rows.length === 0) {
+                  <p class="text-base-content/50">No data found.</p>
+                } @else {
+                  <div class="overflow-x-auto bg-base-100 rounded">
+                    @switch (r.tool) {
+                      @case ('get_worst_cells') {
+                        <table class="table table-xs">
+                          <thead>
+                          <tr><th>#</th><th>Cell</th><th>KPI</th><th>Value</th><th>Change</th><th>Bad days</th></tr>
+                          </thead>
+                          <tbody>
+                            @for (cell of cellRows(r); track cell.cellName; let i = $index) {
+                              <tr class="hover:bg-base-200 cursor-pointer" (click)="openCell(r, cell)">
+                                <td>{{ i + 1 }}</td>
+                                <td>{{ cell.cellName }}</td>
+                                <td>{{ cell.kpiLabel }}</td>
+                                <td>{{ cell.value | number: '1.2-2' }}{{ cell.unit }}</td>
+                                <td>
+                                  <span class="badge badge-soft badge-xs" [class]="cell.improved ? 'badge-success' : 'badge-error'">
+                                    {{ cell.difference > 0 ? '+' : '' }}{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}
+                                  </span>
+                                </td>
+                                <td>{{ cell.consecutiveBadDays < 31 ? cell.consecutiveBadDays : '30+' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('get_anomalies') {
+                        <table class="table table-xs">
+                          <thead>
+                          <tr><th>#</th><th>Cell</th><th>KPI</th><th>Value</th><th>Change</th><th>Severity</th><th>Alarms</th></tr>
+                          </thead>
+                          <tbody>
+                            @for (cell of cellRows(r); track cell.cellName + cell.kpiName; let i = $index) {
+                              <tr class="hover:bg-base-200 cursor-pointer" (click)="openCell(r, cell)">
+                                <td>{{ i + 1 }}</td>
+                                <td>{{ cell.cellName }}</td>
+                                <td>{{ cell.kpiLabel }}</td>
+                                <td>{{ cell.value | number: '1.2-2' }}{{ cell.unit }}</td>
+                                <td>{{ cell.difference > 0 ? '+' : '' }}{{ cell.difference | number: '1.2-2' }}{{ cell.unit }}</td>
+                                <td>
+                                  <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full shrink-0" [class]="severityDotClass(cell.severity)"></span>
+                                    <span class="capitalize">{{ cell.severity }}</span>
+                                  </div>
+                                </td>
+                                <td>{{ cell.hasAlarmCorrelation ? cell.distinctAlarmDefCount : '—' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('get_kpi_trend') {
+                        <table class="table table-xs">
+                          <thead><tr><th>Date</th><th>{{ r.params['kpiLabel'] }}</th></tr></thead>
+                          <tbody>
+                            @for (row of trendRows(r); track $index) {
+                              <tr><td>{{ row.timestamp | date: 'yyyy-MM-dd HH:mm' }}</td><td>{{ row.kpiValue | number: '1.2-2' }}</td></tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('get_cell_kpi') {
+                        <table class="table table-xs">
+                          <thead><tr><th>Date</th><th>{{ r.params['cell'] }} · {{ r.params['kpiLabel'] }}</th></tr></thead>
+                          <tbody>
+                            @for (row of cellKpiRows(r); track $index) {
+                              <tr><td>{{ row.timestamp | date: 'yyyy-MM-dd HH:mm' }}</td><td>{{ row.kpiValue | number: '1.2-2' }}</td></tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('get_area_kpi_snapshot') {
+                        @let s = snapshot(r);
+                        <table class="table table-xs">
+                          <thead><tr><th>KPI</th><th>Value</th><th>Previous</th><th>Change</th></tr></thead>
+                          <tbody>
+                          <tr class="font-semibold">
+                            <td>{{ s.kpiLabel }}</td>
+                            <td>{{ s.value | number: '1.2-2' }}{{ s.unit }}</td>
+                            <td>{{ s.previousValue | number: '1.2-2' }}{{ s.unit }}</td>
+                            <td [class]="s.improved ? 'text-success' : 'text-error'">{{ s.difference | number: '1.2-2' }}{{ s.unit }}</td>
+                          </tr>
+                            @for (k of s.standardKpis ?? []; track k.kpiLabel) {
+                              <tr>
+                                <td class="pl-4">{{ k.kpiLabel }}</td>
+                                <td>{{ k.value | number: '1.2-2' }}{{ k.unit }}</td>
+                                <td>{{ k.previousValue | number: '1.2-2' }}{{ k.unit }}</td>
+                                <td [class]="k.improved ? 'text-success' : 'text-error'">{{ k.difference | number: '1.2-2' }}{{ k.unit }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('get_alarms') {
+                        <table class="table table-xs">
+                          <thead>
+                          <tr><th>Time</th><th>Node</th><th>Cell</th><th>Severity</th><th>Alarm</th><th>Type</th><th>State</th><th>Source</th></tr>
+                          </thead>
+                          <tbody>
+                            @for (a of alarmRows(r); track a.alarmId + a.nodeName + a.occurrenceTime) {
+                              <tr>
+                                <td class="whitespace-nowrap">{{ a.occurrenceTime | date: 'yyyy-MM-dd HH:mm' }}</td>
+                                <td>{{ a.nodeName }}</td>
+                                <td>{{ alarmCell(a) || '—' }}</td>
+                                <td>
+                                  <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full shrink-0" [class]="alarmSeverityClass(a.severity)"></span>
+                                    <span class="capitalize">{{ a.severity.toLowerCase() }}</span>
+                                  </div>
+                                </td>
+                                <td>{{ a.alarmName }}</td>
+                                <td>{{ a.alarmType }}</td>
+                                <td>
+                                  <span class="badge badge-soft badge-xs" [class]="a.clearState === 'UNCLEARED' ? 'badge-error' : 'badge-success'">
+                                    {{ a.clearState === 'UNCLEARED' ? 'Active' : 'Cleared' }}
+                                  </span>
+                                  @if (a.ackState === 'ACKNOWLEDGED') {
+                                    <span class="badge badge-ghost badge-xs ml-1">Ack</span>
+                                  }
+                                </td>
+                                <td>{{ a.alarmSource }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @case ('get_site_info') {
+                        @let info = siteInfo(r);
+                        @let eng = info.engineering;
+                        <div class="p-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                          <span><span class="text-base-content/50">Site:</span> <b>{{ info.site.siteCode }}</b> · {{ info.site.siteName }}</span>
+                          <span><span class="text-base-content/50">Location:</span> {{ info.site.latitude | number: '1.5-5' }}, {{ info.site.longitude | number: '1.5-5' }}</span>
+                          @if (eng) {
+                            <span><span class="text-base-content/50">Operator:</span> {{ eng.site.operatorName || '—' }}</span>
+                            <span><span class="text-base-content/50">Infra:</span> {{ eng.site.infraType || '—' }}</span>
+                            <span><span class="text-base-content/50">Tower / building:</span> {{ eng.site.towerHeight ?? '—' }} m / {{ eng.site.buildingHeight ?? '—' }} m</span>
+                          }
+                        </div>
+
+                        <table class="table table-xs">
+                          <thead><tr><th>Cell</th><th>RAT</th><th>Band</th><th>Carrier</th><th>Sector</th><th>Azimuth</th><th>Node</th></tr></thead>
+                          <tbody>
+                            @for (c of info.cells; track c.cellName) {
+                              <tr>
+                                <td>{{ c.cellName }}</td><td>{{ c.ratName }}</td><td>{{ c.bandName }}</td><td>{{ c.carrierName }}</td>
+                                <td>{{ c.sectorName }}</td><td>{{ c.azimuth ?? '—' }}</td><td>{{ c.nodeName }}</td>
+                              </tr>
+                            } @empty {
+                              <tr><td colspan="7" class="text-base-content/50">No cells recorded for this site.</td></tr>
+                            }
+                          </tbody>
+                        </table>
+
+                        @if (eng) {
+                          <table class="table table-xs mt-2">
+                            <thead><tr><th>Sector</th><th>Antenna</th><th>Type</th><th>Azimuth</th><th>Height</th><th>M-tilt</th><th>E-tilts (band)</th></tr></thead>
+                            <tbody>
+                              @for (s of eng.sectors; track s.sector.name) {
+                                @for (a of s.antennas; track a.antenna.id) {
+                                  <tr>
+                                    <td>{{ s.sector.name }}</td>
+                                    <td>#{{ a.antenna.antennaIndex }}</td>
+                                    <td>{{ a.antenna.antennaTypeName }}</td>
+                                    <td>{{ a.antenna.azimuth }}</td>
+                                    <td>{{ a.antenna.antennaHeight }} m</td>
+                                    <td>{{ a.antenna.mechanicalTilt }}°</td>
+                                    <td>
+                                      @for (t of a.electricalTilts; track t.id) {
+                                        <span class="badge badge-ghost badge-xs mr-1">{{ t.electricalTilt }}° ({{ t.bandName }})</span>
+                                      }
+                                    </td>
+                                  </tr>
+                                } @empty {
+                                  <tr><td>{{ s.sector.name }}</td><td colspan="6" class="text-base-content/50">No antennas recorded.</td></tr>
+                                }
+                              }
+                            </tbody>
+                          </table>
+                        } @else {
+                          <p class="text-xs text-base-content/50 p-2">Engineering parameters are not available (no Beam access, or Beam is unreachable).</p>
+                        }
+                      }
+                      @case ('get_cell_info') {
+                        @let c = cellInfo(r);
+                        <table class="table table-xs">
+                          <tbody>
+                          <tr><th>Cell</th><td>{{ c.cellName }}</td></tr>
+                          <tr><th>Site</th><td>{{ c.siteCode }}</td></tr>
+                          <tr><th>Node</th><td>{{ c.nodeName }}</td></tr>
+                          <tr><th>RAT</th><td>{{ c.ratName }}</td></tr>
+                          <tr><th>Band / carrier</th><td>{{ c.bandName }} / {{ c.carrierName }}</td></tr>
+                          <tr><th>Sector</th><td>{{ c.sectorName }}</td></tr>
+                          <tr><th>Azimuth / beamwidth</th><td>{{ c.azimuth ?? '—' }} / {{ c.beamwidth ?? '—' }}</td></tr>
+                          </tbody>
+                        </table>
+                      }
+                    }
+                  </div>
+                }
+              }
+            }
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Input -->
+  <form class="shrink-0 flex gap-2 items-end" (ngSubmit)="ask()">
+    <div class="flex-1 flex flex-col">
+      <textarea class="textarea textarea-sm w-full resize-none" rows="2" name="question"
+                placeholder="e.g. Top E-RAB drop rate worst cells of yesterday for Kandy district"
+                [maxlength]="maxLength" [ngModel]="question()" (ngModelChange)="question.set($event)"
+                (keydown.enter)="onEnter($event)"></textarea>
+      <span class="text-[10px] text-base-content/40 self-end">{{ question().length }}/{{ maxLength }} · Enter to send, Shift+Enter for a new line</span>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm mb-4" [disabled]="busy() || !question().trim()">
+      @if (busy()) {
+        <span class="loading loading-spinner loading-xs"></span>
+      }
+      Ask
+    </button>
+  </form>
+</div>
+
+<app-cell-analysis-modal
+  [open]="showCellAnalysisModal"
+  (closed)="showCellAnalysisModal.set(false)"
+  [standardKpiName]="standardKpi"
+  [ratName]="rat"
+  [granularityName]="granularity"
+  [cellName]="selectedCellName"
+  [returnPage]="'pulse/assistant'"
+></app-cell-analysis-modal>

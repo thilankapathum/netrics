@@ -23,10 +23,6 @@ export class PsAreaManagement {
 
   activeTab = signal<'AREA_TYPE' | 'AREA' | 'DISTRICT_ASSIGNMENT'>('AREA_TYPE');
 
-  areaTypeSubTab = signal<'CREATE' | 'LIST'>('CREATE');
-  areaSubTab = signal<'CREATE' | 'LIST'>('CREATE');
-  assignmentSubTab = signal<'CREATE' | 'LIST'>('CREATE');
-
   areaTypes: AreaTypeDto[] = [];
 
   // ---- Area Type tab ----
@@ -64,18 +60,6 @@ export class PsAreaManagement {
 
   setActiveTab(tab: 'AREA_TYPE' | 'AREA' | 'DISTRICT_ASSIGNMENT') {
     this.activeTab.set(tab);
-  }
-
-  setAreaTypeSubTab(tab: 'CREATE' | 'LIST') {
-    this.areaTypeSubTab.set(tab);
-  }
-
-  setAreaSubTab(tab: 'CREATE' | 'LIST') {
-    this.areaSubTab.set(tab);
-  }
-
-  setAssignmentSubTab(tab: 'CREATE' | 'LIST') {
-    this.assignmentSubTab.set(tab);
   }
 
   //================== LOADERS =========================

@@ -13,8 +13,12 @@ import {KpiReports} from './layout/content/pages/pulse/kpi-reports/kpi-reports';
 import {PulseSettings} from './layout/content/pages/pulse/pulse-settings/pulse-settings';
 import {KpiMap} from './layout/content/pages/pulse/kpi-map/kpi-map';
 import {UpgradeReview} from './layout/content/pages/pulse/upgrade-review/upgrade-review';
+import {TrendAnalysis} from './layout/content/pages/pulse/trend-analysis/trend-analysis';
 import {AnomalyCells} from './layout/content/pages/pulse/anomaly-cells/anomaly-cells';
 import {Alarms} from './layout/content/pages/pulse/alarms/alarms';
+import {Assistant} from './layout/content/pages/pulse/assistant/assistant';
+import {SiteSearch} from './layout/content/pages/beam/engineering-parameters/site-search/site-search';
+import {SiteTree} from './layout/content/pages/beam/engineering-parameters/site-tree/site-tree';
 
 export const routes: Routes = [
   // {path: '', redirectTo: 'pulse', pathMatch: 'full'},
@@ -55,6 +59,11 @@ export const routes: Routes = [
             component: UpgradeReview
           },
           {
+            path: 'trend-analysis',
+            canActivate: [authGuard, roleGuard(['PULSE_READ'])],
+            component: TrendAnalysis
+          },
+          {
             path: 'anomaly',
             canActivate: [authGuard, roleGuard(['PULSE_READ'])],
             component: AnomalyCells
@@ -63,6 +72,11 @@ export const routes: Routes = [
             path: 'alarms',
             canActivate: [authGuard, roleGuard(['PULSE_READ'])],
             component: Alarms
+          },
+          {
+            path: 'assistant',
+            canActivate: [authGuard, roleGuard(['PULSE_ASSISTANT'])],
+            component: Assistant
           },
           {
             path: 'dashboard',
@@ -81,7 +95,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings',
-            canActivate: [authGuard, roleGuard(['PULSE_DELETE'])],
+            canActivate: [authGuard, roleGuard(['PULSE_DELETE', 'BEAM_DELETE'])],
             component: PulseSettings
           },
           {
@@ -93,7 +107,29 @@ export const routes: Routes = [
         ]
       },
       {path: 'surge', component: BeamComponent, canActivate: [authGuard, roleGuard(['SURGE_READ'])]},
-      {path: 'beam', component: BeamComponent, canActivate: [authGuard, roleGuard(['BEAM_READ'])]},
+      {
+        path: 'beam',
+        component: ContentComponent,
+        children: [
+          {
+            path: 'engineering-parameters',
+            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
+            component: SiteSearch
+          },
+          {
+            path: 'engineering-parameters/:siteCode',
+            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
+            component: SiteTree
+          },
+          {path: 'settings', redirectTo: '/pulse/settings'},
+          {
+            path: '',
+            canActivate: [authGuard, roleGuard(['BEAM_READ'])],
+            component: BeamComponent
+          },
+          {path: 'unauthorized', component: UnauthorizedComponent},
+        ]
+      },
       {path: 'mark', component: BeamComponent, canActivate: [authGuard, roleGuard(['MARK_READ'])]},
       {path: 'cortex', component: BeamComponent, canActivate: [authGuard, roleGuard(['CORTEX_READ'])]},
     ]

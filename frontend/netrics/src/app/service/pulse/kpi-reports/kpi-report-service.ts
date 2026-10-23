@@ -26,6 +26,22 @@ export class KpiReportService {
     );
   }
 
+  submitSiteWiseMultiKpiReportJob(ratName: string, granularityName: string, standardKpiNames: string[],
+                                  startDate: string, endDate: string, areaName: string) {
+    return this.http.post<{ jobId: string, status: string }>(
+      `${this.baseUrl}/export/site-multi-kpi-date/jobs`, null,
+      { params: { ratName, granularityName, standardKpiNames, startDate, endDate, areaName } }
+    );
+  }
+
+  submitCellWiseReportJob(ratName: string, granularityName: string, standardKpiNames: string[],
+                          startDate: string, endDate: string, areaName: string) {
+    return this.http.post<{ jobId: string, status: string }>(
+      `${this.baseUrl}/export/cell-kpi-date/jobs`, null,
+      { params: { ratName, granularityName, standardKpiNames, startDate, endDate, areaName } }
+    );
+  }
+
   getJobStatus(jobId: string) {
     return this.http.get<{ jobId: string, status: string, errorMessage: string | null, fileName: string | null }>(
       `${this.baseUrl}/jobs/${jobId}`

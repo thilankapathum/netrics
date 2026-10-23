@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { PulseSettingUserAreaMapping } from './pulse-setting-user-area-mapping/pulse-setting-user-area-mapping';
 import { PsStandardKpi } from './ps-standard-kpi/ps-standard-kpi';
 import { PsCells } from './ps-cells/ps-cells';
-import { PsCreateSite } from './ps-create-site/ps-create-site';
 import { PsEvictCache } from './ps-evict-cache/ps-evict-cache';
 import { PsSiteInfo } from './ps-site-info/ps-site-info';
 import { PsSectorInfo } from './ps-sector-info/ps-sector-info';
@@ -17,19 +16,23 @@ import {PsKpiSourceMapping} from './ps-kpi-source-mapping/ps-kpi-source-mapping'
 import {PsStandardRawKpiMapping} from './ps-standard-raw-kpi-mapping/ps-standard-raw-kpi-mapping';
 import {PsCellMapping} from './ps-cell-mapping/ps-cell-mapping';
 import {PsAreaManagement} from './ps-area-management/ps-area-management';
+import {BeamSettings, Tab as BeamSettingsTab} from '../../beam/beam-settings/beam-settings';
+import {PsBands} from './ps-bands/ps-bands';
+import {AuthService} from '../../../../../auth/service/auth-service';
 
 export type SettingsView =
   | 'CACHE'
   | 'CELL_INFO'
   | 'CELL_MAPPING'
+  | 'BANDS'
   | 'SECTOR_INFO'
-  | 'CREATE_SITE'
   | 'SITE_INFO'
   | 'STANDARD_KPI'
   | 'KPI_SOURCE_MAPPING'
   | 'STANDARD_RAW_KPI_MAPPING'
   | 'USER_AREA_MAPPING'
   | 'AREA_MANAGEMENT'
+  | BeamSettingsTab
   | null;
 
 @Component({
@@ -40,21 +43,21 @@ export type SettingsView =
     PsStandardKpi,
     PsKpiSourceMapping,
     PsCellSettings,
-    PsCreateSite,
     PsEvictCache,
     PsSectorInfo,
     PsSiteManagement,
     PsKpiSourceMapping,
     PsStandardRawKpiMapping,
     PsCellMapping,
-    PsAreaManagement
+    PsAreaManagement,
+    BeamSettings,
+    PsBands
   ],
   templateUrl: './pulse-settings.html',
   styleUrl: './pulse-settings.css'
 })
 export class PulseSettings {
 
-  // Track the currently active view instead of multiple modal states
   activeView = signal<SettingsView>(null);
 
   missingCellInfoCount = signal(0);
@@ -66,10 +69,24 @@ export class PulseSettings {
     private alertService: AlertService,
     private sectorService: SectorService,
     private siteService: SiteService,
+    private authService: AuthService,
   ) {
-    this.getCellCountWithMissingInfo();
-    this.getSectorCountWithMissingInfo();
-    this.getSiteCountWithMissingInfo();
+    // Open on the first section this user can access
+    this.activeView.set(this.hasAnyRole(['PULSE_DELETE']) ? 'CACHE' : 'antenna-types');
+
+    if (this.hasAnyRole(['PULSE_DELETE'])) {
+      this.getCellCountWithMissingInfo();
+      this.getSectorCountWithMissingInfo();
+      this.getSiteCountWithMissingInfo();
+    }
+  }
+
+  hasAnyRole(roles: string[]) {
+    return this.authService.hasAnyRole(roles);
+  }
+
+  isBeamView(view: SettingsView): view is BeamSettingsTab {
+    return view === 'antenna-types' || view === 'infra-types' || view === 'manufacturers' || view === 'operators';
   }
 
   setActiveView(view: SettingsView) {

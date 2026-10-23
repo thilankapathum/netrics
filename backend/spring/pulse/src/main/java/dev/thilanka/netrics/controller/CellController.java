@@ -1,5 +1,6 @@
 package dev.thilanka.netrics.controller;
 
+import dev.thilanka.netrics.dto.CellAzimuthUpdateDto;
 import dev.thilanka.netrics.dto.CellCsvImportResultDto;
 import dev.thilanka.netrics.dto.CellDto;
 import dev.thilanka.netrics.dto.CellNameDto;
@@ -53,6 +54,18 @@ public class CellController {
     public ResponseEntity<List<CellNameDto>> getCellsBySector(@RequestParam("sectorName") String sectorName, @RequestParam("ratName") String ratName) {
         List<CellNameDto> cells = cellService.getCellsBySector(sectorName, ratName);
         return ResponseEntity.ok(cells);
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("by-sector")
+    public ResponseEntity<List<CellDto>> getCellsBySectorName(@RequestParam("sectorName") String sectorName) {
+        return ResponseEntity.ok(cellService.getCellsBySectorName(sectorName));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_UPDATE')")
+    @PutMapping("azimuth")
+    public ResponseEntity<List<CellDto>> updateAzimuths(@RequestBody @Valid CellAzimuthUpdateDto dto) {
+        return ResponseEntity.ok(cellService.updateAzimuths(dto));
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")

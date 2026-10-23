@@ -21,7 +21,9 @@ public interface OperatorService {
 
     void deleteOperator(Long id);
 
-    void  deleteOperator(String operatorName);
+    void deleteOperator(String operatorName, boolean force);
+
+    List<String> getDependentSiteLabels(String operatorName);
 
     Operator findByName(String name);
 

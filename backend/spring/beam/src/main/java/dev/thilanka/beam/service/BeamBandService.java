@@ -11,5 +11,6 @@ public interface BeamBandService {
     BeamBandDto getByName(String name);
     List<BeamBand> findAll();
     List<BeamBandDto> getAll();
+    long countTilts(String name);
 
 }

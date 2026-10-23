@@ -2,6 +2,7 @@ package dev.thilanka.netrics.controller;
 
 import dev.thilanka.netrics.dto.SectorCsvImportResultDto;
 import dev.thilanka.netrics.dto.SectorDto;
+import dev.thilanka.netrics.service.CellService;
 import dev.thilanka.netrics.service.CsvService;
 import dev.thilanka.netrics.service.SectorService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +25,14 @@ import java.util.List;
 public class SectorController {
     private final SectorService sectorService;
     private final CsvService csvService;
+    private final CellService cellService;
+
+    /** Cells that block deleting the sector; also called by beam with the user's token before a sector delete */
+    @PreAuthorize("hasAnyAuthority('ROLE_PULSE_READ', 'ROLE_BEAM_READ')")
+    @GetMapping("{name}/cells")
+    public ResponseEntity<List<String>> getSectorCellNames(@PathVariable("name") String name) {
+        return ResponseEntity.ok(cellService.getAllCellNamesBySectorName(name));
+    }
 
 //    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
 //    @PostMapping

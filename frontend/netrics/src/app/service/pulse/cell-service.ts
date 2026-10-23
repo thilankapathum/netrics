@@ -45,4 +45,14 @@ export class CellService {
   updateCell(cell: CellDto):Observable<CellDto> {
     return this.http.put<CellDto>(`${this.baseUrl}`, cell);
   }
+
+  /** All current cells on a sector, every RAT */
+  getBySectorName(sectorName: string): Observable<CellDto[]> {
+    return this.http.get<CellDto[]>(`${this.baseUrl}/by-sector`, {params: {sectorName}});
+  }
+
+  /** Sets one azimuth on all the given cells */
+  updateAzimuths(cellNames: string[], azimuth: number): Observable<CellDto[]> {
+    return this.http.put<CellDto[]>(`${this.baseUrl}/azimuth`, {cellNames, azimuth});
+  }
 }

@@ -1,5 +1,11 @@
 package dev.thilanka.netrics.repository;
 
+import dev.thilanka.netrics.dto.CellKpiReportDto;
+import jakarta.persistence.QueryHint;
+import org.hibernate.jpa.HibernateHints;
+import org.springframework.data.jpa.repository.QueryHints;
+import java.util.stream.Stream;
+
 import dev.thilanka.netrics.dto.*;
 import dev.thilanka.netrics.entity.*;
 import dev.thilanka.netrics.entity.KpiDay;
@@ -1069,7 +1075,7 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
             JOIN area_district_code_mapping adcm ON dc.id = adcm.district_code_id
             WHERE kv.rat_id = :ratId
               AND kv.granularity_id = :granularityId
-              AND kv.standard_kpi_id = :standardKpiId
+              AND kv.standard_kpi_id IN (:standardKpiIds)
               AND kv.timestamp BETWEEN :startTimestamp AND :endTimestamp
               AND adcm.area_id = :areaId
             GROUP BY
@@ -1078,9 +1084,10 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
                 bc.concat_bands,
                 skpi.aggregation,
             	skpi.label,
-            	skpi.kpi_name;
+            	skpi.kpi_name
+            ORDER BY 1, 2;
             """, nativeQuery = true)
-    List<SiteKpiReportDto> getSiteWiseReportByKpiAndDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId, @Param("standardKpiId") Long standardKpiId, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp, @Param("areaId") Long areaId);
+    List<SiteKpiReportDto> getSiteWiseReportByKpiAndDate(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId, @Param("standardKpiIds") List<Long> standardKpiIds, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp, @Param("areaId") Long areaId);
 
 
     @Modifying
@@ -1122,4 +1129,29 @@ public interface KpiDayRepository extends JpaRepository<KpiDay, Long> {
               AND r.rn > 1;
             """, nativeQuery = true)
     int deduplicateOssByPeriod(@Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp);
+
+    // ----------------------------- CELL-WISE KPI REPORT (raw kpi_value, streamed) --------------------------------------
+
+    @QueryHints(@QueryHint(name = HibernateHints.HINT_FETCH_SIZE, value = "5000"))
+    @Query(value = """
+            SELECT
+                kv."timestamp",
+                s.site_code,
+                kv.cell_name,
+                b.name AS band_name,
+                skpi.kpi_name,
+                kv.kpi_value
+            FROM kpi_values kv
+            JOIN standard_kpi skpi ON skpi.id = kv.standard_kpi_id
+            LEFT JOIN cells c ON c.cell_name = kv.cell_name AND c.rat_id = kv.rat_id
+            LEFT JOIN sites s ON s.id = c.site_id
+            LEFT JOIN bands b ON b.id = c.band_id
+            WHERE kv.rat_id = :ratId
+              AND kv.granularity_id = :granularityId
+              AND kv.standard_kpi_id IN (:standardKpiIds)
+              AND kv."timestamp" BETWEEN :startTimestamp AND :endTimestamp
+              AND kv.district_code_id IN (SELECT district_code_id FROM area_district_code_mapping WHERE area_id = :areaId)
+            ORDER BY kv."timestamp", kv.cell_name
+            """, nativeQuery = true)
+    Stream<CellKpiReportDto> streamCellWiseReport(@Param("ratId") Long ratId, @Param("granularityId") Long granularityId, @Param("standardKpiIds") List<Long> standardKpiIds, @Param("startTimestamp") LocalDateTime startTimestamp, @Param("endTimestamp") LocalDateTime endTimestamp, @Param("areaId") Long areaId);
 }

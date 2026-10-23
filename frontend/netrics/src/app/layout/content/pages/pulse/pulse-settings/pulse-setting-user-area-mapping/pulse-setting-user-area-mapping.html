@@ -1,236 +1,116 @@
-<div class="w-full max-w-4xl flex flex-col gap-6">
+<div class="flex flex-col gap-4 w-full max-w-5xl">
 
-  <!-- Header Section -->
   <div>
-    <h2 class="text-xl font-semibold text-base-content">
-      User-Area Mapping
-    </h2>
-
-    <p class="text-xs text-secondary mt-1">
-      Assign system users to specific geographical areas or operational zones.
-    </p>
+    <h2 class="text-base font-semibold text-base-content">User-Area Mapping</h2>
+    <p class="text-xs text-secondary mt-0.5">Assign users to an area. Worst Cells and KPI Reports open on the user's assigned area.</p>
   </div>
 
-  <!-- Main Content -->
-  <div class="flex flex-col gap-6 p-6 border border-base-300 rounded-lg bg-base-100">
+  <!-- Assign -->
+  <section class="flex flex-col gap-3 p-4 rounded-xl border border-base-300 bg-base-100">
+    <h3 class="text-sm font-semibold">Assign a user</h3>
 
-    <div>
-      <h3 class="text-lg font-semibold">
-        Map User to an Area
-      </h3>
-
-      <p class="text-xs text-secondary mt-1">
-        Select a user and assign the relevant operational area.
-      </p>
-    </div>
-
-    <!-- Form -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-      <!-- User -->
-      <label class="form-control w-full">
-        <div class="label">
-          <span class="label-text text-xs font-medium">
-            User
-          </span>
-        </div>
-
-        <select
-          class="select select-bordered select-sm w-full"
-          [(ngModel)]="userId">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium">User</span>
+        <select class="select select-sm w-full" [(ngModel)]="userId">
           @for (u of users; track u.userId) {
-
-            <option [value]="u.userId">
-              {{u.username}} ({{u.email}})
-            </option>
-
+            <option [value]="u.userId">{{ u.username }} ({{ u.email }})</option>
           }
         </select>
       </label>
 
-      <!-- Area Type -->
-      <label class="form-control w-full">
-
-        <div class="label">
-          <span class="label-text text-xs font-medium">
-            Area Type
-          </span>
-        </div>
-
-        <select
-          class="select select-bordered select-sm w-full"
-          [(ngModel)]="areaType"
-          (change)="selectAreaType(areaType()!)">
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium">Area type</span>
+        <select class="select select-sm w-full" [(ngModel)]="areaType" (change)="selectAreaType(areaType()!)">
           @for (at of areaTypes; track at.name) {
-
-            <option [value]="at.name">
-              {{at.name}}
-            </option>
-
+            <option [value]="at.name">{{ at.name }}</option>
           }
         </select>
       </label>
 
-      <!-- Area -->
-      <label class="form-control w-full sm:col-span-2">
-
-        <div class="label">
-          <span class="label-text text-xs font-medium">
-            Target Area
-          </span>
-        </div>
-
-        <select
-          class="select select-bordered select-sm w-full max-w-md"
-          [(ngModel)]="area"
-          (change)="selectArea(area()!)">
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium">Area</span>
+        <select class="select select-sm w-full" [(ngModel)]="area" (change)="selectArea(area()!)">
           @for (ar of areas; track ar.name) {
-
-            <option [value]="ar.name">
-              {{ar.name}}
-            </option>
-
+            <option [value]="ar.name">{{ ar.name }}</option>
           }
         </select>
       </label>
     </div>
 
-    <!-- Actions -->
-    <div class="mt-4 flex gap-3">
-      <button
-        class="btn btn-primary btn-sm"
-        [disabled]="userId() === '' || area() === '' || loadingUserAreaMapping"
-        (click)="createUserAreaMapping()">
-        <span
-          [hidden]="!loadingUserAreaMapping"
-          class="loading loading-spinner loading-xs">
-        </span>
-        <span [hidden]="loadingUserAreaMapping">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none">
-
-            <path
-              d="M12 8V16M8 12H16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 16.9706 21 12C21 16.9706 16.9706 21 12 21Z"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"/>
-          </svg>
-        </span>
-        Create Mapping
+    <div class="flex items-center gap-2 pt-1">
+      <button class="btn btn-sm btn-primary"
+              [disabled]="userId() === '' || area() === '' || loadingUserAreaMapping"
+              (click)="createUserAreaMapping()">
+        @if (loadingUserAreaMapping) {
+          <span class="loading loading-spinner loading-xs"></span>
+        } @else {
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5V19M5 12H19"/></svg>
+        }
+        Assign user
       </button>
-
-
-
-      <button
-        class="btn btn-ghost btn-sm"
-        type="button"
-        (click)="onCancel()">
-        Clear
-      </button>
+      <button class="btn btn-sm btn-ghost" type="button" (click)="onCancel()">Clear</button>
     </div>
+  </section>
 
-  </div>
-
-  <!-- Existing Mappings -->
-  <div class="flex flex-col gap-4 p-6 border border-base-300 rounded-lg bg-base-100">
-
-    <div>
-      <h3 class="text-lg font-semibold">
-        Existing Mappings
-      </h3>
-
-      <p class="text-xs text-secondary mt-1">
-        Users currently assigned to an area.
-      </p>
-    </div>
-
-    <div class="overflow-x-auto border border-base-300 rounded-xl">
-      <table class="table table-zebra table-xs">
+  <!-- Existing -->
+  <section class="flex flex-col gap-3">
+    <h3 class="text-sm font-semibold">Assigned users <span class="text-secondary font-normal">({{ mappings.length }})</span></h3>
+    <div class="overflow-x-auto rounded-xl border border-base-300">
+      <table class="table table-xs table-zebra">
         <thead>
-        <tr class="text-xs uppercase">
-          <th>User Name</th>
-          <th>Area Type</th>
+        <tr>
+          <th>User</th>
+          <th>Area type</th>
           <th>Area</th>
-          <th class="text-right">Action</th>
+          <th class="w-24"><span class="sr-only">Actions</span></th>
         </tr>
         </thead>
         <tbody>
           @for (mapping of mappings; track mapping.id) {
             <tr>
+              <td>{{ mapping.userFullName }}</td>
               @if (editingMappingId === mapping.id) {
-                <td>{{ mapping.userFullName }}</td>
-
                 <td>
-                  <select
-                    class="select select-bordered select-xs w-full max-w-32"
-                    [ngModel]="editAreaType()"
-                    (ngModelChange)="selectEditAreaType($event)">
+                  <select class="select select-xs w-full max-w-32" aria-label="Area type"
+                          [ngModel]="editAreaType()" (ngModelChange)="selectEditAreaType($event)">
                     @for (at of areaTypes; track at.name) {
                       <option [value]="at.name">{{ at.name }}</option>
                     }
                   </select>
                 </td>
-
                 <td>
-                  <select
-                    class="select select-bordered select-xs w-full max-w-40"
-                    [ngModel]="editArea()"
-                    (ngModelChange)="selectEditArea($event)">
+                  <select class="select select-xs w-full max-w-40" aria-label="Area"
+                          [ngModel]="editArea()" (ngModelChange)="selectEditArea($event)">
                     @for (ar of editAreas; track ar.name) {
                       <option [value]="ar.name">{{ ar.name }}</option>
                     }
                   </select>
                 </td>
-
                 <td class="text-right whitespace-nowrap">
-                  <button
-                    class="btn btn-xs btn-primary"
-                    [disabled]="savingEdit"
-                    (click)="saveEditMapping(mapping)">
-                    Save
-                  </button>
-                  <button
-                    class="btn btn-xs btn-ghost"
-                    [disabled]="savingEdit"
-                    (click)="cancelEditMapping()">
-                    Cancel
-                  </button>
+                  <button class="btn btn-xs btn-primary" [disabled]="savingEdit" (click)="saveEditMapping(mapping)">Save</button>
+                  <button class="btn btn-xs btn-ghost" [disabled]="savingEdit" (click)="cancelEditMapping()">Cancel</button>
                 </td>
               } @else {
-                <td>{{ mapping.userFullName }}</td>
                 <td>{{ mapping.areaTypeName }}</td>
                 <td>{{ mapping.areaName }}</td>
-
                 <td class="text-right whitespace-nowrap">
-                  <button
-                    class="btn btn-xs btn-ghost"
-                    title="Edit"
-                    (click)="startEditMapping(mapping)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                    </svg>
+                  <button class="btn btn-xs btn-ghost btn-square" title="Edit" aria-label="Edit mapping" (click)="startEditMapping(mapping)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                   </button>
-                  <button
-                    class="btn btn-xs btn-ghost text-error"
-                    title="Delete"
-                    (click)="requestDeleteMapping(mapping)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M4 7h16M9 7V4h6v3m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"/>
-                    </svg>
+                  <button class="btn btn-xs btn-ghost btn-square text-error" title="Remove" aria-label="Remove mapping" (click)="requestDeleteMapping(mapping)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7H20M10 11V17M14 11V17M5 7L6 19A2 2 0 0 0 8 21H16A2 2 0 0 0 18 19L19 7M9 7V4A1 1 0 0 1 10 3H14A1 1 0 0 1 15 4V7"/></svg>
                   </button>
                 </td>
               }
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="text-center text-base-content/50 py-6">
+              <td colspan="4" class="text-center text-xs text-base-content/50 py-6">
                 @if (loadingMappings) {
-                  Loading mappings...
+                  Loading mappings…
                 } @else {
-                  No User-Area Mappings found.
+                  No users are assigned to an area yet.
                 }
               </td>
             </tr>
@@ -238,19 +118,19 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </div>
 
-<!-- DELETE CONFIRMATION -->
+<!-- Remove confirmation -->
 <dialog class="modal" [class.modal-open]="mappingPendingDelete !== null">
   @if (mappingPendingDelete; as mapping) {
-    <div class="modal-box">
-      <h3 class="text-lg font-bold mb-2">Remove mapping?</h3>
-      <p class="text-sm">
-        Remove the area mapping for '{{ mapping.userFullName }}' ('{{ mapping.areaName }}')?
+    <div class="modal-box max-w-md">
+      <h3 class="text-base font-semibold">Remove mapping?</h3>
+      <p class="text-sm text-base-content/80 mt-2">
+        '{{ mapping.userFullName }}' will no longer be assigned to '{{ mapping.areaName }}'.
       </p>
       <div class="modal-action">
-        <button class="btn btn-sm" (click)="cancelDeleteMapping()">Cancel</button>
+        <button class="btn btn-sm btn-ghost" (click)="cancelDeleteMapping()">Cancel</button>
         <button class="btn btn-sm btn-error" (click)="confirmDeleteMapping()">Remove</button>
       </div>
     </div>

@@ -2,6 +2,7 @@ package dev.thilanka.beam.service.impl;
 
 import dev.thilanka.beam.common.enums.CsvImportStatus;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
+import dev.thilanka.beam.dto.AuditDto;
 import dev.thilanka.beam.dto.SiteCsvImportResultDto;
 import dev.thilanka.beam.dto.SiteDto;
 import dev.thilanka.beam.dto.SiteEvent;
@@ -62,6 +63,11 @@ public class SiteServiceImpl implements SiteService {
     public Site findBySiteCode(String siteCode) {
         return siteRepository.findBySiteCode(siteCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Site", "siteCode", siteCode));
+    }
+
+    @Override
+    public SiteDto getBySiteCode(String siteCode) {
+        return toSiteDto(findBySiteCode(siteCode));
     }
 
     @Override
@@ -235,7 +241,7 @@ public class SiteServiceImpl implements SiteService {
         }
 
         return new SiteDto(site.getSiteCode(), site.getSiteName(), site.getLatitude(), site.getLongitude(),
-                site.getBuildingHeight(), site.getTowerHeight(), operatorName, infraTypeName);
+                site.getBuildingHeight(), site.getTowerHeight(), operatorName, infraTypeName, AuditDto.of(site));
     }
 
     private Site toSite(SiteDto dto) {

@@ -17,6 +17,13 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
 
     List<Site> findAllByOrderBySiteCodeAsc();
 
+    List<Site> findByOperator_Id(Long operatorId);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE sites SET operator_id = NULL WHERE operator_id = :id", nativeQuery = true)
+    void nullifyOperator(@Param("id") Long id);
+
     @Query(value = """
                 SELECT * FROM public.sites
                 WHERE site_code IS NULL

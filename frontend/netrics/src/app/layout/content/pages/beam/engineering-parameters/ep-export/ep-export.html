@@ -1,0 +1,30 @@
+<details #menu class="dropdown dropdown-end">
+  <summary class="btn btn-sm btn-outline btn-primary">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>
+    </svg>
+    Download CSV
+  </summary>
+  <div class="dropdown-content bg-base-100 border border-base-300 rounded-xl shadow-sm z-10 w-72 p-4 mt-1 text-xs">
+    <p class="font-semibold text-sm">Export {{ siteCode ? siteCode : 'all sites' }}</p>
+    <p class="text-secondary mt-0.5">Choose how deep to go. Each level includes its parents' columns.</p>
+
+    <fieldset class="flex flex-col gap-1 mt-3" aria-label="Export level">
+      <label *ngFor="let l of levels" class="flex items-start gap-2 p-2 rounded-lg cursor-pointer hover:bg-primary/5"
+             [ngClass]="{'bg-primary/10': level() === l.value}">
+        <input type="radio" name="ep-export-level" class="radio radio-xs radio-primary mt-0.5"
+               [checked]="level() === l.value" (change)="select(l.value)"/>
+        <span>
+          <span class="font-semibold block">{{ l.label }}</span>
+          <span class="text-secondary">{{ l.hint }}</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <button type="button" class="btn btn-sm btn-primary w-full mt-3" [disabled]="downloading()" (click)="download()">
+      <span *ngIf="downloading()" class="loading loading-spinner loading-xs"></span>
+      {{ downloading() ? 'Preparing…' : 'Download' }}
+    </button>
+  </div>
+</details>

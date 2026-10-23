@@ -8,6 +8,7 @@ public record SiteDto(
         Short buildingHeight,
         Short towerHeight,
         String operatorName,
-        String infraType
+        String infraType,
+        AuditDto audit
 ) {
 }

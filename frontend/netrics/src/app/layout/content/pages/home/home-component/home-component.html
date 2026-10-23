@@ -155,6 +155,22 @@
           </div>
         </a>
 
+        <!-- Trend Analysis -->
+        <a routerLink="pulse/trend-analysis"
+           [class.pointer-events-none]="!hasAnyRole(['PULSE_READ'])"
+           [class.opacity-50]="!hasAnyRole(['PULSE_READ'])"
+           class="card bg-base-100 border border-base-300 hover:border-primary/50 transition-all cursor-pointer group text-left">
+          <div class="card-body p-4 flex-row gap-4 items-center">
+            <div class="shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17L9 11L13 15L21 7M21 7H15M21 7V13" /></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-base-content">Trend Analysis</h3>
+              <p class="text-xs text-base-content/60 mt-0.5 leading-snug">Compare KPI trends across areas, KPIs and bands.</p>
+            </div>
+          </div>
+        </a>
+
         <!-- Spatial Analysis -->
         <a routerLink="pulse/map"
            [class.pointer-events-none]="!hasAnyRole(['PULSE_READ'])"
@@ -174,6 +190,51 @@
             </div>
           </div>
         </a>
+
+        <!-- Ask Pulse -->
+        <a routerLink="pulse/assistant"
+           [class.pointer-events-none]="!hasAnyRole(['PULSE_ASSISTANT'])"
+           [class.opacity-50]="!hasAnyRole(['PULSE_ASSISTANT'])"
+           class="card bg-base-100 border border-base-300 hover:border-primary/50 transition-all cursor-pointer group text-left">
+          <div class="card-body p-4 flex-row gap-4 items-center">
+            <div class="shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M8 10H16M8 14H13M21 12C21 16.9706 16.9706 21 12 21C10.4003 21 8.89804 20.5826 7.59634 19.8508L3 21L4.14916 16.4036C3.41738 15.102 3 13.5997 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-base-content">Ask Pulse</h3>
+              <p class="text-xs text-base-content/60 mt-0.5 leading-snug">Ask network KPI questions in plain language.</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div [hidden]="!hasAnyRole(['BEAM_READ'])" class="flex flex-col gap-2">
+      <span class="text-xs text-neutral/50">Network Inventory</span>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+
+        <!-- Site Parameters Card -->
+        <a routerLink="beam/engineering-parameters"
+           class="card bg-base-100 border border-base-300 hover:border-accent/50 transition-all cursor-pointer group text-left">
+          <div class="card-body p-4 flex-row gap-4 items-center">
+            <div class="shrink-0 h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M8.34277 14.5899C8.80861 14.0903 9.37187 13.6915 9.9978 13.418C10.6237 13.1446 11.2995 13.0025 11.9826 13.0001C12.6656 12.9977 13.3419 13.1353 13.9697 13.4044C14.5975 13.6735 15.1637 14.0683 15.633 14.5646M6.14941 11.5439C6.89476 10.7446 7.79597 10.1066 8.79745 9.66902C9.79893 9.23148 10.8793 9.00389 11.9721 9.00007C13.065 8.99626 14.1466 9.21651 15.1511 9.64704C16.1556 10.0776 17.0617 10.7094 17.8127 11.5035M3.22363 8.81635C4.34165 7.61742 5.69347 6.66028 7.19569 6.00398C8.69791 5.34768 10.3179 5.0058 11.9572 5.00007C13.5966 4.99435 15.2208 5.32472 16.7276 5.97052C18.2344 6.61632 19.5931 7.56458 20.7195 8.75568M12 19.0001C11.4477 19.0001 11 18.5524 11 18.0001C11 17.4478 11.4477 17.0001 12 17.0001C12.5523 17.0001 13 17.4478 13 18.0001C13 18.5524 12.5523 19.0001 12 19.0001Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-base-content">Site Parameters</h3>
+              <p class="text-xs text-base-content/60 mt-0.5 leading-snug">Look up sector and antenna parameters by site.</p>
+            </div>
+          </div>
+        </a>
       </div>
     </div>
 
@@ -184,8 +245,8 @@
 
         <!-- KPI Reports Card -->
         <a routerLink="pulse/kpi-reports"
-           [class.pointer-events-none]="!hasAnyRole(['PULSE_READ'])"
-           [class.opacity-50]="!hasAnyRole(['PULSE_READ'])"
+           [class.pointer-events-none]="!hasAnyRole(['PULSE_UPDATE'])"
+           [class.opacity-50]="!hasAnyRole(['PULSE_UPDATE'])"
            class="card bg-base-100 border border-base-300 hover:border-info/50 transition-all cursor-pointer group text-left">
           <div class="card-body p-4 flex-row gap-4 items-center">
             <div class="shrink-0 h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center text-info group-hover:scale-110 transition-transform">
@@ -204,15 +265,14 @@
       </div>
     </div>
 
-    <div [hidden]="!hasAnyRole(['PULSE_DELETE'])" class="flex flex-col gap-2">
+    <div [hidden]="!hasAnyRole(['PULSE_DELETE', 'BEAM_DELETE'])" class="flex flex-col gap-2">
       <span class="text-xs text-neutral/50">Administration</span>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
 
-        <!-- KPI Reports Card -->
+        <!-- Settings Card -->
         <a routerLink="pulse/settings"
-           [class.pointer-events-none]="!hasAnyRole(['PULSE_DELETE'])"
-           [class.opacity-50]="!hasAnyRole(['PULSE_DELETE'])"
+           [hidden]="!hasAnyRole(['PULSE_DELETE', 'BEAM_DELETE'])"
            class="card bg-base-100 border border-base-300 hover:border-secondary/50 transition-all cursor-pointer group text-left">
           <div class="card-body p-4 flex-row gap-4 items-center">
             <div class="shrink-0 h-10 w-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
@@ -227,10 +287,10 @@
             </div>
             <div>
               <h3 class="font-semibold text-base-content">Settings</h3>
-              <p class="text-xs text-neutral/50 mt-0.5 leading-snug">Pulse Settings</p>
             </div>
           </div>
         </a>
+
       </div>
     </div>
 
@@ -329,21 +389,6 @@
 <!--          </svg>-->
 <!--        </span>-->
 <!--          KPI Reports-->
-<!--        </button>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--    <div class="flex flex-col gap-2">-->
-<!--      <span class="text-xs text-neutral/50"></span>-->
-<!--      <div class="flex flex-row flex-wrap gap-4">-->
-<!--        <button [hidden]="!hasAnyRole(['BEAM_READ'])" class="btn" routerLink="beam">-->
-<!--          <span class="text-secondary">-->
-<!--          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-<!--            <path-->
-<!--              d="M8.34277 14.5899C8.80861 14.0903 9.37187 13.6915 9.9978 13.418C10.6237 13.1446 11.2995 13.0025 11.9826 13.0001C12.6656 12.9977 13.3419 13.1353 13.9697 13.4044C14.5975 13.6735 15.1637 14.0683 15.633 14.5646M6.14941 11.5439C6.89476 10.7446 7.79597 10.1066 8.79745 9.66902C9.79893 9.23148 10.8793 9.00389 11.9721 9.00007C13.065 8.99626 14.1466 9.21651 15.1511 9.64704C16.1556 10.0776 17.0617 10.7094 17.8127 11.5035M3.22363 8.81635C4.34165 7.61742 5.69347 6.66028 7.19569 6.00398C8.69791 5.34768 10.3179 5.0058 11.9572 5.00007C13.5966 4.99435 15.2208 5.32472 16.7276 5.97052C18.2344 6.61632 19.5931 7.56458 20.7195 8.75568M12 19.0001C11.4477 19.0001 11 18.5524 11 18.0001C11 17.4478 11.4477 17.0001 12 17.0001C12.5523 17.0001 13 17.4478 13 18.0001C13 18.5524 12.5523 19.0001 12 19.0001Z"-->
-<!--              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>-->
-<!--          </svg>-->
-<!--          </span>-->
-<!--          Antenna Info-->
 <!--        </button>-->
 <!--      </div>-->
 <!--    </div>-->

@@ -1,263 +1,142 @@
-<div class="w-full max-w-5xl flex flex-col">
+<div class="flex flex-col gap-4 w-full max-w-5xl">
 
-  <!-- Header Section -->
   <div>
-    <h2 class="text-xl font-semibold text-base-content">
-      Area Management
-    </h2>
-
-    <p class="text-xs text-secondary mt-1">
-      Manage Area Types, Areas, and District Code assignments.
-    </p>
+    <h2 class="text-base font-semibold text-base-content">Area Management</h2>
+    <p class="text-xs text-secondary mt-0.5">Manage area types, areas, and which district codes belong to each area.</p>
   </div>
 
-  <!-- Mode Selection Tabs -->
-  <div class="tabs tabs-lift mt-4">
+  <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
+    <input type="radio" name="area_management_tabs" class="tab" aria-label="Area types"
+           [checked]="activeTab() === 'AREA_TYPE'" (change)="setActiveTab('AREA_TYPE')"/>
+    <input type="radio" name="area_management_tabs" class="tab" aria-label="Areas"
+           [checked]="activeTab() === 'AREA'" (change)="setActiveTab('AREA')"/>
+    <input type="radio" name="area_management_tabs" class="tab" aria-label="District assignment"
+           [checked]="activeTab() === 'DISTRICT_ASSIGNMENT'" (change)="setActiveTab('DISTRICT_ASSIGNMENT')"/>
+  </div>
 
-    <!-- AREA TYPE TAB -->
-    <input
-      type="radio"
-      name="area_management_tabs"
-      class="tab"
-      aria-label="Area Types"
-      [checked]="activeTab() === 'AREA_TYPE'"
-      (change)="setActiveTab('AREA_TYPE')"/>
+  @switch (activeTab()) {
 
-    <div class="tab-content bg-base-100 border-base-300 p-6">
-      <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
-        <input
-          type="radio"
-          name="area_type_subtabs"
-          class="tab"
-          aria-label="Create"
-          [checked]="areaTypeSubTab() === 'CREATE'"
-          (change)="setAreaTypeSubTab('CREATE')"/>
-        <input
-          type="radio"
-          name="area_type_subtabs"
-          class="tab"
-          aria-label="Existing"
-          [checked]="areaTypeSubTab() === 'LIST'"
-          (change)="setAreaTypeSubTab('LIST')"/>
-      </div>
-
-      @if (areaTypeSubTab() === 'CREATE') {
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label class="form-control w-full">
-            <div class="label">
-              <span class="label-text text-xs font-medium">Area Type Name</span>
-            </div>
-            <input
-              type="text"
-              class="input input-bordered input-sm w-full"
-              placeholder="e.g. Province"
-              [ngModel]="newAreaTypeName()"
-              (ngModelChange)="newAreaTypeName.set($event)"
-              [disabled]="creatingAreaType"/>
+    @case ('AREA_TYPE') {
+      <section class="flex flex-col gap-3 p-4 rounded-xl border border-base-300 bg-base-100">
+        <h3 class="text-sm font-semibold">Add an area type</h3>
+        <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+          <label class="flex flex-col gap-1 w-full sm:max-w-xs">
+            <span class="text-xs font-medium">Name</span>
+            <input type="text" class="input input-sm w-full" placeholder="Province"
+                   [ngModel]="newAreaTypeName()" (ngModelChange)="newAreaTypeName.set($event)" [disabled]="creatingAreaType"/>
           </label>
-        </div>
-
-        <div class="mt-6 flex gap-3">
-          <button
-            class="btn btn-primary btn-sm"
-            [disabled]="creatingAreaType || !newAreaTypeName()"
-            (click)="createAreaType()">
-            <span [hidden]="!creatingAreaType" class="loading loading-spinner loading-xs"></span>
-            Create Area Type
+          <button class="btn btn-sm btn-primary self-start sm:self-auto" [disabled]="creatingAreaType || !newAreaTypeName()" (click)="createAreaType()">
+            @if (creatingAreaType) {
+              <span class="loading loading-spinner loading-xs"></span>
+            } @else {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5V19M5 12H19"/></svg>
+            }
+            Add area type
           </button>
         </div>
-      } @else {
-        <div class="mt-6 overflow-x-auto border border-base-300 rounded-xl">
-          <table class="table table-zebra table-xs">
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h3 class="text-sm font-semibold">Area types <span class="text-secondary font-normal">({{ areaTypes.length }})</span></h3>
+        <div class="overflow-x-auto rounded-xl border border-base-300">
+          <table class="table table-xs table-zebra">
             <thead>
-            <tr class="text-xs uppercase">
-              <th>Name</th>
-            </tr>
+            <tr><th>Name</th></tr>
             </thead>
             <tbody>
               @for (at of areaTypes; track at.name) {
-                <tr>
-                  <td>{{ at.name }}</td>
-                </tr>
+                <tr><td>{{ at.name }}</td></tr>
               } @empty {
-                <tr>
-                  <td class="text-center text-base-content/50 py-6">No Area Types found.</td>
-                </tr>
+                <tr><td class="text-center text-xs text-base-content/50 py-6">No area types yet.</td></tr>
               }
             </tbody>
           </table>
         </div>
-      }
-    </div>
+      </section>
+    }
 
-    <!-- AREA TAB -->
-    <input
-      type="radio"
-      name="area_management_tabs"
-      class="tab"
-      aria-label="Areas"
-      [checked]="activeTab() === 'AREA'"
-      (change)="setActiveTab('AREA')"/>
-
-    <div class="tab-content bg-base-100 border-base-300 p-6">
-      <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
-        <input
-          type="radio"
-          name="area_subtabs"
-          class="tab"
-          aria-label="Create"
-          [checked]="areaSubTab() === 'CREATE'"
-          (change)="setAreaSubTab('CREATE')"/>
-        <input
-          type="radio"
-          name="area_subtabs"
-          class="tab"
-          aria-label="Existing"
-          [checked]="areaSubTab() === 'LIST'"
-          (change)="setAreaSubTab('LIST')"/>
-      </div>
-
-      @if (areaSubTab() === 'CREATE') {
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label class="form-control w-full">
-            <div class="label">
-              <span class="label-text text-xs font-medium">Area Type</span>
-            </div>
-            <select
-              class="select select-bordered select-sm w-full"
-              [ngModel]="areaFormAreaType()"
-              (ngModelChange)="selectAreaFormAreaType($event)">
+    @case ('AREA') {
+      <section class="flex flex-col gap-3 p-4 rounded-xl border border-base-300 bg-base-100">
+        <h3 class="text-sm font-semibold">Add an area</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium">Area type</span>
+            <select class="select select-sm w-full" [ngModel]="areaFormAreaType()" (ngModelChange)="selectAreaFormAreaType($event)">
               @for (at of areaTypes; track at.name) {
                 <option [value]="at.name">{{ at.name }}</option>
               }
             </select>
           </label>
-
-          <label class="form-control w-full">
-            <div class="label">
-              <span class="label-text text-xs font-medium">Area Name</span>
-            </div>
-            <input
-              type="text"
-              class="input input-bordered input-sm w-full"
-              placeholder="e.g. Colombo"
-              [ngModel]="newAreaName()"
-              (ngModelChange)="newAreaName.set($event)"
-              [disabled]="creatingArea"/>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium">Name</span>
+            <input type="text" class="input input-sm w-full" placeholder="Colombo"
+                   [ngModel]="newAreaName()" (ngModelChange)="newAreaName.set($event)" [disabled]="creatingArea"/>
           </label>
-
-          <label class="label cursor-pointer justify-start gap-2 sm:col-span-2">
-            <input
-              type="checkbox"
-              class="checkbox checkbox-sm"
-              [ngModel]="newAreaEnabled()"
-              (ngModelChange)="newAreaEnabled.set($event)"/>
-            <span class="label-text text-xs">Enabled</span>
+          <label class="flex items-center gap-2 cursor-pointer w-fit">
+            <input type="checkbox" class="checkbox checkbox-sm" [ngModel]="newAreaEnabled()" (ngModelChange)="newAreaEnabled.set($event)"/>
+            <span class="text-xs">Enabled</span>
           </label>
         </div>
-
-        <div class="mt-6 flex gap-3">
-          <button
-            class="btn btn-primary btn-sm"
-            [disabled]="creatingArea || !newAreaName() || !areaFormAreaType()"
-            (click)="createArea()">
-            <span [hidden]="!creatingArea" class="loading loading-spinner loading-xs"></span>
-            Create Area
+        <div class="flex items-center gap-2 pt-1">
+          <button class="btn btn-sm btn-primary" [disabled]="creatingArea || !newAreaName() || !areaFormAreaType()" (click)="createArea()">
+            @if (creatingArea) {
+              <span class="loading loading-spinner loading-xs"></span>
+            } @else {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5V19M5 12H19"/></svg>
+            }
+            Add area
           </button>
         </div>
-      } @else {
-        <div class="mt-6 flex flex-col gap-4">
-          <label class="form-control w-full max-w-xs">
-            <div class="label">
-              <span class="label-text text-xs font-medium">Area Type</span>
-            </div>
-            <select
-              class="select select-bordered select-sm w-full"
-              [ngModel]="areaFormAreaType()"
-              (ngModelChange)="selectAreaFormAreaType($event)">
-              @for (at of areaTypes; track at.name) {
-                <option [value]="at.name">{{ at.name }}</option>
-              }
-            </select>
-          </label>
+      </section>
 
-          <div class="overflow-x-auto border border-base-300 rounded-xl">
-            <table class="table table-zebra table-xs">
-              <thead>
-              <tr class="text-xs uppercase">
-                <th>Name</th>
-                <th>Enabled</th>
-              </tr>
-              </thead>
-              <tbody>
-                @for (ar of areasForAreaFormType; track ar.name) {
-                  <tr>
-                    <td>{{ ar.name }}</td>
-                    <td>{{ ar.enabled ? 'Yes' : 'No' }}</td>
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="2" class="text-center text-base-content/50 py-6">No Areas found for this Area Type.</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+      <section class="flex flex-col gap-3">
+        <h3 class="text-sm font-semibold">
+          Areas in {{ areaFormAreaType() || '…' }} <span class="text-secondary font-normal">({{ areasForAreaFormType.length }})</span>
+        </h3>
+        <div class="overflow-x-auto rounded-xl border border-base-300">
+          <table class="table table-xs table-zebra">
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+              @for (ar of areasForAreaFormType; track ar.name) {
+                <tr>
+                  <td>{{ ar.name }}</td>
+                  <td>
+                    <span class="badge badge-xs badge-soft" [class.badge-success]="ar.enabled">{{ ar.enabled ? 'Enabled' : 'Disabled' }}</span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="2" class="text-center text-xs text-base-content/50 py-6">No areas for this area type yet.</td></tr>
+              }
+            </tbody>
+          </table>
         </div>
-      }
-    </div>
+      </section>
+    }
 
-    <!-- DISTRICT ASSIGNMENT TAB -->
-    <input
-      type="radio"
-      name="area_management_tabs"
-      class="tab"
-      aria-label="District Assignment"
-      [checked]="activeTab() === 'DISTRICT_ASSIGNMENT'"
-      (change)="setActiveTab('DISTRICT_ASSIGNMENT')"/>
+    @case ('DISTRICT_ASSIGNMENT') {
+      <section class="flex flex-col gap-3 p-4 rounded-xl border border-base-300 bg-base-100">
+        <div>
+          <h3 class="text-sm font-semibold">Assign district codes</h3>
+          <p class="text-xs text-secondary mt-0.5">Pick an area, then select an available code to assign it. Select an assigned code to unassign it.</p>
+        </div>
 
-    <div class="tab-content bg-base-100 border-base-300 p-6">
-      <div class="tabs tabs-box tabs-xs border border-base-300 w-fit">
-        <input
-          type="radio"
-          name="assignment_subtabs"
-          class="tab"
-          aria-label="Create"
-          [checked]="assignmentSubTab() === 'CREATE'"
-          (change)="setAssignmentSubTab('CREATE')"/>
-        <input
-          type="radio"
-          name="assignment_subtabs"
-          class="tab"
-          aria-label="Existing"
-          [checked]="assignmentSubTab() === 'LIST'"
-          (change)="setAssignmentSubTab('LIST')"/>
-      </div>
-
-      @if (assignmentSubTab() === 'CREATE') {
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label class="form-control w-full">
-            <div class="label">
-              <span class="label-text text-xs font-medium">Area Type</span>
-            </div>
-            <select
-              class="select select-bordered select-sm w-full"
-              [ngModel]="assignAreaType()"
-              (ngModelChange)="selectAssignAreaType($event)">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium">Area type</span>
+            <select class="select select-sm w-full" [ngModel]="assignAreaType()" (ngModelChange)="selectAssignAreaType($event)">
               @for (at of areaTypes; track at.name) {
                 <option [value]="at.name">{{ at.name }}</option>
               }
             </select>
           </label>
-
-          <label class="form-control w-full">
-            <div class="label">
-              <span class="label-text text-xs font-medium">Area</span>
-            </div>
-            <select
-              class="select select-bordered select-sm w-full"
-              [ngModel]="assignArea()"
-              (ngModelChange)="assignArea.set($event)">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium">Area</span>
+            <select class="select select-sm w-full" [ngModel]="assignArea()" (ngModelChange)="assignArea.set($event)">
               @for (ar of assignAreas; track ar.name) {
                 <option [value]="ar.name">{{ ar.name }}</option>
               }
@@ -265,78 +144,65 @@
           </label>
         </div>
 
-        <p class="text-xs text-secondary mt-4">
-          Click a code on the left to assign it to '{{ assignArea() }}'. Click the ✕ on an assigned code to unassign it.
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-          <!-- AVAILABLE POOL -->
-          <div class="border border-base-300 rounded-xl p-4">
-            <h4 class="text-xs font-semibold uppercase text-secondary mb-3">
-              Available District Codes
-            </h4>
-            <div class="flex flex-wrap gap-2 max-h-80 overflow-y-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="flex flex-col gap-2 p-3 rounded-lg border border-base-300">
+            <h4 class="text-xs font-semibold">Available <span class="text-secondary font-normal">({{ getAvailableDistrictCodes().length }})</span></h4>
+            <div class="flex flex-wrap gap-1.5 max-h-72 overflow-y-auto">
               @for (dc of getAvailableDistrictCodes(); track dc.code) {
-                <button
-                  type="button"
-                  class="badge badge-outline cursor-pointer hover:badge-primary"
-                  [disabled]="!assignArea() || assigningCode === dc.code"
-                  [title]="dc.districtName + ' (' + dc.category + ')'"
-                  (click)="assignCode(dc.code!)">
+                <button type="button" class="btn btn-xs btn-outline font-mono"
+                        [disabled]="!assignArea() || assigningCode === dc.code"
+                        [title]="'Assign ' + dc.code + ' — ' + dc.districtName + ' (' + dc.category + ')'"
+                        (click)="assignCode(dc.code!)">
                   {{ dc.code }}
                 </button>
               } @empty {
-                <span class="text-xs text-base-content/50">No available district codes.</span>
+                <span class="text-xs text-base-content/50">All district codes are assigned.</span>
               }
             </div>
           </div>
 
-          <!-- ASSIGNED POOL -->
-          <div class="border border-base-300 rounded-xl p-4">
-            <h4 class="text-xs font-semibold uppercase text-secondary mb-3">
-              Assigned to '{{ assignArea() }}'
-            </h4>
-            <div class="flex flex-wrap gap-2 max-h-80 overflow-y-auto">
+          <div class="flex flex-col gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+            <h4 class="text-xs font-semibold">Assigned to {{ assignArea() || '…' }} <span class="text-secondary font-normal">({{ getAssignedDistrictCodesForArea().length }})</span></h4>
+            <div class="flex flex-wrap gap-1.5 max-h-72 overflow-y-auto">
               @for (m of getAssignedDistrictCodesForArea(); track m.id) {
-                <span class="badge badge-primary gap-1">
+                <button type="button" class="btn btn-xs btn-soft btn-primary font-mono gap-1"
+                        [disabled]="unassigningId === m.id"
+                        [title]="'Unassign ' + m.districtCode"
+                        (click)="unassignCode(m)">
                   {{ m.districtCode }}
-                  <button
-                    type="button"
-                    class="cursor-pointer"
-                    [disabled]="unassigningId === m.id"
-                    title="Unassign"
-                    (click)="unassignCode(m)">
-                    ✕
-                  </button>
-                </span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6L18 18M18 6L6 18"/></svg>
+                </button>
               } @empty {
-                <span class="text-xs text-base-content/50">No district codes assigned.</span>
+                <span class="text-xs text-base-content/50">No district codes assigned to this area.</span>
               }
             </div>
           </div>
         </div>
-      } @else {
-        <div class="mt-6 overflow-x-auto border border-base-300 rounded-xl">
-          <table class="table table-zebra table-xs">
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h3 class="text-sm font-semibold">All assignments <span class="text-secondary font-normal">({{ mappings.length }})</span></h3>
+        <div class="overflow-x-auto rounded-xl border border-base-300 max-h-96">
+          <table class="table table-xs table-zebra table-pin-rows">
             <thead>
-            <tr class="text-xs uppercase">
+            <tr>
               <th>Area</th>
-              <th>District Code</th>
+              <th>District code</th>
             </tr>
             </thead>
             <tbody>
               @for (m of mappings; track m.districtCode) {
                 <tr>
                   <td>{{ m.areaName }}</td>
-                  <td>{{ m.districtCode }}</td>
+                  <td class="font-mono">{{ m.districtCode }}</td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="2" class="text-center text-base-content/50 py-6">
+                  <td colspan="2" class="text-center text-xs text-base-content/50 py-6">
                     @if (loadingMappings) {
-                      Loading assignments...
+                      Loading assignments…
                     } @else {
-                      No Area-District Code assignments found.
+                      No district codes are assigned yet.
                     }
                   </td>
                 </tr>
@@ -344,7 +210,7 @@
             </tbody>
           </table>
         </div>
-      }
-    </div>
-  </div>
+      </section>
+    }
+  }
 </div>

@@ -10,6 +10,8 @@ import java.util.List;
 public interface SectorService {
     Sector findByName(String name);
 
+    List<SectorDto> getBySiteCode(String siteCode);
+
     Sector createSector(Sector sector);
 
     SectorDto createSector(SectorDto dto);
@@ -33,4 +35,9 @@ public interface SectorService {
     Integer reloadSectorCountWithMissingInfo();
 
     Integer getSectorCountWithMissingInfo();
+
+    /** Beam antennas and pulse cells that keep the sector from being deleted */
+    List<String> getDependents(String name);
+
+    void deleteSector(String name);
 }

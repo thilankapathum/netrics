@@ -1,0 +1,52 @@
+<dialog [class.modal-open]="open()" class="modal w-full">
+  <div class="modal-box max-w-md">
+    <h3 class="text-base font-semibold">Delete {{ itemLabel }}?</h3>
+
+    <div *ngIf="loadingDependents" class="flex items-center gap-2 text-sm text-base-content/50 py-4">
+      <span class="loading loading-spinner loading-xs"></span> Checking where this is used…
+    </div>
+
+    <div *ngIf="!loadingDependents && !hasDependents" class="py-2">
+      <p class="text-sm text-base-content/80"><strong>{{ itemLabel }}</strong> will be permanently deleted.</p>
+    </div>
+
+    <div *ngIf="hasDependents && !allowForce" class="py-2 flex flex-col gap-3">
+      <div role="alert" class="alert alert-error alert-soft text-xs">
+        <span><strong>{{ itemLabel }}</strong> is in use and can't be deleted. Remove it from these first:</span>
+      </div>
+
+      <ul class="text-xs list-disc list-inside max-h-32 overflow-y-auto bg-base-200 rounded-lg p-3">
+        <li *ngFor="let dep of dependents.slice(0, 10)">{{ dep }}</li>
+        <li *ngIf="dependents.length > 10">...and {{ dependents.length - 10 }} more</li>
+      </ul>
+    </div>
+
+    <div *ngIf="hasDependents && allowForce" class="py-2 flex flex-col gap-3">
+      <div role="alert" class="alert alert-warning alert-soft text-xs">
+        <span>{{ dependentsNote || itemLabel + ' is used by ' + dependents.length + ' item(s). Deleting it will clear this reference on those items.' }}</span>
+      </div>
+
+      <ul class="text-xs list-disc list-inside max-h-32 overflow-y-auto bg-base-200 rounded-lg p-3">
+        <li *ngFor="let dep of dependents.slice(0, 10)">{{ dep }}</li>
+        <li *ngIf="dependents.length > 10">...and {{ dependents.length - 10 }} more</li>
+      </ul>
+
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs">Type <span class="font-mono font-bold">{{ confirmCode }}</span> to confirm</legend>
+        <input type="text" class="input input-sm w-full font-mono" [(ngModel)]="typedCode" placeholder="{{ confirmCode }}" aria-label="Confirmation code"/>
+      </fieldset>
+    </div>
+
+    <div class="modal-action">
+      <button class="btn btn-sm btn-ghost" type="button" (click)="onCancel()">{{ hasDependents && !allowForce ? 'Close' : 'Cancel' }}</button>
+      <button *ngIf="!hasDependents" [disabled]="loadingDependents || deleting" class="btn btn-sm btn-error" (click)="onConfirmDelete()">
+        <span [hidden]="!deleting" class="loading loading-spinner loading-xs"></span>
+        Delete
+      </button>
+      <button *ngIf="hasDependents && allowForce" [disabled]="!codeMatches || deleting" class="btn btn-sm btn-error" (click)="onForceDelete()">
+        <span [hidden]="!deleting" class="loading loading-spinner loading-xs"></span>
+        {{ forceLabel }}
+      </button>
+    </div>
+  </div>
+</dialog>

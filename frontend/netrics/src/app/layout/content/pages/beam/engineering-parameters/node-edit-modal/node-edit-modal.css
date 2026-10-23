@@ -1,0 +1,5 @@
+
+/* duplicate-index error is app-side, so override the native :user-valid green */
+.validator.input-error {
+  --input-color: var(--color-error);
+}

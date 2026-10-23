@@ -22,6 +22,8 @@ import {WorstCellCommentService} from '../../../../../service/pulse/dashboard/wo
 import {WorstCellsAndCommentsDto} from '../../../../../models/pulse/WorstCellsAndCommentsDto';
 import {AuthService} from '../../../../../auth/service/auth-service';
 import {KeycloakProfile} from 'keycloak-js';
+import {UserService} from '../../../../../service/pulse/user-service';
+import {UserDto} from '../../../../../models/pulse/UserDto';
 import {PdbCreateCells} from './pdb-create-cells/pdb-create-cells';
 import {PsStandardKpi} from '../pulse-settings/ps-standard-kpi/ps-standard-kpi';
 import {StandardRawKpiMappingService} from '../../../../../service/pulse/standard-raw-kpi-mapping-service';
@@ -91,6 +93,7 @@ export class DashboardComponent implements OnInit {
   editingCommentId: number | null = null;
 
   userProfile: KeycloakProfile = {};
+  users: UserDto[] = [];
 
   showCreateWorstCellsModal: boolean = false;
 
@@ -105,7 +108,8 @@ export class DashboardComponent implements OnInit {
               private worstCellCommentService: WorstCellCommentService,
               private authService: AuthService,
               private standardRawKpiMappingService: StandardRawKpiMappingService,
-              private sharedService: SharedService
+              private sharedService: SharedService,
+              private userService: UserService
   ) {
   }
 
@@ -116,6 +120,7 @@ export class DashboardComponent implements OnInit {
     }
     this.getAllStandardKpi(this.selectedRat());
     this.getUserProfile();
+    this.getAllUsers();
   }
 
   loadingAll() {
@@ -588,6 +593,21 @@ export class DashboardComponent implements OnInit {
 
   async getUserProfile() {
     this.userProfile = await this.authService.getUserProfile();
+  }
+
+  getAllUsers() {
+    this.userService.getAllUsers().subscribe({
+      next: data => {
+        this.users = data;
+      }, error: error => {
+        console.log(error);
+      }
+    });
+  }
+
+  getCommentAuthorName(userId: string): string {
+    const user = this.users.find(u => u.userId === userId);
+    return user ? `${user.firstName} ${user.lastName.charAt(0)}` : '';
   }
 
   hasAnyRole(roles:string[]){

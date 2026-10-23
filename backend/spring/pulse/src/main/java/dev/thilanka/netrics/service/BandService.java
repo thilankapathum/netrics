@@ -23,4 +23,10 @@ public interface BandService {
     BandDto getByName(String name);
 
     List<BandDto> getBandsByRat(String ratName);
+
+    BandDto updateBand(String name, BandDto dto);
+
+    List<String> getDependents(String name);
+
+    BandDto deleteBand(String name);
 }

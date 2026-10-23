@@ -8,6 +8,7 @@ public record AntennaDto(
         short antennaHeight,
         String antennaTypeName,
         String sectorName,
-        String manufacturerName
+        String manufacturerName,
+        AuditDto audit
 ) {
 }

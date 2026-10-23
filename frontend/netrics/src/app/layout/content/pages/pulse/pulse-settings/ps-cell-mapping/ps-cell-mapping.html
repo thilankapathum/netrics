@@ -1,139 +1,159 @@
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-4 w-full max-w-5xl">
+
   <div>
-    <h3 class="text-lg font-semibold">Cell Mapping</h3>
-    <p class="text-sm text-base-content/60">
-      Map a previous (replaced) cell to the new cell that replaced it. The new cell will inherit the previous
-      cell's azimuth, beamwidth, multi-beam flag, site, band, carrier and sector. The previous cell will then be
-      excluded from cell search, cell counts, and cell listings, but its historical data is kept as-is.
+    <h2 class="text-base font-semibold text-base-content">Cell Mapping</h2>
+    <p class="text-xs text-secondary mt-0.5 max-w-3xl">
+      Link a replaced cell to the cell that replaced it. The new cell inherits the previous cell's azimuth, beamwidth,
+      multi-beam flag, site, band, carrier and sector. The previous cell is hidden from cell search and counts; its
+      history is kept.
     </p>
   </div>
 
-  <!-- BULK UPLOAD -->
-  <div class="flex flex-col gap-3 p-4 border border-base-300 rounded-lg bg-base-100">
-    <h4 class="text-sm font-semibold">Bulk upload mappings (CSV)</h4>
-    <p class="text-xs text-secondary">
-      Columns: "Previous Cell Name", "New Cell Name". Each row is processed the same
-      way as a single mapping; a result CSV with a status/error column downloads
-      automatically.
-    </p>
-    <input [disabled]="uploadingMappings()" #cellMappingFileInput type="file"
-           class="file-input file-input-bordered file-input-sm w-full" accept=".csv" />
-    <button [disabled]="uploadingMappings()" class="btn btn-sm btn-success btn-outline self-start"
-            (click)="importCellMappings(cellMappingFileInput)">
-      <span [hidden]="!uploadingMappings()" class="loading loading-spinner loading-xs"></span>
-      Upload CSV
-    </button>
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <!-- PREVIOUS CELL -->
-    <div class="dropdown w-full">
-      <label class="label text-xs">Previous cell (to be replaced)</label>
-      <input type="search" class="input input-bordered w-full" placeholder="Search cell"
-             [ngModel]="previousCellQuery()" (ngModelChange)="onSearchPreviousCell($event)"/>
-      @if (previousCellQuery().length > 2 && previousCellSuggestions().length > 0) {
-        <ul tabindex="-1"
-            class="dropdown-content menu bg-base-100 rounded-box z-1 w-full p-2 shadow-sm text-xs">
-          @for (cell of previousCellSuggestions(); track $index) {
-            <li>
-              <a class="p-2 hover:bg-base-200 cursor-pointer" (click)="selectPreviousCell(cell)">
-                <span class="text-base-content">{{ cell.cellName }}</span>
-                <span class="text-base-content/30">{{ cell.ratLabel }}</span>
-              </a>
-            </li>
-          }
-        </ul>
-      }
+  <!-- Single mapping -->
+  <section class="flex flex-col gap-3 p-4 rounded-xl border border-base-300 bg-base-100">
+    <div>
+      <h3 class="text-sm font-semibold">Map a cell</h3>
+      <p class="text-xs text-secondary mt-0.5">Type at least 3 characters to search.</p>
     </div>
 
-    <!-- NEW CELL -->
-    <div class="dropdown w-full">
-      <label class="label text-xs">New cell (replacement)</label>
-      <input type="search" class="input input-bordered w-full" placeholder="Search cell"
-             [ngModel]="newCellQuery()" (ngModelChange)="onSearchNewCell($event)"/>
-      @if (newCellQuery().length > 2 && newCellSuggestions().length > 0) {
-        <ul tabindex="-1"
-            class="dropdown-content menu bg-base-100 rounded-box z-1 w-full p-2 shadow-sm text-xs">
-          @for (cell of newCellSuggestions(); track $index) {
-            <li>
-              <a class="p-2 hover:bg-base-200 cursor-pointer" (click)="selectNewCell(cell)">
-                <span class="text-base-content">{{ cell.cellName }}</span>
-                <span class="text-base-content/30">{{ cell.ratLabel }}</span>
-              </a>
-            </li>
-          }
-        </ul>
-      }
-    </div>
-  </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="dropdown w-full">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium">Previous cell (replaced)</span>
+          <input type="search" class="input input-sm w-full" placeholder="Search cell"
+                 [ngModel]="previousCellQuery()" (ngModelChange)="onSearchPreviousCell($event)"/>
+        </label>
+        @if (previousCellQuery().length > 2 && previousCellSuggestions().length > 0) {
+          <ul tabindex="-1" class="dropdown-content menu menu-sm bg-base-100 border border-base-300 rounded-box z-10 w-full p-1 shadow-sm text-xs mt-1">
+            @for (cell of previousCellSuggestions(); track $index) {
+              <li>
+                <a class="flex justify-between" (click)="selectPreviousCell(cell)">
+                  <span class="text-base-content">{{ cell.cellName }}</span>
+                  <span class="text-base-content/40">{{ cell.ratLabel }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      </div>
 
-  <!-- CONFIRMATION -->
-  @if (previousCellDetails(); as details) {
-    <div class="border border-warning/40 bg-warning/10 rounded-lg p-4 flex flex-col gap-3">
-      <p class="text-sm font-semibold">
-        Confirm: '{{ newCellName() ?? '...' }}' will inherit the following from '{{ previousCellName() }}':
-      </p>
-      <ul class="text-xs grid grid-cols-2 md:grid-cols-4 gap-2">
-        <li><span class="text-base-content/50">Azimuth:</span> {{ details.azimuth ?? '—' }}</li>
-        <li><span class="text-base-content/50">Beamwidth:</span> {{ details.beamwidth ?? '—' }}</li>
-        <li><span class="text-base-content/50">Multi-Beam:</span> {{ details.isMultiBeam ? 'Yes' : 'No' }}</li>
-        <li><span class="text-base-content/50">Site:</span> {{ details.siteCode ?? '—' }}</li>
-        <li><span class="text-base-content/50">Band:</span> {{ details.bandName ?? '—' }}</li>
-        <li><span class="text-base-content/50">Carrier:</span> {{ details.carrierName ?? '—' }}</li>
-        <li><span class="text-base-content/50">Sector:</span> {{ details.sectorName ?? '—' }}</li>
-      </ul>
-      <div class="flex gap-2">
-        <button class="btn btn-sm btn-primary" [disabled]="!newCellName() || submitting()" (click)="confirmMapping()">
-          Confirm mapping
-        </button>
-        <button class="btn btn-sm btn-ghost" (click)="cancelPreview()">Cancel</button>
+      <div class="dropdown w-full">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium">New cell (replacement)</span>
+          <input type="search" class="input input-sm w-full" placeholder="Search cell"
+                 [ngModel]="newCellQuery()" (ngModelChange)="onSearchNewCell($event)"/>
+        </label>
+        @if (newCellQuery().length > 2 && newCellSuggestions().length > 0) {
+          <ul tabindex="-1" class="dropdown-content menu menu-sm bg-base-100 border border-base-300 rounded-box z-10 w-full p-1 shadow-sm text-xs mt-1">
+            @for (cell of newCellSuggestions(); track $index) {
+              <li>
+                <a class="flex justify-between" (click)="selectNewCell(cell)">
+                  <span class="text-base-content">{{ cell.cellName }}</span>
+                  <span class="text-base-content/40">{{ cell.ratLabel }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
       </div>
     </div>
-  }
 
-  <!-- EXISTING MAPPINGS -->
-  <div>
-    <h4 class="text-sm font-semibold mb-2">Existing mappings</h4>
-    @if (mappings().length === 0) {
-      <p class="text-xs text-base-content/50">No cell mappings yet.</p>
-    } @else {
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
-          <tr>
-            <th>Previous cell</th>
-            <th>New cell</th>
-            <th></th>
-          </tr>
-          </thead>
-          <tbody>
-            @for (mapping of mappings(); track mapping.id) {
-              <tr>
-                <td>{{ mapping.previousCellName }}</td>
-                <td>{{ mapping.newCellName }}</td>
-                <td class="text-right">
-                  <button class="btn btn-xs btn-error btn-outline" (click)="requestDeleteMapping(mapping)">Remove</button>
-                </td>
-              </tr>
+    @if (previousCellDetails(); as details) {
+      <div class="flex flex-col gap-3 p-3 rounded-lg border border-warning/40 bg-warning/10">
+        <p class="text-xs font-semibold">
+          '{{ newCellName() ?? '…' }}' will inherit these values from '{{ previousCellName() }}':
+        </p>
+        <dl class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+          <div class="flex gap-1"><dt class="text-base-content/50">Azimuth</dt><dd>{{ details.azimuth ?? '—' }}</dd></div>
+          <div class="flex gap-1"><dt class="text-base-content/50">Beamwidth</dt><dd>{{ details.beamwidth ?? '—' }}</dd></div>
+          <div class="flex gap-1"><dt class="text-base-content/50">Multi-beam</dt><dd>{{ details.isMultiBeam ? 'Yes' : 'No' }}</dd></div>
+          <div class="flex gap-1"><dt class="text-base-content/50">Site</dt><dd>{{ details.siteCode ?? '—' }}</dd></div>
+          <div class="flex gap-1"><dt class="text-base-content/50">Band</dt><dd>{{ details.bandName ?? '—' }}</dd></div>
+          <div class="flex gap-1"><dt class="text-base-content/50">Carrier</dt><dd>{{ details.carrierName ?? '—' }}</dd></div>
+          <div class="flex gap-1"><dt class="text-base-content/50">Sector</dt><dd>{{ details.sectorName ?? '—' }}</dd></div>
+        </dl>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-sm btn-primary" [disabled]="!newCellName() || submitting()" (click)="confirmMapping()">
+            @if (submitting()) {
+              <span class="loading loading-spinner loading-xs"></span>
             }
-          </tbody>
-        </table>
+            Confirm mapping
+          </button>
+          <button class="btn btn-sm btn-ghost" (click)="cancelPreview()">Cancel</button>
+        </div>
       </div>
     }
-  </div>
+  </section>
+
+  <!-- Bulk upload -->
+  <section class="flex flex-col gap-3 p-4 rounded-xl border border-base-300 bg-base-100">
+    <div>
+      <h3 class="text-sm font-semibold">Map cells in bulk</h3>
+      <p class="text-xs text-secondary mt-0.5">
+        Upload a CSV with "Previous Cell Name" and "New Cell Name" columns. A result CSV with the status of each row
+        downloads when processing finishes.
+      </p>
+    </div>
+    <input [disabled]="uploadingMappings()" #cellMappingFileInput type="file" accept=".csv"
+           class="file-input file-input-sm w-full" aria-label="Cell mappings CSV"/>
+    <div class="flex items-center gap-2">
+      <button class="btn btn-sm btn-primary" [disabled]="uploadingMappings()" (click)="importCellMappings(cellMappingFileInput)">
+        @if (uploadingMappings()) {
+          <span class="loading loading-spinner loading-xs"></span>
+        } @else {
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M12 4L8 8M12 4L16 8M4 20H20"/></svg>
+        }
+        Upload mappings
+      </button>
+    </div>
+  </section>
+
+  <!-- Existing mappings -->
+  <section class="flex flex-col gap-3">
+    <h3 class="text-sm font-semibold">Existing mappings <span class="text-secondary font-normal">({{ mappings().length }})</span></h3>
+    <div class="overflow-x-auto rounded-xl border border-base-300">
+      <table class="table table-xs table-zebra">
+        <thead>
+        <tr>
+          <th>Previous cell</th>
+          <th>New cell</th>
+          <th class="w-12"><span class="sr-only">Actions</span></th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (mapping of mappings(); track mapping.id) {
+            <tr>
+              <td>{{ mapping.previousCellName }}</td>
+              <td>{{ mapping.newCellName }}</td>
+              <td class="text-right">
+                <button class="btn btn-xs btn-ghost btn-square text-error" title="Remove mapping" aria-label="Remove mapping"
+                        (click)="requestDeleteMapping(mapping)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7H20M10 11V17M14 11V17M5 7L6 19A2 2 0 0 0 8 21H16A2 2 0 0 0 18 19L19 7M9 7V4A1 1 0 0 1 10 3H14A1 1 0 0 1 15 4V7"/></svg>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="text-center text-xs text-base-content/50 py-6">No cell mappings yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>
 
-<!-- DELETE CONFIRMATION -->
+<!-- Remove confirmation -->
 <dialog class="modal" [class.modal-open]="mappingPendingDelete() !== null">
   @if (mappingPendingDelete(); as mapping) {
-    <div class="modal-box">
-      <h3 class="text-lg font-bold mb-2">Remove cell mapping?</h3>
-      <p class="text-sm">
-        Remove the mapping '{{ mapping.previousCellName }}' → '{{ mapping.newCellName }}'?
-        This will not revert properties already copied to the new cell.
+    <div class="modal-box max-w-md">
+      <h3 class="text-base font-semibold">Remove cell mapping?</h3>
+      <p class="text-sm text-base-content/80 mt-2">
+        '{{ mapping.previousCellName }}' will no longer map to '{{ mapping.newCellName }}'. Values already copied to
+        the new cell are not reverted.
       </p>
       <div class="modal-action">
-        <button class="btn btn-sm" (click)="cancelDeleteMapping()">Cancel</button>
+        <button class="btn btn-sm btn-ghost" (click)="cancelDeleteMapping()">Cancel</button>
         <button class="btn btn-sm btn-error" (click)="confirmDeleteMapping()">Remove</button>
       </div>
     </div>

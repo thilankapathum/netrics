@@ -1,0 +1,172 @@
+<section class="card bg-base-100 border border-base-300 min-w-0" [attr.aria-labelledby]="'kpis-report-title-' + level()">
+  <header class="px-5 pt-4 pb-3 border-b border-base-300">
+    @if (level() === 'cell') {
+      <h2 [id]="'kpis-report-title-' + level()" class="text-base font-semibold">Cell-wise multi-KPI report</h2>
+      <p class="text-xs text-secondary mt-0.5">Several KPIs side by side, with a row for each cell and timestamp. Values are taken as reported, without aggregation.</p>
+    } @else {
+      <h2 [id]="'kpis-report-title-' + level()" class="text-base font-semibold">Site-wise multi-KPI report</h2>
+      <p class="text-xs text-secondary mt-0.5">Several KPIs side by side, with a row for each site and day.</p>
+    }
+  </header>
+
+  <!-- Fixed-width fields: changing a value never reflows the card -->
+  <div class="px-5 py-4 grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-4 gap-y-3">
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">RAT</legend>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-full flex-nowrap overflow-x-auto" role="radiogroup" aria-label="RAT">
+        @for (_rat of rats; track $index) {
+          <input [disabled]="loadingAll()" type="radio" [name]="'rat_tabs_' + level()" class="tab flex-1" [value]="_rat.name" aria-label="{{_rat.label}}"
+                 [checked]="rat() === _rat.name" (change)="selectRat($any($event.target).value)"/>
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">KPIs</legend>
+      <button type="button" class="select select-sm w-full" [disabled]="loadingAll()"
+              [attr.popovertarget]="'kpi-picker-' + level()" [attr.style]="'anchor-name:--kpi-picker-' + level()">
+        @if (loadingStandardKpis) {
+          <span class="loading loading-spinner loading-xs"></span>
+        } @else {
+          <span class="truncate" [class.text-secondary]="!selectedKpis().length">
+            {{ selectedKpis().length ? selectedKpis().length + ' selected' : 'Select KPIs' }}
+          </span>
+        }
+      </button>
+      <!-- Top-layer popover: opening it never adds page scroll -->
+      <div popover [id]="'kpi-picker-' + level()" class="dropdown w-80 max-w-[calc(100vw-2rem)] p-2 bg-base-100 border border-base-300 rounded-box shadow-lg"
+           [attr.style]="'position-anchor:--kpi-picker-' + level()" (toggle)="kpiFilter.set('')">
+        <div class="flex items-center gap-2 mb-1">
+          <input type="search" class="input input-sm grow" placeholder="Search KPIs" aria-label="Search KPIs"
+                 [ngModel]="kpiFilter()" (ngModelChange)="kpiFilter.set($event)"/>
+          <button type="button" class="btn btn-ghost btn-xs" [disabled]="!selectedKpis().length" (click)="selectedKpis.set([])">Clear</button>
+        </div>
+        <ul class="max-h-72 overflow-y-auto">
+          @for (kpi of filteredKpis(); track kpi.kpiName) {
+            <li>
+              <label class="flex items-center gap-2 px-2 py-1.5 rounded-field text-sm cursor-pointer hover:bg-base-200">
+                <input type="checkbox" class="checkbox checkbox-xs checkbox-primary"
+                       [checked]="selectedKpis().includes(kpi.kpiName!)"
+                       (change)="toggleKpi(kpi.kpiName!, $any($event.target).checked)"/>
+                <span class="min-w-0">{{ kpi.label }}</span>
+              </label>
+            </li>
+          } @empty {
+            <li class="text-xs text-secondary px-2 py-1.5">No KPIs match “{{ kpiFilter() }}”.</li>
+          }
+        </ul>
+      </div>
+    </fieldset>
+
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">Area</legend>
+      <div class="join w-full">
+        <select [disabled]="loadingAll()" class="select select-sm join-item w-2/5 min-w-0" [(ngModel)]="areaType"
+                (change)="selectAreaType(areaType()!)" aria-label="Area type">
+          @for (at of areaTypes; track at.name) {
+            <option [value]="at.name">{{ at.name }}</option>
+          }
+        </select>
+        <select [disabled]="loadingAll()" class="select select-sm join-item w-3/5 min-w-0" [(ngModel)]="area" aria-label="Area">
+          @for (ar of areas; track ar.name) {
+            <option [value]="ar.name">{{ ar.name }}</option>
+          }
+        </select>
+      </div>
+    </fieldset>
+
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">Granularity</legend>
+      <div class="tabs tabs-box tabs-xs border border-base-300 w-full flex-nowrap overflow-x-auto" role="radiogroup" aria-label="Granularity">
+        @for (gran of granularities; track gran.name) {
+          <input [disabled]="loadingAll()" type="radio" [name]="'granularity_tabs_' + level()" class="tab flex-1" [value]="gran.name"
+                 aria-label="{{gran.label}}"
+                 [checked]="granularity() === gran.name"
+                 (change)="selectGranularity($any($event.target).value)"/>
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="fieldset p-0 min-w-0">
+      <legend class="fieldset-legend pt-0 text-xs">Date range</legend>
+      <button type="button" class="input input-sm w-full justify-start gap-2 cursor-pointer"
+              [attr.popovertarget]="'kpis-report-dates-' + level()" [attr.style]="'anchor-name:--kpis-report-dates-' + level()">
+        <svg class="text-secondary shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 8H20M8 4V2M16 4V2M6 4H18C19.1 4 20 4.9 20 6V18C20 19.1 19.1 20 18 20H6C4.9 20 4 19.1 4 18V6C4 4.9 4.9 4 6 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="truncate" [class.text-secondary]="!startDate()">
+          {{ startDate() ? startDate() + ' to ' + endDate() : 'Select dates' }}
+        </span>
+      </button>
+      <div #dateMenu popover [id]="'kpis-report-dates-' + level()" class="dropdown bg-base-100 rounded-box shadow-lg"
+           [attr.style]="'position-anchor:--kpis-report-dates-' + level()">
+        <calendar-range class="cally bg-base-100 border border-base-300 rounded-box" months="2" [attr.max]="today"
+                        (rangestart)="onDateRangeStart($event)"
+                        (change)="onDateRangeChange($event); dateMenu.hidePopover()">
+          <svg aria-label="Previous" class="fill-current w-4 h-4" slot="previous" viewBox="0 0 24 24"><path d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
+          <svg aria-label="Next" class="fill-current w-4 h-4" slot="next" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
+          <div class="flex flex-wrap gap-4 justify-center">
+            <calendar-month></calendar-month>
+            <calendar-month offset="1"></calendar-month>
+          </div>
+        </calendar-range>
+      </div>
+      @if (level() === 'cell') {
+        <p class="label text-xs" [class.text-error]="rangeDays() > cellMaxDays">Up to {{ cellMaxDays }} days for cell-wise exports.</p>
+      }
+    </fieldset>
+  </div>
+
+  <footer class="px-5 py-3 border-t border-base-300 bg-base-200/40 rounded-b-box flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div class="min-w-0 flex-1 flex flex-col gap-1.5">
+      <!-- Live preview of the CSV header, KPI columns in selection order -->
+      <div class="flex flex-wrap items-center gap-1" aria-label="CSV columns">
+        <span class="text-xs text-secondary mr-1">Columns</span>
+        @if (level() === 'cell') {
+          @for (col of ['Timestamp', 'Site ID', 'Cell', 'Band']; track col) {
+            <span class="badge badge-sm badge-ghost">{{ col }}</span>
+          }
+        } @else {
+          <span class="badge badge-sm badge-ghost">Date</span>
+          <span class="badge badge-sm badge-ghost">Site ID</span>
+        }
+        @for (kpi of selectedKpiDtos(); track kpi.kpiName) {
+          <span class="badge badge-sm badge-primary badge-soft gap-1 max-w-56">
+            <span class="truncate" [title]="kpi.label">{{ kpi.label }}</span>
+            <button type="button" class="cursor-pointer opacity-60 hover:opacity-100" [attr.aria-label]="'Remove ' + kpi.label"
+                    (click)="toggleKpi(kpi.kpiName!, false)">✕</button>
+          </span>
+        } @empty {
+          <span class="badge badge-sm badge-dash text-secondary">KPI columns</span>
+        }
+        @if (level() === 'site') {
+          <span class="badge badge-sm badge-ghost">Bands</span>
+        }
+      </div>
+      <p class="text-xs min-h-4 truncate" aria-live="polite"
+         [class.text-secondary]="jobStatus() !== 'FAILED'" [class.text-error]="jobStatus() === 'FAILED'">
+        {{ statusText() }}
+      </p>
+    </div>
+
+    @switch (jobStatus()) {
+      @case ('COMPLETED') {
+        <button class="btn btn-success btn-sm" [disabled]="downloadingFile()" (click)="downloadReadyFile()">
+          @if (downloadingFile()) { <span class="loading loading-spinner loading-xs"></span> }
+          Download CSV
+        </button>
+      }
+      @case ('PENDING') {
+        <button class="btn btn-sm" disabled><span class="loading loading-spinner loading-xs"></span> Queued</button>
+      }
+      @case ('PROCESSING') {
+        <button class="btn btn-sm" disabled><span class="loading loading-spinner loading-xs"></span> Generating</button>
+      }
+      @default {
+        <button class="btn btn-primary btn-sm" [disabled]="!!blocker()" (click)="startReportJob()">
+          {{ jobStatus() === 'FAILED' ? 'Try again' : 'Generate report' }}
+        </button>
+      }
+    }
+  </footer>
+</section>

@@ -24,6 +24,7 @@ import {StandardkpiService} from '../../../../../../service/pulse/ltefdd/standar
   templateUrl: './site-wise-report-by-kpi-and-date.html',
   styleUrl: './site-wise-report-by-kpi-and-date.css',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  host: {class: 'block min-w-0'},
 })
 export class SiteWiseReportByKpiAndDate implements OnDestroy{
 
@@ -68,7 +69,10 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
   jobId = signal<string | null>(null);
   jobStatus = signal<'IDLE' | 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'>('IDLE');
   jobFileName = signal<string | null>(null);
+  jobError = signal<string | null>(null);
   private pollSub?: Subscription;
+
+  readonly today = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
 
   constructor(private alertService: AlertService,
               private areaService: AreaService,
@@ -189,20 +193,10 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
     console.log(this.rat());
   }
 
-  selectStandardKpi(kpiName: string) {
-    // this.standardKpi.set(kpiName);
-    console.log(kpiName);
-  }
-
   selectAreaType(areaType: string) {
     this.areaType.set(areaType);
     this.getAreasByAreaType(this.areaType()!);
     console.log(this.areaType());
-  }
-
-  selectArea(areaName: string) {
-    this.area.set(areaName);
-    console.log(this.area());
   }
 
   selectGranularity(granularity: string) {
@@ -210,31 +204,22 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
     console.log(granularity);
   }
 
-  onStartDateChange(event: any) {
-    // Cally emits event.target.value
-    this.startDate.set(event.target.value);
-    console.log('Selected date:', this.startDate());
+  onDateRangeChange(event: any) {
+    // <calendar-range> emits "YYYY-MM-DD/YYYY-MM-DD"
+    const [start, end] = (event.target.value as string).split('/');
+    this.startDate.set(start ?? '');
+    this.endDate.set(end ?? '');
   }
-
-  onEndDateChange(event: any) {
-    // Cally emits event.target.value
-    this.endDate.set(event.target.value);
-    console.log('Selected date:', this.endDate());
-  }
-
 
   startReportJob() {
-    if (!this.startDate || !this.endDate) {
-      this.alertService.warning(`Select a valid date range!`);
-      return;
-    }
-    if (this.invalidRange()) {
-      this.alertService.warning(`End date must be later than start date`);
+    if (this.blocker()) {
+      this.alertService.warning(this.blocker());
       return;
     }
 
     this.jobStatus.set('PENDING');
     this.jobFileName.set(null);
+    this.jobError.set(null);
 
     this.kpiReportService.submitSiteWiseReportJob(
       this.rat(), this.granularity(), this.standardKpi(), this.startDate(), this.endDate(), this.area()!
@@ -261,7 +246,7 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
         if (res.status === 'COMPLETED') {
           this.jobFileName.set(res.fileName);
         } else if (res.status === 'FAILED') {
-          this.alertService.error(`Report generation failed: ${res.errorMessage}`);
+          this.jobError.set(res.errorMessage);
         }
       },
       error: (error) => {
@@ -297,21 +282,20 @@ export class SiteWiseReportByKpiAndDate implements OnDestroy{
 
   //================ UTILS ================================
 
-  invalidRangeMessage(): string {
-    const start = this.startDate();
-    const end = this.endDate();
+  /** Why the report can't be generated yet; '' when it can. */
+  blocker = computed(() => {
+    if (this.invalidRange()) return 'Select a date range to generate the report.';
+    if (!this.standardKpi()) return 'Select a KPI to generate the report.';
+    return '';
+  });
 
-    const startTime = new Date(start).getTime();
-    const endTime = new Date(end).getTime();
-
-    if (!start && !end) {
-      return 'Enter valid Start Time & End time';
-    } else if (!start && end) {
-      return 'Enter valid Start Time';
-    } else if (start && !end) {
-      return 'Enter valid End time';
-    } else if (endTime < startTime) {
-      return 'Enter valid date range';
-    } else return '';
-  }
+  statusText = computed(() => {
+    switch (this.jobStatus()) {
+      case 'PENDING': return 'Queued. The report starts when a worker is free.';
+      case 'PROCESSING': return 'Generating report. You can leave this page open and keep working.';
+      case 'COMPLETED': return `Ready: ${this.jobFileName()}`;
+      case 'FAILED': return `Report failed: ${this.jobError() ?? 'unknown error'}. Check the filters and try again.`;
+      default: return this.blocker();
+    }
+  });
 }

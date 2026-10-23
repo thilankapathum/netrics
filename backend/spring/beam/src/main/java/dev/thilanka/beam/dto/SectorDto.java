@@ -4,6 +4,7 @@ public record SectorDto(
         Integer sectorIndex,
         String name,
         Integer azimuth,
-        String siteCode
+        String siteCode,
+        AuditDto audit
 ) {
 }

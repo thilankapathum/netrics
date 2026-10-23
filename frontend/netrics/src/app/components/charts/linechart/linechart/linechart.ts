@@ -99,6 +99,10 @@ export class Linechart implements OnInit, OnChanges, OnDestroy {
         this.chart.updateSeries(series, true);
       }
     }
+    if (changes['chartHeight'] && !changes['chartHeight'].firstChange) {
+      this.chartOptions = {...this.chartOptions, chart: {...this.chartOptions.chart!, height: this.chartHeight}};
+      this.chart?.updateOptions({chart: {height: this.chartHeight}}, false, false);
+    }
     if (changes['yaxisOverride'] && this.chart) {
       this.chart.updateOptions({ yaxis: this.buildYAxis() }, false, true);
     }

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
+import {HttpErrorResponse} from '@angular/common/http';
 
 
 export type AlertType = 'info'|'success' | 'warning'| 'error';
@@ -33,6 +34,14 @@ export class AlertService {
   success(message: string, title = 'Success') { this.push(message, 'success', title); }
   warning(message: string, title = 'Warning') { this.push(message, 'warning', title); }
   error(message: string, title = 'Error', errorCode?: string | number) { this.push(message, 'error', title, errorCode); }
+
+  /** Shows the backend ErrorResponse message/fieldErrors instead of a bare HTTP status */
+  httpError(action: string, err: HttpErrorResponse) {
+    const body = err.error;
+    const fields = body?.fieldErrors?.map((f: any) => `${f.field}: ${f.message}`).join('; ');
+    const msg = fields || body?.message || (err.status === 0 ? 'Cannot reach the server' : err.statusText);
+    this.error(`${action}: ${msg}`, 'Error', err.status || undefined);
+  }
 
   remove(id: number) {
     this.alerts = this.alerts.filter(a => a.id !== id);

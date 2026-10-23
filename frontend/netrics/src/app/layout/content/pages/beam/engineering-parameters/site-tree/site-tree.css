@@ -1,0 +1,50 @@
+/* Sector colours: validated categorical set (adjacent + wrap-around pairs pass CVD and contrast checks);
+   every coloured mark also carries its sector number, so colour is never the only cue. */
+:host {
+  --sector-1: #1baf7a;
+  --sector-2: #eb6834;
+  --sector-3: #6250d6;
+  --sector-4: #eda100;
+  --sector-5: #e87ba4;
+  --sector-6: #2a78d6;
+}
+
+:host-context([data-theme="netrics_dark"]) {
+  --sector-1: #199e70;
+  --sector-2: #d95926;
+  --sector-3: #9085e9;
+  --sector-4: #c98500;
+  --sector-5: #d55181;
+  --sector-6: #3987e5;
+}
+
+.sector-wedge {
+  fill: color-mix(in oklab, var(--sector) 28%, transparent);
+  stroke: var(--sector);
+  transition: fill 150ms;
+}
+
+.sector-wedge.is-active {
+  fill: color-mix(in oklab, var(--sector) 60%, transparent);
+}
+
+.sector-beam {
+  stroke: var(--sector);
+}
+
+.sector-marker {
+  background: color-mix(in oklab, var(--sector) 18%, transparent);
+  box-shadow: inset 0 0 0 2px var(--sector);
+}
+
+.sector-row {
+  box-shadow: inset 3px 0 0 var(--sector);
+}
+
+.sector-row.is-active {
+  background: color-mix(in oklab, var(--sector) 6%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sector-wedge { transition: none; }
+}

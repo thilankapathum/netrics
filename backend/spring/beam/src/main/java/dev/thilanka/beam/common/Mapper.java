@@ -1,6 +1,7 @@
 package dev.thilanka.beam.common;
 
 import dev.thilanka.beam.dto.AntennaDto;
+import dev.thilanka.beam.dto.AuditDto;
 import dev.thilanka.beam.dto.ManufacturerDto;
 import dev.thilanka.beam.dto.OperatorDto;
 import dev.thilanka.beam.entity.Antenna;
@@ -22,22 +23,24 @@ public class Mapper {
                 antenna.getAzimuth(),
                 antenna.getMechanicalTilt(),
                 antenna.getAntennaHeight(),
-                antenna.getAntennaType().getName(),
+                // antenna_type_id / manufacturer_id are nullable (legacy rows)
+                antenna.getAntennaType() == null ? null : antenna.getAntennaType().getName(),
                 antenna.getSector().getName(),
-                antenna.getManufacturer().getName()
+                antenna.getManufacturer() == null ? null : antenna.getManufacturer().getName(),
+                AuditDto.of(antenna)
         );
     }
 
     //--------  OPERATOR  -------------------------
 
     public OperatorDto toOperatorDto(Operator operator) {
-        return new OperatorDto(operator.getName());
+        return new OperatorDto(operator.getId(), operator.getName());
     }
 
     //--------  MANUFACTURER  ---------------------
 
     public ManufacturerDto toManufacturerDto(Manufacturer manufacturer) {
-        return new ManufacturerDto(manufacturer.getName());
+        return new ManufacturerDto(manufacturer.getId(), manufacturer.getName());
     }
 
 }
