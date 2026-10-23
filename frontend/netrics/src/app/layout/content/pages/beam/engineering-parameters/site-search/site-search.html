@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-3 w-full">
   <nav class="flex flex-row flex-wrap gap-3 items-center">
     <div class="breadcrumbs text-xs text-secondary grow-1">
       <ul>
@@ -9,11 +9,12 @@
     <app-ep-export/>
   </nav>
 
-  <section class="bg-base-100 border border-base-300 rounded-xl p-5 w-full max-w-3xl">
+  <!-- SEARCH -->
+  <section class="bg-base-100 border border-base-300 rounded-xl p-5">
     <h1 class="text-base font-semibold">Find a site</h1>
     <p class="text-xs text-secondary mt-0.5">View and edit sectors, antennas and electrical tilts for a site.</p>
 
-    <label class="input input-bordered w-full mt-4">
+    <label class="input input-bordered w-full max-w-3xl mt-4">
       <svg class="w-4 h-4 text-secondary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/>
@@ -32,7 +33,7 @@
     <p *ngIf="query().length === 1" class="text-xs text-secondary mt-3">Type one more character to search.</p>
 
     <ul *ngIf="query().length > 1 && results().length > 0" id="site-results" role="listbox"
-        class="mt-3 border border-base-300 rounded-xl divide-y divide-base-300 max-h-96 overflow-y-auto">
+        class="mt-3 max-w-3xl border border-base-300 rounded-xl divide-y divide-base-300 max-h-96 overflow-y-auto">
       <li *ngFor="let site of results(); let i = index"
           [id]="'site-opt-' + i" role="option" [attr.aria-selected]="i === activeIndex()"
           class="flex items-baseline gap-3 px-3 py-2 cursor-pointer hover:bg-primary/5"
@@ -47,5 +48,154 @@
     <p *ngIf="query().length > 1 && !searching() && searched() && results().length === 0" class="text-xs text-secondary mt-3">
       No site matches “{{ query() }}”. Check the code or try part of the site name.
     </p>
+
+    <div *ngIf="recent().length && query().length < 2" class="flex flex-wrap items-center gap-1.5 mt-3">
+      <span class="text-xs text-secondary mr-1">Recently viewed</span>
+      <a *ngFor="let code of recent()" class="btn btn-xs btn-ghost border border-base-300 tabular-nums"
+         [routerLink]="['/beam/engineering-parameters', code]">{{ code }}</a>
+    </div>
   </section>
+
+  <!-- INVENTORY -->
+  <section class="bg-base-100 border border-base-300 rounded-xl p-5" aria-labelledby="inventory-title">
+    <h2 id="inventory-title" class="text-base font-semibold">Inventory</h2>
+
+    <div *ngIf="overviewState() === 'loading'" class="flex flex-col gap-3 mt-4" aria-busy="true">
+      <div class="skeleton h-10 w-full"></div>
+      <div class="skeleton h-24 w-full"></div>
+    </div>
+    <p *ngIf="overviewState() === 'failed'" class="text-xs text-secondary mt-2">
+      Couldn’t load the inventory. Reload the page to try again.
+    </p>
+
+    <ng-container *ngIf="overviewState() === 'ready'">
+      <!-- the hierarchy as one chain; each link counts parents missing the next level -->
+      <ol class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-0 mt-4">
+        <ng-container *ngFor="let level of chain()">
+          <li class="shrink-0">
+            <p class="text-2xl font-semibold tracking-tight tabular-nums leading-tight">{{ level.count | number }}</p>
+            <p class="text-xs text-secondary">{{ level.label }}</p>
+          </li>
+          <li *ngIf="level.gap as g" class="grow min-w-0 flex flex-col sm:items-center gap-1 sm:pt-3.5 sm:px-3
+                     border-l-2 sm:border-l-0 border-base-300 ml-3 sm:ml-0 pl-3 sm:pl-3 py-1 sm:py-0">
+            <span class="hidden sm:block w-full h-0.5 bg-base-300 rounded-full"></span>
+            <button *ngIf="g.count > 0" type="button" class="link link-hover text-xs text-warning text-left sm:text-center"
+                    (click)="showGap(g.key)">
+              {{ g.count | number }} without {{ level.child }}
+            </button>
+            <span *ngIf="g.count === 0" class="text-xs text-secondary">all have {{ level.child }}</span>
+          </li>
+        </ng-container>
+      </ol>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5 mt-6 pt-5 border-t border-base-300">
+        <div *ngFor="let b of breakdowns()" class="min-w-0">
+          <h3 class="text-sm font-semibold">{{ b.title }} <span class="text-xs font-normal text-secondary">of {{ b.of }}</span></h3>
+          <p *ngIf="!b.rows.length" class="text-xs text-secondary mt-2">No {{ b.of }} yet.</p>
+          <ul class="flex flex-col gap-1.5 mt-2">
+            <li *ngFor="let r of b.rows" class="text-xs" [attr.title]="r.name + ': ' + (r.count | number) + ' (' + r.pct + '%)'">
+              <div class="flex items-baseline justify-between gap-2">
+                <span class="truncate" [class.text-secondary]="r.name === 'Not set' || r.name === 'Other'">{{ r.name }}</span>
+                <span class="tabular-nums text-secondary shrink-0">{{ r.count | number }}</span>
+              </div>
+              <div class="h-1 rounded-full bg-base-200 mt-0.5" aria-hidden="true">
+                <div class="h-1 rounded-full bg-primary/60" [style.width.%]="r.pct"></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </ng-container>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+    <!-- GAPS -->
+    <section class="bg-base-100 border border-base-300 rounded-xl p-5" aria-labelledby="gaps-title">
+      <h2 id="gaps-title" class="text-base font-semibold">Needs attention</h2>
+      <p class="text-xs text-secondary mt-0.5">Missing parameters across the network. Open a site to fill them in.</p>
+
+      <div *ngIf="overviewState() === 'loading'" class="flex flex-col gap-2 mt-4" aria-busy="true">
+        <div class="skeleton h-8 w-full"></div>
+        <div class="skeleton h-8 w-full"></div>
+        <div class="skeleton h-8 w-full"></div>
+      </div>
+      <p *ngIf="overviewState() === 'failed'" class="text-xs text-secondary mt-3">
+        Couldn’t load missing parameters. Reload the page to try again.
+      </p>
+
+      <ul *ngIf="overview() as o" class="mt-3 divide-y divide-base-300">
+        <li *ngFor="let g of o.gaps" [id]="'gap-' + g.key">
+          <details *ngIf="g.count > 0; else none" class="group" [open]="openGap() === g.key" (toggle)="onGapToggle(g.key, $event)">
+            <summary class="flex items-center gap-2 py-2.5 cursor-pointer list-none text-sm hover:text-primary">
+              <svg class="w-3.5 h-3.5 shrink-0 text-secondary transition-transform group-open:rotate-90" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+              <span class="grow">{{ g.label }}</span>
+              <span class="badge badge-sm badge-warning badge-soft tabular-nums">{{ g.count | number }}</span>
+            </summary>
+            <div class="pb-3 pl-5.5">
+              <div class="flex flex-wrap gap-1.5">
+                <a *ngFor="let code of g.siteCodes" class="btn btn-xs btn-ghost border border-base-300 tabular-nums"
+                   [routerLink]="['/beam/engineering-parameters', code]">{{ code }}</a>
+              </div>
+              <p *ngIf="g.siteCodes.length < g.count && g.siteCodes.length >= 20" class="text-xs text-secondary mt-2">
+                Showing the first {{ g.siteCodes.length }} sites. Export the CSV to see them all.
+              </p>
+            </div>
+          </details>
+          <ng-template #none>
+            <div class="flex items-center gap-2 py-2.5 pl-5.5 text-sm text-secondary">
+              <span class="grow">{{ g.label }}</span>
+              <span class="text-xs">None</span>
+            </div>
+          </ng-template>
+        </li>
+      </ul>
+    </section>
+
+    <!-- RECENT CHANGES -->
+    <section class="bg-base-100 border border-base-300 rounded-xl p-5" aria-labelledby="changes-title">
+      <h2 id="changes-title" class="text-base font-semibold">Recent changes</h2>
+      <p class="text-xs text-secondary mt-0.5">Edits to sites, sectors, antennas and tilts, newest first.</p>
+
+      <div *ngIf="changesState() === 'loading'" class="flex flex-col gap-3 mt-4" aria-busy="true">
+        <div class="skeleton h-9 w-full"></div>
+        <div class="skeleton h-9 w-full"></div>
+        <div class="skeleton h-9 w-full"></div>
+      </div>
+      <p *ngIf="changesState() === 'failed'" class="text-xs text-secondary mt-3">
+        Couldn’t load recent changes. Reload the page to try again.
+      </p>
+      <p *ngIf="changesState() === 'ready' && !changeRows().length" class="text-xs text-secondary mt-3">
+        No changes yet. Edits made on a site’s page show up here.
+      </p>
+
+      <ol *ngIf="changeRows().length" class="mt-3 flex flex-col">
+        <li *ngFor="let c of changeRows()" class="flex gap-2.5 py-2 border-b border-base-300 last:border-b-0">
+          <span class="w-1.5 h-1.5 rounded-full mt-2 shrink-0" [ngClass]="c.recent ? 'bg-primary' : 'bg-transparent'"
+                [attr.title]="c.recent ? 'Changed in the last 24 hours' : null"></span>
+          <div class="min-w-0 grow">
+            <p class="text-sm">
+              <span class="font-medium">{{ c.by }}</span> {{ c.verb }} {{ c.target }}
+              <a *ngIf="c.siteCode" class="link link-primary link-hover tabular-nums"
+                 [routerLink]="['/beam/engineering-parameters', c.siteCode]">{{ c.siteCode }}</a>
+            </p>
+            <p class="text-xs text-secondary mt-0.5">
+              <time [attr.title]="c.absolute">{{ c.relative }}</time>
+              <ng-container *ngFor="let d of c.diffs">
+                <span class="mx-1 text-base-content/20" aria-hidden="true">|</span><span class="text-base-content/80">{{ d.field }}</span>
+                <ng-container *ngIf="d.from"> {{ d.from }} →</ng-container> {{ d.to }}
+              </ng-container>
+              <ng-container *ngIf="c.more">, +{{ c.more }} more</ng-container>
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <button *ngIf="hasMore()" type="button" class="btn btn-sm btn-ghost mt-2" [disabled]="loadingMore()" (click)="loadChanges()">
+        <span *ngIf="loadingMore()" class="loading loading-spinner loading-xs"></span> Show older changes
+      </button>
+    </section>
+  </div>
 </div>

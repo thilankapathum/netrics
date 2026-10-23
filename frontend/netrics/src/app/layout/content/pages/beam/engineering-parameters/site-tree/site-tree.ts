@@ -20,6 +20,7 @@ import {CellDto} from '../../../../../../models/pulse/CellDto';
 import {antennaToNode, NodeType, sectorToNode, tiltToNode, TreeNodeVm} from '../tree-node.model';
 import {NodeEditModal} from '../node-edit-modal/node-edit-modal';
 import {EpExport} from '../ep-export/ep-export';
+import {absoluteTime, RECENT_MS, relativeTime, rememberSite, SYSTEM_USERS, userNameMap} from '../change-format';
 
 interface AntennaVm {
   antenna: AntennaDto;
@@ -69,9 +70,6 @@ const BEAMWIDTH = 65;
 const ROSE_RADIUS = 42;
 /** Distinct sector colours (see site-tree.css); colour follows the sector index so sector 1 always looks the same */
 const SECTOR_COLOURS = 6;
-const RECENT_MS = 24 * 3600 * 1000;
-const SYSTEM_USERS = ['SYSTEM', 'ANONYMOUS'];
-const relativeFormat = new Intl.RelativeTimeFormat('en', {numeric: 'auto'});
 
 @Component({
   selector: 'app-site-tree',
@@ -122,8 +120,7 @@ export class SiteTree implements OnInit {
   // names come from the realm user list in pulse; without PULSE_READ we just show the time
   private loadUserNames(): void {
     this.userService.getAllUsers().pipe(catchError(() => of([]))).subscribe(users => {
-      this.userNames = new Map(users.map(u => [u.userId,
-        [u.firstName, u.lastName?.charAt(0) ? u.lastName.charAt(0) + '.' : ''].filter(Boolean).join(' ') || u.username]));
+      this.userNames = userNameMap(users);
       // re-render with names
       this.sectors.update(s => [...s]);
       this.site.update(s => s && {...s});
@@ -154,6 +151,7 @@ export class SiteTree implements OnInit {
     }).subscribe({
       next: ({site, sectors}) => {
         this.site.set(site);
+        rememberSite(site.siteCode);
         this.sectors.set(sectors.sort((a, b) => (a.sector.sectorIndex ?? 0) - (b.sector.sectorIndex ?? 0)));
         this.loading.set(false);
       },
@@ -198,8 +196,8 @@ export class SiteTree implements OnInit {
     const date = new Date(at);
     return {
       verb: edited ? 'Edited' : 'Added',
-      relative: this.relative(date),
-      absolute: date.toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'}),
+      relative: relativeTime(date),
+      absolute: absoluteTime(date),
       by: SYSTEM_USERS.includes(user ?? '') ? 'System' : this.userNames.get(user ?? '') ?? null,
       recent: Date.now() - date.getTime() < RECENT_MS
     };
@@ -209,15 +207,6 @@ export class SiteTree implements OnInit {
   changeText(audit?: AuditDto): string {
     const c = this.change(audit);
     return c ? `${c.verb} ${c.relative}${c.by ? ' by ' + c.by : ''} (${c.absolute})` : '';
-  }
-
-  private relative(date: Date): string {
-    const ago = (Date.now() - date.getTime()) / 1000;
-    if (ago < 60) return 'just now';
-    if (ago < 3600) return relativeFormat.format(-Math.round(ago / 60), 'minute');
-    if (ago < 86400) return relativeFormat.format(-Math.round(ago / 3600), 'hour');
-    if (ago < 86400 * 30) return relativeFormat.format(-Math.round(ago / 86400), 'day');
-    return 'on ' + date.toLocaleDateString(undefined, {dateStyle: 'medium'});
   }
 
   antennaCount(): number {
