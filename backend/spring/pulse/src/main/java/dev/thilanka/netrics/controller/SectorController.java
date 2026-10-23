@@ -59,6 +59,12 @@ public class SectorController {
     }
 
     @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
+    @GetMapping("site/{siteCode}")
+    public ResponseEntity<List<SectorDto>> getSectorsBySiteCode(@PathVariable("siteCode") String siteCode) {
+        return ResponseEntity.ok(sectorService.getBySiteCode(siteCode));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PULSE_READ')")
     @GetMapping("site-index")
     public ResponseEntity<SectorDto> getSectorByNameAndIndex(@RequestParam("siteCode") String siteCode, @RequestParam("sectorIndex") Integer sectorIndex) {
         return ResponseEntity.ok(sectorService.getBySiteAndIndex(siteCode, sectorIndex));

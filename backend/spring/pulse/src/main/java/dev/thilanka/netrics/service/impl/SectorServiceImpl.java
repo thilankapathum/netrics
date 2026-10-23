@@ -217,6 +217,19 @@ public class SectorServiceImpl implements SectorService {
         }
     }
 
+    @Override
+    public List<SectorDto> getBySiteCode(String siteCode) {
+        if (cachedSectors.isEmpty()) {
+            log.warn("Sector List is empty. Reloading...");
+            reloadSectors();
+        }
+
+        return cachedSectors.stream()
+                .filter(s -> siteCode.equalsIgnoreCase(s.siteCode()))
+                .sorted(Comparator.comparing(SectorDto::sectorIndex, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+    }
+
 //    @Override
 //    public List<Sector> findSectorsWithMissingInfo() {
 //        return sectorRepository.findSectorsWithMissingInfo();

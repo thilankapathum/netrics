@@ -25,6 +25,11 @@ export class SectorService {
     return this.http.get<SectorDto[]>(`${this.getUrl}/search`, {params:{name:name}});
   }
 
+  /** All sectors of a site, ordered by sector index */
+  getSectorsBySiteCode(siteCode: string) {
+    return this.http.get<SectorDto[]>(`${this.getUrl}/site/${siteCode}`);
+  }
+
   exportSectorsWithMissingInfo() {
     return this.http.get(`${this.postUrl}/missing/export`, {responseType: 'blob'});
   }

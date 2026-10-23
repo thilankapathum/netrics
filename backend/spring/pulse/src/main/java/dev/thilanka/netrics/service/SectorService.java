@@ -33,6 +33,8 @@ public interface SectorService {
 
     List<SectorDto> searchSectors(String searchString);
 
+    List<SectorDto> getBySiteCode(String siteCode);
+
 //    List<Sector> findSectorsWithMissingInfo();
 //
 //    List<SectorDto> getSectorsWithMissingInfo();
