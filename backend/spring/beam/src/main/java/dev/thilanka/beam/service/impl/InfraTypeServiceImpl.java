@@ -1,6 +1,5 @@
 package dev.thilanka.beam.service.impl;
 
-import dev.thilanka.beam.common.exception.BusinessValidationException;
 import dev.thilanka.beam.common.exception.DataNotChangedException;
 import dev.thilanka.beam.common.exception.ResourceNotFoundException;
 import dev.thilanka.beam.dto.InfraTypeDto;
@@ -106,13 +105,12 @@ public class InfraTypeServiceImpl implements InfraTypeService {
     public InfraType extractInfraType(String infraType) {
         if (infraType == null) {return null;}
 
-        String[] infraTypes = infraType.split(" - ");
-        if (infraTypes.length != 2) {
-            throw new BusinessValidationException("Incorrect Infra-Type");
-        } else {
-            return infraTypeRepository.findByInfraAndLeg(infraTypes[0], infraTypes[1])
-                    .orElseThrow(() -> new ResourceNotFoundException("Infra-Type", "infraType", infraTypes[0] + " - " + infraTypes[1]));
-        }
+        // Leg types contain '-' (e.g. "4-Leg"), so match the whole "infra-leg" label instead of splitting it
+        String label = infraType.trim().replace(" - ", "-");
+        return infraTypeRepository.findAll().stream()
+                .filter(i -> (i.getInfraType() + "-" + i.getLegType()).equals(label))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Infra-Type", "infraType", label));
     }
 
     private InfraTypeDto toDto(InfraType infraType) {
