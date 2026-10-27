@@ -35,6 +35,7 @@ export class SectorMap implements OnInit, OnChanges {
   @Output() selectedCellName = new EventEmitter<string>();
   @Output() openAnalysisDialog = new EventEmitter<boolean>();
   @Input() showSiteLabels: boolean = true;
+  @Input() refresh = 0;
   // @Input() selectedSite = signal<SiteDto | undefined>(undefined);
   @Input() selectedSite: SiteDto = {siteCode: '', siteName: ''};
   // @Input() filterByBands: boolean = false;
@@ -98,7 +99,8 @@ export class SectorMap implements OnInit, OnChanges {
       changes['date'] ||
       changes['areaName'] ||
       changes['filterByBands'] ||
-      changes['selectedBand'];
+      changes['selectedBand'] ||
+      changes['refresh'];
 
     if (filterChanged) {
       this.loadedTiles.clear();   // Filters changed → old tiles are stale

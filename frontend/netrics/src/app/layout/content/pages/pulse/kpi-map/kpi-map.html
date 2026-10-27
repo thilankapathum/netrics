@@ -135,6 +135,7 @@
                       [standardKpiName]="standardKpi()!" [date]="date()!"
                       [mapCellThrSetAndThresholds]="mapCellThrSetAndThresholds"
                       [areaName]="area()!"
+                      [refresh]="mapRefresh"
                       [loadingAll]="loadingAll()"
                       (selectedCellName)="onCellSelection($event)"
                       (openAnalysisDialog)="openCellMapCellAnalysisModal()"
@@ -189,5 +190,6 @@
 
 <app-cell-map-eng-para-modify [open]="showCellMapEngParaModifyModal"
                               (closed)="closeCellMapEngParaModifyModal()"
+                              (saved)="mapRefresh = mapRefresh + 1"
                               [cellName]="selectedCellName()"
                               [isEngineeringParaEditable]="isEngineeringParaEditable()"></app-cell-map-eng-para-modify>

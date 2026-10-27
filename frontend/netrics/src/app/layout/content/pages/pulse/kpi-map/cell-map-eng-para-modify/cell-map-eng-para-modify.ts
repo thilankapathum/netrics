@@ -19,6 +19,7 @@ import {AuthService} from '../../../../../../auth/service/auth-service';
 export class CellMapEngParaModify {
   @Input() open = signal<boolean>(false);
   @Output() closed = new EventEmitter<void>();
+  @Output() saved = new EventEmitter<void>();
 
   @Input() cellName: string = '';
   @Input() isEngineeringParaEditable: boolean = false;
@@ -103,6 +104,7 @@ export class CellMapEngParaModify {
           this.alertService.success(`Saved cell ${this.cellName}`);
           this.cell = data;
           this.savingCell = false;
+          this.saved.emit();
         }, error: err => {
           console.error(err);
           this.alertService.error(`Error updating cell ${this.cellName}`, 'Error', `${err.statusCode} ${err.statusText}`);

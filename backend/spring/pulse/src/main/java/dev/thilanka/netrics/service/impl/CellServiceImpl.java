@@ -42,7 +42,7 @@ public class CellServiceImpl implements CellService {
     List<CellDto> allCells = new ArrayList<>();
 
     @Override
-    @CacheEvict(value = "mapCellTiles", allEntries = true)
+    @CacheEvict(cacheNames = {"mapCellTiles", "mapCellByteTiles"}, allEntries = true)
     public Cell createCell(Cell cell) {
         log.warn(String.format("Creating cell with id %d", cell.getId()));
         return cellRepository.save(cell);
@@ -106,6 +106,7 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {"mapCellTiles", "mapCellByteTiles"}, allEntries = true)
     public List<CellDto> createCells(List<CellDto> dtos) {
 
         List<CellDto> savedDtos = new ArrayList<>();
@@ -143,7 +144,7 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
-    @CacheEvict(value = "mapCellTiles", allEntries = true)
+    @CacheEvict(cacheNames = {"mapCellTiles", "mapCellByteTiles"}, allEntries = true)
     public CellUpdateResult updateCell(CellDto dto) {       //-- RAT is not updatable
 //        log.info("UPDATE CELL" + dto.cellName());
 
@@ -266,6 +267,7 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {"mapCellTiles", "mapCellByteTiles"}, allEntries = true)
     public List<CellDto> updateCells(List<CellDto> dtos) {
         List<CellDto> updatedCells = new ArrayList<>();
 
@@ -281,6 +283,7 @@ public class CellServiceImpl implements CellService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {"mapCellTiles", "mapCellByteTiles"}, allEntries = true)
     public List<CellCsvImportResultDto> updateCellsWithResult(List<CellDto> dtos) {
         List<CellCsvImportResultDto> importResultDtos = new ArrayList<>();
 
@@ -319,7 +322,7 @@ public class CellServiceImpl implements CellService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "mapCellTiles", allEntries = true)
+    @CacheEvict(cacheNames = {"mapCellTiles", "mapCellByteTiles"}, allEntries = true)
     public List<CellDto> updateAzimuths(CellAzimuthUpdateDto dto) {
         // load-and-save (not a bulk UPDATE) so audit fields and the audit log are recorded
         List<Cell> cells = dto.cellNames().stream().map(this::findByCellName).toList();

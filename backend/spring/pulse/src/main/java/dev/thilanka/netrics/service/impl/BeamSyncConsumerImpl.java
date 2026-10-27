@@ -11,6 +11,7 @@ import dev.thilanka.netrics.service.SiteService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ public class BeamSyncConsumerImpl implements BeamSyncConsumer {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {"mapCellTiles", "mapCellSiteTiles", "mapCellByteTiles"}, allEntries = true)
     @KafkaListener(
             topics = "${spring.kafka.topic.site-events}",
             groupId = "pulse-service",
@@ -39,7 +41,6 @@ public class BeamSyncConsumerImpl implements BeamSyncConsumer {
                 case "DELETED" -> siteRepository.deleteBySiteCode(event.siteCode());
                 default -> log.warn("Unknown Site event type: {}", event.eventType());
             }
-            //TODO: RELOAD SITES TO MEMORY  | EVICT CACHE
         } catch (Exception e) {
             log.error("Error processing SiteEvent siteCode={}", event.siteCode(), e);
             throw e;

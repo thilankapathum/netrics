@@ -97,6 +97,7 @@ export class KpiMap implements OnInit {
   showCellMapLegendEditModal = signal<boolean>(false);
   showCellMapCellAnalysisModal = signal<boolean>(false);
   showCellMapEngParaModifyModal = signal<boolean>(false);
+  mapRefresh = 0;   // bumped after an eng-para save so sector-map drops its loaded tiles
 
 
   constructor(private ratService: RatService,
